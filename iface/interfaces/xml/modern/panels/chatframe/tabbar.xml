@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's chat tab strip (its XML twin's layout; tabbar.lua shows the tabs as the logic has them, opens a tab's menu
+     and its settings window): the strip along the top of the chat frame, a tab of it, and the settings window (which
+     kinds a tab shows). Format: core/xml.md. Drawing only. -->
+<ui>
+  <!-- a tab's height, the gap between tabs, the room round its name and its least width (tabbar.lua's) -->
+  <data key="SIZES" height="22" gap="2" pad="20" minWidth="56"/>
+  <!-- s6-ui-core (round 61): the chat's tabs are the shared tab in their own see-through colours: the shown one lighter
+       with gold text, the others grey -->
+  <data key="LOOK">
+    <data key="bg" value="0.14, 0.14, 0.16, 0.7"/>
+    <data key="chosenBg" value="0.3, 0.3, 0.33, 0.9"/>
+    <data key="text" value="grey"/>
+    <data key="chosenText" value="gold"/>
+  </data>
+  <!-- the settings window's two columns of check boxes: where each starts -->
+  <data key="COLUMNS">
+    <data key="Chat" x="24" y="-78"/>
+    <data key="Other" x="192" y="-78"/>
+  </data>
+
+  <!-- the strip, along the top of the chat frame -->
+  <template name="Strip">
+    <frame name="TKChatTabs" Height="@SIZES.height" Point="BOTTOMLEFT, @parent, TOPLEFT, 0, 0">
+      <do Point="BOTTOMRIGHT, @parent, TOPRIGHT, 0, 0"/>
+      <!-- its tabs, in the strip's order (tabbar.lua's Refresh makes them) -->
+      <data key="buttons"/>
+      <!-- WoW's alert: the tab's glow fades in and out, a second each way, until the tab is shown -->
+      <on script="OnUpdate" call="Alerts"/>
+    </frame>
+  </template>
+
+  <!-- a tab (TKChatTab1...): a click shows it, a right-click opens its menu, a drag moves it along the strip -->
+  <template name="Tab">
+    <tab text="" width="@SIZES.minWidth" height="@SIZES.height" look="@LOOK">
+      <texture key="glow" layer="ARTWORK" AllPoints="@parent" Texture="tk:glow" VertexColor="1, 0.85, 0.4, 1">
+        <do Hide=""/>
+      </texture>
+      <do RegisterForClicks="LeftButtonUp, RightButtonUp" RegisterForDrag="LeftButton"/>
+      <on script="OnClick" call="TabClick"/>
+      <on script="OnDragStart" call="TabDragStart"/>
+      <on script="OnDragStop" call="TabDragStop"/>
+    </tab>
+  </template>
+
+  <!-- WoW's Chat Settings: which kinds the tab shows, one check box a kind -->
+  <template name="Settings">
+    <window name="TKChatTabSettings" title="Chat Settings" width="360" height="300">
+      <!-- s6-interface-5x (round 14; Astra's review of round 13, P2): the shared widgets make it on UIParent, which makes
+           it no panel's until owned, so it goes with the chat frame when it is unloaded -->
+      <run call="Own"/>
+      <label key="window" text="" size="13" colour="white" Point="TOP, @parent.title, BOTTOM, 0, -8"/>
+      <data key="checks"/>
+      <!-- each column's header, 24 above its first check box (COLUMNS) -->
+      <header text="Chat" width="140" Point="TOPLEFT, @parent, TOPLEFT, 24, -54"/>
+      <header text="Other" width="140" Point="TOPLEFT, @parent, TOPLEFT, 192, -54"/>
+      <!-- the kinds' check boxes, in the logic's order (tabs.lua's T.KINDS), each down its group's column -->
+      <run call="Checks"/>
+      <button key="done" text="Okay" width="100" height="24" style="red" click="HideSettings"
+              Point="BOTTOM, @parent, BOTTOM, 0, 14"/>
+    </window>
+  </template>
+
+  <!-- a kind's check box, its label the kind's (tabbar.lua's Checks gives the kind as its with, its place and what it
+       changes) -->
+  <template name="KindCheck">
+    <check text="@with.label"/>
+  </template>
+</ui>

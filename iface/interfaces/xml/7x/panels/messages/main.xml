@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 7.x's messages pane (its XML twin's layout; main.lua is its scripts), the original's NewSystemMessagePane, the lower
+     page of the side at (832, 376)-(1021, 641) on the 7.x screen, in the base layer. Drawing only: none of its panes sends
+     anything. Format: core/xml.md. -->
+<ui>
+  <!-- its top left on the 7.x screen -->
+  <data key="PLACE" value="832, 376"/>
+  <!-- font 0's line -->
+  <data key="ROW" value="12"/>
+  <!-- the divider (NewSystemMessageModifyHeightPane) at (3, H)-(166, H + 16): dragged between 70 and 175
+       (HandlePointerOrMouseEvent 0x005882F0's clamp) -->
+  <data key="DIVIDER" x="3" low="70" high="175"/>
+  <!-- the system messages (SystemMessagePane) at (3, 244 - 12 n)-(183, 244), n = (229 - H) / 12 whole lines, drawn from x
+       3 to 170; at most 200 kept (AppendMessage 0x00585580), a message at most 160 pixels wide (AddWrappedText
+       0x00586B00), in 0x84 (ColorStringSystemMessage::Draw 0x00587B60) -->
+  <data key="MESSAGES" left="3" right="170" bottom="244" rowsFrom="229" keep="200" wrap="160" colour="0x84"/>
+  <!-- the spell list (SpelledPane) at (3, 22)-(183, H + 7), drawn from x 3 to 170; a line of 24 dashes before the aethers -->
+  <data key="SPELLS" left="3" right="170" top="22" below="7" dashes="24"/>
+
+  <!-- the base layer, under the frame layer's pieces -->
+  <frame name="TK7xMessages" key="frame" parent="UIParent" FrameStrata="LOW" FrameLevel="4" Size="189, 265">
+    <do Hide=""/>
+    <run call="Own"/>
+    <!-- the divider's press area (its picture is the screen's piece), then the messages, then the spell list (4a's order of
+         adding them) -->
+    <frame name="TK7xMessagesDivider" key="divider" FrameLevel="5" Size="163, 16" EnableMouse="true">
+      <on script="OnMouseDown" call="DividerDown"/>
+      <on script="OnMouseUp" call="DividerUp"/>
+      <on script="OnPressCancelled" call="DividerCancelled"/>
+      <on script="OnUpdate" call="DividerUpdate"/>
+    </frame>
+    <frame AllPoints="@parent" FrameLevel="6">
+      <run call="MessageList"/>
+    </frame>
+    <frame AllPoints="@parent" FrameLevel="7">
+      <run call="SpellList"/>
+    </frame>
+    <on script="OnUpdate" call="Tick"/>
+    <run call="Register"/>
+  </frame>
+</ui>

@@ -1,0 +1,9 @@
+# Mignok's Home (map 4716) on the test server: indoors (s6-effects, from the test server's own MapIndoor flag): no sky, so no
+# clouds, wind or lightning, and its plants stand still. Applies only when the map the server sends passes the check (3.5).
+
+[check]
+size = "17x17"
+
+[map]
+indoor = true
+outdoor = 4715 # Country Farm, through its doors (the test server's warps)

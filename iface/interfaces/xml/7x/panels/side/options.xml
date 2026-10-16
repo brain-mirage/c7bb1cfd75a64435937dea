@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 7.x's options tab (side panel tab 6; its XML twin's layout; options.lua is its scripts), 4a's NewOptionPane. Format:
+     core/xml.md.
+     WIRE: each row's number decides the action a press on it runs (Modern's window's optionrow for the rows marked send:
+     1B 01 and its option, by 4a's row: NewOptionPane::HandlePointerOrMouseEvent 0x00540910), and its rectangle (from
+     its corner, the label's width + 18 wide and 18 high: InitOptionRow 0x005411B0) where that press lands. Changing a
+     row's number, its place or its send changes what the server sees. -->
+<ui>
+  <!-- the rows (BuildOptionRows 0x00541240): 4a's row number, its label, its rectangle's corner, its kind (3 a box, 4 a
+       radio) and page; send: it runs Modern's window's row action (options.lua's header), else its local switch -->
+  <data key="ROWS">
+    <row row="14" label="Simple Click" x="8" y="16" kind="3" page="0" send="true"/>
+    <row row="9" label="Use enter to talk" x="8" y="34" kind="3" page="0"/>
+    <row row="2" label="Map" x="8" y="70" kind="3" page="0" send="true"/>
+    <row row="3" label="Magic" x="88" y="70" kind="3" page="0" send="true"/>
+    <row row="4" label="Weather" x="8" y="88" kind="3" page="0" send="true"/>
+    <row row="18" label="Shadow" x="88" y="88" kind="3" page="0" send="true"/>
+    <row row="5" label="Display names" x="8" y="106" kind="3" page="0"/>
+    <row row="7" label="Fixed movement" x="8" y="124" kind="3" page="0" send="true"/>
+    <row row="10" label="Advice" x="8" y="160" kind="3" page="0" send="true"/>
+    <row row="12" label="Whisper" x="88" y="160" kind="3" page="0" send="true"/>
+    <row row="11" label="Shout" x="8" y="178" kind="3" page="0" send="true"/>
+    <row row="13" label="Snore" x="88" y="178" kind="3" page="0" send="true"/>
+    <row row="8" label="BLDG" x="71" y="196" kind="3" page="0"/>
+    <row row="19" label="Chat" x="131" y="196" kind="3" page="0" send="true"/>
+    <row row="20" label="Low" x="42" y="214" kind="4" page="0" send="true"/>
+    <row row="21" label="High" x="84" y="214" kind="4" page="0" send="true"/>
+    <row row="22" label="Manual" x="130" y="214" kind="4" page="0" send="true"/>
+    <row row="16" label="Music" x="8" y="232" kind="3" page="0" slider="music"/>
+    <row row="17" label="Sound" x="8" y="250" kind="3" page="0" send="true" slider="effects"/>
+    <row row="23" label="Orb/Spell target share" x="8" y="16" kind="3" page="1" send="true"/>
+    <row row="24" label="F1/Shift+F1 swap" x="8" y="34" kind="3" page="1" send="true"/>
+    <row row="25" label="Show group HP/MP bars" x="8" y="52" kind="3" page="1"/>
+    <row row="26" label="Show names in carnage dye" x="8" y="70" kind="3" page="1"/>
+  </data>
+  <!-- page 0's headings, at x 2 on their lines -->
+  <data key="HEADINGS">
+    <heading text="Show Effects" y="64"/>
+    <heading text="Listen to" y="154"/>
+    <heading text="Semi-trans" y="208"/>
+    <heading text="System" y="226"/>
+  </data>
+  <!-- two pages (field_12B8) -->
+  <data key="PAGES" value="2"/>
+  <!-- the volume sliders (ScrollVolumePane: 82 x 13 at the row's top right + (20, 1), SCRBUTT2.EPF's 38-pixel thumb in
+       BUTTON.PAL; a press off the thumb takes it by its middle, 19) over CScrollBarBackPane's groove at the row's top
+       right + (10, 5): three lines x 7-94 at y 1-3, a stub each side at y 2 (x 0-4, x 98-102) and the right one's stroke
+       x 100 at y 0-4 (OnPaint 0x0053FF00) -->
+  <data key="SLIDER" dx="20" dy="1" width="82" height="13" thumb="38" grab="19" grooveX="10" grooveY="5"/>
+  <data key="GROOVE">
+    <line x="7" y="1" w="88" h="3"/>
+    <line x="0" y="2" w="5" h="1"/>
+    <line x="98" y="2" w="5" h="1"/>
+    <line x="100" y="0" w="1" h="5"/>
+  </data>
+  <!-- the page arrows' pictures (INVENBUT.EPF 5 and 6, normal; + 7 pressed, + 14 greyed) and places -->
+  <data key="ARROWS" back="5" on="6" backX="147" onX="166" y="269"/>
+
+  <!-- a text of the page, hidden until drawn (K.Text) -->
+  <template name="TK7xOptionText">
+    <text layer="OVERLAY">
+      <do Hide=""/>
+    </text>
+  </template>
+
+  <frame name="TK7xSideOptions" key="frame" AllPoints="@parent">
+    <data key="page" value="0"/>
+    <!-- OPTION.EPF frame 0 in OPTION.PAL -->
+    <picture key="back" file="OPTION.EPF" frame="0" palette="OPTION.PAL" x="0" y="0" layer="BACKGROUND"/>
+    <!-- the headings: each drawn twice a pixel apart -->
+    <text from="TK7xOptionText" key="headings[]"/>
+    <text from="TK7xOptionText" key="headings[]"/>
+    <text from="TK7xOptionText" key="headings[]"/>
+    <text from="TK7xOptionText" key="headings[]"/>
+    <text from="TK7xOptionText" key="headings[]"/>
+    <text from="TK7xOptionText" key="headings[]"/>
+    <text from="TK7xOptionText" key="headings[]"/>
+    <text from="TK7xOptionText" key="headings[]"/>
+    <run call="Rows"/>
+    <!-- the arrows: rows 0 and 1 (InitOptionRow with an empty label: 18 x 18), their press MoveSelection -->
+    <frame type="Button" name="TK7xOptionBack" key="back1" Point="TOPLEFT, @parent, TOPLEFT, 147, -269" Size="18, 18">
+      <on script="OnMouseDown" call="PageBack"/>
+    </frame>
+    <frame type="Button" name="TK7xOptionOn" key="on1" Point="TOPLEFT, @parent, TOPLEFT, 166, -269" Size="18, 18">
+      <on script="OnMouseDown" call="PageOn"/>
+    </frame>
+    <!-- the server's answers (0x23, 0x08) change its rows: the page looks a few times a second while it shows -->
+    <run call="Watch"/>
+    <!-- s6-rules-dialogs' hook, as Modern's window: while the options show, the server's "saved" (S 0x21) is the tab's
+         alert (NewOptionPane::HandlePacketEvent 0x00540DB0) -->
+    <on script="OnShow" call="Shown" hook="true"/>
+    <on script="OnHide" call="Hidden" hook="true"/>
+  </frame>
+</ui>

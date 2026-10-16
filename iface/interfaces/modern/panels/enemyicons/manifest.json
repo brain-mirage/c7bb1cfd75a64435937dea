@@ -1,0 +1,9 @@
+{
+  "name": "enemyicons",
+  "title": "Effect Icons",
+  "version": "0.1.0",
+  "order": 55,
+  "description": "Very small icons for the buffs and debuffs of creatures and other players, under their names or over their heads, with a tooltip (what it is, ??? when unknown, and its time left); the server's seconds-left list for exact times; for whom and which per kind on the Nameplates pane's Players and NPCs pages. Nothing is sent.",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

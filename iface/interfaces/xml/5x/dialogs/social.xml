@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 5.x's look of the user list and the friend list (its XML twin's layout; social.lua draws with it), 5.33's own windows
+     by its own numbers (social.lua's header). Format: core/xml.md; each dialog's attributes are its look entry's values
+     (interfaces/xml/entry.lua), its children where social.lua draws its parts: rectangles (left, top, right, bottom), pictures
+     and image buttons (BUTT001.EPF's image id first).
+     WIRE: a control's rectangle is where a press on it lands; changing one changes which control a press reaches. -->
+<ui>
+  <!-- the user list (UserListDialogPane_UserListDialogPane 0x004D0020): 635 x 390 on USERLIST.EPF in NPAL8.PAL; CLOSE
+       (1, image 15); the previous nation (19, image 44), the next (16, image 45); the nation's name; the five columns
+       from (36, 102) to y 282, 113 apart and 110 wide, of 96-pixel cells, each with its count under it (y 285-297); the
+       shown sum and the total at x 111-183 on y 304 and 323; a hunter's note (control 18's place); the sort (3), a
+       radio group of LEVEL (y 37-48) and NAME (y 53-63) at x 506; 7.5.2's hunters only (21) as a radio button with its
+       caption, and its hunters' box (20) as a text button. A row: STAR.EPF's frame status - 1 centred on x 6, ICON.EPF's
+       frame (bucket - 1) x 4 + badge - 1 at x 13, the name right-aligned in its colour, a friend's in 9 -->
+  <data key="Users" width="635" height="390" button="72" page="72" party="84" columnWidth="96" columnHeight="180" slide="true">
+    <data key="art" value="USERLIST.EPF, NPAL8.PAL"/>
+    <data key="close" value="15, 529, 302, 601, 318"/>
+    <data key="prev" value="44, 190, 302, 262, 318"/>
+    <data key="next" value="45, 190, 321, 262, 337"/>
+    <data key="nation" value="36, 304, 107, 316"/>
+    <data key="columns" x="36" t="102" b="282" step="113" width="110" cell="96" countTop="285" countBottom="297"/>
+    <data key="sums" l="111" r="183" shown="304" total="323" height="12"/>
+    <data key="note" value="111, 341, 261, 353"/>
+    <data key="sort" value="506, 37, 568, 63"/>
+    <data key="byStatus" value="506, 37, 48"/>
+    <data key="byName" value="506, 53, 63"/>
+    <data key="only" value="290, 304, 400, 316"/>
+    <data key="onlyRadio" value="290, 304, 316"/>
+    <data key="onlyLabel" text="Hunters only" rect="304, 304, 400, 316"/>
+    <data key="partyButton" text="Party Search" rect="290, 321, 374, 337"/>
+    <data key="row" width="96" star="STAR.EPF" starX="6" icon="ICON.EPF" iconX="13" friend="9"/>
+  </data>
+  <!-- the friend list (FriendListDialog_Constructor 0x00488CC0): 407 x 391 on FRIEND.EPF in NPAL8.PAL; OK (1, image 14);
+       the twenty names (2-21), ten a column at x 104 and 246, 78 wide, from y 94 21 apart, 12 high, edits in 0x80 -->
+  <data key="Friends" width="407" height="391" button="72" editWidth="78" editHeight="12" slide="true">
+    <data key="art" value="FRIEND.EPF, NPAL8.PAL"/>
+    <data key="ok" value="14, 168, 341, 240, 357"/>
+    <data key="names" columns="104, 246" top="94" step="21" perColumn="10"/>
+  </data>
+</ui>

@@ -1,0 +1,10 @@
+{
+  "id": "protocol-533",
+  "name": "NexusTK 5.33 (OSTK interoperability, untested against a server)",
+  "kind": "protocol",
+  "version": "0.3.0",
+  "contract": 2,
+  "assembly": "protocol-533.dll",
+  "entry": "TK.Modules.Protocol533.Codec",
+  "serves": ["5.33"]
+}

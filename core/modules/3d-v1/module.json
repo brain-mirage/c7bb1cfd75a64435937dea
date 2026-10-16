@@ -1,0 +1,16 @@
+{
+  "id": "3d-v1",
+  "name": "3D (v1)",
+  "kind": "draw",
+  "version": "0.2.1",
+  "contract": 4,
+  "assembly": "3d-v1.dll",
+  "entry": "TK.Modules.Draw3d.Module",
+  "serves": ["characters"],
+  "artPacks": [],
+  "bundle": "3d-v1.bundle",
+  "hidden": true,
+  "clips": ["Idle", "Walking_A", "1H_Melee_Attack_Chop", "Spellcast_Shoot", "Use_Item", "Cheer", "Sit_Floor_Idle", "Lie_Idle", "Sit_Chair_Idle",
+            "PickUp", "Hit_B", "Block", "Interact", "Hit_A", "Unarmed_Melee_Attack_Punch_A", "Throw", "Spellcast_Raise",
+            "Unarmed_Melee_Attack_Kick", "Jump_Full_Short", "Dodge_Left"]
+}

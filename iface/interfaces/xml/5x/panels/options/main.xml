@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 5.x's options window (its XML twin's layout; main.lua is its rows' states, presses and buttons' actions): 5.33's
+     OptionPane (constructor 0x00487BD0), DLGOPT.EPF in NPAL8.PAL (407 x 410), built at its first opening (F10). Format:
+     core/xml.md.
+     WIRE: the rows' option rectangles (RadioGroupControlPane's: a press on the option that is not chosen is 7.5.2's row
+     press, NewOptionPane::HandlePointerOrMouseEvent 0x00540910) and the buttons' rectangles and actions (FRIENDS 7.5.2's
+     F3, PROFILE the Menu's Profile, SPELL MACRO its Macro Setup: main.lua's notes) decide what a press sends. Changing
+     them changes what the server sees. -->
+<ui>
+  <!-- its size, centred on the 5.x screen (slot 3's place) -->
+  <data key="SIZE" value="407, 410"/>
+  <!-- twelve radio groups (controls 2-13) at (227, 80 + 14 i)-(311, 91 + 14 i): ON at (0, 0)-(33, 11) and OFF at
+       (56, 0)-(94, 11) of its group; RADIOBUT.EPF in NPAL8.PAL, frame 1 for the chosen option and 0 for the other, at the
+       option's left on its middle row - 5 (RadioGroupControlPane's paint sub_419DA0); without the 5.33 set, its caption at
+       x 84 -->
+  <data key="ROWS" top="80" step="14" height="11" on="227, 260" off="283, 321" captionX="84"
+        file="RADIOBUT.EPF" palette="NPAL8.PAL" chosen="1" other="0"/>
+  <!-- the image buttons SPELL MACRO (54), SAY MACRO (55), FRIENDS (56) and PROFILE (57) at (120, 258 + 19 i)-
+       (289, 276 + 19 i), and OK (14) at (168, 360)-(240, 376) -->
+  <data key="BUTTONS" l="120" t="258" r="289" b="276" step="19"/>
+
+  <!-- a button of the window, pressed on the left button's release -->
+  <template name="TK5xOptionsButton">
+    <frame type="Button" RegisterForClicks="LeftButtonUp"/>
+  </template>
+
+  <frame name="TK5xOptions" key="window" parent="UIParent">
+    <!-- the component's root (Astra's review of round 1): a replaced component keeps it hidden (TK.ReplaceComponent) -->
+    <run call="Own"/>
+    <!-- HIGH, the macro window's strata (core/widgets.lua make.Window), so SAY MACRO and SPELL MACRO show it over this
+         window, as 5.33 opens its MACRO dialog over OPTION (round 93: in DIALOG it opened behind); the model's dialogs
+         (FRIENDS, PROFILE) still open over it -->
+    <do FrameStrata="HIGH" Size="407, 410" EnableMouse="true"/>
+    <picture key="back" file="DLGOPT.EPF" frame="0" palette="NPAL8.PAL" x="0" y="0" layer="BACKGROUND"/>
+    <!-- without the 5.33 set, a plain panel so the window stays usable -->
+    <run call="Plain"/>
+    <run call="Rows"/>
+    <!-- X.Image's focus mark asks the window -->
+    <data key="x5" value="true"/>
+    <frame name="TK5xOptionsSpellMacro" from="TK5xOptionsButton" key="buttons[]">
+      <!-- 7.5.2's Macro Setup (IntegrateMacroDialog 0x00541B30) where the player's setting offers it, else the macro
+           window (decision 2026-10-04-5x-options-and-macro-windows) -->
+      <data key="def" id="54" name="SpellMacro">
+        <data key="action" kind="dialog:open" text="IntegrateMacroDialog"/>
+      </data>
+      <run call="Button"/>
+    </frame>
+    <frame name="TK5xOptionsSayMacro" from="TK5xOptionsButton" key="buttons[]">
+      <!-- the macro window (7.5.2 has no say macros) -->
+      <data key="def" id="55" name="SayMacro"/>
+      <run call="Button"/>
+    </frame>
+    <frame name="TK5xOptionsFriends" from="TK5xOptionsButton" key="buttons[]">
+      <!-- 7.5.2's F3 (UserPane::HandleKeyOrTextEvent 0x005A5BD0: new FriendListDialog, 0x0053F2C0) -->
+      <data key="def" id="56" name="Friends">
+        <data key="action" kind="dialog:open" text="FriendListDialog"/>
+      </data>
+      <run call="Button"/>
+    </frame>
+    <frame name="TK5xOptionsProfile" from="TK5xOptionsButton" key="buttons[]">
+      <!-- the Menu popup's Profile (MenuVarietySelectPane: new ProfileDialog, 0x0053F940) -->
+      <data key="def" id="57" name="Profile">
+        <data key="action" kind="dialog:open" text="ProfileDialog"/>
+      </data>
+      <run call="Button"/>
+    </frame>
+    <!-- OK has the focus (SetFocusedControl(1)): X.Image's 1-pixel frame in 0x80 round it; it closes the window -->
+    <frame name="TK5xOptionsOK" from="TK5xOptionsButton" key="ok">
+      <data key="x5focus" value="true"/>
+      <data key="def" id="14" rect="168, 360, 240, 376"/>
+      <run call="Ok"/>
+    </frame>
+    <!-- the server's answers (0x23, 0x08) change its options' state: an open window looks a few times a second -->
+    <run call="Ticker"/>
+    <!-- s6-rules-dialogs' hook, as Modern's window: while the options show, the server's "saved" (S 0x21) is its alert -->
+    <on script="OnShow" call="Shown" hook="true"/>
+    <on script="OnHide" call="Hidden" hook="true"/>
+    <!-- Escape closes it, as Modern's window -->
+    <run call="Escape"/>
+    <do Hide=""/>
+  </frame>
+</ui>

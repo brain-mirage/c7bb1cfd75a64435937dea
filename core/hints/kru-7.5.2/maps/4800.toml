@@ -1,0 +1,100 @@
+# Made by tools/reprojection/map_shapes.py (s6-reprojection-b round 6): edit the script, not this file.
+# Tomb (map 4800): its own cells beyond the base hints. Applies only when the map the server sends passes
+# the check (3.5).
+
+[check]
+size = "100x100"
+
+# The sunken pits (7 by 7 blocked tiles from 24747; the rules stood them up as a raised ring): each sunk three
+# cells, its north wall's inner face painted in its first three rows, its floor three rows south of it.
+[cells."1,5-7,11"]
+footprint = "rounded"
+inset = [0.05, 0.15, 0.75, 0.2]
+corner = 1.2
+height = -3
+
+[cells."32,12-38,18"]
+footprint = "rounded"
+inset = [0.05, 0.15, 0.75, 0.2]
+corner = 1.2
+height = -3
+
+[cells."9,15-15,21"]
+footprint = "rounded"
+inset = [0.05, 0.15, 0.75, 0.2]
+corner = 1.2
+height = -3
+
+[cells."0,45-6,51"]
+footprint = "rounded"
+inset = [0.05, 0.15, 0.75, 0.2]
+corner = 1.2
+height = -3
+
+[cells."11,59-17,65"]
+footprint = "rounded"
+inset = [0.05, 0.15, 0.75, 0.2]
+corner = 1.2
+height = -3
+
+[cells."56,78-62,84"]
+footprint = "rounded"
+inset = [0.05, 0.15, 0.75, 0.2]
+corner = 1.2
+height = -3
+
+[cells."6,79-12,85"]
+footprint = "rounded"
+inset = [0.05, 0.15, 0.75, 0.2]
+corner = 1.2
+height = -3
+
+[cells."67,93-73,99"]
+footprint = "rounded"
+inset = [0.05, 0.15, 0.75, 0.2]
+corner = 1.2
+height = -3
+
+# The raised plateaus (8 rows of blocked tiles from 11384; the rules stood them as low boxes with their face
+# lying on top): each three cells high, its top painted in its first four rows, its face in the next three.
+[cells."43,8-53,15"]
+footprint = "rounded"
+inset = [3.1, 0.9, 1.0, 1.0]
+corner = 1.4
+height = 3
+
+[cells."0,24-10,31"]
+footprint = "rounded"
+inset = [3.1, 0.9, 1.0, 1.0]
+corner = 1.4
+height = 3
+
+[cells."7,68-17,75"]
+footprint = "rounded"
+inset = [3.1, 0.9, 1.0, 1.0]
+corner = 1.4
+height = 3
+
+[cells."16,78-26,85"]
+footprint = "rounded"
+inset = [3.1, 0.9, 1.0, 1.0]
+corner = 1.4
+height = 3
+
+[cells."79,78-89,85"]
+footprint = "rounded"
+inset = [3.1, 0.9, 1.0, 1.0]
+corner = 1.4
+height = 3
+
+[cells."42,85-52,92"]
+footprint = "rounded"
+inset = [3.1, 0.9, 1.0, 1.0]
+corner = 1.4
+height = 3
+
+[cells."84,89-94,96"]
+footprint = "rounded"
+inset = [3.1, 0.9, 1.0, 1.0]
+corner = 1.4
+height = 3

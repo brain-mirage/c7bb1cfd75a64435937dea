@@ -1,0 +1,65 @@
+{
+  "format": "tk-packset",
+  "formatVersion": 1,
+  "packFormat": "1.0",
+  "kind": "overlay",
+  "setName": "retro",
+  "source": {"id":"v5.65-2003+v6.51-2005","kind":"retro"},
+  "base": {"setName":"kru-7.5.2","setFingerprintSha256":"c4058ad0950f1c5094571c155ab94bf3df1fa1b90995baab170020f9df46c236"},
+  "categories": {"tile":true,"tilec":true,"sobj":true,"icon":true,"monster":true,"ridings":true,"effect":true,"part":true,"image":true},
+  "whole": ["v5.65-2003/chard.dat:body.epd","v5.65-2003/chard.dat:body.pad","v5.65-2003/chard.dat:head.epd","v5.65-2003/chard.dat:head.pad","v5.65-2003/chard.dat:headsp.epd","v5.65-2003/chard.dat:headsp.pad","v6.51-2005/chard.dat:sword.epd","v6.51-2005/chard.dat:sword.pad","v5.65-2003/chard.dat:spear.epd","v5.65-2003/chard.dat:spear.pad","v5.65-2003/chard.dat:fan.epd","v5.65-2003/chard.dat:fan.pad","v5.65-2003/chard.dat:shield.epd","v5.65-2003/chard.dat:shield.pad","v5.65-2003/chard.dat:face.epd","v5.65-2003/chard.dat:face.pad","v5.65-2003/chard.dat:deadsign.epd","v5.65-2003/chard.dat:ghost.epd","v5.65-2003/chard.dat:ghost.pad","v5.65-2003/chard.dat:ghostsp.epd","v6.51-2005/baramd.dat:emotion.epd","v6.51-2005/baramd.dat:emotiosp.epd","v6.51-2005/baramd.dat:emotion.pad","v5.65-2003/bint.dat:baram.pal","v5.65-2003/tile.dat:2tilec.epf","v6.51-2005/tiled.dat:tilec.epd","v6.51-2005/tiled.dat:tilec.pad"],
+  "scales": {"v5.65-2003":2,"v6.51-2005":2},
+  "files": ["@file:old-figures.json","@file:old-objects.json","@file:old-wholes.jsonl"],
+  "entries": 91168,
+  "keeps": 0,
+  "packs": [
+    {"file":"overlay.tkp","role":"overlay","size":61632399,"sha256":"2cce27e15041eb1b34787ec6d76538d0d890c95d6e2de19f3592c478f180b0d7","assets":531}
+  ],
+  "repairs": [
+    {
+      "frame": "v5.65-2003/mond.dat:monster.epd#3861",
+      "source": "v5.65-2003",
+      "changedBy": "Source-6 (s6-data-exporter), by hand: not the source's own data",
+      "defect": "1 stray pixel 26 px left of the figure",
+      "removed": [
+        {"pixels":1,"left":-33,"top":15,"right":-32,"bottom":16}
+      ],
+      "sourceSha256": "dd50e77a71a6bc3151d4347f88ccd00ef9d2be0ee217395359425730064d5be4",
+      "sha256": "bd440dc20464b94a2457c4571ec1e87b913ded6dfca4421765daa53382afc793",
+      "top": -18,
+      "left": -6,
+      "bottom": 11,
+      "right": 7
+    },
+    {
+      "frame": "v5.65-2003/mond.dat:monster.epd#7101",
+      "source": "v5.65-2003",
+      "changedBy": "Source-6 (s6-data-exporter), by hand: not the source's own data",
+      "defect": "1 stray pixel 64 px right of the figure",
+      "removed": [
+        {"pixels":1,"left":98,"top":-24,"right":99,"bottom":-23}
+      ],
+      "sourceSha256": "4bf8d792ae4e65bd368759d45c6e76440652b5852230224c0028a872b7d8983d",
+      "sha256": "7ca6624377ff4caa9870ba7c1f3a99a8f30ee2b0a61f5c30537541962c4ad2cd",
+      "top": -75,
+      "left": -35,
+      "bottom": 2,
+      "right": 34
+    },
+    {
+      "frame": "v5.65-2003/mond.dat:monster.epd#7229",
+      "source": "v5.65-2003",
+      "changedBy": "Source-6 (s6-data-exporter), by hand: not the source's own data",
+      "defect": "1 stray pixel 6 px right of the figure",
+      "removed": [
+        {"pixels":1,"left":16,"top":-32,"right":17,"bottom":-31}
+      ],
+      "sourceSha256": "5abd9d3883139a12544ffae6629d3610c70b3e44a2988e3fe59892ed4c0532f8",
+      "sha256": "b3635dc6efff2f6eab9d35c8bd61ec683a008344fcaf93983b816efac5666706",
+      "top": -51,
+      "left": -9,
+      "bottom": -6,
+      "right": 10
+    }
+  ]
+}

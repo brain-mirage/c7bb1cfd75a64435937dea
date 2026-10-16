@@ -1,0 +1,9 @@
+{
+  "name": "auras",
+  "title": "Buffs and Aethers",
+  "version": "0.1.0",
+  "order": 25,
+  "description": "Buffs and debuffs as separate movable frames, split by the editable effects table (lua/data/effects.lua), with emoji icons (Modern's, lua/interfaces/modern/data/effects.lua), remaining time and blinking; and an optional list of the running aethers.",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

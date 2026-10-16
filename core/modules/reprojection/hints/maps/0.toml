@@ -1,0 +1,6 @@
+# Kugnae (map 0). Round 47: no map exceptions. The pagoda's crown (150-155,181) and the two two-tier halls' upper
+# roofs (83-95,111 and 124-136,109) had theirs (round 42: separate flat strips at 5; round 43: height 5), as their
+# tiers met nothing standing below them. Their storeys (the module hints' tier = true) stand on the roofs under them
+# now, so the global hints (the red-pavilion-roof and hall-roof groups) lay each roof on the storey it rests on.
+[check]
+size = "220x220"

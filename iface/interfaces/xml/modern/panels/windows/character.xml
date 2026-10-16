@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's character window (its XML twin's layout; character.lua opens it on a tab, lays the side tabs out and fills
+     the pages): the window with its title and close box, a side tab, a tab's page, and the Character, Legend and
+     Collection tabs' pages (the gear slots, the figure, the stats, the self look's switches; the legend's marks; the
+     collection's volumes). Format: core/xml.md. Drawing only, but for the tabs' requests, the gear slots' and the
+     buttons' actions, the switches and the volumes' presses, which are the wire's (marked where they are attached). -->
+<ui>
+  <!-- the window's width and height, and a side tab's side -->
+  <data key="SIZES" width="560" height="600" tab="46"/>
+  <!-- The self-look pane's four switches (SelfLookPane::HandlePointerOrMouseEvent 0x00568CB0), two by two at the right:
+       the option each sends and its name. The original's keys for 8 and 2 are E and G, and the servers name the four
+       options Exchange, Group, Show Helmet and Show Necklace. -->
+  <data key="SWITCHES">
+    <switch id="exchange" option="8" label="Exchange" tip="Exchange on or off: 1B 01 08 00 (as Shift+E here)."/>
+    <switch id="group" option="2" label="Group" tip="Group on or off: 1B 01 02 00 (as Shift+G here)."/>
+    <switch id="helmet" option="14" label="Helmet" tip="The helmet shown or not: 1B 01 0E."/>
+    <switch id="necklace" option="15" label="Necklace" tip="The necklace shown or not: 1B 01 0F."/>
+  </data>
+
+  <template name="Window">
+    <panel name="TKCharacterWindow" parent="UIParent">
+      <!-- s6-interface-5x (round 14; Astra's review of round 13, P2): the shared widgets make it on UIParent, which makes
+           it no panel's until owned, so it goes with the windows when they are unloaded -->
+      <run call="Own"/>
+      <!-- s6-ui-core (round 49): the shallow band of light behind the title, as W.Window's -->
+      <titleband/>
+      <do FrameStrata="HIGH" Size="@SIZES.width, @SIZES.height" Point="CENTER, @parent, CENTER, -60, 30"
+          EnableMouse="true" Movable="true" ClampedToScreen="true" RegisterForDrag="LeftButton"/>
+      <on script="OnDragStart" call="DragStart"/>
+      <on script="OnDragStop" call="DragStop"/>
+      <do Hide=""/>
+      <label key="title" text="" size="16" colour="gold" Point="TOP, @parent, TOP, 0, -14"/>
+      <iconbutton texture="tk:close" size="16" click="Close" Point="TOPRIGHT, @parent, TOPRIGHT, -10, -10"/>
+      <panel key="content" inner="true" Point="TOPLEFT, @parent, TOPLEFT, 12, -42">
+        <do Point="BOTTOMRIGHT, @parent, BOTTOMRIGHT, -12, 12"/>
+      </panel>
+      <data key="tabButtons"/>
+      <run call="LayoutTabs"/>
+      <run call="Escape"/>
+    </panel>
+  </template>
+
+  <!-- s6-ui-core (round 61): a side tab, the shared tab with its tab's icon (character.lua's LayoutTabs makes it, named
+       TKCharacterTab<id>, with its tab as its with) -->
+  <template name="SideTab">
+    <tab width="@SIZES.tab" height="@SIZES.tab" icon="@with.icon" click="OpenTab">
+      <!-- D20: the tab carries its page's request, which the page runs when it becomes visible (plan 5.9). Wire:
+           character.lua's SideTab. -->
+      <run call="SideTab"/>
+      <on script="OnEnter" call="SideTabTip"/>
+      <on script="OnLeave" call="Untip"/>
+    </tab>
+  </template>
+
+  <!-- A tab's page, empty and hidden, over the content area; its contents are made when it first shows. D20: the
+       original's request for the tab goes with its page, which asks when it becomes visible by the player's hand (wire:
+       character.lua's PageRequest). -->
+  <template name="Page">
+    <frame Hide="" AllPoints="@parent">
+      <run call="PageRequest"/>
+    </frame>
+  </template>
+
+  <!-- Character: the 14 equipment records of 0x39 (and 0x37 / 0x38), the identity lines and the stats -->
+  <template name="CharacterPage">
+    <into>
+      <data key="slots"/>
+      <!-- the gear slots, half down the left and half down the right -->
+      <run call="GearSlots"/>
+      <label key="name" text="" size="16" colour="white" Point="TOP, @parent, TOP, 0, -16"/>
+      <label key="info" text="" size="12" colour="gold" Point="TOP, @name, BOTTOM, 0, -6"/>
+      <label key="lines" text="" size="11" colour="0.8, 0.8, 0.8" Point="TOP, @info, BOTTOM, 0, -6"/>
+      <!-- Head note 39: the player's own look as the original's look pane draws one (s6-characters' figure, painted onto
+           this box's colour so a translucent look blends as the original's does); the emoji only offline, with no look. -->
+      <figurebox key="figureBox" name="TKCharacterFigure" Point="TOP, @parent, TOP, 0, -84">
+        <!-- (the figure is the page's: page.figure) -->
+        <run call="Figure"/>
+        <!-- s6-ui-character: the states change on the logic thread -->
+        <run call="SwitchTicker"/>
+        <!-- s6-ui-core (round 33, the owner): the figure is held until the look or the gear changes
+             (UNIT_PORTRAIT_UPDATE, s6-characters' round 36), and asked for when the page opens; it was asked for four
+             times a second. -->
+        <do RegisterEvent="UNIT_PORTRAIT_UPDATE"/>
+        <on script="OnEvent" call="PortraitChanged"/>
+        <run call="ShowFigure"/>
+      </figurebox>
+      <label key="stats" text="" size="12" colour="white" justify="LEFT" Point="TOPLEFT, @parent, TOPLEFT, 24, -396"/>
+      <label key="stats2" text="" size="12" colour="white" justify="LEFT" Point="TOPLEFT, @parent, TOP, 30, -396"/>
+      <label key="note" text="" size="12" colour="0.7, 0.7, 0.7" WordWrap="true" Width="470"
+             Point="TOP, @parent, TOP, 0, -480"/>
+      <!-- Bare hands (12 00) and Take Off All (fourteen 1F), the game layer's actions (TK.Game.SelfLook; wire:
+           character.lua's RunFrozen, BareHandsAction and TakeOffAllControl). -->
+      <button key="bare" text="Bare Hands" width="110" height="22" click="RunFrozen"
+              Point="TOPLEFT, @parent, TOPLEFT, 12, -330">
+        <run call="BareHandsAction"/>
+      </button>
+      <button key="takeOffAll" text="Take Off All" width="110" height="22" Point="TOPLEFT, @bare, BOTTOMLEFT, 0, -6">
+        <run call="TakeOffAllControl"/>
+      </button>
+      <!-- The self-look pane's four switches, two by two at the right (SWITCHES). -->
+      <data key="switches"/>
+      <run call="Switches"/>
+      <run call="UpdateSwitches"/>
+      <frame>
+        <data key="tab" value="character"/>
+        <do RegisterEvent="TK_CHARACTER_SHEET"/>
+        <do RegisterEvent="UNIT_STATS"/>
+        <do RegisterEvent="UNIT_HEALTH"/>
+        <do RegisterEvent="UNIT_POWER"/>
+        <do RegisterEvent="PLAYER_MONEY"/>
+        <do RegisterEvent="PLAYER_XP_UPDATE"/>
+        <do RegisterEvent="UNIT_NAME_UPDATE"/>
+        <on script="OnEvent" call="RefreshTab"/>
+      </frame>
+    </into>
+  </template>
+
+  <!-- a gear slot (TKCharacterSlot1...), at its place (its with: index, x, y, point) -->
+  <template name="GearSlot">
+    <gearslot x="@with.x" y="@with.y" point="@with.point">
+      <run call="GearSlot"/>
+      <!-- The hover tooltip stands for 4a's right-press help on a worn item (coverage H-16, a declared deviation, the
+           owner's answer; client-only, nothing is sent): SelfLookPane::HandlePointerOrMouseEvent (0x00568CB0, type 4)
+           opens an ItemHelpPane on slots 7-20 only when the slot holds an item, so an empty slot shows none
+           (s6-ui-settings round 19). -->
+      <on script="OnEnter" call="GearTip"/>
+      <on script="OnLeave" call="Untip"/>
+      <!-- A press takes the item off, as on the original's gear slot (1F with the slot's code, set by refresh): the game
+           layer's worn item control, on the left button down (s6-ui-character; wire: character.lua's WornControl). -->
+      <run call="WornControl"/>
+    </gearslot>
+  </template>
+
+  <!-- a self-look switch (its with: one of SWITCHES): the game layer's switch control (wire: character.lua's
+       SwitchControl) -->
+  <template name="Switch">
+    <button text="@with.label" width="124" height="22">
+      <run call="SwitchControl"/>
+      <on script="OnEnter" call="SwitchTip"/>
+      <on script="OnLeave" call="Untip"/>
+    </button>
+  </template>
+
+  <!-- Legend: the marks at the end of 0x39 (the original's own-status tab, so it asks with 2D 00 too) -->
+  <template name="LegendPage">
+    <into>
+      <!-- s6-ui-character (D-77): each mark's symbol and colour, as the original's LegendPane draws them; the list the
+           page's width less 60 and its height less 90 -->
+      <legendlist key="list" width="500" height="510"/>
+      <run call="LegendPlace"/>
+      <frame>
+        <data key="tab" value="legend"/>
+        <do RegisterEvent="TK_CHARACTER_SHEET"/>
+        <on script="OnEvent" call="RefreshTab"/>
+      </frame>
+    </into>
+  </template>
+
+  <!-- Collection: the volumes of 0x12 00 -->
+  <template name="CollectionPage">
+    <into>
+      <label key="text" text="" size="12" colour="white" justify="LEFT" Point="TOPLEFT, @parent, TOPLEFT, 16, -16"/>
+      <label text="Double-click a volume to open its album (one click with Simple Click)." size="12"
+             colour="0.7, 0.7, 0.7" WordWrap="true" Width="470" Point="TOP, @parent, TOP, 0, -490"/>
+      <!-- s6-rules-dialogs (round 8): one row a volume (Volume, made as the list arrives) -->
+      <data key="rows"/>
+      <!-- The page list arrives as 0x12 00 some time after the request, and records change the counts (12 00 02): the
+           page shows each new revision. -->
+      <on script="OnUpdate" call="CollectionRevision"/>
+    </into>
+  </template>
+
+  <!-- a volume's row (TKCollectionVolume1..., named for the gate's driver: s6-gate round 37, H-18; its with: its index),
+       its name, percentage and count -->
+  <template name="Volume">
+    <frame type="Button" Size="500, 38">
+      <run call="VolumePlace"/>
+      <texture layer="HIGHLIGHT" AllPoints="@parent" ColorTexture="1, 1, 1, 0.08"/>
+      <label key="name" text="" size="13" colour="white" justify="LEFT" Point="TOPLEFT, @parent, TOPLEFT, 4, -3"/>
+      <label key="percent" text="" size="12" colour="white" justify="LEFT" Point="BOTTOMLEFT, @parent, BOTTOMLEFT, 4, 3"/>
+      <label key="count" text="" size="12" colour="white" justify="RIGHT"
+             Point="BOTTOMRIGHT, @parent, BOTTOMRIGHT, -4, 3"/>
+      <!-- its presses go to the dialog model with the page's index (wire: character.lua's VolumePress) -->
+      <on script="OnMouseDown" call="VolumePress"/>
+    </frame>
+  </template>
+</ui>

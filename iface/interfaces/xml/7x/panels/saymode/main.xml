@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 7.x's say-mode button and its menu (their XML twin's layout; main.lua is their scripts), the original's
+     ChattingVarietyPane and ChattingVarietySelectPane. Format: core/xml.md.
+     WIRE: which presses and releases the menu and its rows claim, pass on or take (their ClaimButtons, PassesDoubles,
+     TakesEveryRelease, PicksOnRelease, WatchesKeys, and the scripts main.lua gives them: 4a
+     ChattingVarietySelectPane::HandlePointerOrMouseEvent 0x004811C0 and HandleKeyOrTextEvent 0x00481470, MapPane
+     0x00507150 under it) and the rows' rectangles (GetItemRect 0x00481A80) decide the row a release chooses and what
+     reaches the map. Changing them changes what the server sees. -->
+<ui>
+  <!-- the button's top left on the 7.x screen, (10, 727)-(72, 751), and the menu's, (7, 617)-(74, 727) -->
+  <data key="PLACE" value="10, 727"/>
+  <data key="MENU" value="7, 617"/>
+  <!-- the button's picture: CHATVAR.EPF in CHATVAR.PAL, frame 0 while the menu is closed and 1 while it is open -->
+  <data key="ART" file="CHATVAR.EPF" palette="CHATVAR.PAL" closed="0" open="1"/>
+  <!-- the say modes' names (0-4) the button shows: its pen at x = 31 - 3 x length - 2 (6 pixels a character) on the
+       line 18 (ChattingVarietyPane::OnPaint 0x00480E80) -->
+  <data key="LABELS" value="Talk, Shout, Whisper, Group, Clan"/>
+  <data key="PEN" x="31" baseline="18" half="3" less="2"/>
+  <!-- the rows' part of the menu (HitTest 0x00481AD0): (0, 6)-(67, 102), 16 a row, in the menu's 67 x 110 -->
+  <data key="ROWS" left="0" right="67" top="6" bottom="102" height="16" width="67" menuHeight="110"/>
+
+  <!-- over the screen's border, as the frame layer's panes are over its backdrop, and over the chat frame the 7.x first
+       profile keeps until 7.x's own chat bar (decision 2026-10-03-7x-interim-modern-panels), whose bottom it shares -->
+  <frame type="Button" name="TK7xSayModeButton" key="button" parent="UIParent" FrameStrata="HIGH" Size="62, 24">
+    <texture key="art" layer="ARTWORK"/>
+    <text key="label" layer="OVERLAY"/>
+    <do EnableMouse="true"/>
+    <on script="OnMouseDown" call="ButtonDown"/>
+    <on script="OnUpdate" call="ButtonUpdate"/>
+    <do Hide=""/>
+    <run call="OwnButton"/>
+  </frame>
+
+  <!-- a menu row: 4a's rectangle (0, 6 + 16 n)-(67, 22 + 16 n), its label drawn twice a pixel apart in the port's colour
+       (0x80) from x 15 (-Color- from 9) on the line 21 + 16 n (OnPaint 0x00481490), outlined from x 4 to 62 round its
+       16-pixel rectangle. s6-modular-g round 22: the menu takes only single left presses; right and double presses
+       reach MapPane 0x00507150 (swallowing them changes the 0A/2D/walk packets the server sees); an idle release passes
+       on to the map. -->
+  <template name="TK7xSayModeRow">
+    <frame type="Button" Size="67, 16" EnableMouse="false" ClaimButtons="LeftButton" PassesDoubles="true" TakesEveryRelease="false">
+      <on script="OnUpdate" call="RowUpdate"/>
+      <on script="OnMouseDown" call="RowPress"/>
+      <on script="OnMouseUp" call="RowRelease"/>
+    </frame>
+  </template>
+
+  <!-- the menu: 67 x 110, SUBWIN.EPF's 7-pixel frame in SUBWIN.PAL (SetupBackground 0x004816D0, DrawBorder 0x00481750) -->
+  <frame name="TK7xSayModeMenu" key="menu" parent="UIParent" FrameStrata="DIALOG" ClaimButtons="LeftButton" PassesDoubles="true"
+         TakesEveryRelease="false" Size="67, 110">
+    <tiles width="67" height="110" file="SUBWIN.EPF" palette="SUBWIN.PAL" size="7"/>
+    <data key="rows"/>
+    <data key="paints"/>
+    <do PicksOnRelease="true"/>
+    <on script="OnMouseDown" call="Press"/>
+    <on script="OnMouseUp" call="Release"/>
+    <frame from="TK7xSayModeRow" Point="TOPLEFT, @parent, TOPLEFT, 0, -6">
+      <data key="index" value="1"/>
+      <bold key="label" of="@menu" x="15" baseline="21" colour="TEXT" Text="Talk"/>
+      <outline key="paint" l="4" right="62" h="16" tracked="true" manual="true"/>
+      <run call="Row"/>
+    </frame>
+    <frame from="TK7xSayModeRow" Point="TOPLEFT, @parent, TOPLEFT, 0, -22">
+      <data key="index" value="2"/>
+      <bold key="label" of="@menu" x="15" baseline="37" colour="TEXT" Text="Shout"/>
+      <outline key="paint" l="4" right="62" h="16" tracked="true" manual="true"/>
+      <run call="Row"/>
+    </frame>
+    <frame from="TK7xSayModeRow" Point="TOPLEFT, @parent, TOPLEFT, 0, -38">
+      <data key="index" value="3"/>
+      <bold key="label" of="@menu" x="15" baseline="53" colour="TEXT" Text="Whisper"/>
+      <outline key="paint" l="4" right="62" h="16" tracked="true" manual="true"/>
+      <run call="Row"/>
+    </frame>
+    <frame from="TK7xSayModeRow" Point="TOPLEFT, @parent, TOPLEFT, 0, -54">
+      <data key="index" value="4"/>
+      <bold key="label" of="@menu" x="15" baseline="69" colour="TEXT" Text="Group"/>
+      <outline key="paint" l="4" right="62" h="16" tracked="true" manual="true"/>
+      <run call="Row"/>
+    </frame>
+    <frame from="TK7xSayModeRow" Point="TOPLEFT, @parent, TOPLEFT, 0, -70">
+      <data key="index" value="5"/>
+      <bold key="label" of="@menu" x="15" baseline="85" colour="TEXT" Text="Clan"/>
+      <outline key="paint" l="4" right="62" h="16" tracked="true" manual="true"/>
+      <run call="Row"/>
+    </frame>
+    <frame from="TK7xSayModeRow" Point="TOPLEFT, @parent, TOPLEFT, 0, -86">
+      <data key="index" value="6"/>
+      <bold key="label" of="@menu" x="9" baseline="101" colour="TEXT" Text="-Color-"/>
+      <outline key="paint" l="4" right="62" h="16" tracked="true" manual="true"/>
+      <run call="Row"/>
+    </frame>
+    <!-- any key closes it and goes on (main.lua's WatchKeys) -->
+    <do WatchesKeys="true"/>
+    <run call="WatchKeys"/>
+    <on script="OnShow" call="MenuShow"/>
+    <on script="OnHide" call="MenuHide"/>
+    <do Hide=""/>
+    <run call="WatchPresses"/>
+    <run call="Own"/>
+  </frame>
+</ui>

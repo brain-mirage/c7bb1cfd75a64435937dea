@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 7.x's skin (its XML twin's; skin.lua and draw.lua draw with it): the screen, the font and the standard dialog
+     window. Format: core/xml.md. Drawing only: nothing here is sent. -->
+<ui>
+  <!-- 7.5.2's game screen: it runs at 1024 x 768 only (the EPF layout: Source-5's systems/entering-the-game-world.md) -->
+  <data key="SCREEN" width="1024" height="768"/>
+  <!-- 7.5.2's font 0 (BARAM00.EFT, "classic"), for the texts and the edits: 12-pixel lines (TextEditPane's line height;
+       our classic font asset leaves 2 more, its cell + 2, for Modern's chat: spacing -2), scaled with its frame -->
+  <data key="FONT" face="classic" size="12" spacing="-2"/>
+  <!-- 4a's standard window: DLGFRAME.EPF in PAL01.PAL, 14-pixel tiles (DialogPane::DrawBackground and DrawBorder) -->
+  <data key="DIALOG_FRAME" file="DLGFRAME.EPF" palette="PAL01.PAL" tile="14"/>
+</ui>

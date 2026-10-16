@@ -1,0 +1,25 @@
+{
+  "id": "2d-5x",
+  "name": "Retro (5.x)",
+  "kind": "draw",
+  "version": "0.7.0",
+  "contract": 4,
+  "assembly": "2d-5x.dll",
+  "entry": "TK.Modules.Draw5x.Module",
+  "serves": ["tiles", "map-objects", "items", "monsters", "npcs", "characters", "effects"],
+  "artPacks": ["retro-2026"],
+  "cycle": { "name": "Retro", "options": { "figures": "whole" } },
+  "options": [
+    {
+      "key": "figures",
+      "name": "Retro Characters",
+      "values": "classic=As the 2026 client mixes them;mixed=The 2026 mix with the 2003 heads;whole=2003 figures, whole"
+    },
+    {
+      "key": "view",
+      "name": "Retro World View",
+      "page": "worldview",
+      "values": "modern=As the World View settings say;old=The old version's view (21 x 19 cells, smaller);old-wide=The old version's wide view (29 x 19 cells, smaller)"
+    }
+  ]
+}

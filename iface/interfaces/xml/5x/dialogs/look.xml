@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 5.x's look of the dialogs, what every window shares (its XML twin's layout; init.lua draws and places with it): 5.33's
+     standard window, image buttons, radios, the quit's line and the open sound. Format: core/xml.md. Drawing and sound
+     only. -->
+<ui>
+  <!-- 5.33's standard window: DLGFRAME.EPF in NPAL8.PAL, 16-pixel tiles (DialogPane::DrawBackground 0x00420FC0 and
+       DrawBorder 0x00421050); its frames: the background 8, the edges 1 top, 6 bottom, 3 left, 4 right, the corners 0,
+       2, 5, 7, the background over all of it (inset 0) -->
+  <data key="DIALOG_FRAME" file="DLGFRAME.EPF" palette="NPAL8.PAL" tile="16"/>
+  <data key="FRAME_TILES" bg="8" top="1" bottom="6" left="3" right="4" tl="0" tr="2" bl="5" br="7" inset="0"/>
+  <!-- 7.5.2's standard window, drawn where the 5.33 set is not: DLGFRAME.EPF in PAL01.PAL, 14-pixel tiles -->
+  <data key="KIT_FRAME" file="DLGFRAME.EPF" palette="PAL01.PAL" tile="14"/>
+  <!-- an image button of 5.33's (ImageButtonControlPane_OnPaint 0x00419760): BUTT001.EPF's frames 2 x id (normal) and
+       2 x id + 1 (pressed), or for ids from 51 BUTT002.EPF's 2 x (id - 50) and + 1, in NPAL8.PAL; disabled, the normal
+       picture under a white wash at half strength -->
+  <data key="IMAGE_BUTTON" file="BUTT001.EPF" high="BUTT002.EPF" from="51" palette="NPAL8.PAL" wash="0.5"/>
+  <!-- a radio option of 5.33's (RadioGroupControlPane's paint, sub_419DA0): RADIOBUT.EPF in NPAL8.PAL, frame 1 chosen and 0
+       not, its top on the option rectangle's middle - 5 -->
+  <data key="RADIO" file="RADIOBUT.EPF" palette="NPAL8.PAL" chosen="1" other="0" middle="5"/>
+  <!-- the quit's line: 5.33's QuitInputPane (constructor 0x004DA830) asks on the input line, (14, 456), 408 x 12 -->
+  <data key="QUIT_LINE" value="14, 456, 408, 12"/>
+  <!-- the open sound: DialogPane::AddToLayer 0x0041FCA0 plays sample 408, 0x198, as 7.5.2's -->
+  <data key="OPEN_SOUND" value="0x198"/>
+</ui>

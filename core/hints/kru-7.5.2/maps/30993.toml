@@ -1,0 +1,160 @@
+# Made by tools/reprojection/map_shapes.py (s6-reprojection-b round 6): edit the script, not this file.
+# Ancient Grounds (map 30993): its own cells beyond the base hints. Applies only when the map the server sends passes
+# the check (3.5).
+
+[check]
+size = "250x250"
+
+# The sunken pits (7 by 7 blocked tiles from 24747; the rules stood them up as a raised ring): each sunk three
+# cells, its north wall's inner face painted in its first three rows, its floor three rows south of it.
+[cells."85,8-91,14"]
+footprint = "rounded"
+inset = [0.05, 0.15, 0.75, 0.2]
+corner = 1.2
+height = -3
+
+[cells."2,16-8,22"]
+footprint = "rounded"
+inset = [0.05, 0.15, 0.75, 0.2]
+corner = 1.2
+height = -3
+
+[cells."91,35-97,41"]
+footprint = "rounded"
+inset = [0.05, 0.15, 0.75, 0.2]
+corner = 1.2
+height = -3
+
+[cells."13,41-19,47"]
+footprint = "rounded"
+inset = [0.05, 0.15, 0.75, 0.2]
+corner = 1.2
+height = -3
+
+[cells."103,42-109,48"]
+footprint = "rounded"
+inset = [0.05, 0.15, 0.75, 0.2]
+corner = 1.2
+height = -3
+
+[cells."113,47-119,53"]
+footprint = "rounded"
+inset = [0.05, 0.15, 0.75, 0.2]
+corner = 1.2
+height = -3
+
+[cells."92,63-98,69"]
+footprint = "rounded"
+inset = [0.05, 0.15, 0.75, 0.2]
+corner = 1.2
+height = -3
+
+[cells."7,68-13,74"]
+footprint = "rounded"
+inset = [0.05, 0.15, 0.75, 0.2]
+corner = 1.2
+height = -3
+
+[cells."95,76-101,82"]
+footprint = "rounded"
+inset = [0.05, 0.15, 0.75, 0.2]
+corner = 1.2
+height = -3
+
+[cells."0,77-6,83"]
+footprint = "rounded"
+inset = [0.05, 0.15, 0.75, 0.2]
+corner = 1.2
+height = -3
+
+[cells."15,85-21,91"]
+footprint = "rounded"
+inset = [0.05, 0.15, 0.75, 0.2]
+corner = 1.2
+height = -3
+
+[cells."92,91-98,97"]
+footprint = "rounded"
+inset = [0.05, 0.15, 0.75, 0.2]
+corner = 1.2
+height = -3
+
+# The raised plateaus (8 rows of blocked tiles from 11384; the rules stood them as low boxes with their face
+# lying on top): each three cells high, its top painted in its first four rows, its face in the next three.
+[cells."2,2-12,9"]
+footprint = "rounded"
+inset = [3.1, 0.9, 1.0, 1.0]
+corner = 1.4
+height = 3
+
+[cells."26,2-36,9"]
+footprint = "rounded"
+inset = [3.1, 0.9, 1.0, 1.0]
+corner = 1.4
+height = 3
+
+[cells."12,11-22,18"]
+footprint = "rounded"
+inset = [3.1, 0.9, 1.0, 1.0]
+corner = 1.4
+height = 3
+
+[cells."98,11-105,18"]
+footprint = "rounded"
+inset = [3.1, 0.9, 1.0, 1.0]
+corner = 1.4
+height = 3
+
+[cells."111,19-121,26"]
+footprint = "rounded"
+inset = [3.1, 0.9, 1.0, 1.0]
+corner = 1.4
+height = 3
+
+[cells."83,28-90,35"]
+footprint = "rounded"
+inset = [3.1, 0.9, 1.0, 1.0]
+corner = 1.4
+height = 3
+
+[cells."1,48-8,55"]
+footprint = "rounded"
+inset = [3.1, 0.9, 1.0, 1.0]
+corner = 1.4
+height = 3
+
+[cells."86,49-96,56"]
+footprint = "rounded"
+inset = [3.1, 0.9, 1.0, 1.0]
+corner = 1.4
+height = 3
+
+[cells."106,74-113,81"]
+footprint = "rounded"
+inset = [3.1, 0.9, 1.0, 1.0]
+corner = 1.4
+height = 3
+
+[cells."83,78-90,85"]
+footprint = "rounded"
+inset = [3.1, 0.9, 1.0, 1.0]
+corner = 1.4
+height = 3
+
+[cells."2,94-21,101"]
+footprint = "rounded"
+inset = [3.1, 0.9, 1.0, 1.0]
+corner = 1.4
+height = 3
+
+[cells."83,100-102,107"]
+footprint = "rounded"
+inset = [3.1, 0.9, 1.0, 1.0]
+corner = 1.4
+height = 3
+
+[cells."104,106-123,113"]
+footprint = "rounded"
+inset = [3.1, 0.9, 1.0, 1.0]
+corner = 1.4
+height = 3

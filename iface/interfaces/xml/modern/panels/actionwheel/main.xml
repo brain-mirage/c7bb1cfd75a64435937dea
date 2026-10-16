@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's action wheel (its XML twin's layout; main.lua opens and closes it by its keys, fills its segments from their
+     action slots and runs a pick on the hotkey path): the catcher that takes a click outside it, the ring, the hovered
+     segment's name, the Done button and the segments round it. Format: core/xml.md. Drawing only. -->
+<ui>
+  <!-- the segments: how many, the circle their centres are on and their size (C.SEGMENTS, C.RADIUS, C.SIZE) -->
+  <data key="WHEEL" segments="8" radius="86" size="46"/>
+
+  <!-- one segment (TKActionWheelSegment1..., the first at the top, clockwise) -->
+  <template name="Segment">
+    <frame type="Button">
+      <!-- its action slot and the hotkey path its press goes on, its size and its place on the circle (main.lua's
+           Segment; wire) -->
+      <run call="Segment"/>
+      <!-- s6-ui-core (round 62): the shared slot's picture, an action button's edge, the wheel's warm light -->
+      <slotart keys="bg, icon, edge" edge="slotActionEdge" light="1, 0.9, 0.5, 0.7"/>
+      <text key="glyph" layer="ARTWORK" sublevel="3" Font="20, OUTLINE" Point="CENTER, @parent, CENTER, 0, 1"/>
+      <do RegisterForDrag="LeftButton"/>
+      <on script="OnClick" call="Pick"/>
+      <on script="OnDragStart" call="DragStart"/>
+      <on script="OnReceiveDrag" call="ReceiveDrag"/>
+      <on script="OnEnter" call="Enter"/>
+      <on script="OnLeave" call="Leave"/>
+    </frame>
+  </template>
+
+  <!-- a click anywhere outside the wheel cancels it: this catcher takes the whole screen under it -->
+  <frame name="TKActionWheelCatcher" key="catcher" parent="UIParent">
+    <run call="Own"/>
+    <do FrameStrata="FULLSCREEN" FrameLevel="1" AllPoints="@parent" EnableMouse="true"/>
+    <on script="OnMouseDown" call="Close"/>
+    <do Hide=""/>
+  </frame>
+
+  <frame name="TKActionWheel" key="wheel" parent="UIParent">
+    <run call="Own"/>
+    <do FrameStrata="FULLSCREEN" FrameLevel="10"/>
+    <!-- the ring round the segments, 10 beyond their edges -->
+    <run call="Fit"/>
+    <texture layer="BACKGROUND" AllPoints="@parent" Texture="tk:ring" VertexColor="0.05, 0.05, 0.07, 0.75"/>
+    <!-- the hovered segment's action -->
+    <label key="label" text="" size="13" colour="gold" Font="13, OUTLINE" Point="CENTER, @parent, CENTER, 0, 0"/>
+    <!-- shown while the wheel is filled from the settings page -->
+    <button key="done" text="Done" width="70" height="22" click="Close" Point="CENTER, @parent, CENTER, 0, -22"/>
+    <do Hide=""/>
+    <run call="Segments"/>
+    <!-- s6-ui-core (round 83): a segment's aether ending while the wheel is open takes its red edge away -->
+    <on script="OnUpdate" call="AethersEnd"/>
+  </frame>
+</ui>

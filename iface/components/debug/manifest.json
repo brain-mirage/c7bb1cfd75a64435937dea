@@ -1,0 +1,9 @@
+{
+  "name": "debug",
+  "title": "Debug",
+  "version": "0.1.0",
+  "order": 999,
+  "description": "s6-devtools (round 3): the Debug page, the settings window's last: the frame time and its graph, the performance counters, the map's line, the tile grid, coordinates, blocked cells, warps, lights and window hints on the ground in every mode, the tile inspector, and Detached Camera; s6-effects (round 40): the Weather & Lighting tab, which overrides the server's weather and hour in the drawing. Drawing and reading only.",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

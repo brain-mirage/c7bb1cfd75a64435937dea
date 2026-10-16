@@ -1,0 +1,9 @@
+{
+  "name": "prompt",
+  "title": "Prompt Line",
+  "version": "0.1.0",
+  "order": 91,
+  "description": "The line a prompt is drawn on (\"Eat what?\") when no chat draws it: the rules' prompts and Classic Commands' own (moved from components/classic, s6-modular-g round 16).",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

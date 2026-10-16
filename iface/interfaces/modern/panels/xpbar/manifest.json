@@ -1,0 +1,9 @@
+{
+  "name": "xpbar",
+  "title": "XP Bar",
+  "version": "0.1.0",
+  "order": 13,
+  "description": "A long experience bar, as Bartender's XP Bar, at the bottom of the screen.",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

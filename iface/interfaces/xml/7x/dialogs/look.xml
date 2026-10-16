@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 7.x's look of the dialogs, what every window shares (its XML twin's layout; init.lua places with it). Format:
+     core/xml.md. Drawing only. -->
+<ui>
+  <!-- where a dialog opens: its placement slot (slot 1 and the others: mode 1, centred on (512, 384) on 1024 x 768:
+       Config::InitializeDefaults), moved inside by DialogPane::AddToLayer's clamps (its bottom above 50 or its top
+       below 430; its right above 50 or its left below 590) -->
+  <data key="PLACE" x="512" y="384" bottom="50" top="430" right="50" left="590"/>
+  <!-- the open sound: DialogPane::AddToLayer 0x0049DFD0 plays sample 0x198 as it attaches any dialog -->
+  <data key="OPEN_SOUND" value="0x198"/>
+</ui>

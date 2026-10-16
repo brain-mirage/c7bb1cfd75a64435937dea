@@ -1,0 +1,9 @@
+{
+  "name": "peer",
+  "title": "Remote-Protocol",
+  "version": "0.2.0",
+  "order": 900,
+  "description": "The remote protocol between our clients (s6-peer round 5, plan D28): its pages under Plugins, Global, the values the client answers, and the minimap marks plugins set.",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

@@ -1,0 +1,9 @@
+{
+  "name": "dialogs",
+  "title": "Dialogs",
+  "version": "0.1.0",
+  "order": 60,
+  "description": "The original's dialog windows (plan 5.11), drawn from the dialog model (plan 5.7): NPC and merchant dialogs, the trade, the boards and mail, the user list, the music dialog, the world map, the lost connection's alerts; the clock, the parcel buttons, the Menu popup, the transfer's animation and the dimmer.",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

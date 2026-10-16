@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 7.x's look of the original's Macro Setup (its XML twin's layout; macros.lua draws with it), IntegrateMacroDialog
+     0x00541B30 (ui/OptionPane.cpp; Source-5's class pages). Format: core/xml.md; the dialog's attributes are its look
+     entry's values (interfaces/xml/entry.lua), its children where macros.lua draws its parts: rectangles (left, top, right,
+     bottom), pictures (file, palette) and image buttons (BUTT001.EPF's image id first). Nothing in it is sent. -->
+<ui>
+  <!-- 289 x 449 at placement slot 6 (centred), sliding open, with the open sound; DLGMAC2.EPF frame 0 in DLGMACRO.PAL,
+       its whole window (control 0, mode 1: colour 0 shows what is under it); OK (1, image 14), the previous page (12,
+       image 18), the next (13, image 19), 63 x 24; the ten rows (2-11) at (19, 54 + 29 i)-(268, 74 + 29 i), each drawn
+       as IntegrateMacroEditControlPane (SpellMacroEditControlPane::OnPaint 0x0057FFB0): font 0 in 0x80 on the row's line
+       16, the key from x 18 ("%d"), 0 ("Ctrl+%d") or 4 ("Alt+%d") by the record's page; the kind T, S or I from 40; from
+       50 a spell's or an item's "letter:name", or the text macro's line in its edit (50, 4) into the row, 12 high; the
+       row with the focus framed in 0x80. Under the picture, OnPaint's (0x00541E50) three help lines from x 9 on the lines
+       413, 431 and 449, outlined. -->
+  <data key="MacroSetup" width="289" height="449" button="63" editWidth="219" editHeight="12" slide="true">
+    <data key="art" value="DLGMAC2.EPF, DLGMACRO.PAL"/>
+    <data key="ok" value="14, 118, 362, 181, 386"/>
+    <data key="prev" value="18, 30, 362, 93, 386"/>
+    <data key="next" value="19, 200, 362, 263, 386"/>
+    <data key="rows" x="19" y="54" step="29" right="268" height="20" line="16" kind="40" does="50"/>
+    <data key="rowEdit" x="50" y="4" right="269" height="12"/>
+    <data key="keyX" value="18, 0, 4"/>
+    <data key="help" x="9" line="413" step="18">
+      <line text="Spell : Select 'SPELLS' tab and press key."/>
+      <line text="Item  : Select 'ITEMS' tab and press key."/>
+      <line text="Text  : Press ';' key"/>
+    </data>
+  </data>
+</ui>

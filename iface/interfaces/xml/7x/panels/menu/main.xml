@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 7.x's menu button (its XML twin's layout; main.lua takes its press): the original's MENU (MenuVarietyPane, constructor
+     0x005BC970) at (744, 727)-(805, 751) on the 7.x screen, in the frame layer. Format: core/xml.md. -->
+<ui>
+  <!-- its top left on the 7.x screen (Screen.PlacePanel follows the scaled screen until the player moves it) -->
+  <data key="PLACE" value="744, 727"/>
+  <!-- MENUVAR.EPF in MENUVAR.PAL at its top left: frame 0 while its popup is closed, 2 while it is open (OnPaint
+       0x005BC800; frame 1, a hover picture, is never drawn) -->
+  <data key="ART" file="MENUVAR.EPF" palette="MENUVAR.PAL" closed="0" open="2" x="0" y="0"/>
+
+  <!-- over the screen's border, as the frame layer's panes are over its backdrop -->
+  <frame name="TK7xMenuButton" key="frame" type="Button" parent="UIParent" FrameStrata="LOW" FrameLevel="10" Size="61, 24">
+    <texture key="art" layer="ARTWORK"/>
+    <do EnableMouse="true"/>
+    <on script="OnMouseDown" call="Press"/>
+    <do Hide=""/>
+  </frame>
+</ui>

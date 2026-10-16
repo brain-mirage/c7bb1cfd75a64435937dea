@@ -1,0 +1,9 @@
+{
+  "name": "graphicsstyles",
+  "title": "Asset Styles",
+  "version": "0.1.0",
+  "order": 912,
+  "description": "s6-modular: the drawing style per category (Tiles, Map Objects, Items, Monsters, NPCs, Characters, Mounts, Effects), from the installed drawing modules (Modern 2d-7x, Retro 2d-5x, 3D 3d-v1): saved per profile and applied live. The modules themselves are C# (TK.Modular.Draw).",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

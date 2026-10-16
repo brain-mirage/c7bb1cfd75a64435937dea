@@ -1,0 +1,14 @@
+# Made by tools/reprojection/map_shapes.py (s6-reprojection-b round 6): edit the script, not this file.
+# Tomb (map 4880): its own cells beyond the base hints. Applies only when the map the server sends passes
+# the check (3.5).
+
+[check]
+size = "100x100"
+
+# The sunken pits (7 by 7 blocked tiles from 24747; the rules stood them up as a raised ring): each sunk three
+# cells, its north wall's inner face painted in its first three rows, its floor three rows south of it.
+[cells."1,5-7,11"]
+footprint = "rounded"
+inset = [0.05, 0.15, 0.75, 0.2]
+corner = 1.2
+height = -3

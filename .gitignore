@@ -1,0 +1,16 @@
+**/live-check*/
+**/oath-*/
+**/screenshots/
+**/userdata/
+**/Play.bat
+*.pdb
+Create-LVL-99-Test-Character.*
+create-test-character.lua
+/user/
+/config/
+/logs/
+/servers/
+/cache/
+/userdata.old/
+/dedicated-server/
+/core/modules/test-*/

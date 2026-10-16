@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's nameplates (their XML twin's layout; main.lua shows a plate per figure as the original's ObjectInfoObjectPane
+     draws its name, and the group members' bars): the layer over the whole screen, and a plate's name, outline, carnage
+     box, down arrow and bars. Format: core/xml.md. Drawing only. -->
+<ui>
+  <!-- a plain rectangle, coloured where it is shown -->
+  <template name="Rect">
+    <texture ColorTexture="1, 1, 1, 1"/>
+  </template>
+
+  <!-- one figure's plate (main.lua makes them as they are needed, TKNameplate1...) -->
+  <template name="Plate">
+    <frame Size="1, 1">
+      <!-- DrawOutlinedTextAt: the text in the back colour one pixel up, down, left and right, then in the text colour -->
+      <label key="back[]" text="" size="12" colour="white"/>
+      <label key="back[]" text="" size="12" colour="white"/>
+      <label key="back[]" text="" size="12" colour="white"/>
+      <label key="back[]" text="" size="12" colour="white"/>
+      <label key="name" text="" size="12" colour="white"/>
+      <!-- the carnage box: 12 x 10, its border in the fill colour and its inside in the outline colour -->
+      <texture key="box" from="Rect" layer="ARTWORK"/>
+      <texture key="boxInside" from="Rect" layer="OVERLAY"/>
+      <!-- the down arrow (the font's 0x1F: three rows), outlined as the text is: its rows in the back colour at the four
+           places around, then in the text colour over them -->
+      <texture key="arrow[]" from="Rect" layer="ARTWORK"/>
+      <texture key="arrow[]" from="Rect" layer="ARTWORK"/>
+      <texture key="arrow[]" from="Rect" layer="ARTWORK"/>
+      <texture key="arrow[]" from="Rect" layer="ARTWORK"/>
+      <texture key="arrow[]" from="Rect" layer="ARTWORK"/>
+      <texture key="arrow[]" from="Rect" layer="ARTWORK"/>
+      <texture key="arrow[]" from="Rect" layer="ARTWORK"/>
+      <texture key="arrow[]" from="Rect" layer="ARTWORK"/>
+      <texture key="arrow[]" from="Rect" layer="ARTWORK"/>
+      <texture key="arrow[]" from="Rect" layer="ARTWORK"/>
+      <texture key="arrow[]" from="Rect" layer="ARTWORK"/>
+      <texture key="arrow[]" from="Rect" layer="ARTWORK"/>
+      <texture key="arrow[]" from="Rect" layer="OVERLAY"/>
+      <texture key="arrow[]" from="Rect" layer="OVERLAY"/>
+      <texture key="arrow[]" from="Rect" layer="OVERLAY"/>
+      <!-- a group member's bars (the active HitBarObjectPane, ObjectPane.cpp:868-960): a 60 x 19 box in the back colour,
+           the HP and MP fills inside it, at their own place whatever the name and balloon do -->
+      <texture key="bars" from="Rect" layer="BACKGROUND"/>
+      <texture key="hp" from="Rect" layer="ARTWORK"/>
+      <texture key="mp" from="Rect" layer="ARTWORK"/>
+    </frame>
+  </template>
+
+  <frame name="TKNameplates" key="frame" parent="UIParent" AllPoints="@parent" FrameStrata="LOW">
+    <!-- every frame: the names follow the figures' steps -->
+    <on script="OnUpdate" call="Refresh"/>
+  </frame>
+</ui>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 5.x's status pane (its XML twin's layout; main.lua draws the values): 5.33's OldUserStatusPane (constructor
+     0x004E0B60, at (433, 372)-(626, 468) on the 640 x 480 screen), its fields at GetStatusFieldRect's rectangles
+     (0x004E1E90) on USERSTAT.EPF. Format: core/xml.md. It reads the client's values and sends nothing. -->
+<ui>
+  <!-- its top left on the 5.x screen (Screen.PlacePanel follows the scaled screen until the player moves it) -->
+  <data key="PLACE" value="433, 372"/>
+  <!-- the pictures centred in their fields, in NPAL7.PAL: 1 the nation (1, 49)-(56, 94), 2 the totem (1, 2)-(56, 47); 3
+       the status icon at (147, 0), CLASS.EPF in NPAL5.PAL: its frame is the icon - 1, icon 0's frame 4 (OldUserStatusPane
+       keeps the icon from 0x05's byte 9) -->
+  <data key="NATION" file="NATION.EPF" palette="NPAL7.PAL" rect="1, 49, 56, 94"/>
+  <data key="TOTEM" file="TOTEM.EPF" palette="NPAL7.PAL" rect="1, 2, 56, 47"/>
+  <data key="PATH" file="CLASS.EPF" palette="NPAL5.PAL" x="147" y="0" peasant="4"/>
+  <!-- the numbers in 9X11FONT.BIN's digit rows (5.33's "%3u", "%10u", "%04u/%04u"): 4 the level (160, 3) in row 2;
+       5 might (75, 17), 6 grace (163, 17), 7 will (120, 17) in row 1; 8 vita and 9 mana over their bars, 10 experience
+       (101, 56) in row 0; 11 gold (101, 69), 12 the place on the map (101, 82) in row 2 -->
+  <data key="DIGITS">
+    <number field="level" format="%3d" row="2" x="160" y="3"/>
+    <number field="might" format="%3d" row="1" x="75" y="17"/>
+    <number field="grace" format="%3d" row="1" x="163" y="17"/>
+    <number field="will" format="%3d" row="1" x="120" y="17"/>
+    <number field="hp" format="%10d" row="0" x="101" y="30"/>
+    <number field="mp" format="%10d" row="0" x="101" y="43"/>
+    <number field="ep" format="%10d" row="0" x="101" y="56"/>
+    <number field="gold" format="%10d" row="2" x="101" y="69"/>
+    <number field="place" format="%04d/%04d" row="2" x="101" y="82"/>
+  </data>
+  <!-- 8 vita and 9 mana (101, 30)-(192, 42) and (101, 43)-(192, 55): BAR.EPF's empty bar (frame 2) from the left as wide
+       as what is missing, its full bar (frame 0, 1 for mana) from the right as wide as what is left (MulDiv) -->
+  <data key="BARS" file="BAR.EPF" empty="2">
+    <bar full="0" rect="101, 30, 192, 42"/>
+    <bar full="1" rect="101, 43, 192, 55"/>
+  </data>
+  <!-- s6-interface-5x-b: the fields' help lines (OldUserStatusPane__HandlePointerOrMouseEvent 0x004E0D80, a right press:
+       the first field holding the press, its rectangle as GetStatusFieldRect gives it, fields 5-7 widened 16 pixels to
+       the left and 8-12 40, over their labels), each 7.5.2's line for 5.33's (interfaces/5x/help.lua): the name 185, the
+       nation 184, the totem 183, the level and path 186 and 187 (5.33's one line 186; field 4 lies inside field 3, so
+       field 3 takes its presses), might 189, grace 191, will 190, vita 192, mana 193, experience 194, gold 195, the
+       place 196 -->
+  <data key="HELP_FIELDS">
+    <field rect="59, 3, 131, 15" lines="185"/>
+    <field rect="1, 49, 56, 94" lines="184"/>
+    <field rect="1, 2, 56, 47" lines="183"/>
+    <field rect="147, 0, 193, 17" lines="186, 187"/>
+    <field rect="160, 3, 190, 15" lines="186, 187"/>
+    <field rect="59, 17, 102, 29" lines="189"/>
+    <field rect="147, 17, 190, 29" lines="191"/>
+    <field rect="104, 17, 147, 29" lines="190"/>
+    <field rect="61, 30, 192, 42" lines="192"/>
+    <field rect="61, 43, 192, 55" lines="193"/>
+    <field rect="61, 56, 192, 68" lines="194"/>
+    <field rect="61, 69, 192, 81" lines="195"/>
+    <field rect="61, 82, 192, 94" lines="196"/>
+  </data>
+
+  <frame name="TK5xStatus" key="frame" parent="UIParent" FrameStrata="LOW" Size="193, 96">
+    <picture key="back" file="USERSTAT.EPF" frame="0" palette="NPAL7.PAL" x="0" y="0" layer="BACKGROUND"/>
+    <!-- 0 the name (59, 3)-(131, 15), in white (0x8F) -->
+    <skintext key="name" colour="WHITE" layer="ARTWORK" WordWrap="false" JustifyH="LEFT"
+              Point="TOPLEFT, @parent, TOPLEFT, 59, -4" Width="72"/>
+    <texture key="totem" layer="ARTWORK"/>
+    <texture key="nation" layer="ARTWORK"/>
+    <texture key="path" layer="ARTWORK"/>
+    <!-- the bars under the digits drawn over them (DrawNumberGlyphString follows the blits) -->
+    <texture key="hpBar[]" layer="BORDER"/>
+    <texture key="hpBar[]" layer="BORDER"/>
+    <texture key="mpBar[]" layer="BORDER"/>
+    <texture key="mpBar[]" layer="BORDER"/>
+    <data key="digits">
+    </data>
+    <do Hide=""/>
+  </frame>
+</ui>

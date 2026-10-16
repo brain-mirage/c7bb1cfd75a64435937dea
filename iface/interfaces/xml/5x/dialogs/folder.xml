@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 5.x's look of the folder choice (its XML twin's layout; folder.lua draws with it), 5.33's folder dialog (constructor
+     0x0042EF20) over the shared X8 enumeration and navigation renderer. Format: core/xml.md; the dialog's attributes are
+     its look entry's values (interfaces/xml/entry.lua), its children where folder.lua draws its parts: rectangles (left, top,
+     right, bottom), pictures and image buttons (BUTT001.EPF's image id first).
+     WIRE: a control's rectangle is where a press on it lands; the shared Choose/Cancel ids and matched releases stay
+     FolderSelectDialog 0x004B1920's (changing those routes changes what the server sees through C12 0x0057A890). -->
+<ui>
+  <!-- 300 x 316 on 5.33's standard window: the drive (16, 16)-(66, 32), its caption (20, 17)-(50, 31) in 0x25 on
+       POPUPMNU.EPF's left (frame 0 at 16), middle (frame 1 at 18, 34 wide) and right (frame 2 at 52) in NPAL8.PAL; Up
+       (72, 16)-(108, 32); the path (112, 17)-(284, 31), 172 x 12; the viewport (16, 32)-(284, 282) on white, the list
+       (16, 32)-(271, 282), 255 wide, 16-pixel rows (their text (4, 1)-(251, 15), 247 x 12; the chosen on 0x25), and
+       ScrollablePane's skin 0 at x 271, 15 lines a page; Choose (image 14) and Cancel (image 22) -->
+  <data key="FolderSelect" width="300" height="316">
+    <data key="drives" value="16, 16, 66, 32"/>
+    <data key="driveText" value="20, 17, 50, 31"/>
+    <data key="popup" file="POPUPMNU.EPF" palette="NPAL8.PAL" left="16" middle="18" width="34" right="52" top="16" text="0x25"/>
+    <data key="up" value="72, 16, 108, 32"/>
+    <data key="path" value="112, 17, 284, 31"/>
+    <data key="pathSize" value="172, 12"/>
+    <data key="viewport" value="16, 32, 284, 282"/>
+    <data key="list" value="16, 32, 271, 282"/>
+    <data key="rows" width="255" height="16" page="15" selected="0x25"/>
+    <data key="rowText" value="4, 1, 251, 15"/>
+    <data key="rowTextSize" value="247, 12"/>
+    <data key="bar" x="271" t="32" b="282" skin="0"/>
+    <data key="choose" value="14, 16, 286, 88, 302"/>
+    <data key="cancel" value="22, 93, 286, 165, 302"/>
+  </data>
+</ui>

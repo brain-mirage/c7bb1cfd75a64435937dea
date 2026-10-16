@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's action bars' events (their XML twin's; main.lua loads this after it has made the bars, so the frame's events
+     come after the buttons' and the game layer's carriers', as the original's). Format: core/xml.md. -->
+<ui>
+  <!-- This runs for the bars that are off too, as a bar that is off keeps its keys while another is on (the owner,
+       2026-10-03): the buttons carry what their clicks and Modern's own keys run (main.lua's UpdateButton: the action
+       frozen at the press). Wire: a carried action left stale would use another slot or cast another spell than the
+       press's (UserPane::UseCommandSlot 0x005A4530); changing these events, or their order after the carriers' (the game
+       layer refreshes those on the same events before this runs), changes what the server sees. -->
+  <frame key="events">
+    <do RegisterEvent="ACTIONBAR_UPDATE_COOLDOWN"/>
+    <do RegisterEvent="BAG_UPDATE"/>
+    <do RegisterEvent="SPELLS_CHANGED"/>
+    <do RegisterEvent="UPDATE_BINDINGS"/>
+    <do RegisterEvent="ACTIONBAR_SLOT_CHANGED"/>
+    <do RegisterEvent="TK_EDIT_MODE"/>
+    <do RegisterEvent="TK_KEYBIND_MODE"/>
+    <do RegisterEvent="PLAYER_ENTERING_WORLD"/>
+    <do RegisterEvent="TK_PANEL_STYLE_CHANGED"/>
+    <do RegisterEvent="TK_DRAWING_STYLE_CHANGED"/>
+    <!-- s6-spell-icons: a spell's icon chosen in its editor -->
+    <do RegisterEvent="TK_SPELL_ICONS_CHANGED"/>
+    <!-- s6-ui-core (round 82): the red edges as the mana changes -->
+    <do RegisterEvent="UNIT_POWER"/>
+    <on script="OnEvent" call="Changed"/>
+  </frame>
+</ui>

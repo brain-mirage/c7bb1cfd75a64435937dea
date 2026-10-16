@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 5.x's parcel icons (its XML twin's layout; main.lua draws the counts and flies the pictures in): 5.33's ParcelIconPane
+     (constructor 0x0048CF50) and the ParcelPane it keeps at (45, 371) of the 640 x 480 screen, beside the clock. Format:
+     core/xml.md.
+     WIRE: each icon is the control of 7.5.2's ParcelPane for its kind (main.lua's Icons and Draw: a press to the icon's
+     control, its release to the control under the pointer then; ParcelPane::HandlePointerOrMouseEvent 0x00546610,
+     ParcelPane.cpp:207), so the icons' frames and which take the mouse decide what a press sends. Changing them changes
+     what the server sees. -->
+<ui>
+  <!-- its top left on the 5.x screen (Screen.PlacePanel follows the scaled screen until the player moves it) -->
+  <data key="PLACE" value="45, 371"/>
+  <!-- four icons at most (100 from four), 11 pixels apart (ParcelIconPane's paint 0x0048D5D0; its fill of colour 0 is
+       5.33's transparent key in this keyed pane, so none is drawn: main.lua) -->
+  <data key="ICONS" count="4" step="11"/>
+  <!-- each kind's pictures: the icon (frame 1: a parcel's 19 x 19, a letter's 18 x 18) and the big one that flies in
+       (frame 0, 22 x 22), for 0 the parcels and 1 the letters -->
+  <data key="KINDS">
+    <kind file="PARCEL.EPF" frame="1" size="19" big="0"/>
+    <kind file="MAIL.EPF" frame="1" size="18" big="0"/>
+  </data>
+  <!-- a flight: from the map's top right, (397 + 11 total, 4), or (441, 4) beyond four, 11 left and down every 10 ms for
+       34 steps (0x0048DA90, 0x0048DB60) -->
+  <data key="FLIGHT" x="397" far="441" y="4" step="11" steps="34" wait="0.01"/>
+
+  <frame name="TK5xParcel" key="frame" parent="UIParent" FrameStrata="LOW" Size="55, 18">
+    <!-- the icons, each wired as its kind's control (main.lua's Icons) -->
+    <run call="Icons"/>
+    <!-- the flying picture, above the screen's panes and the map view (FlyingParcelPane on a layer of its own) -->
+    <frame key="layer" FrameStrata="MEDIUM" AllPoints="@parent">
+      <texture key="flyer" layer="OVERLAY">
+        <do Hide=""/>
+      </texture>
+    </frame>
+    <on script="OnUpdate" call="Update"/>
+    <do Hide=""/>
+  </frame>
+</ui>

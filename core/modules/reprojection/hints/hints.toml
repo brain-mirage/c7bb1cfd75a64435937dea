@@ -1,0 +1,641 @@
+# The reprojection module's own tile hints (s6-reprojection-b, round 5; the design's 3.4 and 3.6, the chosen world
+# renderer's hints: docs/user-related/research/3dsen-and-tile-hints.md). Read by the host (TK.Modular.Draw.WorldHints) only
+# while this module is the chosen world renderer, after the shipped base hints and before a pack's and the player's, from
+# local files: nothing here is sent to any server.
+#
+# Why these are here and not in the base hints: each names a "kind" that is how the 3D, Flat and Sphere modes should build
+# the piece, where Normal's Sun Shadows (s6-effects-c, SunShadow.ByKind) read the same field to decide what casts. In the
+# base hints they changed Normal (Astra's P2 on round 4: the clouds 7766-7774 stopped casting). Here Normal keeps its own
+# rule. Every entry below was in the base hints before round 5, unchanged but for this note and the clouds' map count.
+
+# Bookshelf artwork: keep the original books on the front and use native plain wood for invented sides,
+# back and exposed top. These are artwork definitions, shared by every placement; Dharma is one example.
+# Wall is their pictured shape even on unblocked cells (Eternal Order); it does not change map pass flags.
+# 729 is a plain panel and 734 a framed display, so neither is part of this bookshelf family.
+[sobj.730-733]
+kind = "wall"
+skin = "tile/14393"
+
+[sobj.735-738]
+kind = "wall"
+skin = "tile/14393"
+
+# The town gates' middle (s6-reprojection-b): the archway between a gate's two towers, its little roof and its name board
+# drawn over the opening, ten cells tall. Its two middle pieces paint nothing in their bottom cell (the opening), so the
+# rule took them for tops and laid the roof and the board on the ground, beside the towers. Standing, with the side
+# pieces, they are the archway's picture. The same pieces are every Kugnae and Buya gate's, Koguryo Valley's, Wilderness
+# Valley's, the Wilderness's north-west gate and Angel's Blessing's (16-17); the Wilderness's south-east gate has its own
+# (17729-17730).
+[sobj.16-17]
+kind = "prop"
+
+[sobj.17729-17730]
+kind = "prop"
+
+# The hunting grounds' mounds and rock piles (round 2), in Kugnae, the Wilderness and most first floors (Spider's Web, Fox
+# Crossroads, Slime Field...): a big mound is three pieces (1578-1580, 1582-1584, 1586-1588, 1589-1591), its middle blocked
+# and walled all round, so the rule stood that middle up as a wall three cells tall, a column between two cards; the small
+# mounds (1581, 1585, 1592-1593) and the rock piles (1594-1612, round 1's 1602-1604 among them) are thin. Each mound is
+# one turning card, as the boulders are (its pieces, props, join along their row). Round 3 tried a solid form, revolved:
+# the picture turned round its axis came out stretched from the front and striped and hollow from the sides, as round 9's
+# round trees did, so the card stays.
+[sobj.1578-1612]
+kind = "prop"
+shape = "turning"
+
+# Thatched roofs (round 2): every roof piece 440-479 paints nothing in its bottom three cells, so the rule takes it for a
+# top. The ones overgrown with vines or gourds (440-448, 456-463: Kugnae, Buya, Nagnang, Hausson, Sanhae Valley) are green
+# enough for the tree rule, which comes first, so they stood as cards across the house. A top, as the plain thatch is.
+[sobj.440-471]
+kind = "top"
+
+# Pictures hung on an inside wall (found by s6-reprojection in its round 14, handed to s6-reprojection-b): windows,
+# scrolls and frames stand on the floor row before their wall with their picture empty below, so the rule took each for a
+# top and laid it behind the wall, held up on blocks outside the room. A thin card on its own row instead: IronHeart's
+# home (14959, 14972-14973, 14898-14899), JadeSpear's (14888, 14891, 14897), Bamboo Tavern's (15286, 15288). The card
+# stands half a cell before its wall, as every prop's does.
+[sobj.14888]
+kind = "prop"
+shape = "thin"
+depth = 0.05
+
+[sobj.14891]
+kind = "prop"
+shape = "thin"
+depth = 0.05
+
+[sobj.14897-14899]
+kind = "prop"
+shape = "thin"
+depth = 0.05
+
+[sobj.14959]
+kind = "prop"
+shape = "thin"
+depth = 0.05
+
+[sobj.14972-14973]
+kind = "prop"
+shape = "thin"
+depth = 0.05
+
+[sobj.15286]
+kind = "prop"
+shape = "thin"
+depth = 0.05
+
+[sobj.15288]
+kind = "prop"
+shape = "thin"
+depth = 0.05
+
+# s6-effects (round 20): the same case's windows still laid behind their wall, so 3D showed plain panels where Normal
+# shows them and their panes could not darken at night or flash in a storm outside: the Kugnae Salon's (14963,
+# 14976-14977, map 23) and 15288's partner (15289: maps 5, 43, 334 and 361). Every hinted window on a floor row before
+# its wall in the test server's indoor maps is now in this list.
+[sobj.14963]
+kind = "prop"
+shape = "thin"
+depth = 0.05
+
+[sobj.14976-14977]
+kind = "prop"
+shape = "thin"
+depth = 0.05
+
+[sobj.15289]
+kind = "prop"
+shape = "thin"
+depth = 0.05
+
+# This native upper-layer square stays upright on its own row; its empty base is not a roof.
+# Its semantic purpose is unknown: preserve the original pixels and transparent base gap.
+[sobj.1536]
+kind = "prop"
+shape = "thin"
+depth = 0.05
+
+# Dirge's floor dither (10713, on every cell of the lower floors of 501-508) has no hint since round 34: s6-effects' round
+# 16 (TK.Core.Map.PaintedShadows' EdgeDots) made the shared rule take all of it for a painted shadow, which the rules lay on
+# the ground with the Shadows option on Painted and leave out with the sun's (Cast), as every painted shadow (the owner's
+# decision, docs/user-related/decisions/2026-10-05-every-painted-shadow-goes.md). Rounds 3-4's `kind = "top"` then had
+# no pixel left to draw, so it hid the dither with the shadows painted and changed nothing with them cast.
+
+# Clouds (7766-7805, round 4; every one a cloud's slice): drawn over 36 maps (the Northern Pass, the Vale, Echo Summit,
+# Mount Baekdu, Weaver of Dreams...). The rules stood each as a card, so from the side the sky was full of upright sheets.
+# They lie flat where Normal draws them. Floating them stood the blocked cells under them up to them (the rule's blocks
+# under tops), white pillars over the rivers, until s6-reprojection's round 21 gave tops `floats = true`: nothing stands
+# under them, and they drift two cells up, over the figures' heads
+[sobj.7766-7805]
+kind = "top"
+height = 2
+roof = "flat"
+floats = true
+
+# Round 5: the clouds drawn at a height (1140-1151, on 104 maps: Mountain Top, Conflicts Through Time, Immortals Niche,
+# Tanwemarde...). Their bottom three layers are empty, so the rule laid each as a top three cells up, and stood the blocked
+# cells under it up to it: white pillars of cloud over the cliffs. Round 21 (s6-reprojection): floating, they lie at the
+# rule's height, where the art draws them, with nothing under them
+[sobj.1140-1151]
+kind = "top"
+roof = "flat"
+floats = true
+
+# Round 5: the snowy pines in a row (5416-5419, with their shadow 5420; Frost Valley and 15 other snowy maps). The row's
+# first piece paints nothing in its base layer and is too white for the tree rule, so the rule took it for a top and stood
+# the blocked snow under it up to it, as walls skinned with the pines' picture. Trees, as the rest of the row is
+[sobj.5416-5419]
+kind = "tree"
+
+# Round 22 (s6-reprojection, s6-reprojection-b's requests): the yurts, one row of pieces each (4619-4628 and 5461-5469,
+# their doors 4629-4630 in the row: on the test server only ever in a yurt's row; Frozen Walk, Raheem Desert and the
+# maps beside it, maps 4531 and 26141-26241). They stood as one card, a sheet from the side. As a group, each yurt is a round wall with a
+# dome (Grids' Dome: the circle from the painted width, the dome as high as the painted roof reaches)
+[sobj.4619-4630]
+group = "yurt"
+
+[sobj.5461-5469]
+group = "yurt"
+
+[group.yurt]
+kind = "statue"
+footprint = "circle"
+roof = "dome"
+height = 1.25
+
+# Round 44 (the 3D tour audit's group B, round 43's hint gap): the white yurt (4603-4618: the Gypsy Camp, maps 4531-4532,
+# 9052-9098, 53901-55910; its middle is 4607-4608 or 4615-4616, 4617-4618 on two maps) and the Forest of Elders' red-roofed
+# one (10766-10779: maps 590, 743, 3542, 4532, 4549, 5032, 26162-26242). Each is one row of pieces that stood as a card. As
+# round 22's yurts, with what their pictures need: the doorway is painted as a dark dither, which the painted-shadow rule
+# threw away (half a yurt, then a see-through band), so the picture is kept whole; the painting is about nine cells wide
+# and five rows tall, the circle round its foot painted only a fifth of a cell deep at its sides, so `oval` stretches
+# the painting onto the true circle (Grids' Dome) and `height` is the painted wall's at the door
+[sobj.4603-4618]
+group = "yurt"
+painted_shadow = false
+height = 2
+oval = 0.06
+
+[sobj.10766-10779]
+group = "yurt"
+painted_shadow = false
+height = 2.5
+oval = 0.15
+
+# Round 44 (the audit's group B): KaMing's gold tents (5485-5498: KaMing, map 4532, the clan halls 26101-26243 and maps
+# 53901-55910), ten pieces in a row, a cone of straw on a short round wall with a dithered doorway under a red curtain.
+# They stood as cards and walls, a sheet from the side. A round wall with a cone (Grids' Dome with `roof = "cone"`), the
+# picture kept whole, the painting stretched onto the circle as the yurts' are. The roof's sides slope below the columns
+# Dome takes for the body, so `radius` gives the circle: the painted wall's eight cells
+[sobj.5485-5498]
+group = "tent"
+
+[group.tent]
+kind = "statue"
+footprint = "circle"
+roof = "cone"
+height = 2.3
+radius = 4
+oval = 0.08
+painted_shadow = false
+
+# Round 44 (the audit's group O): Kinung Crafters' fishing net (7486-7492: maps 280, 591, 742, 4040, 4549 and the
+# 17065-17265 instances), spread on the grass. It is painted as a dither of net and gaps, which the painted-shadow rule
+# took for a shadow, so it stood as a dark patch, leaving the net out. Its picture is kept whole, flat on the ground (a
+# pixel over it, as the painted shadows' decals lie, so the two do not fight)
+[sobj.7486-7492]
+kind = "top"
+roof = "flat"
+height = 0.02
+painted_shadow = false
+
+# Round 22 (s6-reprojection-b's requests): rock masses drawn by one row of pieces, each picture rising four or five rows
+# above them: the desert oasis's rock (8113-8124: the Desert maps, Kinung, Phoenix Hall, the clan halls, Gypsy Camp) and
+# Winter Wonderland's snowy rocks (5437-5456). From the side they were cards or walls as tall as their pictures; as a
+# relief from the art (Grids' Relief) each column of the picture slopes back as it rises
+[sobj.8113-8124]
+footprint = "relief"
+
+# The oasis waterfall strip contains the same ridge, pool and rim as its neighboring rock pieces.
+[sobj.8134]
+footprint = "relief"
+
+[sobj.5437-5456]
+footprint = "relief"
+
+# Round 22 (s6-reprojection, the walk's limitation from round 20): the cliffs' edges in Fox Landscape and its kin (1342-1389,
+# on 73 maps of the test server: the Fox Landscapes, maps 80-89 and 390-409, 6514-6594...). Each piece stood as a wall as
+# tall as its picture, so from behind and the side the plateaus' rims were rows of pillars. They lie as tops at the
+# plateaus' height, a cell up, their picture where the game draws it from the front, and flat from behind
+[sobj.1342-1389]
+kind = "top"
+height = 1
+roof = "flat"
+
+# Round 45 (the 3D tour audit's group B, Later in round 44): Buya's hills (1201-1225, on 51 maps: Buya 330, 515, 1005, 1009,
+# 1120-1121, 1451-1457, 5810-5970 ...), rows of four-row rims round a plateau of blocked cells. They stood as walls as tall as
+# their pictures; as Fox Landscape's rims above, each lies as a top two cells up, and the blocked cells under it stand up to
+# it. Round 46 (the head's brief: "the cliff face lies on the plateau's top, and rims over walkable cells float"): each rim
+# paints a grass ledge with two cells of cliff face below it, so it is a terrace: its face stands from the ground, its ledge
+# lies two cells up, and where rims come one above the other every four rows each tier stands on the ledge of the one painted
+# below it (a hill two, four and six cells up). (The Mountain Range's cliffs stay Later: their pieces are two to four rows
+# tall beside plateau pieces 3D already raises one or three cells; docs/user-related/research/
+# 2026-10-08-reprojection-audit-groups.md.)
+[sobj.1201-1225]
+kind = "top"
+height = 2
+roof = "flat"
+terrace = true
+
+# Round 36: town gate fronts and towers are compound strips, with a roof painted above the eaves.
+# Joining each family before splitting its roof gives one supported roof and a deep arch, not isolated pillars/plates.
+[sobj.1-4]
+group = "stone-gate"
+[sobj.9-18]
+group = "stone-gate"
+[group.stone-gate]
+skin = "tile/257"
+wind = "none"
+kind = "prop"
+roof = "ridge-ew"
+height = 6
+depth = 2
+
+[sobj.37-40]
+group = "town-tower"
+[sobj.45-48]
+group = "town-tower"
+[group.town-tower]
+wind = "none"
+kind = "prop"
+roof = "ridge-ew"
+height = 6
+depth = 3
+
+[sobj.50-58]
+group = "wood-gate"
+[sobj.102-104]
+group = "wood-gate"
+[group.wood-gate]
+skin = "tile/338"
+wind = "none"
+kind = "prop"
+roof = "ridge-ew"
+height = 3
+depth = 2
+
+# The walkway's sides use plain cut stone, rather than repeating its battlements down the wall.
+[sobj.20]
+skin = "tile/257"
+[sobj.35-36]
+skin = "tile/257"
+
+# Round 36: the town/field trees and bushes, including pale petals, bare trunks and the giant rooted trees.
+# Each multi-piece family joins only touching art; a base-layer shadow is no longer mistaken for a separate trunk.
+
+[sobj.801-809]
+group = "big-tree"
+[group.big-tree]
+kind = "tree"
+shape = "crown"
+
+[sobj.810-813]
+group = "orchard-tree"
+[group.orchard-tree]
+kind = "tree"
+shape = "crown"
+
+[sobj.814-817]
+group = "bare-tree"
+[group.bare-tree]
+kind = "tree"
+shape = "crown"
+
+[sobj.890-897]
+group = "flower-tree"
+[group.flower-tree]
+kind = "tree"
+shape = "crown"
+
+[sobj.5786-5794]
+group = "red-tree"
+[group.red-tree]
+kind = "tree"
+shape = "crown"
+
+[sobj.15919-15931]
+group = "giant-tree"
+[group.giant-tree]
+kind = "tree"
+shape = "crown"
+
+[sobj.13367-13369]
+group = "wide-bush"
+[group.wide-bush]
+kind = "tree"
+shape = "crown"
+
+[sobj.1194-1199]
+group = "snow-tree"
+[group.snow-tree]
+kind = "tree"
+shape = "crown"
+
+# One-piece bushes keep their footprint small. The flowering hedge uses the same crown form along its fixed row:
+# a one-cell depth, with its top over the stems rather than a traced slab two rows north of them.
+[sobj.898-921]
+kind = "tree"
+shape = "crown"
+[group.hedge]
+kind = "tree"
+shape = "crown"
+back = 1
+
+# Kinung's timber gateway: its roof strips touch posts three map rows below. Join that architecture before cutting
+# at the eaves, so the beam stays upright beneath one roof. Map-specific palace-hall hints keep their own priority.
+[sobj.955-976]
+group = "blue-gate"
+[group.blue-gate]
+depth = 0.25
+wind = "none"
+kind = "prop"
+roof = "ridge-ew"
+height = 6
+
+# The small two-piece hanging sign has empty bottom layers. It hangs upright, rather than lying on the ground
+# as the generic K0 rule would place it; these module hints leave Normal's original drawing unchanged.
+[sobj.549-550]
+kind = "prop"
+shape = "thin"
+depth = 0.05
+
+# Narrow tree families have a trunk in just one strip; the neighbouring leafy/shadow strip belongs to that same tree.
+
+[sobj.818-819]
+group = "light-pine"
+[group.light-pine]
+kind = "tree"
+shape = "crown"
+
+[sobj.820-821]
+group = "green-pine"
+[group.green-pine]
+kind = "tree"
+shape = "crown"
+
+[sobj.822-824]
+group = "round-tree"
+[group.round-tree]
+kind = "tree"
+shape = "crown"
+
+[sobj.825-826]
+group = "dark-tree"
+[group.dark-tree]
+kind = "tree"
+shape = "crown"
+
+# The large hanging gate board is painted across three ground-tile rows. Stand that connected tile class beneath
+# the beam, remove its repeated paving from the card, and keep the passage floor at the original ground level.
+# The reused middle tiles also occur in floor ornaments; only a complete three-row board beginning with 7793 folds.
+[tile.7793-7801]
+group = "hanging-gate-board"
+[tile.7806]
+group = "hanging-gate-board"
+[tile.7815]
+group = "hanging-gate-board"
+[group.hanging-gate-board]
+kind = "prop"
+shape = "thin"
+height = 5
+floor = 2
+offset = [0, 2]
+skin = "tile/25299"
+depth = 0.05
+
+
+# Round37: Kinung's four open blue shrines use five connected gable/roof strips one row south of their two
+# four-layer posts. Join that architectural class before splitting at the posts' top; the wooden gable remains
+# vertical below the blue roof. The pointed roof runs north-south, as the original end-on painting shows.
+# These module-only hints do not affect Normal or replace a selected model.
+[sobj.1012-1016]
+group = "blue-open-shrine"
+[sobj.10078-10079]
+group = "blue-open-shrine"
+[group.blue-open-shrine]
+kind = "prop"
+shape = "thin"
+roof = "ridge-ns"
+height = 4
+depth = 0.1
+wind = "none"
+
+# Round39: native707-711 is the same five-strip altar artwork in every map. The existing assembly split
+# gives its painted tabletop horizontal depth while the front/legs and standing ornaments keep their height.
+# Renderer-global activation changes only reprojection drawing; Normal and selected models retain their priority.
+[sobj.707-711]
+group = "dharma-altar"
+[group.dharma-altar]
+kind = "prop"
+shape = "thin"
+depth = 0.1
+wind = "none"
+
+# Folding-screen artwork stands on its native foot as thin panels. A full-cell wall cap hid the
+# neighboring altar's candles/plants in Lotus; this artwork treatment preserves the native altar depth.
+# Source blocking and gameplay/pick ground remain the map's own data; no wind field is overridden.
+[sobj.14867-14870]
+kind = "prop"
+shape = "thin"
+depth = 0.125
+
+# Native563-565: one three-strip red tabletop, above its decorated apron and open legs.
+# Global artwork scope; the renderer waits for the exact sequence and received surface cells.
+# Thin fronts retain the original silhouette. The separate floating top creates no terrain/support.
+# s6-virtual-objects (round 4, VO-6): this entry is the pieces' default wherever they stand. A table of three is the
+# virtual object below; a piece in no such table (the other lengths, and the runs open at one end on maps 5016 and
+# 6435) keeps what this entry gives it.
+[sobj.563-565]
+group = "red-table"
+[group.red-table]
+kind = "prop"
+shape = "thin"
+depth = 0.1
+wind = "none"
+
+# s6-virtual-objects (round 4, VO-6): the red table as a virtual object, the first one shipped
+# (docs/user-related/research/2026-10-09-red-table-virtual-object.md): 563 564 565 side by side, the table whose top
+# the renderer lifts. A placement is one table wherever it stands, on maps nobody worked on too (113 on 31 of the
+# server's maps), and its pieces are one item in the 3D modes. It names the group above, so its drawing is that
+# group's: nothing is copied here.
+# The other lengths on the server's maps (563 565, and two, three or ten 564s between the ends: 61 tables) are not
+# variants yet. Joined into one object each, their 3D pictures change a little, which is the owner's to decide by
+# the pictures (the report's section 5).
+[vobj.red-table]
+label = "Red table"
+group = "red-table"
+[vobj.red-table.variant.three]
+sobj = ["563 564 565"]
+
+# s6-virtual-objects (round 5): the well as a virtual object, the second one shipped
+# (docs/user-related/research/2026-10-09-well-virtual-object.md): its two halves, 437 438 side by side, the stone
+# ring the base hints measure ([sobj.437-438] and [group.well] in project/hints/kru-7.5.2/hints.toml). A placement
+# is one well wherever both halves stand (101 on 72 of the server's maps), and its two pieces are one item in the
+# 3D modes because they are one object, not because their pictures touch. It names that group, so its drawing is
+# the group's: nothing is copied here. The base entry stays: it draws a half that stands alone (one 438 on map
+# 3626), and Normal, which reads no shipped object.
+[vobj.well]
+label = "Well"
+group = "well"
+[vobj.well.variant.two]
+sobj = ["437 438"]
+
+# s6-virtual-objects (round 6): the crypts' grave mound as a virtual object, the third one shipped and the first on
+# the ground layer (docs/user-related/research/2026-10-09-grave-mound-virtual-object.md): ground tiles 18004 18005
+# over 18006 18007, the round mound the base hints' plan shapes ([tile.18004-18007] and [group.grave-mound] in
+# project/hints/kru-7.5.2/hints.toml). A placement is one mound wherever the four tiles stand (98 on the nine mudum
+# crypts, maps 2201-2209), and it gives the group's shape its own rectangle, which the renderer's recogniser
+# (GroundAssemblies) worked out before. It names that group, so the plan and its height are the group's: nothing is
+# copied here. The base entry stays: it keeps a mound cut by a wall (two tiles of the four) flat, and it is what
+# Normal reads.
+[vobj.grave-mound]
+label = "Grave mound"
+group = "grave-mound"
+[vobj.grave-mound.variant.four]
+tile = ["18004 18005",
+        "18006 18007"]
+
+# Native164-169: the connected green shrine roof has five empty base layers, not a tree trunk.
+# Explicit architecture wins over the foliage colour heuristic; existing Top geometry derives its
+# eave height from the separately placed native entry supports. No map or post/door overrides.
+# Round 43: the green hall roof 132-142 is the same green-glazed artwork (the Wilderness's small pavilion
+# mixes 132 and 142 with 165-168 in one roof), so it joins the same group.
+[sobj.132-142]
+group = "green-shrine-roof"
+[sobj.164-169]
+group = "green-shrine-roof"
+[group.green-shrine-roof]
+kind = "top"
+roof = "hip"
+wind = "none"
+
+# Native red pavilion strips share one roof over their standing posts; height comes from native contact.
+# Kugnae's five-tier pagoda is crowned with the same paint, resting on its top storey (round 47: the tier pieces
+# below). Buya's existing local height-4 roof still wins.
+[sobj.202-207]
+group = "red-pavilion-roof"
+[group.red-pavilion-roof]
+kind = "top"
+roof = "hip"
+wind = "none"
+
+# Round 43 (the 3D tour audit's group A, docs/user-related/research/2026-10-06-3d-sen-reprojection-audit.md):
+# the towns' hall and pavilion roofs. Each roof is one row of empty-base strips painted over its walls two rows
+# north. Strip by strip, the contact rule met the walls at slightly different heights (3.02-3.08 cells), met
+# nothing over the door or at the ends, and met only the low stone wall behind Kinung's market stalls: each roof
+# broke into a comb of one-cell roofs with flat plates lying south of the hall, or lay on the ground. One group
+# per roof artwork joins its strips into one roof whose eaves lie at its highest native contact (Solid.JoinTops).
+# 219-229's leaf-green tiles had made it a tree card standing behind its hall. These are artwork definitions,
+# shared by every placement; module-only, so Normal and selected models are unchanged.
+[sobj.170-180]          # the lion hall's red roof (also the Kugnae palace's upper roof)
+group = "hall-roof"
+[sobj.208-218]          # the red hall's roof
+group = "hall-roof"
+[sobj.219-229]          # the dark green-glazed pavilion roof (Kugnae, Buya)
+group = "hall-roof"
+[sobj.230-240]          # the blue hall's roof (Kugnae, Buya, Nagnang)
+group = "hall-roof"
+[sobj.464-471]          # plain thatch (Kinung's market stalls on poles; Buya's and Kinung's houses)
+group = "hall-roof"
+[sobj.491-496]          # the shrine hut's upper thatch heap (Kugnae, Buya, Nagnang, Hausson, Kinung's market)
+group = "hall-roof"
+[sobj.2172-2185]        # Hausson's straw roofs
+group = "hall-roof"
+[sobj.2618-2629]        # the green roof over the Islets' hall and Nagnang's great arch
+group = "hall-roof"
+[sobj.2640-2646]        # Arctic Village's dark glass hall roof
+group = "hall-roof"
+[sobj.2801-2809]        # Arctic Village's black pavilion roof
+group = "hall-roof"
+[sobj.2974-2982]        # Hausson's red hall roof
+group = "hall-roof"
+[sobj.4272-4282]        # Kinung's yellow cottage roof
+group = "hall-roof"
+[sobj.9696-9709]        # KaMing's Encampment roofs
+group = "hall-roof"
+[sobj.181-189]          # round 47: the pagodas' and the palace's red eaves, one row a tier (with the tier pieces below)
+group = "hall-roof"
+[sobj.143-151]          # round 47: the green pagodas' eaves (Kugnae's green pagoda; maps 3922, 5330, 5331)
+group = "hall-roof"
+[group.hall-roof]
+kind = "top"
+roof = "hip"
+wind = "none"
+
+# Round 47 (the head's brief: the pagodas and the palace, whose pieces Kugnae's halls share): a tiered building's
+# storeys, painted over the roof under them in the game's view. The balcony bands (243-246) and their rails (287-289)
+# stood as tops at their empty layers, 2 and 3, under the tiers' eaves, which all lay at the rule's 5: the tiers
+# collapsed into one height and parted only in depth. As storeys (Solid.StoreyBase) each stands on the top of the roof
+# painted right below it, and the eave over it rests on it (SupportHeight), cut where it meets that roof, as a wall under
+# its roof; the flared corners (190-201) stand on the roof below as well. One treatment for every placement: Kugnae's
+# pagodas, palace and two-tier halls, maps 4549, 3529, 5330, 5331, 5382, 3815 and 3922.
+[sobj.243-246]
+kind = "wall"
+tier = true
+[sobj.287-289]
+kind = "wall"
+tier = true
+[sobj.190-201]
+tier = true
+
+# Round 47 (the head's brief: the Mountain Range): the cliff row's dark recess under a plateau (5848-5853, walkable,
+# between the cliff walls 5847 and 5854) is one painted strip. Its middle pieces' dark green passed the shared green
+# test, so 5850-5852 stood as trees while 5848, 5849 and 5853 are props. The plateau's pieces over a tree met no
+# support and lay at their one empty layer, the rest at their contact with the cliff, three cells up: map 2941's
+# plateaus came out in steps with fins between. As props, as their neighbours, every column of the cliff row holds
+# the plateau up, so it lies at one height, and the existing rule caps the cliff walls and the recess under it there
+# (round 17). One artwork definition for every placement (the cliffs are on 51 maps).
+[sobj.5850-5852]
+kind = "prop"
+
+# The gable-end thatch (480-484: Kugnae's and Hausson's L-houses' wings) shows its gable to the south: one row of
+# strips is a roof whose ridge runs north-south, not along the row.
+[sobj.480-484]
+group = "gable-thatch"
+[group.gable-thatch]
+kind = "top"
+roof = "ridge-ns"
+wind = "none"
+
+# The halls' doors: two strips in the wall row whose bottom layer is empty (the doorway), with the wall and lintel
+# painted above it. The rule took each for a top and laid it flat a cell up in front of the hall. Upright, as the
+# town gates' middles, they keep the doorway open under their lintel.
+[sobj.128-131]
+kind = "prop"
+[sobj.247-250]
+kind = "prop"
+[sobj.265-268]
+kind = "prop"
+[sobj.283-286]
+kind = "prop"
+[sobj.1852-1855]
+kind = "prop"
+[sobj.3080-3081]
+kind = "prop"
+
+# The round thatched huts' roof (the base hints' round-hut group: a circle and a cone over all eight or six pieces).
+# Its middle pieces now pass the shared green test, so they were trees while its end pieces stayed tops; the two
+# kinds never join, and each part got its own oversized dark circle. A top, as the plain thatch is (440-471).
+# Its thatch is painted as a flat oval, about three rows deep for six or eight cells wide: stretched whole onto the
+# circle (oval 1), the circle's north and south reached past the painting into dark streaks. The painted oval's depth
+# for the circle's width, as the well's (oval 0.7): six-piece huts (radius 2.6) 0.5, eight-piece huts (476's 3.4) 0.45.
+[group.round-hut]
+kind = "top"
+oval = 0.5
+[sobj.476]
+oval = 0.45
+
+# Round 43 (the audit's group B), left without a hint: the Gypsy Camp's white yurt (4603-4618, also map 55905) and the
+# Forest of Elders' (10766-10779) paint their doorway as a dark dither, which the shared painted-shadow rule takes for
+# shadow; as the yurt group's dome, that doorway left a see-through band across the dome and spoiled the front. They
+# stay one card until a doorway can be kept. KaMing's gold tents (5485-5498) are cones, which a dome cut off at the peak.

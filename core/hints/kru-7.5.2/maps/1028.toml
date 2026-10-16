@@ -1,0 +1,10 @@
+# Northern Shore (map 1028) on the test server: the 3D modes' horizon past its edges (s6-reprojection round 30, the
+# design's 3.14), an example: its whole north and east edges are water, the open sea; the land beyond its south and west
+# edges is the map's own carried on. Applies only when the map the server sends passes the check (3.5).
+
+[check]
+size = "60x40"
+
+[sky]
+north = "ocean"
+east = "ocean"

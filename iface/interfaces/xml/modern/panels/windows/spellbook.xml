@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's Spell Book tab (its XML twin's layout; spellbook.lua fills, sorts and scrolls the table): the header's sort
+     buttons, the scrolling list of the 52 slots' rows (the spell's icon, aether clock, letter and name, then a cell a
+     column), the hint, Server Order and the empty note. The columns themselves (what each shows and sorts by) are
+     spellbook.lua's COLUMNS. Format: core/xml.md. Drawing only, but for each row's input path (the book cell's, the
+     game layer's), marked where it is attached. -->
+<ui>
+  <!-- a row's height, the spell icon's side, the list's width (the page's 536 less its margins, 12 and 16, and the scroll
+       bar beside it), the aura marks a cell shows at most (the tooltip names them all) -->
+  <data key="SIZES" row="40" icon="34" list="508" marks="5"/>
+
+  <!-- the tab's page (made into the character window's page for the tab) -->
+  <template name="BookPage">
+    <into>
+      <data key="rows"/>
+      <data key="shown"/>
+      <!-- The header: a button a column, whose click sorts by it, and an arrow beside the sorted one's title. -->
+      <frame key="header" Size="@SIZES.list, 22" Point="TOPLEFT, @parent, TOPLEFT, 12, -10">
+        <texture layer="BACKGROUND" AllPoints="@parent">
+          <!-- the title band's colour -->
+          <run call="Band"/>
+        </texture>
+        <texture layer="ARTWORK" Height="1" Point="BOTTOMLEFT, @parent, BOTTOMLEFT, 0, 0">
+          <do Point="BOTTOMRIGHT, @parent, BOTTOMRIGHT, 0, 0"/>
+          <!-- the header rule's colour -->
+          <run call="Rule"/>
+        </texture>
+        <data key="buttons"/>
+        <run call="SortButtons"/>
+      </frame>
+      <!-- the list, scrolling (page.scroll, its content page.list) -->
+      <scrollarea key="scroll" content="list" Point="TOPLEFT, @parent, TOPLEFT, 12, -36">
+        <do Point="BOTTOMRIGHT, @parent, BOTTOMRIGHT, -16, 40"/>
+      </scrollarea>
+      <!-- a notch of the wheel a row; the 52 slots' rows -->
+      <run call="List"/>
+      <!-- a label that measures a name at the cells' size (spellbook.lua's measure) -->
+      <label text="" size="11" Hide="">
+        <run call="Measure"/>
+      </label>
+      <!-- s6-ui-character: PgUp and PgDn (K-097), here a screenful of the list each -->
+      <run call="Turn"/>
+      <label key="hint" text="Right-click a spell to change its icon." size="11" colour="0.7, 0.7, 0.7" justify="LEFT"
+             Point="BOTTOMLEFT, @parent, BOTTOMLEFT, 14, 14"/>
+      <button key="serverOrder" text="Server Order" width="110" height="22" click="ServerOrder"
+              Point="BOTTOMRIGHT, @parent, BOTTOMRIGHT, -14, 9">
+        <on script="OnEnter" call="ServerOrderTip"/>
+        <on script="OnLeave" call="Untip"/>
+      </button>
+      <!-- the character window's note (CW.Note's): no spells yet -->
+      <label key="empty" text="" size="12" colour="0.7, 0.7, 0.7" WordWrap="true" Width="470"
+             Point="TOP, @parent, TOP, 0, -40"/>
+      <!-- s6-ui-core (round 83): the rows' red edges as the player's mana changes (an aether's begin is a refresh) -->
+      <run call="BookPage"/>
+      <frame>
+        <do RegisterEvent="UNIT_POWER"/>
+        <on script="OnEvent" call="PowerChanged"/>
+      </frame>
+      <!-- the page drawn again on these while it shows (CW.RefreshOn's); s6-ui-bars: the pictures in a drawing style -->
+      <frame>
+        <do RegisterEvent="SPELLS_CHANGED"/>
+        <do RegisterEvent="CURSOR_CHANGED"/>
+        <do RegisterEvent="ACTIONBAR_UPDATE_COOLDOWN"/>
+        <do RegisterEvent="TK_SPELL_ICONS_CHANGED"/>
+        <do RegisterEvent="TK_DRAWING_STYLE_CHANGED"/>
+        <do RegisterEvent="TK_SPELLINFO_CHANGED"/>
+        <on script="OnEvent" call="Changed"/>
+      </frame>
+      <!-- Head note 44: with spell icons animating, the page's spells draw their icons' frame showing now -->
+      <run call="Animator"/>
+    </into>
+  </template>
+
+  <!-- a column's sort button (TKSpellBookSort<key>; its with: the column, its place and its title's justification) -->
+  <template name="SortButton">
+    <frame type="Button" Size="@with.w, 22" Point="TOPLEFT, @parent, TOPLEFT, @with.x, 0">
+      <run call="Column"/>
+      <texture layer="HIGHLIGHT" AllPoints="@parent" Texture="tk:button-hl" VertexColor="1, 0.85, 0.4, 0.3"/>
+      <label key="label" text="@with.title" size="11" colour="buttonText" justify="@with.justify"/>
+      <!-- the spell's title over the names, the others centred -->
+      <run call="SortLabel"/>
+      <texture key="arrow" layer="ARTWORK" Size="8, 8" Point="LEFT, @label, RIGHT, 2, 0">
+        <run call="Gold"/>
+        <do Hide=""/>
+      </texture>
+      <on script="OnClick" call="Sort"/>
+      <on script="OnEnter" call="SortTip"/>
+      <on script="OnLeave" call="Untip"/>
+    </frame>
+  </template>
+
+  <!-- Slot i's row (TKSpellBookSlot<i>; its with: the slot, its cooldown's name, its letter, the name's width). Wire:
+       its slot is fixed at its making and its input path is the book cell's (spellbook.lua's RowSlot and CellControl). -->
+  <template name="Row">
+    <frame type="Button">
+      <run call="RowSlot"/>
+      <!-- the row's height less 2 -->
+      <do Size="@SIZES.list, 38"/>
+      <!-- every other row a shade lighter, as a spreadsheet's -->
+      <texture key="stripe" layer="BACKGROUND" AllPoints="@parent" ColorTexture="1, 1, 1, 0.035"/>
+      <texture layer="HIGHLIGHT" AllPoints="@parent" ColorTexture="0.25, 0.4, 0.8, 0.3"/>
+      <frame key="box" Size="@SIZES.icon, @SIZES.icon" Point="LEFT, @parent, LEFT, 0, 0">
+        <!-- s6-ui-core (round 62): the shared slot's picture, an item's edge (round 83: red while marked) -->
+        <slotart keys="_, icon, edge"/>
+        <text key="glyph" layer="ARTWORK" sublevel="3" Font="18, OUTLINE" Point="CENTER, @parent, CENTER, 0, 1"/>
+        <frame key="cooldown" type="Cooldown" name="@with.cooldown" AllPoints="@parent">
+          <run call="OverBox"/>
+          <do CountdownFontSize="14"/>
+          <!-- s6-ui-core (round 83): the aether's end -->
+          <on script="OnCooldownDone" call="AetherEnd"/>
+        </frame>
+        <!-- The slot's letter, only with the Classic preset (the original's book is lettered). -->
+        <label key="letter" text="@with.letter" size="10" colour="gold" justify="LEFT" Font="10, OUTLINE"
+               Point="TOPLEFT, @parent, TOPLEFT, 2, -2"/>
+      </frame>
+      <!-- (the box's parts are the row's: row.icon, row.edge, row.glyph, row.cooldown, row.letter) -->
+      <run call="BoxParts"/>
+      <label key="name" text="" size="12" colour="white" justify="LEFT" Point="LEFT, @box, RIGHT, 6, 0"
+             Width="@with.nameWidth" WordWrap="true"/>
+      <!-- A value column's cell: one line (a), or two (a over b: the damage), or the auras' marks. -->
+      <run call="Cells"/>
+      <run call="CellControl"/>
+      <on script="OnEnter" call="RowTip"/>
+      <on script="OnLeave" call="RowLeave"/>
+      <do Hide=""/>
+    </frame>
+  </template>
+
+  <!-- a cell's line -->
+  <template name="CellLine">
+    <label text="" size="11" colour="white" justify="CENTER"/>
+  </template>
+
+  <!-- an aura's mark in the auras' cell -->
+  <template name="AuraMark">
+    <texture layer="ARTWORK" Size="8, 8" Texture="tk:circle" Hide=""/>
+  </template>
+</ui>

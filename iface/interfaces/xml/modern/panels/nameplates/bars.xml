@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's health bars over others (their XML twin's layout; bars.lua shows one under each name its page asks for):
+     a unit's health bar and, under it, its mana bar. Format: core/xml.md. Drawing only. -->
+<ui>
+  <!-- the bars' width, the health bar's height without and with its numbers, the mana bar's and the gap between them;
+       bars.lua sizes by them -->
+  <data key="SIZES" width="60" hp="6" hpNumbers="10" mp="3" gap="1"/>
+
+  <!-- one unit's bars (bars.lua makes them as they are needed, TKNameplateBar1...) -->
+  <template name="UnitBar">
+    <frame Width="@SIZES.width">
+      <!-- its fill coloured by kind (bars.lua's COLOURS) on a grey ground -->
+      <bar key="hp" height="@SIZES.hp" colour="1, 1, 1" textsize="9">
+        <do Point="TOPLEFT, @parent, TOPLEFT, 0, 0"/>
+        <do Point="TOPRIGHT, @parent, TOPRIGHT, 0, 0"/>
+      </bar>
+      <!-- SIZES.gap under the health bar -->
+      <bar key="mp" height="@SIZES.mp" colour="0.2, 0.45, 0.95" textsize="9">
+        <do Point="TOPLEFT, @hp, BOTTOMLEFT, 0, -1"/>
+        <do Point="TOPRIGHT, @hp, BOTTOMRIGHT, 0, -1"/>
+      </bar>
+    </frame>
+  </template>
+</ui>

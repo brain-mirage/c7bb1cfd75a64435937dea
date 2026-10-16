@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's Social window (its XML twin's layout; social.lua shows the page asked for and fills the lists): the Group
+     and Ignore tabs, the group page (the members, Invite) and the ignore page (the names, Add, Remove). Format:
+     core/xml.md. Drawing only, but for the Group tab's and the group page's request (2D 01), marked where attached. -->
+<ui>
+  <!-- the window, made while the UI loads (social.lua: the group page's request is attached then, plan 5.9) -->
+  <template name="Window">
+    <window name="TKSocialWindow" title="Social" width="360" height="380">
+      <!-- (as the character window: made by the shared widgets, it goes with the windows) -->
+      <run call="Own"/>
+      <do Point="CENTER, @parent, CENTER, -320, 40"/>
+      <data key="tabs"/>
+      <!-- s6-ui-core (round 61): the shared tab; a click opens its view (social.lua's OpenTab) -->
+      <tab text="Group" width="100" height="24" click="OpenTab" Point="TOPLEFT, @parent, TOPLEFT, 16, -40">
+        <data key="id" value="group"/>
+        <run call="Tab"/>
+        <!-- The Group tab, F and the micro menu's Social button carry the group page's request (D20, plan 5.9). Wire: its
+             2D 01 (NewGroupPane::OnActivate 0x0056CB80, social.lua's GroupRequest); changing which control carries it
+             changes what the server sees. -->
+        <run call="GroupRequest"/>
+      </tab>
+      <tab text="Ignore" width="100" height="24" click="OpenTab" Point="TOPLEFT, @parent, TOPLEFT, 122, -40">
+        <data key="id" value="ignore"/>
+        <run call="Tab"/>
+      </tab>
+
+      <!-- the group page: the members, Invite -->
+      <frame key="group" Point="TOPLEFT, @parent, TOPLEFT, 16, -74">
+        <do Point="BOTTOMRIGHT, @parent, BOTTOMRIGHT, -16, 14"/>
+        <label key="list" text="" size="12" colour="white" justify="LEFT" Width="320" WordWrap="true"
+               Point="TOPLEFT, @parent, TOPLEFT, 0, 0"/>
+        <button key="invite" text="Invite..." width="110" height="24" style="red" click="Invite"
+                Point="BOTTOMLEFT, @parent, BOTTOMLEFT, 0, 0"/>
+        <!-- The group page is the original's group tab: it asks for the list each time it becomes visible (2D 01, D20;
+             wire, social.lua's GroupOpen). -->
+        <run call="GroupOpen"/>
+      </frame>
+
+      <!-- the ignore page: the names, Add, Remove -->
+      <frame key="ignore" AllPoints="@group">
+        <label key="list" text="" size="12" colour="white" justify="LEFT" Width="320" WordWrap="true"
+               Point="TOPLEFT, @parent, TOPLEFT, 0, 0"/>
+        <button key="add" text="Add..." width="100" height="24" style="red" click="Ignore"
+                Point="BOTTOMLEFT, @parent, BOTTOMLEFT, 0, 0"/>
+        <button key="remove" text="Remove..." width="100" height="24" click="HearAgain" Point="LEFT, @add, RIGHT, 8, 0"/>
+      </frame>
+
+      <!-- the lists drawn again as the group changes, while the window shows -->
+      <frame>
+        <do RegisterEvent="GROUP_ROSTER_UPDATE"/>
+        <do RegisterEvent="UNIT_HEALTH"/>
+        <!-- s6-interface-7x-b (round 3): the group list's own change (the player's bars) -->
+        <do RegisterEvent="TK_GROUP_UPDATE"/>
+        <on script="OnEvent" call="Changed"/>
+      </frame>
+    </window>
+  </template>
+</ui>

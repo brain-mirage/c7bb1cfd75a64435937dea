@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 5.x's look of the trade and the mixing (its XML twin's layout; exchange.lua draws with it), from 5.33's own
+     constructors: ExchangeDialog 0x0042B300, AddItemDialog 0x0042CA90, AddMixingItemDialog 0x0042DE00, MixItemDialog
+     0x0042D610. Every window in NPAL8.PAL; 5.33's image buttons, 72 x 16. Format: core/xml.md; each dialog's attributes
+     are its look entry's values (interfaces/xml/entry.lua), its children where exchange.lua draws its parts: rectangles (left,
+     top, right, bottom), lists (the rectangle and the cell's width and height), pictures and image buttons
+     (BUTT001.EPF's image id first).
+     WIRE: a control's rectangle is where a press on it lands; changing one changes which control a press reaches. -->
+<ui>
+  <!-- the trade: 506 x 322 on DLGEXC1; OK (Accept, 14), ADD (36), CANCEL (22); the player's name alone, items and money;
+       the partner's name, items and money as "%u" (ExchangeDialog_RawMoneyUpdate 0x0042C3A0: no commas); the item lists'
+       rows (ExchangeItemListPane 0x0042C970): 156 x 24 cells, the picture centred on x 25, the whole name from 50 -->
+  <data key="Trade" width="506" height="322" button="72" listWidth="202" listHeight="143" moneyWidth="125" editHeight="13">
+    <data key="art" value="DLGEXC1.EPF, NPAL8.PAL"/>
+    <data key="accept" value="14, 42, 272, 114, 288"/>
+    <data key="add" value="36, 217, 272, 289, 288"/>
+    <data key="cancel" value="22, 392, 272, 464, 288"/>
+    <data key="myName" value="51, 71, 235, 84"/>
+    <data key="mine" value="36, 89, 251, 232, 156, 24"/>
+    <data key="money" value="79, 237, 204, 250"/>
+    <data key="theirLabel" value="271, 71, 454, 84"/>
+    <data key="theirs" value="255, 89, 470, 232, 156, 24"/>
+    <data key="theirMoney" value="298, 237, 454, 250"/>
+    <data key="row" value="25, 50"/>
+  </data>
+  <!-- the item pickers: 287 x 277 on DLGEXC2; ADD (36), CANCEL (22); the player's items, 205 x 24 cells (MyItemListPane
+       0x0042CFE0: the picture on x 25, the name from 50 fitted to 155) -->
+  <data key="Picker" width="287" height="277" button="72" listWidth="202" listHeight="144" slide="true">
+    <data key="art" value="DLGEXC2.EPF, NPAL8.PAL"/>
+    <data key="ok" value="36, 69, 225, 141, 241"/>
+    <data key="cancel" value="22, 146, 225, 218, 241"/>
+    <data key="list" value="36, 61, 251, 205, 205, 24"/>
+    <data key="row" value="25, 50, 155"/>
+  </data>
+  <!-- the mixing: 446 x 274 on MIXITEM; ADD (36), DELETE (21), OK (14), CANCEL (22); its rows, the pickers' rows -->
+  <data key="Mix" width="446" height="274" button="72" listWidth="206" listHeight="132" slide="true">
+    <data key="art" value="MIXITEM.EPF, NPAL8.PAL"/>
+    <data key="add" value="36, 72, 224, 144, 240"/>
+    <data key="delete" value="21, 149, 224, 221, 240"/>
+    <data key="ok" value="14, 226, 224, 298, 240"/>
+    <data key="cancel" value="22, 303, 224, 375, 240"/>
+    <data key="list" value="113, 71, 332, 203, 205, 24"/>
+    <data key="row" value="25, 50, 155"/>
+  </data>
+</ui>

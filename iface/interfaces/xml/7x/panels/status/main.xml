@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 7.x's status panes (their XML twin's layout; main.lua draws their values): each a panel of its own (its switch, Layout
+     tab and edit-mode place), drawn in the frame layer at the original's places on the 7.x screen. Format: core/xml.md. -->
+<ui>
+  <!-- the panes in the order they are made: their settings' key and panel id (their place is "7x.<id>"), edit mode's
+       label and their top left on the 7.x screen -->
+  <data key="PANES">
+    <pane key="nameplate" label="7.x Name Plate" x="826" y="16"/>
+    <pane key="vitals" label="7.x Vitals" x="881" y="659"/>
+  </data>
+
+  <!-- the name plate, UserStatusPane (OnPaint 0x005B8C70's EPF branch) at (826, 16), 171 x 42: the name centred in
+       (20, 3)-(96, 17), shadowed 0x80 a pixel right and down, then 0x8F twice a pixel apart; the level in 9X11FONT's digits
+       (variant 1) centred in (121, 4)-(170, 17) by 10 pixels a digit (they advance 9); 0x39's lines A and B centred in
+       (0, 26)-(102, 40) and (106, 26)-(170, 40), shadowed -->
+  <data key="NAMEPLATE">
+    <field key="name" l="20" t="3" r="96" bold="true"/>
+    <field key="lineA" l="0" t="26" r="102"/>
+    <field key="lineB" l="106" t="26" r="170"/>
+    <level l="121" t="4" w="49" digit="10" variant="1"/>
+  </data>
+
+  <!-- the vitals, UserStatusPane2 (OnPaint 0x005BAF80) at (881, 659), 126 x 94, over the backdrop: the vita, mana and
+       experience bars (BAR.EPF in BAR.PAL, right-anchored at 123, MulDiv(120, cur, max) long) and their numbers, the gold,
+       all "%10u" in 9X11FONT's digits (variant 2, the gold's 0) with COMMA.EPF between the groups; the position's x and y
+       "%03u" (variant 1). The rows: their bar's frames (middle, left cap, right cap), their numbers' top and digit
+       variant -->
+  <data key="ROWS">
+    <row key="hp" bar="0, 1, 2" top="2" variant="2" barTop="0"/>
+    <row key="mp" bar="3, 4, 5" top="21" variant="2" barTop="19"/>
+    <row key="gold" top="40" variant="0"/>
+    <row key="exp" bar="6, 7, 8" top="59" variant="2" barTop="57"/>
+  </data>
+  <!-- the bars' right end and full length -->
+  <data key="BAR" right="123" length="120"/>
+  <!-- "%10u"'s ten places: the leading digit at x 13, then three groups of three from x 26, 57 and 88, 9 apart -->
+  <data key="PLACES" value="13, 26, 35, 44, 57, 66, 75, 88, 97, 106"/>
+  <!-- a comma (COMMA.EPF in COMMA.PAL) 4 left of a group and 6 down, before each group a digit precedes: its x and the
+       digits it needs after it -->
+  <data key="COMMAS" file="COMMA.EPF" palette="COMMA.PAL" down="6">
+    <comma x="22" after="9"/>
+    <comma x="53" after="6"/>
+    <comma x="84" after="3"/>
+  </data>
+  <!-- the position: x and y, "%03u" in variant 1 -->
+  <data key="POSITION" variant="1" x="31" y="89" top="79"/>
+
+  <!-- a name plate's help field: a right press on it shows 4a's SimpleHelpPane with the original's string.
+       WIRE (main.lua's note; 4a UserStatusPane::HandlePointerOrMouseEvent 0x005B8A10): fields 0/4/12/13, event 4 only,
+       5000 ms; other presses fall through (it claims the right button, passes doubles). Changing it changes what the
+       server sees. -->
+  <template name="TK7xStatusHelp">
+    <frame ClaimButtons="RightButton" PassesDoubles="true">
+      <on script="OnMouseDown" call="HelpPress"/>
+    </frame>
+  </template>
+
+  <!-- a field's text, hidden until drawn -->
+  <template name="TK7xStatusText">
+    <text key="texts[]" layer="OVERLAY">
+      <do Hide=""/>
+    </text>
+  </template>
+
+  <!-- the frame layer, over the backdrop -->
+  <frame name="TK7xNamePlate" key="nameplate" parent="UIParent" FrameStrata="LOW" FrameLevel="10" Size="171, 42">
+    <data key="pane" value="nameplate"/>
+    <do Hide=""/>
+    <run call="Own"/>
+    <!-- USERSTAT.EPF frame 0 in ITEMINV.PAL -->
+    <picture key="back" file="USERSTAT.EPF" frame="0" palette="ITEMINV.PAL" x="0" y="0" layer="BACKGROUND"/>
+    <text from="TK7xStatusText"/>
+    <text from="TK7xStatusText"/>
+    <text from="TK7xStatusText"/>
+    <text from="TK7xStatusText"/>
+    <text from="TK7xStatusText"/>
+    <text from="TK7xStatusText"/>
+    <text from="TK7xStatusText"/>
+    <!-- the help fields: the name (string 185), the level (186), line A (188) and line B (187) -->
+    <frame from="TK7xStatusHelp" name="TK7xStatusHelp1" Point="TOPLEFT, @parent, TOPLEFT, 20, -3" Size="76, 14">
+      <data key="help" value="185"/>
+    </frame>
+    <frame from="TK7xStatusHelp" name="TK7xStatusHelp2" Point="TOPLEFT, @parent, TOPLEFT, 121, -4" Size="49, 13">
+      <data key="help" value="186"/>
+    </frame>
+    <frame from="TK7xStatusHelp" name="TK7xStatusHelp3" Point="TOPLEFT, @parent, TOPLEFT, 0, -26" Size="102, 14">
+      <data key="help" value="188"/>
+    </frame>
+    <frame from="TK7xStatusHelp" name="TK7xStatusHelp4" Point="TOPLEFT, @parent, TOPLEFT, 106, -26" Size="64, 14">
+      <data key="help" value="187"/>
+    </frame>
+    <on script="OnShow" call="Show"/>
+    <run call="Register"/>
+  </frame>
+
+  <frame name="TK7xVitals" key="vitals" parent="UIParent" FrameStrata="LOW" FrameLevel="10" Size="126, 94">
+    <data key="pane" value="vitals"/>
+    <do Hide=""/>
+    <run call="Own"/>
+    <run call="BuildVitals"/>
+    <on script="OnShow" call="Show"/>
+    <run call="Register"/>
+  </frame>
+</ui>

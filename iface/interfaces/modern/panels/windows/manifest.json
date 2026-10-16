@@ -1,0 +1,9 @@
+{
+  "name": "windows",
+  "title": "Windows",
+  "version": "0.1.0",
+  "order": 11,
+  "description": "The switches of Modern's character, look, Social and emotes windows and the windows themselves (s6-modular-g round 16: moved here from core/); the Game Options window, the options' fallback (round 17: moved here from components/gameoptions).",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

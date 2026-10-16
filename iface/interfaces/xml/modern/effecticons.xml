@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's effect icons (its XML twin's layout; effecticons.lua shows the effects with it): the look of an effect's
+     very small icon, the icon and the group the icons on units and the target frame's row share. Format: core/xml.md.
+     Display only: nothing here is sent. -->
+<ui>
+  <!-- the look: each kind's edge and fill; an estimate's icon a little fainter than the server's word; the gap between two
+       icons; a column's width at least, with the times shown ("~30-60" in the 8-point font) -->
+  <data key="style" estimateAlpha="0.72" gap="2" timeWidth="28">
+    <data key="edge" buff="0.3, 0.85, 0.35, 1" debuff="0.9, 0.25, 0.2, 1" unknown="0.62, 0.62, 0.66, 1"/>
+    <data key="fill" buff="0.1, 0.32, 0.14, 0.95" debuff="0.38, 0.07, 0.06, 0.95" unknown="0.2, 0.2, 0.23, 0.95"/>
+  </data>
+
+  <!-- one effect's icon (effecticons.lua names it <group>Icon<n>, sizes and colours it by its kind): its fill, a one-pixel
+       edge on each side, its picture inside the edge, the name's first letter while it has no picture, its time under it
+       in the time's colour; a right-click puts the effect's name on a list -->
+  <template name="Icon">
+    <frame>
+      <texture key="fill" layer="BACKGROUND" AllPoints="@parent"/>
+      <data key="edge"/>
+      <texture key="edge[]" layer="BORDER">
+        <do Point="TOPLEFT, @parent, TOPLEFT, 0, 0"/>
+        <do Point="TOPRIGHT, @parent, TOPRIGHT, 0, 0"/>
+      </texture>
+      <texture key="edge[]" layer="BORDER">
+        <do Point="BOTTOMLEFT, @parent, BOTTOMLEFT, 0, 0"/>
+        <do Point="BOTTOMRIGHT, @parent, BOTTOMRIGHT, 0, 0"/>
+      </texture>
+      <texture key="edge[]" layer="BORDER">
+        <do Point="TOPLEFT, @parent, TOPLEFT, 0, 0"/>
+        <do Point="BOTTOMLEFT, @parent, BOTTOMLEFT, 0, 0"/>
+      </texture>
+      <texture key="edge[]" layer="BORDER">
+        <do Point="TOPRIGHT, @parent, TOPRIGHT, 0, 0"/>
+        <do Point="BOTTOMRIGHT, @parent, BOTTOMRIGHT, 0, 0"/>
+      </texture>
+      <texture key="picture" layer="ARTWORK">
+        <do Point="TOPLEFT, @parent, TOPLEFT, 1, -1"/>
+        <do Point="BOTTOMRIGHT, @parent, BOTTOMRIGHT, -1, 1"/>
+      </texture>
+      <label key="letter" text="" size="8" colour="white" Point="CENTER, @parent, CENTER, 0, 0"/>
+      <label key="time" text="" size="8" colour="1, 0.95, 0.75" Font="8, OUTLINE" Point="TOP, @parent, BOTTOM, 0, -1"/>
+      <on script="OnMouseUp" call="ListMenu"/>
+    </frame>
+  </template>
+
+  <!-- a group of icons on its owner, which anchors it; the group takes its rows' size; "+n" past its most -->
+  <template name="Group">
+    <frame Size="1, 1">
+      <label key="more" text="" size="9" colour="white" justify="LEFT" Font="9, OUTLINE"/>
+    </frame>
+  </template>
+</ui>

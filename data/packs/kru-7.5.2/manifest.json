@@ -1,0 +1,38 @@
+{
+  "format": "tk-packset",
+  "formatVersion": 1,
+  "packFormat": "1.0",
+  "kind": "base",
+  "setName": "kru-7.5.2",
+  "setFingerprintSha256": "c4058ad0950f1c5094571c155ab94bf3df1fa1b90995baab170020f9df46c236",
+  "source": {
+    "id": "kru-7.5.2",
+    "kind": "base",
+    "profile": {"name":"kru","textEncoding":"windows-1252","supported":["DAT","EPF","PAL","TBL","DNA","DSC","EFT","PCX"],"unsupported":["EPD","PAD","TBD","DND"]},
+    "note": "the client's identity is its exe (client) and every input file with its SHA-256 (inputs)"
+  },
+  "client": {"exe":"NexusTK.exe","fileVersion":"7.5.2.0","productVersion":"7.5.2.0","exeSha256":"9aec210bbc5ce592176a21dd8e9d9fd8f250b8d9ea78237915a99ba8cfa9a632"},
+  "exporter": {"name":"ntkx","version":"1.0.0"},
+  "authoring": {"setName":"kru-7.5.2","manifestSha256":"315819e90713c3740d6f5197452ddb8a13fc3beacc0bdd0eb66e5f5317d10335"},
+  "codec": "lz4 (K4os.Compression.LZ4 1.3.8, level L09_HC)",
+  "compatibility": {
+    "fingerprintSha256": "fe3b8ac87f02176ea75604567c8550bceba2899830af4443e6f8ec1f052f73a4",
+    "decoderVersion": "ntkx-compat/1 (TK.Assets table codec 1, hit-mask windows 1)",
+    "pack": "compat.tkp",
+    "assets": ["@hitmask:TILEC","@pickrects","@series:MON","@series:PART:BODY","@series:PART:BOW","@series:PART:COAT","@series:PART:EMOTION","@series:PART:FACE","@series:PART:FACEDEC","@series:PART:FAN","@series:PART:HAIR","@series:PART:HAIRDEC","@series:PART:HELMET","@series:PART:MANTLE","@series:PART:NECK","@series:PART:SHIELD","@series:PART:SHOES","@series:PART:SPEAR","@series:PART:SWORD","ACC2DRW.TBL","ALL.DSC","ARROW.DSC","BACK.DSC","BODY.DSC","BOW.DSC","COAT.DSC","EMOTION.DSC","FACE.DSC","FACEDEC.DSC","FAN.DSC","HAIR.DSC","HAIRDEC.DSC","HELMET.DSC","MANTLE.DSC","MONSTER.DNA","MOTION.TBL","NECK.DSC","PART.TBL","RIDINGS.DNA","SHIELD.DSC","SHOES.DSC","SOBJ.TBL","SPEAR.DSC","SWORD.DSC","TILE.TBL","TILEC.TBL"],
+    "note": "behaviour-driving data (plan 5.13, 5.6): loaded only from this base pack set; the fingerprint is SHA-256 over the assets' decoded payloads in id order (FORMAT.md)"
+  },
+  "serverOwned": {"pack":"server-seed.tkp","assets":["@meta:seed"],"note":"Meta.dat tables: a seed cache only; the server's copy (7B 01 / 6F) always wins"},
+  "packs": [
+    {"file":"compat.tkp","role":"compat","size":2903291,"sha256":"de9ce1bd230c9a2a89c1f2083fa60b6104c970fcabcd45cd952cf18186d495d6","assets":46,"chunks":127,"rawBytes":23250801},
+    {"file":"tiles.tkp","role":"tiles","size":52216368,"sha256":"575a33513ee56b58fa4b6f9cd2f541db338db7aa6042f7aa3f836d8a0c43b46e","assets":55,"chunks":927,"rawBytes":223750916},
+    {"file":"monsters.tkp","role":"monsters","size":149632875,"sha256":"d47a591ed405afd31f54fe65f8417ccb2b78cd2fb5d61a92475e8445b342c2db","assets":71,"chunks":3655,"rawBytes":930273691},
+    {"file":"characters.tkp","role":"characters","size":78251609,"sha256":"d3efdb19ea6f7f77801351602a808b445790307b80a6f58ccdc1a9d84000532e","assets":97,"chunks":1875,"rawBytes":461835839},
+    {"file":"effects.tkp","role":"effects","size":41521517,"sha256":"c49eff0579d3d11877633aa1b684909c79dea6db7da0d9aea7ff7fddd08c206a","assets":45,"chunks":754,"rawBytes":178306442},
+    {"file":"items.tkp","role":"items","size":4403590,"sha256":"d46783598fcb5818da68e5c50f84889819d61ad491839337fcfc945fbdcebb2b","assets":3,"chunks":61,"rawBytes":17584691},
+    {"file":"interface.tkp","role":"interface","size":24177759,"sha256":"99d7283059182d6df568a766472b0ad08405f746572fe0b52d1f78fdc9a988fa","assets":357,"chunks":686,"rawBytes":72288999},
+    {"file":"audio.tkp","role":"audio","size":88847364,"sha256":"55c33f112c9543f33fbfef67e9bab6bcf28ce30300c27fa4d317d52463f6e7c3","assets":376,"chunks":641,"rawBytes":89167316},
+    {"file":"server-seed.tkp","role":"server-seed","size":489038,"sha256":"8d4f0b4a764ec430dbd09841e78ce144011b3d17cbb9fdc5e7581b66a9d76e35","assets":1,"chunks":7,"rawBytes":1668304},
+    {"file":"extras.tkp","role":"extras","size":988795,"sha256":"0c7d3c5e6b718bd82d6462e445def2b1420e58ccdcff8a774efe9e78c459d029","assets":13,"chunks":59,"rawBytes":12349554}
+  ]
+}

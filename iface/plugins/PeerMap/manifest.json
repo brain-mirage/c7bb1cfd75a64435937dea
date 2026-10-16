@@ -1,0 +1,8 @@
+{
+    "title": "Peer Map",
+    "version": "1.0",
+    "notes": "Lists your connected peers on the map window: a click shows where they are, a right-click offers their remote view when they share it.",
+    "files": ["main.lua"],
+    "unsafe": true,
+    "remote": { "asks": ["location", "online", "players", "view-map", "view-players", "view-creatures", "view-items", "view-effects"] }
+}

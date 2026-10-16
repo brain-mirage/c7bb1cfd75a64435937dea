@@ -1,0 +1,9 @@
+{
+  "name": "chatframe",
+  "title": "Chat Frame",
+  "version": "0.1.0",
+  "order": 40,
+  "description": "The chat frame at the bottom left: the chat log with its tabs (right-click a tab: new tabs, the Terminal for server commands, which messages each shows, its font size), and the chat bar with Back to Talk, the chat-mode menu and the line (Enter, /, ', !, \", Alt+C).",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

@@ -1,0 +1,9 @@
+{
+  "name": "plugins",
+  "title": "Plugins",
+  "version": "0.1.0",
+  "order": 890,
+  "description": "The Plugins pages (s6-sandbox round 10): the Enable unsafe plugins switch, the list of installed plugins as WoW's AddOns list, and each plugin's options panel.",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

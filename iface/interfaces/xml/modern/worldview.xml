@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's look of the shared world view (its XML twin's layout; worldview.lua builds it on the view's frame): a grey
+     edge round the frame, over its outermost pixels, and a label at its top left that the view fills with the map's
+     title. Format: core/xml.md. Drawing only. -->
+<ui>
+  <texture key="edge" layer="OVERLAY">
+    <do Point="TOPLEFT, @parent, TOPLEFT, -2, 2"/>
+    <do Point="BOTTOMRIGHT, @parent, BOTTOMRIGHT, 2, -2"/>
+    <do Texture="tk:border" VertexColor="0.45, 0.45, 0.48, 1"/>
+  </texture>
+  <label key="label" text="" size="11" colour="0.85, 0.85, 0.85" Font="11, OUTLINE" Point="TOPLEFT, @parent, TOPLEFT, 6, -5"
+         JustifyH="LEFT"/>
+</ui>

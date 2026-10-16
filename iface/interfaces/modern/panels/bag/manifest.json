@@ -1,0 +1,9 @@
+{
+  "name": "bag",
+  "title": "Bag",
+  "version": "0.1.0",
+  "order": 12,
+  "description": "The bag window's views: icons or a list, every slot or only the items and the window itself (window.lua).",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

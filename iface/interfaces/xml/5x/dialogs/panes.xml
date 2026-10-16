@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 5.x's look of the server's timer (its XML twin's layout; panes.lua draws with it), 5.33's TimerPane
+     (TimerPane__Constructor 0x004CAB60, its paint 0x004CAE20). Format: core/xml.md. Drawing only: the timer takes no
+     input and sends nothing. -->
+<ui>
+  <!-- at (133, 10) of the 640 x 480 screen; 35 pixels a glyph (5 for MM:SS, 8 for HH:MM:SS) by 70; NUMBER.EPF's digits
+       (10 the colon) in the screen's palette -->
+  <data key="Timer" x="133" y="10" glyph="35" height="70" glyphs="5" file="NUMBER.EPF"/>
+</ui>

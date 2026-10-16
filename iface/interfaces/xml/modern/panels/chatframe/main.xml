@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's chat frame (its XML twin's layout; main.lua draws the log and the logic's line in it and wires the bar to
+     the game layer, TK.Game.Chat): the log with its tab strip (tabbar.xml) and its button back to the newest line, the
+     chat bar under it (Back to Talk, the chat-mode button, the typing area with the line, the offline prompt and box),
+     the chat-mode menu and the server's message pane. Format: core/xml.md. Drawing only, but for the bar's presses, its
+     typing area's action and the menu's rows, which are the wire's (marked where they are). -->
+<ui>
+  <!-- the chat-mode menu: its width and a row's height -->
+  <data key="MENU" width="84" row="18"/>
+
+  <frame name="TKChatFrame" key="frame" parent="UIParent">
+    <backdrop bg="0, 0, 0, 0.3" edge="false" bgfile="tk:white"/>
+    <!-- s6-ui-settings (round 4): the shared panel style; s6-ui-core (round 53): or the chat's own -->
+    <run call="HudPanel"/>
+    <!-- s6-ui-chat: the tab strip along the top (tabbar.lua); every line of the session stays in frame.history -->
+    <run call="TabStrip"/>
+    <do EnableMouseWheel="true"/>
+    <on script="OnMouseWheel" call="Wheel"/>
+    <!-- Scrolled back: a button back to the newest line. -->
+    <iconbutton key="more" texture="tk:arrow-down" size="16" click="Newest"
+                Point="BOTTOMRIGHT, @parent, BOTTOMRIGHT, -4, 4" Hide=""/>
+
+    <!-- The chat bar, under the log: Back to Talk, the chat-mode button, the typing area. -->
+    <frame key="bar" Height="24" Point="TOPLEFT, @parent, BOTTOMLEFT, 0, -2">
+      <do Point="TOPRIGHT, @parent, BOTTOMRIGHT, 0, -2"/>
+      <!-- s6-modular-g (round 21, the owner's research on presses reaching the wrong place): the gaps between its
+           buttons are the bar's, so a click a pixel beside a button no longer walks there (or talks: 43 01). The log
+           above still lets presses through to the world, as WoW's chat frame and 4a's chat pane do. WIRE: a press in a
+           gap reaches no map pane (MapPane::HandlePointerOrMouseEvent 0x00507150: the click-move walk's 06/32/11,
+           RequestObjectInfo 0x0050F4D0's 43 01, the look's 0A); Modern's bar is ours, so 4a has nothing there.
+           Changing this changes what the server sees. -->
+      <do EnableMouse="true"/>
+      <button key="talk" text="" width="22" height="24" click="BackToTalk" Point="LEFT, @parent, LEFT, 0, 0">
+        <label key="label" text="T" size="13" colour="gold" Point="CENTER, @parent, CENTER, 0, 0"/>
+        <on script="OnEnter" call="TalkTip"/>
+        <on script="OnLeave" call="Untip"/>
+      </button>
+      <button key="modeButton" text="Talk" width="62" height="24" click="ToggleMenu"
+              Point="LEFT, @talk, RIGHT, 2, 0"/>
+      <frame key="typing" type="Button" Point="LEFT, @modeButton, RIGHT, 4, 0">
+        <do Point="RIGHT, @parent, RIGHT, 0, 0" Height="24"/>
+        <texture layer="BACKGROUND" AllPoints="@parent" ColorTexture="0, 0, 0, 0.35"/>
+        <!-- the area's action: the say mode's line (the rules' chat:current; wire, main.lua's TypingAction) -->
+        <run call="TypingAction"/>
+        <!-- The left press opens the line (ChattingPane.cpp:1244-1257), so keys typed before the release are its: live,
+             the area's action rides the press's record (the game layer's typing rule; wire, main.lua's TypingPress). -->
+        <on script="OnMouseDown" call="TypingPress"/>
+        <!-- The logic's line (live), or the offline line's prompt. -->
+        <label key="line" text="" size="13" colour="white" justify="LEFT" Point="LEFT, @parent, LEFT, 6, 0">
+          <do Point="RIGHT, @parent, RIGHT, -6, 0"/>
+          <data key="version" value="-1"/>
+        </label>
+        <!-- Offline: the game layer's line on this bar while it shows (TK.Game.Chat.ProvideLine, which drives the box):
+             its prompt, then the box, over the typing area; anchored once, the prompt's width moves it. s6-interface-5x
+             (round 12): 7.x's bar draws its own (it borrowed this box before, on a holder put on its typing area). -->
+        <label key="prompt" text="" size="13" colour="white" justify="LEFT" Point="LEFT, @parent, LEFT, 6, 0"/>
+        <editbox key="input" width="300" height="22" Point="LEFT, @prompt, RIGHT, 2, 0">
+          <do Point="RIGHT, @parent, RIGHT, -2, 0"/>
+        </editbox>
+      </frame>
+      <!-- the bar's parts are the frame's (frame.talk, frame.modeButton, frame.typing, frame.line, frame.prompt,
+           frame.input), as the original's -->
+      <run call="BarParts"/>
+    </frame>
+    <!-- the offline line on this bar, the log the scroll keys move, the host of the rules' Text prompt (the game
+         layer's providers) -->
+    <run call="Provide"/>
+    <on script="OnUpdate" call="Draw"/>
+    <!-- s6-play-modes (Astra's review of round 4): a hidden frame's Terminal tab opens nothing, whatever hid it.
+         s6-play-modes (round 6): a Terminal tab there makes the character a GM, once the tabs are this character's
+         (Astra's review: the frames show at a character's world entry before its tabs load, with the last character's) -->
+    <on script="OnShow" call="Shown" hook="true"/>
+    <on script="OnHide" call="Hidden" hook="true"/>
+  </frame>
+
+  <!-- The chat-mode menu (ChattingVarietySelectPane, a row acts on its release: ChattingPane.cpp:912-959), over the
+       chat-mode button: main.lua's BuildMenu makes it once the frame is made. -->
+  <template name="ModeMenu">
+    <frame name="TKChatModeMenu">
+      <run call="Own"/>
+      <do FrameStrata="DIALOG"/>
+      <backdrop bg="0.04, 0.04, 0.05, 1" edge="panelEdge" bgfile="tk:white"/>
+      <do EnableMouse="true"/>
+      <!-- its size: a row a mode (the game layer's TK.Game.Chat.MENU) -->
+      <run call="FitMenu"/>
+      <data key="rows"/>
+      <run call="MenuRows"/>
+      <do Point="BOTTOMLEFT, @modeButton, TOPLEFT, 0, 2" Hide=""/>
+    </frame>
+  </template>
+
+  <!-- a row of the menu (main.lua's MenuRow gives its place, its index and its mode's name) -->
+  <template name="MenuRow">
+    <frame type="Button" Height="@MENU.row">
+      <run call="MenuRow"/>
+      <texture layer="HIGHLIGHT" AllPoints="@parent" ColorTexture="0.25, 0.4, 0.8, 0.5"/>
+      <!-- its mode's name (MenuRow's row.caption) -->
+      <label text="@parent.caption" size="12" colour="white" Point="CENTER, @parent, CENTER, 0, 0"/>
+      <!-- Wire: the row carries the game layer's action for its mode (TK.Game.Chat.MenuAction, 4a's row dispatch
+           0x004811C0) and runs it on the click's release (MenuChosen); changing either changes the chat packets that
+           follow. -->
+      <run call="MenuRowAction"/>
+      <on script="OnClick" call="MenuRowClick"/>
+    </frame>
+  </template>
+
+  <!-- The original's message pane (0x58): a line of text at the top of the screen until the server closes it (main.lua
+       makes it at its first line). -->
+  <template name="Banner">
+    <frame name="TKMessagePane">
+      <run call="Own"/>
+      <do FrameStrata="MEDIUM" Size="700, 30" Point="TOP, @parent, TOP, 0, -150"/>
+      <backdrop bg="0, 0, 0, 0.55" edge="false" bgfile="tk:white"/>
+      <!-- s6-ui-core (round 53): the UI transparency, or the chat's own -->
+      <run call="HudPanel"/>
+      <label key="text" text="" size="15" colour="1, 0.95, 0.7" Point="CENTER, @parent, CENTER, 0, 0"/>
+      <run call="BannerLeaves"/>
+    </frame>
+  </template>
+</ui>

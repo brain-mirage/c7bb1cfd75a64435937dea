@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's buffs, debuffs and aether list (their XML twin's layout; main.lua splits the effects into the two frames,
+     lays their icons out by the page's settings, counts their times down and lists the running aethers): the three
+     frames edit mode moves, an effect's icon and an aether's row. Format: core/xml.md. Drawing only. -->
+<ui>
+  <!-- an aether row's height (main.lua's LayoutAethers places the rows by it) -->
+  <data key="SIZES" row="24"/>
+
+  <!-- one effect's icon (main.lua makes them as they are needed, TKBuffFrameIcon1...) -->
+  <template name="EffectIcon">
+    <frame type="Button">
+      <!-- s6-ui-core (round 62): the shared slot's picture, darker, the edge in the effect's colour (main.lua), the light -->
+      <slotart keys="bg, icon, border" bg="0.12, 0.12, 0.14, 0.9" inset="4"/>
+      <!-- an effect the effects table does not know -->
+      <label key="mark" text="?" size="12" colour="1, 0.6, 0.2" Font="12, OUTLINE"
+             Point="TOPRIGHT, @parent, TOPRIGHT, -2, -1"/>
+      <label key="time" text="" size="11" colour="white" Font="11, OUTLINE" Point="TOP, @parent, BOTTOM, 0, -1"/>
+      <!-- a right-click moves the effect to the other frame -->
+      <do RegisterForClicks="RightButtonUp"/>
+      <on script="OnClick" call="Reclassify"/>
+      <on script="OnEnter" call="Tip"/>
+      <on script="OnLeave" call="Untip"/>
+    </frame>
+  </template>
+
+  <!-- one running aether's row: its action's picture (or glyph), name, time left and bar (main.lua makes them as they
+       are needed); SIZES.row high with the gap -->
+  <template name="AetherRow">
+    <frame Height="22">
+      <frame key="box" Size="20, 20" Point="LEFT, @parent, LEFT, 2, 0">
+        <texture key="icon" layer="ARTWORK"/>
+        <label key="glyph" text="" size="12" colour="white" Font="12, OUTLINE" Point="CENTER, @parent, CENTER, 0, 0"/>
+      </frame>
+      <label key="name" text="" size="12" colour="white" justify="LEFT" Point="LEFT, @box, RIGHT, 6, 2"/>
+      <label key="time" text="" size="12" colour="1, 0.95, 0.6" justify="RIGHT" Font="12, OUTLINE"
+             Point="RIGHT, @parent, RIGHT, -4, 2"/>
+      <frame type="StatusBar" key="bar" Height="3" Point="BOTTOMLEFT, @box, BOTTOMRIGHT, 6, 0">
+        <do Point="BOTTOMRIGHT, @parent, BOTTOMRIGHT, -4, 1"/>
+        <do StatusBarTexture="tk:bar" StatusBarColor="0.9, 0.75, 0.3, 1" MinMaxValues="0, 1"/>
+      </frame>
+    </frame>
+  </template>
+
+  <!-- the three frames, each with its edit mode entry (main.lua's Register: its settings' key and its mover's title) -->
+  <frame name="TKBuffFrame" key="buffs" parent="UIParent">
+    <data key="icons"/>
+    <data key="rows"/>
+    <data key="edit" id="buffs" title="Buffs"/>
+    <run call="Register"/>
+    <on script="OnUpdate" call="TickIcons"/>
+  </frame>
+  <frame name="TKDebuffFrame" key="debuffs" parent="UIParent">
+    <data key="icons"/>
+    <data key="rows"/>
+    <data key="edit" id="debuffs" title="Debuffs"/>
+    <run call="Register"/>
+    <on script="OnUpdate" call="TickIcons"/>
+  </frame>
+  <frame name="TKAetherFrame" key="aethers" parent="UIParent">
+    <data key="icons"/>
+    <data key="rows"/>
+    <data key="edit" id="aethers" title="Aether List"/>
+    <run call="Register"/>
+    <backdrop bg="0.04, 0.04, 0.05, 0.75" edge="0, 0, 0, 0"/>
+    <!-- s6-ui-settings (round 4): the shared panel style; s6-ui-core (round 53): or the aether list's own -->
+    <run call="HudPanel"/>
+    <on script="OnUpdate" call="TickAethers"/>
+  </frame>
+
+  <frame key="events">
+    <do RegisterEvent="UNIT_AURA"/>
+    <do RegisterEvent="ACTIONBAR_UPDATE_COOLDOWN"/>
+    <do RegisterEvent="PLAYER_ENTERING_WORLD"/>
+    <do RegisterEvent="SPELLS_CHANGED"/>
+    <do RegisterEvent="BAG_UPDATE"/>
+    <!-- s6-ui-bars: the aethers' spell pictures -->
+    <do RegisterEvent="TK_DRAWING_STYLE_CHANGED"/>
+    <!-- s6-spell-icons: a spell's icon chosen in its editor -->
+    <do RegisterEvent="TK_SPELL_ICONS_CHANGED"/>
+    <on script="OnEvent" call="Changed"/>
+  </frame>
+</ui>

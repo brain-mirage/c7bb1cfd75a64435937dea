@@ -1,0 +1,9 @@
+{
+  "name": "playerframe",
+  "title": "Player Frame",
+  "version": "0.1.0",
+  "order": 20,
+  "description": "The player's plate at the top left: name, level and path, health and mana bars with optional numbers, and an optional experience bar.",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

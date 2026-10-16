@@ -1,0 +1,9 @@
+{
+  "name": "minimap",
+  "title": "Minimap",
+  "version": "0.1.0",
+  "order": 30,
+  "description": "The minimap at the top right with its clock, the zone name and the player's cell (the map window, M, is core/mapwindow.lua); the pictures come with the world view.",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

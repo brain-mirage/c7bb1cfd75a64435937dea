@@ -1,0 +1,9 @@
+{
+  "name": "bagbar",
+  "title": "Bag Bar",
+  "version": "0.1.0",
+  "order": 11,
+  "description": "The bag button with the number of free slots; it opens the bag (a placeholder for now).",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

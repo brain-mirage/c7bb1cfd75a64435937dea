@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's bag bar (its XML twin's layout; main.lua counts the free slots and opens the bag): one bag button showing how
+     many slots are free. Format: core/xml.md. Drawing only. -->
+<ui>
+  <frame name="TKBagBar" key="frame" parent="UIParent" Size="40, 40">
+    <frame type="Button" name="TKBagButton" Size="38, 38" Point="CENTER, @parent, CENTER, 0, 0">
+      <!-- s6-ui-core (round 62): the shared slot's picture, an action button's edge, the light; s6-ui-settings (the owner,
+           2026-10-03): the brown backpack, the Micro Menu's bag button's icon too -->
+      <slotart keys="_, icon" edge="slotActionEdge" inset="3" Texture="tk:backpack"/>
+      <label key="free" text="" size="11" colour="white" Font="11, OUTLINE" Point="BOTTOMRIGHT, @parent, BOTTOMRIGHT, -3, 3"
+             JustifyH="RIGHT"/>
+      <on script="OnClick" call="Open"/>
+      <on script="OnEnter" call="Tip"/>
+      <on script="OnLeave" call="Untip"/>
+    </frame>
+    <do RegisterEvent="BAG_UPDATE"/>
+    <do RegisterEvent="PLAYER_ENTERING_WORLD"/>
+    <on script="OnEvent" call="Changed"/>
+  </frame>
+</ui>

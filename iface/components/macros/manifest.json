@@ -1,0 +1,9 @@
+{
+  "name": "macros",
+  "title": "Macros",
+  "version": "0.1.0",
+  "order": 70,
+  "description": "WoW's macros (plan D27): a window to make, edit and delete the general macros (120, shared by every character here) and the character's own (18), each with a name, an icon and up to 255 characters of slash commands, and to drag them onto the action bars and the action wheel. #showtooltip shows what a macro would do.",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

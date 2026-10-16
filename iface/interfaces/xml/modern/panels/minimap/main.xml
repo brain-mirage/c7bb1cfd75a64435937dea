@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's minimap (its XML twin's layout; main.lua fills it from where the player is, zooms it and arranges the border
+     icons): the box with the mock world's grid and dot, the live picture, its N, the zone name and the cell, the
+     plugins' markers, the Map and zoom buttons, and the border icons (the time and weather, mail, parcels) that
+     border.lua drags along its edge. Format: core/xml.md. Drawing only; the Map button's and the mail and parcel icons'
+     presses are the game layer's (main.lua's MapPress and the borderitem element). -->
+<ui>
+  <!-- the live picture's key (main.lua zooms it and lays the markers out on it) -->
+  <data key="MINIMAP" value="live:minimap"/>
+  <!-- the border icons' side, about the bottom mail and parcel buttons' size (30 x 25); the zone name's line (12 with its
+       outline), which main.lua keeps clear of the icons -->
+  <data key="SIZES" icon="24" zone="14"/>
+
+  <!-- a line of the mock world's grid (main.lua's ApplySettings places them) -->
+  <template name="GridLine">
+    <texture layer="ARTWORK" ColorTexture="1, 1, 1, 0.07"/>
+  </template>
+
+  <frame name="TKMinimap" key="frame" parent="UIParent">
+    <!-- s6-input (round 49, separation step 4b): the interface's minimap, for the Debug page -->
+    <run call="SetFrame"/>
+    <backdrop bg="0.12, 0.2, 0.12, 0.9" edge="0.7, 0.62, 0.42, 1"/>
+    <!-- s6-ui-settings (round 4): the shared panel style; s6-ui-core (round 53): or its own -->
+    <run call="HudPanel"/>
+    <!-- the mock world's placeholder: a faint grid (six lines each way, f.lines: { down, across }) and the player's dot,
+         so it reads as a map -->
+    <texture key="grid[]" from="GridLine" Width="1"/>
+    <texture key="grid[]" from="GridLine" Height="1"/>
+    <texture key="grid[]" from="GridLine" Width="1"/>
+    <texture key="grid[]" from="GridLine" Height="1"/>
+    <texture key="grid[]" from="GridLine" Width="1"/>
+    <texture key="grid[]" from="GridLine" Height="1"/>
+    <texture key="grid[]" from="GridLine" Width="1"/>
+    <texture key="grid[]" from="GridLine" Height="1"/>
+    <texture key="grid[]" from="GridLine" Width="1"/>
+    <texture key="grid[]" from="GridLine" Height="1"/>
+    <texture key="grid[]" from="GridLine" Width="1"/>
+    <texture key="grid[]" from="GridLine" Height="1"/>
+    <run call="Grid"/>
+    <!-- s6-world-view (round 10): in a live session, the cached cells' picture (fog of war) with the player and the
+         objects in view; drawn by the world view, updated in place -->
+    <texture key="map" layer="ARTWORK" Point="TOPLEFT, @parent, TOPLEFT, 3, -3">
+      <do Point="BOTTOMRIGHT, @parent, BOTTOMRIGHT, -3, 3" Texture="@MINIMAP" Hide=""/>
+    </texture>
+    <texture key="dot" layer="OVERLAY" Size="10, 10" Point="CENTER, @parent, CENTER, 0, 0" Texture="tk:circle"
+             VertexColor="1, 0.85, 0.2, 1"/>
+    <label key="north" text="N" size="12" colour="gold" Font="12, OUTLINE" Point="TOP, @parent, TOP, 0, -7"/>
+    <label key="zone" text="" size="12" colour="gold" Font="12, OUTLINE" Point="BOTTOM, @parent, TOP, 0, 6"/>
+    <label key="coords" text="" size="10" colour="white" Font="10, OUTLINE" Point="BOTTOM, @parent, BOTTOM, 0, 5"/>
+    <!-- s6-world-view (round 17): the plugins' markers, over the picture -->
+    <frame key="marks" Point="TOPLEFT, @parent, TOPLEFT, 3, -3">
+      <do Point="BOTTOMRIGHT, @parent, BOTTOMRIGHT, -3, 3"/>
+      <run call="OverPicture"/>
+      <run call="Pins"/>
+    </frame>
+
+    <!-- The original's minimap button (MiniMapButtonPane, coverage G-40 and H-24): m's action (7C, by the rules), which
+         the map window follows (core/mapwindow.lua). Wire: its click and its action path are main.lua's MapPress and
+         MapAction (the game layer's one minimap press). -->
+    <button key="mapButton" text="Map" width="34" height="18" click="MapPress">
+      <run call="OverBox"/>
+      <do Point="BOTTOMLEFT, @parent, BOTTOMLEFT, 3, 3"/>
+      <run call="MapAction"/>
+      <!-- a button's one-line tooltip, opening to the left as the minimap's others do -->
+      <data key="tip" value="The map (M)"/>
+      <on script="OnEnter" call="ButtonTip"/>
+      <on script="OnLeave" call="Untip"/>
+    </button>
+    <!-- the zoom (the owner, 2026-10-01: + and - zoom, and no longer open the big map); the wheel zooms too -->
+    <button key="zoomIn" text="+" width="18" height="18" click="ZoomIn">
+      <run call="OverBox"/>
+      <data key="tip" value="Zoom in"/>
+      <on script="OnEnter" call="ButtonTip"/>
+      <on script="OnLeave" call="Untip"/>
+      <do Point="BOTTOMRIGHT, @parent, BOTTOMRIGHT, -3, 3"/>
+    </button>
+    <button key="zoomOut" text="-" width="18" height="18" click="ZoomOut">
+      <run call="OverBox"/>
+      <data key="tip" value="Zoom out"/>
+      <on script="OnEnter" call="ButtonTip"/>
+      <on script="OnLeave" call="Untip"/>
+      <do Point="BOTTOM, @zoomIn, TOP, 0, 2"/>
+    </button>
+    <!-- s6-gate round 19: named, so the gate's driver can click them (core/gatecontrols.lua logs the shown TK globals) -->
+    <run call="GateNames"/>
+    <do EnableMouseWheel="true"/>
+    <on script="OnMouseWheel" call="Wheel"/>
+
+    <!-- s6-world-view (round 19): the border icons. The time, then its weather icon on its right (s6-ui-core round 37,
+         the owner), in the bottom row; the icon's side and 44 for the time. -->
+    <borderitem name="TKMinimapClock" key="clock" at="timeAt" Size="68, 24">
+      <label key="time" text="" size="13" colour="white" justify="LEFT" Font="13, OUTLINE"
+             Point="LEFT, @parent, LEFT, 0, 0"/>
+      <texture key="icon" layer="OVERLAY" Size="@SIZES.icon, @SIZES.icon" Point="LEFT, @time, RIGHT, 4, 0"/>
+      <on script="OnEnter" call="ClockTip"/>
+      <on script="OnLeave" call="Untip"/>
+      <do Hide=""/>
+    </borderitem>
+    <!-- Mail and parcels: the ParcelPane's two controls (review r19); their presses are the borderitem element's (wire) -->
+    <borderitem name="TKMinimapMail" key="mail" at="mailAt" parcel="mail" Size="@SIZES.icon, @SIZES.icon">
+      <texture key="icon" layer="OVERLAY" AllPoints="@parent"/>
+      <on script="OnEnter" call="ParcelTip"/>
+      <on script="OnLeave" call="Untip"/>
+      <do Hide=""/>
+    </borderitem>
+    <borderitem name="TKMinimapParcel" key="parcel" at="parcelAt" parcel="parcel" Size="@SIZES.icon, @SIZES.icon">
+      <texture key="icon" layer="OVERLAY" AllPoints="@parent"/>
+      <on script="OnEnter" call="ParcelTip"/>
+      <on script="OnLeave" call="Untip"/>
+      <do Hide=""/>
+    </borderitem>
+    <!-- the icons in their order, the room the location label keeps, the pointer over an icon over the minimap -->
+    <run call="Border"/>
+
+    <do EnableMouse="true"/>
+    <on script="OnEnter" call="Tip"/>
+    <on script="OnLeave" call="Untip"/>
+    <!-- where the player is, read a few times a second; the labels change only when it does -->
+    <run call="Ticker"/>
+  </frame>
+</ui>

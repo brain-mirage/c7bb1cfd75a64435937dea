@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 7.x's parcel and letter buttons (their XML twin's layout; main.lua is their scripts), the original's ParcelPane: one
+     68 x 25 strip at (630, 726) on the 7.x screen, two panels, each its own frame, switch and place. Format: core/xml.md.
+     WIRE: the buttons' rectangles and controls (4a ParcelPane constructor 0x00546290, HandlePointerOrMouseEvent
+     0x00546610: 0 the parcel button, which sends 41, 1 the letter button, 3B 09, -1 a gap, which sends nothing) and the
+     frames' level over the chat bar decide which control a press or release reaches. Changing them changes what the server
+     sees. -->
+<ui>
+  <!-- the strip's top left on the 7.x screen -->
+  <data key="STRIP" value="630, 726"/>
+  <!-- ALERTBTN.EPF in ALERTBTN.PAL (OnPaint 0x00546890) -->
+  <data key="ART" file="ALERTBTN.EPF" palette="ALERTBTN.PAL"/>
+  <!-- each side: its panel (settings key and place), edit mode's label, its control, its part of the strip, its button's
+       rectangle in the strip, its blink's first frame and the frame it starts from (the parcels wait three ticks first:
+       m_leftAnimationFrame -3) -->
+  <data key="SIDES">
+    <side key="parcel" label="7.x Parcel Button" control="0" part="0, 0, 31, 25" button="0, 0, 30, 25" first="6" start="-3"/>
+    <side key="letter" label="7.x Letter Button" control="1" part="31, 0, 68, 25" button="31, 0, 62, 25" first="20" start="0"/>
+  </data>
+
+  <!-- a side's frame: over the chat bar, whose typing area runs under the strip (main.lua's note) -->
+  <template name="TK7xParcelSide">
+    <frame parent="UIParent" FrameStrata="LOW" FrameLevel="12"/>
+  </template>
+
+  <!-- the parcel panel, the strip's left part (0, 0)-(31, 25) -->
+  <frame from="TK7xParcelSide" name="TK7xParcel" Size="31, 25" EnableMouse="true">
+    <on script="OnMouseDown" call="Press"/>
+    <on script="OnMouseUp" call="Release"/>
+    <do Hide=""/>
+    <data key="side" value="1"/>
+    <run call="Side"/>
+  </frame>
+  <!-- the letter panel, its right part (31, 0)-(68, 25) -->
+  <frame from="TK7xParcelSide" name="TK7xLetter" Size="37, 25" EnableMouse="true">
+    <on script="OnMouseDown" call="Press"/>
+    <on script="OnMouseUp" call="Release"/>
+    <do Hide=""/>
+    <data key="side" value="2"/>
+    <run call="Side"/>
+  </frame>
+  <!-- the pane's timer (main.lua's Tick) -->
+  <frame key="driver" parent="UIParent">
+    <on script="OnUpdate" call="Tick"/>
+    <run call="Own"/>
+  </frame>
+</ui>

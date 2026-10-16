@@ -1,0 +1,9 @@
+{
+  "name": "audio",
+  "title": "Sound",
+  "version": "0.1.0",
+  "order": 91,
+  "description": "Fills the UI's Sound settings node (volumes, the background mute, the MIDI sound bank) and adds a Test tab that plays any effect, zone music or MIDI track by number; music for the login screen and the world; the button click. The sound itself is C# (TK.Unity.Audio.AudioHost).",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

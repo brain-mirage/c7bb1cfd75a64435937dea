@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's party frames (their XML twin's layout; main.lua fills the plates from the roster, lays them out in the
+     chosen direction and previews a hovered spell): the container edit mode moves, and one plate per member with its
+     head, name, level and path, health and mana bars. Format: core/xml.md. Drawing only. -->
+<ui>
+  <!-- a plate's height, the head's box, the name's and the bars' tops below the plate's top (s6-ui-font) and the health
+       bar's height; main.lua's Layout places by them -->
+  <data key="SIZES" height="44" portrait="36" nameTop="5" barsTop="21" hp="12"/>
+
+  <!-- one member's plate (main.lua makes C.MAX of them, TKPartyMember1...) -->
+  <template name="Plate">
+    <frame>
+      <backdrop bg="0.04, 0.04, 0.05, 0.85" edge="0.45, 0.45, 0.5, 1"/>
+      <!-- s6-ui-settings (round 4): the shared panel style; s6-ui-core (round 53): or its own -->
+      <run call="HudPanel"/>
+      <!-- the member's head, as the original's group tab draws it (s6-characters' "member" portrait from 0x63) -->
+      <frame key="portraitBox" Size="@SIZES.portrait, @SIZES.portrait" Point="LEFT, @parent, LEFT, 4, 0">
+        <backdrop bg="0, 0, 0, 0.6" edge="false" bgfile="tk:white"/>
+        <texture key="portrait" layer="ARTWORK" Point="BOTTOM, @parent, BOTTOM, 0, 1"/>
+      </frame>
+      <!-- the name in the original's own font, right of the head (its width + 9), SIZES.nameTop below the top -->
+      <label key="name" text="" size="12" colour="white" justify="LEFT" Font="classic, 12, "
+             Point="TOPLEFT, @parent, TOPLEFT, 45, -5"/>
+      <label key="info" text="" size="10" colour="0.75, 0.75, 0.8" justify="RIGHT"
+             Point="TOPRIGHT, @parent, TOPRIGHT, -7, -6"/>
+      <!-- placed by main.lua's Layout, under the name (s6-ui-font) -->
+      <bar key="hp" height="@SIZES.hp" colour="0.15, 0.75, 0.15" textsize="10"/>
+      <bar key="mp" height="7" colour="0.2, 0.45, 0.95" textsize="10">
+        <run call="NoText"/>
+        <do Point="TOPLEFT, @hp, BOTTOMLEFT, 0, -2"/>
+        <do Point="TOPRIGHT, @hp, BOTTOMRIGHT, 0, -2"/>
+      </bar>
+      <!-- the member's tooltip (head note 40): what the group list sends, nothing more -->
+      <do EnableMouse="true"/>
+      <on script="OnEnter" call="Tip"/>
+      <on script="OnLeave" call="Untip"/>
+      <!-- s6-rules-dialogs: a right-click on a member opens the player menu (D-56; the model decides) -->
+      <on script="OnMouseDown" call="PlayerMenu"/>
+      <do Hide=""/>
+    </frame>
+  </template>
+
+  <frame name="TKPartyFrame" key="frame" parent="UIParent">
+    <run call="Plates"/>
+    <do RegisterEvent="GROUP_ROSTER_UPDATE"/>
+    <do RegisterEvent="UNIT_HEALTH"/>
+    <do RegisterEvent="UNIT_POWER"/>
+    <do RegisterEvent="UNIT_NAME_UPDATE"/>
+    <do RegisterEvent="PLAYER_ENTERING_WORLD"/>
+    <do RegisterEvent="TK_EDIT_MODE"/>
+    <!-- s6-ui-font: the plates laid out again (the name's height can change with the scale) -->
+    <do RegisterEvent="UI_SCALE_CHANGED"/>
+    <!-- s6-ui-core (round 82): the preview follows the target -->
+    <do RegisterEvent="PLAYER_TARGET_CHANGED"/>
+    <!-- the portraits' pictures come a moment after the group list: they are looked at a few times a second -->
+    <run call="PortraitTicker"/>
+    <on script="OnEvent" call="Changed"/>
+  </frame>
+</ui>

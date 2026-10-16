@@ -1,0 +1,9 @@
+{
+  "name": "worldrenderer",
+  "title": "World Renderer",
+  "version": "0.1.0",
+  "order": 913,
+  "description": "s6-modular (round 13): the Experimental tab's world renderer (Normal, or a mode of an installed renderer module, TK.Modular.Draw.WorldRenderers) and its options; the bindable Next World Renderer and the renderers' own actions.",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

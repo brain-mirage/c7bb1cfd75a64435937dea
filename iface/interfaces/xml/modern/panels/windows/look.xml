@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's look window (its XML twin's layout; look.lua fills it from the look the server sent and turns its views):
+     the player's name and header, the figure's box and the identity lines, the Trade and Group buttons, the four views as
+     tabs (Info, Equipment, Profile, Legend) and Close. Format: core/xml.md. Drawing only, but for the Trade and Group
+     buttons' actions (the game layer's look actions, marked where attached). -->
+<ui>
+  <!-- The figure's background (0xRRGGBB), the box it is painted onto, as the character window's. -->
+  <data key="BG" value="0x1C, 0x1C, 0x21"/>
+  <!-- the views in their order (the tabs below; PgUp and PgDn step through them) -->
+  <data key="VIEWS" value="info, equipment, profile, legend"/>
+  <!-- UserLookPane::OnPaint, view 1: each record's place in the 3 x 5 grid (column, row), in the packet's order (weapon,
+       armour, shield, helm, the two accessories, the two sub-accessories, face, crown, mantle, necklace, boots, coat). -->
+  <data key="GRID">
+    <cell x="0" y="1"/> <cell x="1" y="1"/> <cell x="2" y="1"/> <cell x="1" y="0"/> <cell x="2" y="2"/>
+    <cell x="0" y="2"/> <cell x="0" y="3"/> <cell x="2" y="3"/> <cell x="0" y="0"/> <cell x="2" y="0"/>
+    <cell x="1" y="2"/> <cell x="0" y="4"/> <cell x="1" y="4"/> <cell x="1" y="3"/>
+  </data>
+
+  <!-- an equipment record's slot, at its place in the grid (look.lua's SlotPlace) -->
+  <template name="Slot">
+    <frame Size="34, 34">
+      <run call="SlotPlace"/>
+      <!-- s6-ui-core (round 62): the shared slot's picture, an item's edge -->
+      <slotart keys="_, icon"/>
+      <do EnableMouse="true"/>
+      <on script="OnEnter" call="SlotTip"/>
+      <on script="OnLeave" call="Untip"/>
+    </frame>
+  </template>
+
+  <template name="Window">
+    <panel name="TKLookWindow" parent="UIParent">
+      <!-- (as the character window: made by the shared widgets, it goes with the windows) -->
+      <run call="Own"/>
+      <do FrameStrata="DIALOG" Size="300, 524" Point="CENTER, @parent, CENTER, 260, 40" EnableMouse="true"
+          Movable="true" ClampedToScreen="true" RegisterForDrag="LeftButton"/>
+      <on script="OnDragStart" call="DragStart"/>
+      <on script="OnDragStop" call="DragStop"/>
+      <label key="name" text="" size="16" colour="white" Point="TOP, @parent, TOP, 0, -12"/>
+      <label key="header" text="" size="12" colour="gold" Point="TOP, @name, BOTTOM, 0, -4"/>
+      <frame key="box" Size="120, 190" Point="TOPLEFT, @parent, TOPLEFT, 12, -54">
+        <!-- painted in the figure's background (BG) -->
+        <run call="BoxBackdrop"/>
+        <texture key="figure" layer="ARTWORK" Point="BOTTOM, @parent, BOTTOM, 0, 8"/>
+      </frame>
+      <!-- (the figure is the window's: frame.figure) -->
+      <run call="Figure"/>
+      <label key="lines" text="" size="11" colour="0.85, 0.85, 0.85" justify="LEFT" WordWrap="true" Width="144"
+             Point="TOPLEFT, @box, TOPRIGHT, 12, -2"/>
+      <!-- The original's action buttons 0 (Trade) and 1 (Group): each the game layer's look action (its kind; look.lua's
+           ActionButton, on the left press: wire), with its tooltip (tip: the title and the line). -->
+      <button key="trade" text="Trade" width="124" height="22">
+        <data key="kind" value="look:trade"/>
+        <run call="ActionButton"/>
+        <data key="tip" title="Trade" text="Asks this player to trade (4A 00 and the player's id)."/>
+        <on script="OnEnter" call="ActionTip"/>
+        <on script="OnLeave" call="Untip"/>
+        <do Point="BOTTOMLEFT, @box, BOTTOMRIGHT, 12, 30"/>
+      </button>
+      <button key="group" text="Group" width="124" height="22">
+        <data key="kind" value="look:group"/>
+        <run call="ActionButton"/>
+        <data key="tip" title="Group" text="Invites this player to your group (2E and the name)."/>
+        <on script="OnEnter" call="ActionTip"/>
+        <on script="OnLeave" call="Untip"/>
+        <do Point="TOPLEFT, @trade, BOTTOMLEFT, 0, -6"/>
+      </button>
+      <!-- Named for the gate's driver (s6-gate round 37, H-17): gate mode logs a named control's place while it shows
+           (core/gatecontrols.lua), so the gate can click these as it clicks the original's look page. Names only. -->
+      <run call="GateNames"/>
+
+      <!-- The four views, as tabs (s6-ui-core round 61: the shared tab), each with its page. -->
+      <data key="tabs"/>
+      <data key="views"/>
+      <tab text="Info" width="66" height="20" click="ShowView" Point="TOPLEFT, @box, BOTTOMLEFT, 0, -10">
+        <data key="id" value="info"/>
+        <run call="Tab"/>
+      </tab>
+      <panel inner="true" Point="TOPLEFT, @box, BOTTOMLEFT, 0, -36" Size="276, 200" Hide="">
+        <data key="id" value="info"/>
+        <run call="View"/>
+      </panel>
+      <tab text="Equipment" width="66" height="20" click="ShowView" Point="TOPLEFT, @box, BOTTOMLEFT, 70, -10">
+        <data key="id" value="equipment"/>
+        <run call="Tab"/>
+      </tab>
+      <panel inner="true" Point="TOPLEFT, @box, BOTTOMLEFT, 0, -36" Size="276, 200" Hide="">
+        <data key="id" value="equipment"/>
+        <run call="View"/>
+      </panel>
+      <tab text="Profile" width="66" height="20" click="ShowView" Point="TOPLEFT, @box, BOTTOMLEFT, 140, -10">
+        <data key="id" value="profile"/>
+        <run call="Tab"/>
+      </tab>
+      <panel inner="true" Point="TOPLEFT, @box, BOTTOMLEFT, 0, -36" Size="276, 200" Hide="">
+        <data key="id" value="profile"/>
+        <run call="View"/>
+      </panel>
+      <tab text="Legend" width="66" height="20" click="ShowView" Point="TOPLEFT, @box, BOTTOMLEFT, 210, -10">
+        <data key="id" value="legend"/>
+        <run call="Tab"/>
+      </tab>
+      <panel inner="true" Point="TOPLEFT, @box, BOTTOMLEFT, 0, -36" Size="276, 200" Hide="">
+        <data key="id" value="legend"/>
+        <run call="View"/>
+      </panel>
+
+      <!-- View 0: the more-info text -->
+      <label key="moreInfo" parent="@root.views.info" text="" size="12" colour="white" justify="LEFT" WordWrap="true"
+             Width="256" Point="TOPLEFT, @root.views.info, TOPLEFT, 10, -10"/>
+      <!-- View 1: the fourteen items where the original's view 1 draws them (GRID) -->
+      <run call="Slots"/>
+      <!-- View 2: the portrait (48 x 56, shown twice its size) or the original's FACE.EPF without one, and the profile. -->
+      <texture key="portrait" parent="@root.views.profile" layer="ARTWORK" Size="96, 112"
+               Point="TOPLEFT, @root.views.profile, TOPLEFT, 10, -10"/>
+      <label key="profile" parent="@root.views.profile" text="" size="12" colour="white" justify="LEFT" WordWrap="true"
+             Width="150" Point="TOPLEFT, @portrait, TOPRIGHT, 10, 0"/>
+      <!-- View 3: the legend's marks -->
+      <legendlist key="legend" parent="@root.views.legend" width="264" height="188"/>
+      <run call="LegendPlace"/>
+
+      <button key="close" text="Close" width="90" height="22" style="red" click="Close"
+              Point="BOTTOM, @parent, BOTTOM, 0, 10"/>
+      <run call="Escape"/>
+      <do Hide=""/>
+      <!-- The figure is looked at again while the window shows (its picture follows the drawing's state), every 0.2 s as
+           the look driver did before round 12 (a new look is the game layer's: TK.Game.Views' driver opens the view). -->
+      <run call="Ticker"/>
+    </panel>
+  </template>
+</ui>

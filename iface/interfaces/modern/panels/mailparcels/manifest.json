@@ -1,0 +1,9 @@
+{
+  "name": "mailparcels",
+  "title": "Mail and Parcels",
+  "version": "0.1.0",
+  "order": 31,
+  "description": "The original's parcel and letter buttons, which blink while a parcel or a letter waits. Off by default: the minimap's mail and parcel icons do the same.",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

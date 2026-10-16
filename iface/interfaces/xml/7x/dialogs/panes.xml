@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 7.x's look of the popups (its XML twin's layout; panes.lua draws with it), from Source-5's class pages: the player
+     menu (RightButtonMenuPane: OnPaint 0x00554FC0, DrawBorder 0x00555370, GetRightButtonMenuItemRect 0x005556A0), the
+     Menu popup (MenuVarietySelectPane: OnPaint 0x005BD3C0, DrawFrame 0x005BD630, GetItemRect 0x005BD960), the server's
+     timer (TimerPane) and the transfer's animation (TransferServerDialogPane). Format: core/xml.md; points are (x, y) on
+     the 7.x screen or the popup, rectangles (left, top, right, bottom).
+     WIRE: each row's control takes the press on 4a's rectangle for it (the player menu's (0, 22 + 16 n)-(79, 38 + 16 n)
+     for n 0-4, so Info's is the empty line above its text and a press on the text is the menu's; the Menu popup's (0, 6 +
+     16 n)-(79, 22 + 16 n)), as HitTestRightButtonMenuItem and MenuVarietySelectPane::HitTest walk them. Changing a
+     rectangle changes which control a press reaches, so what the client sends. -->
+<ui>
+  <!-- a popup: SUBWIN.EPF in SUBWIN.PAL, 7-pixel tiles; its texts drawn twice a pixel apart (bold) from x 15; the row
+       under the pointer outlined from x 5 to 74, 16 high -->
+  <data key="POPUP" file="SUBWIN.EPF" palette="SUBWIN.PAL" tile="7" label="15" outlineLeft="5" outlineRight="74"
+        outlineHeight="16"/>
+
+  <!-- the player menu: 79 x 126 at (x - 2, y - 2) of the press on the screen ((x - 50, y - 50) in the map pane at (-48,
+       -48)); the target's name centred by 6 pixels a character (3 a half) on a bar (4, 9)-(75, 22) in 0x80, on the line
+       21 in 0x8F; the rows from 22, 16 apart; Look, Trade, Whisper, Group and Info on the lines 37, 53, 69, 85 and 117
+       (Info a line further down than its row) -->
+  <data key="PlayerMenu">
+    <data key="size" value="79, 126"/>
+    <data key="bar" value="4, 9, 75, 22"/>
+    <data key="name" x="39" line="21" colour="0x8F" half="3"/>
+    <data key="rows" top="22" step="16"/>
+    <data key="lines" value="37, 53, 69, 85, 117"/>
+    <data key="open" value="-2, -2"/>
+  </data>
+
+  <!-- the Menu popup: 79 x 172 at (735, 555); its ten rows from 6, 16 apart, on the lines 21 + 16 n -->
+  <data key="MenuPopup">
+    <data key="size" value="79, 172"/>
+    <data key="rows" top="6" step="16" line="21"/>
+    <data key="open" value="735, 555"/>
+  </data>
+
+  <!-- D-71 (s6-interface-7x-b, round 7): the server's timer (TimerPane, TimerPane.cpp:14-137; MapPane.cpp:5544-5548 makes
+       it at (325, 15)): 35 pixels a glyph (5 for MM:SS) by 70; the digits 15 pixels below its top (DrawDigit: NUMBER.EPF
+       in BARAM.PAL, 10 the colon); each frame's rectangle's left and top, 7.5.2's NUMBER.EPF's (digit 0 first) -->
+  <data key="Timer" at="325, 15" glyph="35" height="70" glyphs="5" top="15" file="NUMBER.EPF" palette="BARAM.PAL">
+    <data key="digits">
+      <at x="2" y="1"/>
+      <at x="1" y="1"/>
+      <at x="2" y="1"/>
+      <at x="2" y="1"/>
+      <at x="0" y="1"/>
+      <at x="2" y="1"/>
+      <at x="2" y="1"/>
+      <at x="2" y="1"/>
+      <at x="2" y="1"/>
+      <at x="2" y="1"/>
+      <at x="7" y="5"/>
+    </data>
+  </data>
+
+  <!-- D-75 (s6-interface-7x-b, round 7): the transfer's animation (TransferServerDialogPane.cpp:14-48): TRANSSVR.EPF's
+       frames' union, 252 x 238, at (314, 280) in the world, (470, 356) without the map (the login's, and the menu's 5E:
+       s6-rules-dialogs round 38) -->
+  <data key="Transfer" size="252, 238" world="314, 280" login="470, 356"/>
+</ui>

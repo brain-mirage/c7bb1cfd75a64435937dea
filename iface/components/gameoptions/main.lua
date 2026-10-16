@@ -1,0 +1,7 @@
+-- Game Options (plan D19; the original's options tab, NewOptionPane, tab 6, opened by F10): the General tab's settings
+-- page (settings.lua). s6-play-modes (round 8, interface-separation step 4, section 5.8): the logic is the game layer's
+-- (core/game/options.lua, TK.Game.Options: the switches, the server's state, a row's press, the option keys, the F1 swap
+-- and the opener, with the rows' table and their wire). s6-modular-g (round 17, step 7): Modern's window is in Modern's
+-- folder (interfaces/modern/panels/windows/gameoptions.lua), the game layer's fallback window; this component stays
+-- global (section 4.3). s6-interface-5x (round 15, step 9): its old names, forwarders to the game layer, went; its code
+-- is its settings page's.

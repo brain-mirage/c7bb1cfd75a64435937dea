@@ -1,0 +1,12 @@
+# Spring Tavern (map 332), an interior of Buya: what its own cells need beyond the base hints. Applies only when the
+# map the server sends passes the check (3.5).
+
+[check]
+size = "30x14"
+
+# indoors (s6-effects round 2, the test server's MapIndoor): no sky, so no clouds, wind or lightning
+[map]
+indoor = true
+outdoor = 330 # Buya, through its doors (the test server's warps)
+
+# Its void and blocked floor lie flat by the base hints (round 9; round 7 had them here).

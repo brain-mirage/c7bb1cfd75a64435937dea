@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's look of the dialogs (its XML twin's layout; init.lua places with it): the default look as it is, with only
+     what names Modern's own frames. Format: core/xml.md. Drawing only. -->
+<ui>
+  <!-- D-55: the Menu popup's bottom right 4 pixels above its micro menu's top right (TKMicroMenu; the default's corner
+       while the micro menu is off) -->
+  <data key="MENU_POPUP" point="BOTTOMRIGHT" relative="TOPRIGHT" x="0" y="4"/>
+</ui>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 7.x's minimap button (its XML twin's layout; main.lua takes its click): the original's MiniMapButtonPane
+     (ui/MapNamePane.cpp) at (6, 6)-(34, 34) on the 7.x screen, in the frame layer over the map view's corner
+     (MainMenuPane::InitializeMainUiGraph). Format: core/xml.md. -->
+<ui>
+  <!-- its top left on the 7.x screen (Screen.PlacePanel follows the scaled screen until the player moves it) -->
+  <data key="PLACE" value="6, 6"/>
+  <!-- MMAPBUT.EPF in FRMPART.PAL at its top left: frame 1 while a press made on it is held over it, else 0 (OnPaint
+       0x00503650) -->
+  <data key="ART" file="MMAPBUT.EPF" palette="FRMPART.PAL" up="0" held="1" x="0" y="0" layer="ARTWORK"/>
+
+  <!-- the frame layer, over the map view.
+       WIRE (main.lua's note; s6-interface-7x-b round 2, s6-input round 51): it claims the left button's single presses
+       only (MapNamePane.cpp:189's case 1: the right button and a double click's second press are the map's), and every
+       left release over it is its own (case 3 returns true for any release in it, MapNamePane.cpp:200), so a control
+       under it gets none (no 41 or 3B 09). Its release runs m's action (Action, main.lua). Changing these changes what
+       the server sees. -->
+  <frame name="TK7xMinimapButton" key="frame" parent="UIParent" FrameStrata="LOW" FrameLevel="10" Size="28, 28"
+         ClaimButtons="LeftButton" PassesDoubles="true" TakesEveryRelease="true">
+    <run call="Action"/>
+    <on script="OnMouseDown" call="Press"/>
+    <on script="OnMouseUp" call="Release"/>
+    <on script="OnUpdate" call="Update"/>
+    <do Hide=""/>
+  </frame>
+</ui>

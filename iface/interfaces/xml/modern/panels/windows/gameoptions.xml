@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's Game Options window (its XML twin's layout; gameoptions.lua turns its pages and shows the states): the
+     original's options tab (NewOptionPane) as a window of its rows on its two pages, the page stepper. Format:
+     core/xml.md. Drawing only, but for each row's action and press (the game layer's TK.Game.Options.Press) and the
+     window's shown state for the dialogs (marked where attached). -->
+<ui>
+  <!-- a row's check box (gameoptions.lua's row gives its text, its row number and its place: @with) -->
+  <template name="Row">
+    <check text="@with.text" change="Refresh">
+      <run call="Row"/>
+    </check>
+  </template>
+
+  <template name="Window">
+    <window name="TKGameOptions" title="Game Options" width="380" height="440">
+      <do Point="CENTER, @parent, CENTER, 0, 60"/>
+      <run call="Own"/>
+      <!-- The tab's two pages (NewOptionPane: field_12B8 = 2), each row on its own (BuildOptionRows); the arrows (rows 0
+           and 1) and PgUp and PgDn (HandleKeyOrTextEvent, OptionPane.cpp:963) turn them. -->
+      <frame key="first" AllPoints="@parent"/>
+      <frame key="second" AllPoints="@parent"/>
+      <run call="Pages"/>
+      <label parent="@second" text="This computer:" size="12" colour="0.75, 0.75, 0.75" justify="LEFT"
+             Point="TOPLEFT, @root, TOPLEFT, 18, -40"/>
+      <label parent="@first" text="Kept by the server: a click asks it to turn the option over." size="12"
+             colour="0.75, 0.75, 0.75" justify="LEFT" Point="TOPLEFT, @root, TOPLEFT, 18, -40"/>
+      <!-- the server's rows, two to a line: the box shows the server's state, not the click; it changes when the server
+           answers -->
+      <run call="ServerRows"/>
+      <label parent="@first" text="This computer:" size="12" colour="0.75, 0.75, 0.75" justify="LEFT"
+             Point="TOPLEFT, @root, TOPLEFT, 18, -184"/>
+      <!-- the local rows: page 1's in two columns under the server's, page 2's in one -->
+      <run call="LocalRows"/>
+      <label parent="@first" text="System:" size="12" colour="0.75, 0.75, 0.75" justify="LEFT"
+             Point="TOPLEFT, @root, TOPLEFT, 18, -326"/>
+      <!-- the system radio: Low, High, Manual (rows 20-22) -->
+      <run call="SystemRows"/>
+      <label parent="@first" text="Low and High also set magic and weather on the server." size="11"
+             colour="0.6, 0.6, 0.6" justify="LEFT" Point="BOTTOMLEFT, @root, BOTTOMLEFT, 18, 40"/>
+      <!-- s6-ui-core (round 62; s6-optimize's plan step 4): the page arrows are the shared stepper, the page between
+           them; its parts keep their names (window.back, window.on, window.pageLabel). Changing a page sends nothing. -->
+      <stepper step="Page" valuewidth="72" size="11" colour="0.6, 0.6, 0.6"
+               Point="BOTTOMRIGHT, @parent, BOTTOMRIGHT, -16, 12">
+        <run call="Stepper"/>
+      </stepper>
+      <run call="FirstPage"/>
+      <!-- The server's answer comes as 0x23 or in 0x08: an open window looks a few times a second. -->
+      <on script="OnUpdate" call="Poll"/>
+      <!-- s6-rules-dialogs. Wire: while the options tab shows, the server's "saved" (S 0x21) opens the tab's modal alert
+           in place of the saved notice (NewOptionPane::HandlePacketEvent 0x00540DB0); until it closes it takes the keys,
+           and a click outside it goes on to the side panel (DialogPane::HandlePointerOrMouseEvent 0x0049E240). Changing
+           when these two hooks run (gameoptions.lua's Shown and Hidden) changes what the client sends after a 0x21. -->
+      <on script="OnShow" call="Shown" hook="true"/>
+      <on script="OnHide" call="Hidden" hook="true"/>
+    </window>
+  </template>
+</ui>

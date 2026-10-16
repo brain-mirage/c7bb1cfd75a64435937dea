@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 5.x's screen (its XML twin's layout; main.lua places, shows and updates it): NexusTK 5.33's 640 x 480 screen
+     (MainMenuPane::InitializeMainUiGraph 0x00457530) scaled to fit the window, its pieces 5.33's panes there, each a panel
+     with its own frame, Layout tab and edit-mode place. Format: core/xml.md. Drawing only: nothing here is sent. -->
+<ui>
+  <!-- 5.33's map view, (14, 12)-(422, 372): MapPane(17, 15) at (-10, -12)-(446, 396), its 24-pixel cells one beyond each
+       edge, so the 17 x 15 the server sends fill 408 x 360 (decision 2026-10-04-5x-world-in-the-map-view) -->
+  <data key="MAP_VIEW" value="14, 12, 422, 372"/>
+  <!-- HourPane's frame of TIME.EPF for each two hours (word_550678: hour / 2 % 12 indexes it) -->
+  <data key="HOUR_FRAMES" value="10, 11, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9"/>
+  <!-- the map name: fitted to 133 pixels with "..." (GrafPort::FitTextAndAppendSuffix), centred by font 0's advances, its
+       line's glyphs ending at the pane's bottom (MapNamePane::HandlePacketEvent 0x0045FC80) -->
+  <data key="MAP_NAME" fit="133" top="1"/>
+
+  <!-- The pieces in the order they are made, each: its settings' key, its panel id (its place is "5x.<id>"), edit mode's
+       label and its rectangle on the screen (main.lua's Piece). The frame layer (LOW) unless it says. -->
+
+  <!-- the backdrop: BackPane (0x00404B50), FRAME.EPF in NPAL5.PAL over the whole screen, under the world view -->
+  <frame name="TK5xBackdrop" key="backdrop" parent="UIParent" FrameStrata="BACKGROUND" FrameLevel="0" Size="640, 480">
+    <data key="piece" setting="backdrop" id="backdrop" label="5.x Backdrop" rect="0, 0, 640, 480"/>
+    <!-- what FRAME.EPF leaves undrawn (its map view, chat and prompt line) is the screen's black -->
+    <texture layer="BACKGROUND" AllPoints="@parent" ColorTexture="0, 0, 0, 1"/>
+    <picture file="FRAME.EPF" frame="0" palette="NPAL5.PAL" x="0" y="0"/>
+    <run call="Piece"/>
+  </frame>
+  <!-- the border: BuildAboveFrameBorder (0x004011D0), thirteen AboveFrame pieces of FRMPART.EPF in NPAL5.PAL, the corners
+       and the top bar at (14, 12), (125, 12), (378, 12), five side pieces each at (14, y + 6) and (420, y) for y from 92
+       by 63 (AboveFrame(frame, top, left) offsets the frame's own rectangle, (0, 0) in every frame, by (left, top)); each
+       at its place less the piece's (14, 12) -->
+  <frame name="TK5xBorder" key="border" parent="UIParent" FrameStrata="LOW" Size="408, 359">
+    <data key="piece" setting="border" id="border" label="5.x Border" rect="14, 12, 422, 371"/>
+    <picture key="pieces[]" file="FRMPART.EPF" frame="0" palette="NPAL5.PAL" x="0" y="0"/>
+    <picture key="pieces[]" file="FRMPART.EPF" frame="1" palette="NPAL5.PAL" x="111" y="0"/>
+    <picture key="pieces[]" file="FRMPART.EPF" frame="2" palette="NPAL5.PAL" x="364" y="0"/>
+    <picture key="pieces[]" file="FRMPART.EPF" frame="3" palette="NPAL5.PAL" x="0" y="86"/>
+    <picture key="pieces[]" file="FRMPART.EPF" frame="4" palette="NPAL5.PAL" x="406" y="80"/>
+    <picture key="pieces[]" file="FRMPART.EPF" frame="3" palette="NPAL5.PAL" x="0" y="149"/>
+    <picture key="pieces[]" file="FRMPART.EPF" frame="4" palette="NPAL5.PAL" x="406" y="143"/>
+    <picture key="pieces[]" file="FRMPART.EPF" frame="3" palette="NPAL5.PAL" x="0" y="212"/>
+    <picture key="pieces[]" file="FRMPART.EPF" frame="4" palette="NPAL5.PAL" x="406" y="206"/>
+    <picture key="pieces[]" file="FRMPART.EPF" frame="3" palette="NPAL5.PAL" x="0" y="275"/>
+    <picture key="pieces[]" file="FRMPART.EPF" frame="4" palette="NPAL5.PAL" x="406" y="269"/>
+    <picture key="pieces[]" file="FRMPART.EPF" frame="3" palette="NPAL5.PAL" x="0" y="338"/>
+    <picture key="pieces[]" file="FRMPART.EPF" frame="4" palette="NPAL5.PAL" x="406" y="332"/>
+    <run call="Piece"/>
+  </frame>
+  <!-- the map name: MapNamePane (151, 0)-(284, 12), white over the border's top bar (its paint as 4a's classic branch;
+       its fill of colour 0 is 5.33's transparent key in this keyed pane, so none is drawn: main.lua) -->
+  <frame name="TK5xMapName" key="mapName" parent="UIParent" FrameStrata="LOW" Size="133, 12">
+    <data key="piece" setting="mapName" id="mapname" label="5.x Map Name" rect="151, 0, 284, 12"/>
+    <skintext key="text" colour="WHITE" layer="ARTWORK" WordWrap="false" JustifyH="LEFT"/>
+    <run call="Piece"/>
+  </frame>
+  <!-- the clock: HourPane (14, 375)-(43, 387), TIME.EPF, a picture every two hours (HourPane::OnPaint 0x00442420), black
+       while the hour is unknown; a right press shows the hour's help line -->
+  <frame name="TK5xClock" key="clock" parent="UIParent" FrameStrata="LOW" Size="29, 12">
+    <data key="piece" setting="clock" id="clock" label="5.x Clock" rect="14, 375, 43, 387"/>
+    <fill key="back" index="TEXT" layer="BACKGROUND" AllPoints="@parent"/>
+    <run call="ClockHelp"/>
+    <run call="Piece"/>
+  </frame>
+</ui>

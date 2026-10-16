@@ -1,0 +1,10 @@
+# Made by tools/reprojection/map_shapes.py (s6-reprojection-b round 6): edit the script, not this file.
+# Chil-mudum crypt (map 2207): its own cells beyond the base hints. Applies only when the map the server sends passes
+# the check (3.5).
+
+[check]
+size = "32x32"
+
+# Indoors (s6-effects, from the test server's own MapIndoor flag): no sky, so no clouds, wind or lightning.
+[map]
+indoor = true

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's bag window (its XML twin's layout; window.lua shows the slots in the view the settings choose, scrolls it
+     and pages it): the 52 slots' grid cells and the list's rows, the range and the gold, the gold commands, and the
+     original's four buttons (List, Grid, Expand, Mix). Format: core/xml.md. Drawing only; each slot's input path, the
+     carry and the Mix button's action are the game layer's (TK.Game.Inventory), marked where they are attached. -->
+<ui>
+  <!-- the slots; the grid's columns, a cell's side and the gap between cells; a list row's step; the window's width (the
+       13 columns' span and 32 of margin) -->
+  <data key="BAG" slots="52" cols="13" size="38" gap="4" row="22" width="574"/>
+  <!-- The lines a view shows at once, compact and expanded: the original's list has 13 rows, 26 expanded
+       (RebuildInventoryList); the grid keeps our 13 columns, 2 lines compact and all 4 expanded. -->
+  <data key="LINES">
+    <data key="grid" compact="2" expanded="4"/>
+    <data key="list" compact="13" expanded="26"/>
+  </data>
+
+  <!-- a grid cell (TKBagSlot1...) -->
+  <template name="Cell">
+    <frame type="Button" Size="@BAG.size, @BAG.size">
+      <!-- s6-ui-core (round 62): the shared slot's picture, an item's edge, the light -->
+      <slotart keys="bg, icon, edge"/>
+      <label key="glyph" text="" size="18" colour="white" Font="18, OUTLINE" Point="CENTER, @parent, CENTER, 0, 1"/>
+      <label key="letter" text="" size="10" colour="0.85, 0.85, 0.85" justify="LEFT" Font="10, OUTLINE"
+             Point="TOPLEFT, @parent, TOPLEFT, 3, -2"/>
+      <label key="count" text="" size="11" colour="white" justify="RIGHT" Font="11, OUTLINE"
+             Point="BOTTOMRIGHT, @parent, BOTTOMRIGHT, -3, 3"/>
+      <!-- its place in the grid, and its input path (the game layer's slot control; wire, window.lua's Cell) -->
+      <run call="Cell"/>
+    </frame>
+  </template>
+
+  <!-- a list row (TKBagRow1...): its letter, the item's icon and name, the count -->
+  <template name="Row">
+    <frame type="Button">
+      <!-- its size (the window's inside, a row's step less 2) and its place in the list -->
+      <run call="RowPlace"/>
+      <texture key="bg" layer="BACKGROUND" AllPoints="@parent">
+        <!-- every other row a little lighter -->
+        <run call="RowShade"/>
+      </texture>
+      <texture layer="HIGHLIGHT" AllPoints="@parent" Texture="tk:button-hl" VertexColor="1, 1, 1, 0.35"/>
+      <label key="letter" text="" size="12" colour="0.85, 0.85, 0.85" justify="LEFT" Point="LEFT, @parent, LEFT, 6, 0"/>
+      <frame key="iconBox" Size="18, 18" Point="LEFT, @parent, LEFT, 24, 0"/>
+      <texture key="icon" layer="ARTWORK"/>
+      <label key="glyph" parent="@iconBox" text="" size="12" colour="white" Point="CENTER, @iconBox, CENTER, 0, 0"/>
+      <label key="name" text="" size="12" colour="white" justify="LEFT" Point="LEFT, @parent, LEFT, 50, 0"/>
+      <label key="count" text="" size="12" colour="white" justify="RIGHT" Point="RIGHT, @parent, RIGHT, -8, 0"/>
+      <!-- its input path (the game layer's slot control; wire, window.lua's SlotControl) -->
+      <run call="SlotControl"/>
+    </frame>
+  </template>
+
+  <!-- the window, made at its first opening or while the world loads (window.lua's Bag:Build): 4 grid lines high -->
+  <template name="Window">
+    <window name="TKBagWindow" title="Bag" width="@BAG.width" height="280">
+      <!-- s6-interface-5x (round 14; Astra's review of round 13, P2): the shared widgets make it on UIParent, which makes
+           it no panel's until owned, so it goes with the bag when it is unloaded -->
+      <run call="Own"/>
+      <do Point="CENTER, @parent, CENTER, 260, 40"/>
+      <data key="offset" value="0"/>
+      <data key="cells"/>
+      <data key="rows"/>
+      <!-- every slot's cell, then the expanded list's rows; their actions follow the carry (window.lua's Slots) -->
+      <run call="Slots"/>
+      <label key="range" text="" size="11" colour="0.6, 0.6, 0.6" justify="LEFT" Point="TOPLEFT, @parent, TOPLEFT, 18, -16"/>
+      <label key="gold" text="" size="13" colour="gold" justify="LEFT" Point="BOTTOMLEFT, @parent, BOTTOMLEFT, 18, 50"/>
+      <!-- the gold commands, with the amount asked first -->
+      <button key="dropGold" text="Drop Gold" width="110" height="24" click="DropGold"
+              Point="BOTTOMLEFT, @parent, BOTTOMLEFT, 16, 14"/>
+      <button key="giveGold" text="Give Gold" width="110" height="24" click="GiveGold" Point="LEFT, @dropGold, RIGHT, 8, 0"/>
+      <!-- The original's four buttons (GetButtonRect 2-5): List, Grid, Expand and Mix. Mix runs the dialog model's
+           opener, the action Shift+I runs (components/originalkeys), through the game layer's (TK.Game.Inventory.MixControl;
+           wire, window.lua's Mix and MixControl). -->
+      <button key="mix" text="Mix" width="56" height="24" click="Mix" Point="BOTTOMRIGHT, @parent, BOTTOMRIGHT, -16, 14">
+        <run call="MixControl"/>
+      </button>
+      <button key="expand" text="Compact" width="76" height="24" click="ToggleExpanded" Point="RIGHT, @mix, LEFT, -6, 0"/>
+      <button key="list" text="List" width="56" height="24" click="ListView" Point="RIGHT, @expand, LEFT, -6, 0"/>
+      <button key="grid" text="Grid" width="56" height="24" click="GridView" Point="RIGHT, @list, LEFT, -6, 0"/>
+      <label key="hint" text="Right-click an item for its commands." size="11" colour="0.6, 0.6, 0.6" justify="RIGHT"
+             Point="BOTTOMRIGHT, @parent, BOTTOMRIGHT, -18, 50"/>
+      <do EnableMouseWheel="true"/>
+      <on script="OnMouseWheel" call="Wheel"/>
+      <on script="OnShow" call="Refresh"/>
+      <!-- review r1: no carry outlives it (the game layer's) -->
+      <run call="EndCarryOnHide"/>
+
+      <!-- the slots and the gold drawn again as the server changes them, while the window shows -->
+      <frame>
+        <do RegisterEvent="BAG_UPDATE"/>
+        <do RegisterEvent="PLAYER_MONEY"/>
+        <do RegisterEvent="TK_WORLD_SOURCE"/>
+        <on script="OnEvent" call="Changed"/>
+      </frame>
+    </window>
+  </template>
+</ui>

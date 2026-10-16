@@ -1,0 +1,211 @@
+{
+ "models": [
+  {
+   "name": "notice-board",
+   "objects": [
+    1619,
+    1620
+   ]
+  },
+  {
+   "name": "signpost",
+   "objects": [
+    2051,
+    2052
+   ]
+  },
+  {
+   "name": "bush_mound",
+   "objects": [
+    911,
+    912
+   ]
+  },
+  {
+   "name": "bush_stems",
+   "objects": [
+    915,
+    916
+   ]
+  },
+  {
+   "name": "jars",
+   "objects": [
+    434,
+    435
+   ]
+  },
+  {
+   "name": "house-L",
+   "pieces": [
+    [
+     386,
+     387,
+     412,
+     429,
+     378,
+     379,
+     429,
+     378,
+     379,
+     413,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     472,
+     473,
+     474,
+     475,
+     476,
+     475,
+     476,
+     475,
+     476,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     397,
+     390,
+     391,
+     392,
+     398
+    ],
+    [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     480,
+     481,
+     482,
+     483,
+     484
+    ]
+   ],
+   "origin": [
+    0,
+    3
+   ],
+   "seen": [
+    [
+     330,
+     39,
+     104
+    ]
+   ]
+  },
+  {
+   "name": "well",
+   "objects": [
+    437,
+    438
+   ]
+  },
+  {
+   "name": "bench_grey",
+   "objects": [
+    302
+   ]
+  },
+  {
+   "name": "bench_red",
+   "objects": [
+    313
+   ]
+  },
+  {
+   "name": "tree_round",
+   "objects": [
+    822,
+    823,
+    824
+   ]
+  },
+  {
+   "name": "tree_pair",
+   "objects": [
+    825,
+    826
+   ]
+  },
+  {
+   "name": "tree_blossom",
+   "objects": [
+    890,
+    891,
+    892,
+    893
+   ]
+  },
+  {
+   "name": "tree_violet",
+   "objects": [
+    894,
+    895,
+    896,
+    897
+   ]
+  },
+  {
+   "name": "tree_fruit",
+   "objects": [
+    860,
+    861,
+    862,
+    863,
+    864
+   ]
+  },
+  {
+   "name": "tree_slim",
+   "objects": [
+    818,
+    819,
+    820,
+    821
+   ]
+  }
+ ]
+}

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 5.x's icon row (its XML twin's layout; main.lua runs the icons): 5.33's IconsPane (constructor 0x00442560) at
+     (263, 374)-(422, 388) of the 640 x 480 screen: eight icons of ICONS.EPF in NPAL7.PAL, 20 pixels apart, 19 x 14 each
+     (IconsPane_GetIconRect 0x00442D90); an icon pressed shows its frame + 8 while the pointer stays on it. Format:
+     core/xml.md.
+     WIRE: an icon's action (its <data key="action">: the action a key already has for it in 7.5.2, ActivateIcon
+     0x004CF8E0) and that it runs on the release of the left button (IconsPane__HandlePointerOrMouseEvent 0x00442740,
+     cases 1, 0, 3) decide what an icon sends; changing them changes what the server sees. -->
+<ui>
+  <!-- its top left on the 5.x screen (Screen.PlacePanel follows the scaled screen until the player moves it) -->
+  <data key="PLACE" value="263, 374"/>
+
+  <!-- an icon: its picture (frame n) and its pressed picture (n + 8), run on the left button's release (main.lua's Icon:
+       the action frozen at its press, or the opener); help: 7.5.2's line of its help (5.33's 200-207, 7.5.2's 202-209:
+       a right press shows it for 5 s, interfaces/5x/help.lua); none: an opener only (main.lua's OPENERS) -->
+  <template name="TK5xIcon">
+    <frame type="Button" Size="19, 14"/>
+  </template>
+
+  <frame name="TK5xIcons" key="frame" parent="UIParent" FrameStrata="LOW" Size="159, 14">
+    <frame name="TK5xIconItems" from="TK5xIcon" key="icons[]" Point="TOPLEFT, @parent, TOPLEFT, 0, 0">
+      <picture key="normal" file="ICONS.EPF" frame="0" palette="NPAL7.PAL" x="0" y="0" layer="ARTWORK"/>
+      <picture key="pushed" file="ICONS.EPF" frame="8" palette="NPAL7.PAL" x="0" y="0" layer="ARTWORK"/>
+      <data key="def" name="Items" help="202"/>
+      <run call="Icon"/>
+    </frame>
+    <frame name="TK5xIconSpells" from="TK5xIcon" key="icons[]" Point="TOPLEFT, @parent, TOPLEFT, 20, 0">
+      <picture key="normal" file="ICONS.EPF" frame="1" palette="NPAL7.PAL" x="0" y="0" layer="ARTWORK"/>
+      <picture key="pushed" file="ICONS.EPF" frame="9" palette="NPAL7.PAL" x="0" y="0" layer="ARTWORK"/>
+      <data key="def" name="Spells" help="203"/>
+      <run call="Icon"/>
+    </frame>
+    <!-- Info: the character's opener with its request, open:character (2D 00; RequestLocalPlayerStatus) -->
+    <frame name="TK5xIconInfo" from="TK5xIcon" key="icons[]" Point="TOPLEFT, @parent, TOPLEFT, 40, 0">
+      <picture key="normal" file="ICONS.EPF" frame="2" palette="NPAL7.PAL" x="0" y="0" layer="ARTWORK"/>
+      <picture key="pushed" file="ICONS.EPF" frame="10" palette="NPAL7.PAL" x="0" y="0" layer="ARTWORK"/>
+      <data key="def" name="Info" help="204">
+        <data key="action" kind="open:character"/>
+      </data>
+      <run call="Icon"/>
+    </frame>
+    <!-- Users: userlist (18; OpenUserList) -->
+    <frame name="TK5xIconUsers" from="TK5xIcon" key="icons[]" Point="TOPLEFT, @parent, TOPLEFT, 60, 0">
+      <picture key="normal" file="ICONS.EPF" frame="3" palette="NPAL7.PAL" x="0" y="0" layer="ARTWORK"/>
+      <picture key="pushed" file="ICONS.EPF" frame="11" palette="NPAL7.PAL" x="0" y="0" layer="ARTWORK"/>
+      <data key="def" name="Users" help="205">
+        <data key="action" kind="userlist"/>
+      </data>
+      <run call="Icon"/>
+    </frame>
+    <!-- Board: boards (3B 01; EnsureNormalBulletinSession) -->
+    <frame name="TK5xIconBoard" from="TK5xIcon" key="icons[]" Point="TOPLEFT, @parent, TOPLEFT, 80, 0">
+      <picture key="normal" file="ICONS.EPF" frame="4" palette="NPAL7.PAL" x="0" y="0" layer="ARTWORK"/>
+      <picture key="pushed" file="ICONS.EPF" frame="12" palette="NPAL7.PAL" x="0" y="0" layer="ARTWORK"/>
+      <data key="def" name="Board" help="206">
+        <data key="action" kind="boards"/>
+      </data>
+      <run call="Icon"/>
+    </frame>
+    <!-- Talk: chat:current (OpenInputPaneForCurrentSayMode) -->
+    <frame name="TK5xIconTalk" from="TK5xIcon" key="icons[]" Point="TOPLEFT, @parent, TOPLEFT, 100, 0">
+      <picture key="normal" file="ICONS.EPF" frame="5" palette="NPAL7.PAL" x="0" y="0" layer="ARTWORK"/>
+      <picture key="pushed" file="ICONS.EPF" frame="13" palette="NPAL7.PAL" x="0" y="0" layer="ARTWORK"/>
+      <data key="def" name="Talk" help="207">
+        <data key="action" kind="chat:current"/>
+      </data>
+      <run call="Icon"/>
+    </frame>
+    <!-- Help: helpmenu (43 01 FFFFFFFF 0004 0000; SendOpcode43Packet) -->
+    <frame name="TK5xIconHelp" from="TK5xIcon" key="icons[]" Point="TOPLEFT, @parent, TOPLEFT, 120, 0">
+      <picture key="normal" file="ICONS.EPF" frame="6" palette="NPAL7.PAL" x="0" y="0" layer="ARTWORK"/>
+      <picture key="pushed" file="ICONS.EPF" frame="14" palette="NPAL7.PAL" x="0" y="0" layer="ARTWORK"/>
+      <data key="def" name="Help" help="208">
+        <data key="action" kind="helpmenu"/>
+      </data>
+      <run call="Icon"/>
+    </frame>
+    <!-- Quit: the quit prompt (dialog:open QuitDialog; j_OpenQuitPrompt) -->
+    <frame name="TK5xIconQuit" from="TK5xIcon" key="icons[]" Point="TOPLEFT, @parent, TOPLEFT, 140, 0">
+      <picture key="normal" file="ICONS.EPF" frame="7" palette="NPAL7.PAL" x="0" y="0" layer="ARTWORK"/>
+      <picture key="pushed" file="ICONS.EPF" frame="15" palette="NPAL7.PAL" x="0" y="0" layer="ARTWORK"/>
+      <data key="def" name="Quit" help="209">
+        <data key="action" kind="dialog:open" text="QuitDialog"/>
+      </data>
+      <run call="Icon"/>
+    </frame>
+    <do Hide=""/>
+  </frame>
+</ui>

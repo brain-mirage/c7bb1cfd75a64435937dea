@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 7.x's clock (its XML twin's layout; main.lua draws the hour and shows its tip): the original's HourPane
+     (ui/HourPane.cpp) at (830, 736)-(885, 751) on the 7.x screen, in the frame layer (MainMenuPane::InitializeMainUiGraph).
+     Format: core/xml.md. -->
+<ui>
+  <!-- its top left on the 7.x screen (Screen.PlacePanel follows the scaled screen until the player moves it) -->
+  <data key="PLACE" value="830, 736"/>
+  <!-- g_hourFrameTable (0x0066DB04): TIME.EPF's frame for each two-hour period from midnight -->
+  <data key="FRAMES" value="10, 11, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9"/>
+  <!-- the hour's picture: a frame of TIME.EPF in TIME.PAL at the pane's top left (OnPaint 0x004CF010) -->
+  <data key="HOUR" file="TIME.EPF" palette="TIME.PAL" x="0" y="0" layer="ARTWORK"/>
+
+  <!-- the frame layer, over the screen's backdrop -->
+  <frame name="TK7xClock" key="frame" parent="UIParent" FrameStrata="LOW" FrameLevel="10" Size="55, 15" EnableMouse="true">
+    <on script="OnMouseDown" call="Press"/>
+    <on script="OnUpdate" call="Update"/>
+    <do Hide=""/>
+  </frame>
+</ui>

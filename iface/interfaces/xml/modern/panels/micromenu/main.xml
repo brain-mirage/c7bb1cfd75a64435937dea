@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's micro menu (its XML twin's layout; main.lua makes its buttons, opens what they open and lays them out by the
+     page's settings): the bar and its buttons. Format: core/xml.md. What a button sends is main.lua's (its wire comments). -->
+<ui>
+  <!-- a button's size and its icon's: the bar lays the buttons out by it (ApplySettings), and the player's bare head is
+       asked at the icon's size -->
+  <data key="BUTTON" width="30" height="38" icon="24"/>
+
+  <!-- a micro button (main.lua names it by its title, TKMicroButtonMenu...: the gate's driver clicks our controls by
+       name, head note 51, and sizes it and colours its face in its hue): its face, darker pressed, the light, the icon in
+       its middle, and its tip -->
+  <template name="MicroButton">
+    <frame type="Button">
+      <texture key="face" layer="BACKGROUND" AllPoints="@parent" Texture="tk:button"/>
+      <texture key="pressed" layer="BACKGROUND" AllPoints="@parent" Texture="tk:button"/>
+      <do NormalTexture="@face" PushedTexture="@pressed"/>
+      <texture key="light" layer="HIGHLIGHT" AllPoints="@parent" Texture="tk:button-hl" VertexColor="1, 0.9, 0.5, 0.5"/>
+      <do HighlightTexture="@light"/>
+      <texture key="icon" layer="ARTWORK">
+        <do Point="CENTER, @parent, CENTER, 0, 0"/>
+      </texture>
+      <on script="OnEnter" call="Tip"/>
+      <on script="OnLeave" call="Untip"/>
+    </frame>
+  </template>
+
+  <!-- the bar (TKMicroMenu); its size and its buttons' places are the page's (ApplySettings) -->
+  <frame name="TKMicroMenu" key="frame" parent="UIParent">
+    <run call="Buttons"/>
+    <do RegisterEvent="UNIT_PORTRAIT_UPDATE"/>
+    <on script="OnEvent" call="PortraitChanged"/>
+    <run call="Ticker"/>
+  </frame>
+</ui>

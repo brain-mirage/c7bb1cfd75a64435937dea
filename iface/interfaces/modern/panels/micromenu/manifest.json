@@ -1,0 +1,9 @@
+{
+  "name": "micromenu",
+  "title": "Micro Menu",
+  "version": "0.1.0",
+  "order": 12,
+  "description": "Small buttons for the character window (Character and Spell Book tabs), the Bag (a placeholder for now), edit mode, the Settings window and Log Out.",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

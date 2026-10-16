@@ -1,0 +1,9 @@
+{
+  "name": "advancedeffects",
+  "title": "Advanced Effects",
+  "version": "0.1.0",
+  "order": 917,
+  "description": "s6-effects (round 1; the owner, 2026-10-03): the Experimental tab's Advanced Weather (the master switch, the Transition, the Wind Shader) and Advanced Lighting pages (docs/user-related/research/advanced-weather-and-lighting.md). Off by default; saved in the profile. Drawing only: nothing is sent, and the original's Weather, Shadows and Map effects options are never touched. The host's side is C# (TK.WorldView.AdvancedEffects).",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

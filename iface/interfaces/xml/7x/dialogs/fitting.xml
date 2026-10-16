@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 7.x's look of the fitting room (its XML twin's layout; fitting.lua draws with it), from Source-5's class pages.
+     Format: core/xml.md; the dialog's attributes are its look entry's values (interfaces/xml/entry.lua), its children where
+     fitting.lua draws its parts: rectangles (left, top, right, bottom) and image buttons (BUTT001.EPF's image id first).
+     WIRE: a control's rectangle is where a press on it lands (GetControlBounds 0x0041D150, the grid's cells); changing
+     one changes which control a press reaches, so what the client sends. -->
+<ui>
+  <!-- FittingRoomDialog (0x0041BDD0): 820 x 500, centred, no slide; the web board's frame (its OnPaint 0x0041C5E0); OK
+       (0, image 14); the preview (1) 192 x 192 on black; "<" (3, image 44) and ">" (4, image 45); "Basic" (5) and
+       "Current" (6), 92 x 30; the ten categories (7-16) 86 x 22 at (280 + 90 (n % 5), 50 + 26 (n / 5)); Basic, Current
+       and the categories 4a's flat text buttons (FittingRoomTextButtonControlPane::OnPaint 0x00424080: 0xD4, bevels
+       0xD0 and 0xD8, sunken while chosen); the item grid (2) at (218, 92), 586 x 362 (FittingRoomListPane::OnPaint
+       0x0041F2B0): a cell's 54 x 54 press area at (16 + 96 c, 31 + 112 r), its 50 x 50 box a pixel in (filled in 0x8A for
+       an item tried on) with the item's picture centred in it, its name in 0x8F centred under it (96 wide) on lines from
+       66, 16 apart, a word going on a new line when the line and the word reach 14 characters; the empty grid's line at
+       175. -->
+  <data key="Room" width="820" height="500" button="63" turn="63" category="86" categoryHeight="22" icon="50"
+        previewSize="192">
+    <data key="ok" value="14, 379, 468, 442, 492"/>
+    <data key="previous" value="44, 18, 248, 81, 272"/>
+    <data key="next" value="45, 149, 250, 212, 274"/>
+    <data key="basic" value="18, 276, 110, 306"/>
+    <data key="current" value="120, 276, 212, 306"/>
+    <data key="flat" value="0xD4, 0xD0, 0xD8"/>
+    <data key="preview" value="18, 50, 210, 242"/>
+    <data key="categories" x="280" y="50" across="90" down="26" columns="5" width="86" height="22"/>
+    <data key="grid" value="218, 92, 804, 454"/>
+    <data key="empty" value="0, 175, 586, 187"/>
+    <data key="cells" x="16" y="31" across="96" down="112" size="54" box="50" fill="0x8A" name="66" nameWidth="96"
+          wrap="14" colour="0x8F"/>
+  </data>
+</ui>

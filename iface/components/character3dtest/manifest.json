@@ -1,0 +1,9 @@
+{
+  "name": "character3dtest",
+  "title": "3D Character Test",
+  "version": "0.1.0",
+  "order": 914,
+  "description": "s6-modular-b (rounds 13-14; the owner, 2026-10-03): the Experimental tab's 3D Character Test. On, characters are drawn in 3D (the 3d-v1 module) over the Characters choice, which stays as it is; off, they return to it at once. Saved in the profile like every other setting (round 14). 3D is in no menu. The host's side is C# (TK.Modular.Draw.Characters3d).",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 7.x's self look (side panel tab 0; its XML twin's layout; selflook.lua is its scripts), 4a's SelfLookPane. Format:
+     core/xml.md.
+     WIRE: the worn slots' and the switches' rectangles (GetSlotRect 0x00569ED0, HitTestSlot 0x0056A300: the switches above
+     the slots, so the necklace switch over the necklace's slot takes the press), the options the switches send and
+     button 2's rectangle (it takes the press and sends nothing) decide what a press on the page sends (selflook.lua's
+     header). Changing them changes what the server sees. -->
+<ui>
+  <!-- the worn items' slots by the server's slot code (GetSlotRect: pane slots 7-20, 48 x 48 from (x, y)), each with
+       LOOKICON.EPF's frame drawn round it at (fx, fy) while the pointer is over it; its name on a hover (OnTimer
+       0x00569860) -->
+  <data key="GEAR">
+    <slot code="22" x="12" y="12" frame="0" fx="7" fy="10" name="Faceaccessory(1)"/>
+    <slot code="4" x="68" y="12" frame="1" fx="63" fy="10" name="Head(h)"/>
+    <slot code="23" x="126" y="12" frame="2" fx="121" fy="10" name="Headaccessory(2)"/>
+    <slot code="1" x="10" y="68" frame="3" fx="7" fy="62" name="Righthand(w)"/>
+    <slot code="2" x="68" y="68" frame="4" fx="63" fy="62" name="Body(a)"/>
+    <slot code="3" x="126" y="68" frame="5" fx="121" fy="62" name="Lefthand(s)"/>
+    <slot code="8" x="10" y="122" frame="6" fx="7" fy="114" name="Rightaccessory(r)"/>
+    <slot code="14" x="68" y="122" frame="7" fx="63" fy="114" name="Mantle(m)"/>
+    <slot code="7" x="126" y="122" frame="8" fx="121" fy="114" name="Leftaccessory(l)"/>
+    <slot code="20" x="10" y="174" frame="9" fx="7" fy="166" name="Subaccessory([)"/>
+    <slot code="16" x="68" y="174" frame="10" fx="63" fy="166" name="Coat(c)"/>
+    <slot code="21" x="126" y="174" frame="11" fx="121" fy="166" name="Subaccessory(r)"/>
+    <slot code="6" x="10" y="226" frame="12" fx="7" fy="218" name="Necklace(n)"/>
+    <slot code="13" x="68" y="226" frame="13" fx="63" fy="218" name="Foot(f)"/>
+  </data>
+  <!-- The switches (buttons 0, 1, 5 and 6): the option each sends, their rectangles and pictures (STATBUTS on / off in
+       BUTTON.PAL, filled 0x8F while 0xFF; ONOFFBUT 1 / 0, 0 meaning off and anything else on), and button 0's and 1's
+       help line on a right press (strings 197 and 198) -->
+  <data key="SWITCHES">
+    <switch id="exchange" option="8" rect="126, 228, 153, 255" file="STATBUTS.EPF" on="7" off="2" help="197"/>
+    <switch id="group" option="2" rect="155, 228, 182, 255" file="STATBUTS.EPF" on="8" off="3" help="198"/>
+    <switch id="helmet" option="14" rect="107, 7, 121, 21" file="ONOFFBUT.EPF" on="1" off="0"/>
+    <switch id="necklace" option="15" rect="49, 221, 63, 235" file="ONOFFBUT.EPF" on="1" off="0"/>
+  </data>
+  <!-- the status view's nation (0-4) and spirit (0-3) names -->
+  <data key="NATIONS" value="Neutral, Koguryo, Buya, Nagnang, Han"/>
+  <data key="SPIRITS" value="Ju jak, Baekho, Hyun moo, Chung ryong"/>
+  <!-- the arrows' places by view (GetSlotRect's 4, next, in views 0 and 1, and 3, previous, in views 1 and 2) -->
+  <data key="NEXT">
+    <at view="0" x="169" y="268"/>
+    <at view="1" x="169" y="268"/>
+  </data>
+  <data key="BACK">
+    <at view="1" x="149" y="268"/>
+    <at view="2" x="169" y="268"/>
+  </data>
+
+  <!-- a text of the page, hidden until drawn (K.Text) -->
+  <template name="TK7xSelfText">
+    <text key="texts[]" layer="OVERLAY">
+      <do Hide=""/>
+    </text>
+  </template>
+
+  <frame name="TK7xSideSelf" key="frame" AllPoints="@parent">
+    <data key="view" value="0"/>
+    <texture key="back" layer="BACKGROUND"/>
+    <texture key="hover" layer="BORDER"/>
+    <run call="Gear"/>
+    <run call="Switches"/>
+    <!-- button 2 (126, 256)-(153, 283): it takes the press and sends nothing -->
+    <frame type="Button" name="TK7xSelfStats" key="stats" Point="TOPLEFT, @parent, TOPLEFT, 126, -256" Size="27, 27">
+      <texture key="tex" layer="ARTWORK"/>
+    </frame>
+    <!-- 15 texts: the status view's five lines, three draws each -->
+    <text from="TK7xSelfText"/>
+    <text from="TK7xSelfText"/>
+    <text from="TK7xSelfText"/>
+    <text from="TK7xSelfText"/>
+    <text from="TK7xSelfText"/>
+    <text from="TK7xSelfText"/>
+    <text from="TK7xSelfText"/>
+    <text from="TK7xSelfText"/>
+    <text from="TK7xSelfText"/>
+    <text from="TK7xSelfText"/>
+    <text from="TK7xSelfText"/>
+    <text from="TK7xSelfText"/>
+    <text from="TK7xSelfText"/>
+    <text from="TK7xSelfText"/>
+    <text from="TK7xSelfText"/>
+    <data key="numbers"/>
+    <data key="minus"/>
+    <!-- the legend (7, 15)-(182, 265), 4a's LegendPane -->
+    <textpane key="legend" l="7" t="15" r="182" b="265"/>
+    <!-- the arrows: next (INVENBUT.EPF 6) and previous (5), placed by view -->
+    <arrow key="next" picture="6" call="Next"/>
+    <arrow key="previous" picture="5" call="Previous"/>
+    <on script="OnUpdate" call="Tip"/>
+  </frame>
+</ui>

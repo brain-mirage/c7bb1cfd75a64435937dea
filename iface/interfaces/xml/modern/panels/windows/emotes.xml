@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's emote menu (its XML twin's layout; emotes.lua opens it and makes its buttons): the window, and where the
+     sixteen expressions' buttons go. Format: core/xml.md. Drawing only: what a button sends is the action it carries
+     (emotes.lua). -->
+<ui>
+  <!-- the expressions' buttons, in TK.Game.Emotes.list's order: two columns of 128 x 24 buttons from (16, -40) of the
+       window's top left, 140 apart across and 29 down -->
+  <data key="BUTTONS" columns="2" x="16" y="-40" dx="140" dy="29" width="128" height="24"/>
+
+  <window key="window" name="TKEmoteMenu" title="Emotes" width="300" height="290">
+    <!-- as the character window: made by the shared widgets, it goes with the windows -->
+    <run call="Own"/>
+    <do Point="CENTER, @parent, CENTER, 0, 120"/>
+    <run call="Buttons"/>
+  </window>
+</ui>

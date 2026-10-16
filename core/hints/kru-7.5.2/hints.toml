@@ -1,0 +1,790 @@
+# The shipped base hints for the base pack set (kru-7.5.2): what the world renderers' rules get wrong about its
+# pictures, on every map (docs/user-related/research/3dsen-and-tile-hints.md). The rules stay the defaults: an entry
+# replaces only the fields it names, and a map's own file (maps/<number>.toml) or the player's files can override it.
+# Read by the host (TK.Modular.Draw.WorldHints) from local files only: nothing here is sent to any server.
+
+[sobj.5432]           # Kugnae's red-leaved pine: neither green nor ragged enough for the tree rule
+kind = "tree"
+
+# s6-effects (round 3): trees the wind's foliage rule misses (no green for the leaves' mask), found by swaying the towns
+# in a storm: their crowns sway as a whole, every piece of the tree (a piece left still would tear the crown at its seam).
+[sobj.5431-5433]      # Kugnae's red-leaved pine, three pieces side by side
+wind = "whole"
+
+[sobj.13340-13344]    # Kugnae's great autumn tree with its roots, five pieces
+wind = "whole"
+
+[sobj.5421-5424]      # the dark red pines (Kugnae's east), four pieces
+wind = "whole"
+
+[sobj.883-889]        # the flowering trees with their roots (Kugnae's hedgerows): pale leaves, so the mask took strips
+wind = "whole"
+
+# s6-effects (round 4): the same, found by swaying the outdoor hunting grounds and roads s6-reprojection-b ranked in a storm
+[sobj.5400-5402]      # a snow-laden tree (the Vale), three pieces
+wind = "whole"
+
+[sobj.5417-5420]      # the great snow-laden pine (the Vale), four pieces
+wind = "whole"
+
+[sobj.6913-6916]      # the pink blossom tree (Dae Shore), four pieces
+wind = "whole"
+
+[sobj.6917-6919]      # a smaller pink blossom tree (the Vale), three pieces
+wind = "whole"
+
+[sobj.1875-1878]      # the dark-leaved tree with red blossoms (Dae Shore), four pieces
+wind = "whole"
+
+[sobj.17226-17230]    # a white magnolia (the Wilderness), five pieces
+wind = "whole"
+
+[sobj.17231-17235]    # the white magnolia (the Wilderness), five pieces
+wind = "whole"
+
+[sobj.17289-17292]    # the golden ginkgo (the Wilderness), four pieces
+wind = "whole"
+
+[sobj.17270-17272]    # golden autumn trees (the Wilderness), three pieces
+wind = "whole"
+
+[sobj.17276-17278]    # golden autumn trees (the Wilderness), three pieces
+wind = "whole"
+
+[sobj.17283-17288]    # a row of golden autumn trees (the Wilderness), six pieces
+wind = "whole"
+
+[sobj.1194-1199]      # snow-laden pines (Arctic Village), three pieces each
+wind = "whole"
+
+[sobj.814-817]        # the bare trees (Hallowed Pass), four pieces
+wind = "whole"
+
+# s6-effects (build 41, the owner: "many of the game's trees aren't moved by the wind", Retro above all): every static
+# object of the seven towns and seventeen forests and groves, Modern and Retro, through the foliage rule (now with olive
+# greens and the old art's 2 x 2 shadow dots). The trees it still misses sway whole; what it takes for a plant but is none
+# stays still. docs/development/jobs/s6-effects/notes.md, round 10.
+[sobj.801-809]        # Kugnae's great trees (the west, row 110): green in 7.5.2, gold in the old art Retro draws
+wind = "whole"
+
+[sobj.5416]           # the snow-laden pine's crown beside the great one (the Vale)
+wind = "whole"
+
+[sobj.10621]          # the twisted pine (the Vale): its green tufts too few for the rule
+wind = "foliage"
+
+[sobj.898-921]        # the flower beds and bushes (Kugnae, Buya): green bushes in 7.5.2, mostly petals in the old art Retro draws
+wind = "foliage"
+
+[sobj.15]             # Kugnae's north gate: its green-tiled roof ends, which the rule took for leaves
+wind = "none"
+
+[sobj.18]
+wind = "none"
+
+[sobj.132-169]        # Kugnae's green-glazed roofs: their tiles are leaf green
+wind = "none"
+
+[sobj.219-229]        # Kugnae's dark green-glazed roofs
+wind = "none"
+
+[sobj.1622-1623]      # the cave mouths under a grassy cliff top (Kugnae)
+wind = "none"
+
+[sobj.1626-1627]
+wind = "none"
+
+[sobj.1634-1635]
+wind = "none"
+
+[sobj.5850-5851]      # the earth cliff's grassy edge (Memory Grove)
+wind = "none"
+
+[sobj.12668-12669]    # the mossy stone arch over the falls (Kugnae)
+wind = "none"
+
+[sobj.3941]           # the green bamboo pipe (Kugnae)
+wind = "none"
+
+[sobj.3943-3945]
+wind = "none"
+
+[sobj.3947]
+wind = "none"
+
+[sobj.4173-4174]      # the pale yellow lantern sign (Kugnae)
+wind = "none"
+
+[sobj.1578]           # mossy stones (Rock Forest, Forest of Elders, Arctic Village, Nagnang)
+wind = "none"
+
+[sobj.1582]
+wind = "none"
+
+[sobj.1594]
+wind = "none"
+
+[sobj.1598]
+wind = "none"
+
+[sobj.1606]
+wind = "none"
+
+[sobj.7160]           # the rock with a tuft of grass (the Vale)
+wind = "none"
+
+# The city wall: Buya's and Kugnae's use the same pieces. The heights are the test program's hand masks, made by
+# looking at the owner's picture of Buya's gate building and city wall.
+
+[sobj.35-36]          # the wall's walkway, two cells wide: a flat top 4 cells up; the blocked cells under it stand up to it,
+kind = "top"          # their invented sides of cut stone (round 9, r5 findings W1 and G1: they repeated the battlements)
+height = 4
+roof = "flat"
+skin = "tile/257"
+
+[sobj.37-40]          # the tower's front: its invented sides of the same stone
+skin = "tile/257"
+
+[sobj.45-48]          # the tower's roof, on the tower's 6-cell front
+kind = "top"
+height = 6
+
+[sobj.41-44]          # the wall's painted shadow strip, on the ground
+kind = "shadow"
+
+[sobj.49]
+kind = "shadow"
+
+[sobj.70]             # Buya's gate building: its side roofs running back, at the top of its 3-cell corner pieces
+kind = "top"
+height = 3
+
+[sobj.71-73]          # their painted shadow
+kind = "shadow"
+
+# Buya's gate building's brick walls (its corner pieces, the walls beside its opening): the sides the 3D mode invents for
+# them, and for the blocks under its side roofs, repeated the front's doors and roof edge (round 9, r5 findings G1 and
+# W4); they are of brick, as the walls are
+[sobj.52]
+skin = "tile/338"
+
+[sobj.56-58]
+skin = "tile/338"
+
+[sobj.62-63]
+skin = "tile/338"
+
+# The canal through Buya and Kugnae: its north bank is painted sloping down to the water, two rows deep, and the rule
+# stood it up as a block a cell above the land. Each row slopes only where the canal lies beyond it (neighbour rules), so
+# the same tiles elsewhere keep the rule: the upper row from the land (0) down to the lower row's level, the lower row
+# from there to the water (-0.2). The two tiles by Buya's bridge (17736, 17737) are the rows' ends.
+
+[tile.17748-17750.when.south]
+is = "tile/17756-17758"
+ground = "slope"
+rises = "n"
+
+[tile.17736.when.south]
+is = "tile/17737"
+ground = "slope"
+rises = "n"
+
+[tile.17756-17758.when.south]
+is = "tile/17764-17766"
+ground = "slope"
+rises = "n"
+level = -0.1
+
+[tile.17737.when.south]
+is = "tile/17738"
+ground = "slope"
+rises = "n"
+level = -0.1
+
+# Blocked floors and the void (round 9, r5 findings O1 and O2): ground blocked only for walking (round a house's back,
+# behind a counter, along an interior's walls, the void round it) that the rule stood up as blocks of floor. Every one of
+# these pictures is grass, earth, sand, paving or a plank floor, never a cliff or a wall, so they lie flat on every map.
+
+[tile.43]
+ground = "flat"
+
+[tile.64]
+ground = "flat"
+
+[tile.177]
+ground = "flat"
+
+[tile.338]
+ground = "flat"
+
+[tile.405]
+ground = "flat"
+
+[tile.427]
+ground = "flat"
+
+[tile.449-450]
+ground = "flat"
+
+[tile.607]
+ground = "flat"
+
+[tile.986]
+ground = "flat"
+
+[tile.4442-4443]
+ground = "flat"
+
+[tile.7542]
+ground = "flat"
+
+[tile.7584]
+ground = "flat"
+
+[tile.8565]
+ground = "flat"
+
+[tile.9221]
+ground = "flat"
+
+[tile.9405]
+ground = "flat"
+
+[tile.9675]
+ground = "flat"
+
+[tile.17819]
+ground = "flat"
+
+[tile.17822]
+ground = "flat"
+
+[tile.17879]
+ground = "flat"
+
+[tile.23343]
+ground = "flat"
+
+# The river by Kugnae's shrine and through Buya: its banks are painted sloping down to the water, two columns deep, as the
+# canal's are; the west bank rises west (17762 or 17770, then 17763 or 17771), the east bank east (17768 or 17774, then
+# 17769 or 17775). Each column slopes only where the river lies beyond it, as the canal's rows do.
+
+[tile.17762.when.east]
+is = ["tile/17763", "tile/17771"]
+ground = "slope"
+rises = "w"
+
+[tile.17770.when.east]
+is = ["tile/17763", "tile/17771"]
+ground = "slope"
+rises = "w"
+
+[tile.17763.when.east]
+is = "tile/17778"
+ground = "slope"
+rises = "w"
+level = -0.1
+
+[tile.17771.when.east]
+is = ["tile/17778", "tile/17764"]
+ground = "slope"
+rises = "w"
+level = -0.1
+
+[tile.17768.when.west]
+is = ["tile/17773", "tile/17779"]
+ground = "slope"
+rises = "e"
+level = -0.1
+
+[tile.17774.when.west]
+is = "tile/17779"
+ground = "slope"
+rises = "e"
+level = -0.1
+
+[tile.17769.when.west]
+is = "tile/17768"
+ground = "slope"
+rises = "e"
+
+[tile.17775.when.west]
+is = ["tile/17768", "tile/17774"]
+ground = "slope"
+rises = "e"
+
+# Half wall, half ground (round 11, face_rows): the earth cliff's lower pieces (in Buya on rows 27 and 87, x 37-56 and
+# 41-100) and the stone courts' (the same pictures in stone: the courts north of the palace and round Buya) paint the
+# cliff's face in their top 42 rows and the grass at its foot in the bottom 6. The face now stands, the grass lies before it, and
+# the rule's block of the whole cell goes. The pieces above them (17944-17945, 17864-17865) paint the face's upper part
+# and stay the rule's blocks; the curved end pieces (17950, 17955, 17873) are shapes for the design's footprints (its 6).
+
+[tile.17951-17954]
+face_rows = 42
+
+[tile.17869-17872]
+face_rows = 42
+
+# The shapes (round 12, the design's 6.3-6.4): an outline in the ground plan, raised or sunk to a height, the picture laid
+# on by the game's own drawing rule. The numbers are read from the pictures, fitted by eye.
+
+[sobj.437-438]        # the well's two halves (in Buya at 59-60, 108 and 52-53, 135): a stone ring round a hole
+group = "well"
+
+[group.well]           # measured from the picture (round 13; round 12 had the design's estimates, which put the rim above it)
+footprint = "ring"
+radius = 0.86          # the outer wall: 83 pixels across
+inner = 0.6            # the hole: 57 pixels across
+height = 0.5           # the rim: its front wall is painted 22 pixels high
+floor = -1.0           # the hole's bottom, below the ground (the ground is cut there)
+offset = [0.0, -0.375] # the ring's centre lies three eighths of a cell north of the middle of the pieces' cells
+oval = 0.7             # its rim is painted 0.7 as deep as it is wide: the oval stretched onto the true circle
+
+[sobj.472-479]        # the round thatched huts' roof pieces: one round roof. Six pieces (472-474, 477-479; in Buya at 108-113
+group = "round-hut"   # and 116-121 on row 134) or eight (472-479; at 31-38, 105 and 79-86, 131). A longer run, its middle
+                      # pieces repeated, is a long thatched house (Country Farm's, Kugnae's, Buya's at 40-48, 105): the
+                      # renderer gives it no circle and a ridge along the run (round 16)
+
+[group.round-hut]
+footprint = "circle"
+radius = 2.6          # the six-piece huts': wider than the walls, so the eaves overhang
+roof = "cone"
+height = 3
+offset = [0.0, -1.0]  # the roof lies at its height over the rows its picture is drawn on, a cell north of its pieces' middle
+
+[sobj.476]            # the eight-piece huts' middle piece, which their joined roof takes its fields from (its anchor): wider
+radius = 3.4
+
+[sobj.876-889]        # the flowering hedges (two sets of pieces: 876-882 and 883-889, an end, middles and an end; in Buya
+group = "hedge"       # south of the round huts): the rules joined each into one tree, a card showing its flat front from
+                      # every side. Traced (round 13): its front follows its stems' foot line, a straight back a cell behind,
+[group.hedge]         # and it stands two cells high, its foliage on its front and top as the picture paints them
+footprint = "traced"
+back = 1
+height = 2
+
+# The canal's turn (round 12, the design's 6.4: "a corner rises to two sides"): where the canal turns from east-west to
+# north-south, its two bank layers meet in corner pieces, each high on its north and west edges, its south-east corner
+# falling to the layer below, then the water (in Buya at 110-111, 24-25). The pieces beside them carry their row's and
+# column's slopes into the corner.
+
+[tile.17746]          # the upper layer's corner
+ground = "slope"
+rises = "nw"
+
+[tile.17755]          # the lower layer's corner
+ground = "slope"
+rises = "nw"
+level = -0.1
+
+[tile.17747]          # the upper row's piece beside the corner
+ground = "slope"
+rises = "n"
+
+[tile.17754]          # the upper column's piece beside the corner
+ground = "slope"
+rises = "w"
+
+# s6-reprojection-b (round 5, Astra's P2 on round 4): the hints that name a "kind" for the 3D and Reprojection modes alone
+# are in the reprojection module's own hints (project/TK-Unity/Assets/TK/Modular/Modules/reprojection/hints/hints.toml),
+# read only while it draws: Normal's Sun Shadows read "kind" too (SunShadow.ByKind), and these classifications are the
+# modes' drawing, not the art's, so Normal keeps its own rule there. The gates' middles, the mounds, the thatched roofs, the
+# pictures on inside walls, Dirge's dither and the clouds moved there.
+
+# Rocks and furniture drawn as thin solids (s6-reprojection-b, the design's cases C and J): from the side they were
+# paper-thin, and a deeper solid (depth = 1) carries the picture's dark outline round its sides, so they stood as black
+# boxes. As turning cards (round 10's trees' way) each shows its whole picture from every side. The grey boulders (559-562:
+# the Deep Forest's, Kugnae's and the Wilderness's) and Mignok's mossy rock (555-558), each four pieces in a row; the
+# teal chests (552-553: the taverns', Mignok's); the taverns' beds (671-674); the woven mat and the herb table in Mignok's
+# home (567-569, 707-711). The mounds and rock piles (1578-1612) are below.
+[sobj.552-553]
+shape = "turning"
+
+[sobj.555-562]
+shape = "turning"
+
+[sobj.567-569]
+shape = "turning"
+
+[sobj.671-674]
+shape = "turning"
+
+[sobj.707-711]
+shape = "turning"
+
+# The dark strips along an interior's walls (the same handover; in about a hundred interiors, in no town): where the floor
+# round a house lies flat (tile 7542 above), the rule found them held up by the walls' fronts and roofed each as a ridge.
+[sobj.1540-1543]
+roof = "flat"
+
+[sobj.1550-1555]
+roof = "flat"
+
+# s6-reprojection-c: still water (the owner, 2026-10-03: "this is moving water this is still water?"). A pond's or a
+# moat's water lies calm: the painted picture as it is, at the water's level below its banks. Rule water is still
+# already; these name the pond tiles as water for whatever reads the surface (the weather's rain on water, later). Buya's
+# house moat (x 64-76, rows 116-125) and Kugnae's pond (x 132-138, rows 14-18) are drawn with them.
+# Moving water is named per stretch in the maps' own files (surface_flow), since one canal tile runs every way.
+
+[tile.117-120]        # the pond's water (121 is a bank)
+surface = "water"
+
+[tile.122-124]
+surface = "water"
+
+# The palaces' royal courts (Koguryo's 4508, Buya's 4609, round 3): the sunken channels and their steps (11683-11699) are
+# tops painted a cell north of their cells, walled all round; the rule laid them a cell up with blocks under them, so the
+# channels stood as raised boxes. They lie on the ground where Normal draws them. Round 4: only on the courts' floor
+# (28448, 28518): the same pieces are the thick walls' tops in Dragon's Mist (256, 3256, 4256), where the rule stands them
+# on their walls' faces, and round 3's hint on every map laid those walls' tops on the floor
+[sobj.11683-11699.when.north]
+is = ["tile/28448", "tile/28518"]
+height = 0
+roof = "flat"
+
+[sobj.11683-11699.when.east]
+is = ["tile/28448", "tile/28518"]
+height = 0
+roof = "flat"
+
+[sobj.11683-11699.when.south]
+is = ["tile/28448", "tile/28518"]
+height = 0
+roof = "flat"
+
+[sobj.11683-11699.when.west]
+is = ["tile/28448", "tile/28518"]
+height = 0
+roof = "flat"
+
+# The crypts' grave mounds (tiles 18004-18007, round 4: the nine mudum crypts, 2201-2209): blocked earth tiles painted as
+# mounds with a headstone; the rules stood each as a block a cell high, so the mounds were square boxes. Flat, they are as
+# Normal draws them. The complete 18004/18005 over 18006/18007 assembly uses one shared plan, discovered by the
+# renderer rather than repeated map coordinates. Partial or differently arranged tiles retain this flat ground.
+[tile.18004-18007]
+ground = "flat"
+group = "grave-mound"
+
+[group.grave-mound]
+plan = "maps/plans/grave-mound.png"
+height = 0.55
+
+# The white standing lantern artwork uses the same warm candle light wherever it stands. Formerly only Spring
+# Tavern/map 332 supplied this appearance. These are Advanced Lighting's local drawing fields; map ambience can
+# still override them without repeating the lantern's ordinary appearance for each map.
+[sobj.14911-14912]
+light_radius = 2
+light_colour = "#ffd8a0"
+flicker = "candle"
+
+# s6-effects-c (round 3): the art's fires, for Advanced Lighting's Embers and Smoke and a fire's light (a deeper orange,
+# breathing as a fire does). Picked by eye from every lit object's pictures: a colour rule cannot tell flames from gold,
+# paper lanterns, lacquer, Christmas trees or candles. Candles, oil lamps, lanterns and candelabra are not fires: they keep
+# the warm, candle-like light. Drawing only: nothing here is sent.
+
+[sobj.696-697]        # kilns
+flicker = "fire"
+
+# s6-effects (round 8): the chimneys, for Advanced Lighting's Chimney Smoke (a child of Embers and Smoke): `chimney = [x, y]`
+# the smoke's point, pixels from the object's cell corner (y down). Surveyed by eye over the towns (Kugnae, Buya, Nagnang,
+# Hausson, Arctic Village, Vale and Dae Shore): the only chimneys the art draws are the kilns' pipes; the houses' thatched and
+# tiled roofs draw none, and the Vale's tents are tied shut at the top. A kiln is two pieces side by side (696 its left half,
+# 697 its right) and its pipe straddles them, so the point is given once, on the left half: the pipe's mouth. Drawing only.
+[sobj.696]            # a kiln's left half: the mouth of its pipe, two cells up
+chimney = [43, -94]
+
+[sobj.5559]           # a tall brazier
+flicker = "fire"
+
+[sobj.5751-5752]      # iron braziers
+flicker = "fire"
+
+[sobj.6931-6932]      # stoves
+flicker = "fire"
+
+[sobj.7674]           # cauldrons over a fire
+flicker = "fire"
+
+[sobj.7678]
+flicker = "fire"
+
+[sobj.7742]           # coal braziers
+flicker = "fire"
+
+[sobj.7744]
+flicker = "fire"
+
+[sobj.7746]           # a campfire
+flicker = "fire"
+
+[sobj.7764]           # a basin over a fire
+flicker = "fire"
+
+[sobj.8029]           # a stove
+flicker = "fire"
+
+[sobj.10567]          # a tripod brazier
+flicker = "fire"
+
+[sobj.10818]          # a tall torch
+flicker = "fire"
+
+[sobj.10820-10821]    # a campfire under a tripod
+flicker = "fire"
+
+[sobj.10877]          # rocks with a fire on top
+flicker = "fire"
+
+[sobj.10879]
+flicker = "fire"
+
+[sobj.10881]
+flicker = "fire"
+
+[sobj.10884]
+flicker = "fire"
+
+[sobj.11732]          # wall torches
+flicker = "fire"
+
+[sobj.11745]
+flicker = "fire"
+
+[sobj.11776]
+flicker = "fire"
+
+[sobj.11782]
+flicker = "fire"
+
+[sobj.11888]
+flicker = "fire"
+
+[sobj.11901]
+flicker = "fire"
+
+[sobj.11934]
+flicker = "fire"
+
+[sobj.11940]
+flicker = "fire"
+
+[sobj.12825]          # a fire pot
+flicker = "fire"
+
+[sobj.12907-12908]    # forges
+flicker = "fire"
+
+[sobj.12918-12919]    # fireplaces
+flicker = "fire"
+
+[sobj.13580]          # a fire bowl
+flicker = "fire"
+
+[sobj.15580-15583]    # brazier stands
+flicker = "fire"
+
+[sobj.15611-15615]    # burning ruins and logs
+flicker = "fire"
+
+[sobj.15617-15619]
+flicker = "fire"
+
+[sobj.15621-15622]
+flicker = "fire"
+
+[sobj.15632]
+flicker = "fire"
+
+[sobj.15635]
+flicker = "fire"
+
+[sobj.15642]          # burning trees
+flicker = "fire"
+
+[sobj.15645]
+flicker = "fire"
+
+[sobj.15697]          # a tripod brazier
+flicker = "fire"
+
+[sobj.16080]          # wall torches
+flicker = "fire"
+
+[sobj.16082]
+flicker = "fire"
+
+[sobj.16367]          # an iron brazier stand
+flicker = "fire"
+
+[sobj.16482-16483]    # cauldrons over a fire
+flicker = "fire"
+
+[sobj.16485-16486]
+flicker = "fire"
+
+[sobj.16496]
+flicker = "fire"
+
+[sobj.16504-16513]    # flames
+flicker = "fire"
+
+[sobj.16615-16617]    # furnaces and a forge
+flicker = "fire"
+
+[sobj.16793-16794]    # cauldrons over a fire
+flicker = "fire"
+
+# s6-effects-c (round 4): the hot ground, for Advanced Lighting's Heat Haze (a shimmer by day): the desert's sand, the four
+# tiles the Desert maps (6000-6005) are laid with; round 5, the sand of the other desert and sandy maps, picked by eye:
+# Desert Weaver's (5002), Hare and Warm Sands' pale sand (84, 404), the Sandy maps' (1313-1317). Desert Claw (417) and Sand
+# Glen, Edge and Den (410-418) are cobblestone and wood, not sand, and are not marked. Drawing only.
+[tile.6985-6988]
+hot = true
+
+[tile.21664]
+hot = true
+
+[tile.21669]
+hot = true
+
+[tile.21714]
+hot = true
+
+[tile.1430]
+hot = true
+
+[tile.28163]
+hot = true
+
+# s6-effects-c (round 6): the towns' windows, for Advanced Lighting's Indoor Windows on the indoor maps: `window = "day"` a
+# pane that lets in daylight (a slight shaft of it into the room by day; at night its panes drawn as daylit sky darken),
+# `window = "lit"` a pane the art draws lit from inside, left bright at night. Picked by eye from the pictures of every
+# object in the houses, inns and shops of Kugnae, Buya and Nagnang. Drawing only: nothing here is sent.
+
+[sobj.14976-14977]    # the Kugnae Salon's tall windows, daylit sky behind them
+window = "day"
+
+[sobj.15288-15289]    # windows with sky behind them (Kugnae's and Buya's houses and shops)
+window = "day"
+
+[sobj.612-613]        # paper lattice windows
+window = "day"
+
+[sobj.638-640]        # paper lattice windows, a barred vent
+window = "day"
+
+[sobj.660]            # a paper lattice window
+window = "day"
+
+[sobj.2481]           # a paper lattice window (Nagnang)
+window = "day"
+
+[sobj.6722]           # the shops' paper lattice window
+window = "day"
+
+[sobj.14963]          # a paper lattice window (the Kugnae Salon)
+window = "day"
+
+[sobj.15286]          # a paper lattice window
+window = "day"
+
+[sobj.633]            # louvred windows
+window = "day"
+
+[sobj.649]
+window = "day"
+
+[sobj.2430]           # vents
+window = "day"
+
+[sobj.2470-2471]
+window = "day"
+
+[sobj.8408-8410]      # a bright wall of windows (Nagnang)
+window = "day"
+
+[sobj.6456]           # cream-yellow panes on dark stone, lit from inside (Nagnang's Tavern of Wood)
+window = "lit"
+
+[sobj.6458-6459]
+window = "lit"
+
+# s6-reprojection (round 48; docs/user-related/decisions/2026-10-08-material-map.md): the starter materials. A material map
+# (an entry's materials = "<png>": red a material's index, alpha its strength, green a direction) marks an artwork's
+# pixels with them, and a ground's surface may name one for its whole tile. A property a material leaves unset keeps the
+# automatic rule. s6-effects (round 44) draws the looks: gloss catches the sky's light, glow keeps a pixel's colour at
+# night (flicker: Real Lights' names), murk makes water reflect less. A map's own file or the player's may retune any of
+# them, field by field. Drawing only: nothing here is sent to any server.
+
+[material.water]          # drawn as water, its waves and reflections; surface = "water" names it
+index = 1
+water = true
+
+[material.flowing-water]  # its way from the map's green, else the tile's surface_flow, else a flow given here
+based_on = "water"
+index = 2
+speed = 0.5
+
+[material.rapid-water]
+based_on = "flowing-water"
+index = 3
+speed = 2
+
+[material.murky-water]
+based_on = "water"
+index = 4
+murk = 0.6
+
+[material.sand]           # walking leaves prints in it without snow
+index = 5
+water = false
+footprints = true
+
+[material.wood]
+index = 6
+water = false
+
+[material.glossy]
+index = 7
+gloss = 0.8
+
+[material.magma]
+index = 8
+water = false
+snow = false
+puddles = false
+glow = 0.8
+flicker = "fire"
+
+[material.fire]
+index = 9
+water = false
+snow = false
+puddles = false
+glow = 1
+flicker = "fire"
+
+[material.glass]          # an object's tinted glass: what stands behind it shows through
+index = 10
+opacity = 0.35
+tint = "#a8d8ff"
+
+[material.flat-colour]    # its pixels in their mean colour: undoes painted light without picking a colour
+index = 11
+flat = "average"
+
+# s6-effects (round 47; the owner's request docs/user-related/requests/2026-10-09-ice-tint-and-outer-area-snow.md: "in 2d
+# mode the ice effect should have a slightly blue tint its hard to tell the trasnition when there is heavy snowo cover"):
+# the snow lying on ice is laid thinner, so the ice's blue shows through it in every mode and its edge stays visible under a
+# heavy cover. snow_opacity: how solid the snow on its pixels is drawn (1, any ground's, when unset).
+[material.ice]
+index = 12
+snow_opacity = 0.5
+
+# The ice tiles (Arctic Village's frozen river and sea, every map they are used on): the plain ice, and the ice meeting the
+# snow (its snowy pixels stay white under the snow).
+[tile.832-858]
+surface = "ice"
+
+[tile.864-876]
+surface = "ice"

@@ -1,0 +1,10 @@
+{
+  "id": "protocol-7x",
+  "name": "NexusTK 7.5.2",
+  "kind": "protocol",
+  "version": "0.1.0",
+  "contract": 1,
+  "assembly": "protocol-7x.dll",
+  "entry": "TK.Modules.Protocol7x.Codec",
+  "serves": ["7.5.2"]
+}

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 5.x's look of the Power window (its XML twin's layout; shops.lua draws with it), 5.33's PowerDialogPane (constructor
+     0x00490640, paint 0x00490D30): the shared layout (interfaces/power.lua) with 5.33's buttons, 72 x 16 from y 307.
+     Format: core/xml.md.
+     WIRE: a button's rectangle is where a press on it lands; changing one changes which control a press reaches. -->
+<ui>
+  <data key="Power" width="72" height="16" top="307"/>
+</ui>

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's action bars (their XML twin's layout; main.lua makes C.MAX_BARS bars of C.BUTTONS buttons, settings.lua's,
+     binds them, lays them out by their settings and draws what each slot holds): a bar and a button with its slot
+     picture, gloss, letter, pushed look, cooldown, hotkey, count, macro text and key-binding cover. Format: core/xml.md.
+     Drawing only; a button's press is the game layer's (main.lua's Button and Press). -->
+<ui>
+  <!-- one bar (TKActionBar1...), its buttons laid out in it by main.lua's LayoutBar -->
+  <template name="ActionBar">
+    <frame parent="UIParent"/>
+  </template>
+
+  <!-- one button (TKActionBar1Button1...) -->
+  <template name="ActionButton">
+    <frame type="Button">
+      <!-- its slot, its binding and the hotkey path a click goes on, its size the bars' (main.lua's Button; wire:
+           TK.Game.Hotkeys) -->
+      <run call="Button"/>
+      <!-- s6-ui-core (round 62): the shared slot's picture, an action button's edge, the light; its box's colour the
+           bar's (main.lua's ColourSlot). The icon: the original's item picture at its own size, or a placeholder square
+           with the letter (spells have no pictures in the original). The gloss, the pushed look and the cooldown cover
+           the same inset square. -->
+      <slotart keys="bg, icon, border" edge="slotActionEdge"/>
+      <run call="ColourSlot"/>
+      <texture key="gloss" layer="ARTWORK" sublevel="2" Point="TOPLEFT, @parent, TOPLEFT, 3, -3">
+        <do Point="BOTTOMRIGHT, @parent, BOTTOMRIGHT, -3, 3" Texture="tk:gloss"/>
+      </texture>
+      <text key="glyph" layer="ARTWORK" sublevel="3" Font="22, OUTLINE" TextColor="1, 1, 1, 0.95"
+            Point="CENTER, @parent, CENTER, 0, 1"/>
+      <texture key="pushed" layer="OVERLAY" sublevel="1" AllPoints="@gloss" ColorTexture="0, 0, 0, 0.4"/>
+      <do PushedTexture="@pushed"/>
+
+      <!-- the cooldown above the icon, then the texts above the cooldown so they stay readable -->
+      <frame type="Cooldown" key="cooldown" name="$parentCooldown" AllPoints="@gloss">
+        <run call="OverIcon"/>
+        <do CountdownFontSize="24"/>
+        <!-- the icon's letter steps back while the aether number is shown over it; s6-ui-core (round 82): the aether's
+             red edge goes with it -->
+        <on script="OnCooldownDone" call="CooldownDone"/>
+      </frame>
+
+      <frame key="texts" AllPoints="@parent">
+        <run call="OverCooldown"/>
+        <text key="hotkey" layer="OVERLAY" Font="12, OUTLINE" TextColor="0.85, 0.85, 0.85, 1" JustifyH="RIGHT"
+              Point="TOPRIGHT, @root, TOPRIGHT, -3, -3"/>
+        <text key="count" layer="OVERLAY" Font="13, OUTLINE" TextColor="1, 1, 1, 1" JustifyH="RIGHT"
+              Point="BOTTOMRIGHT, @root, BOTTOMRIGHT, -3, 3"/>
+        <text key="name" layer="OVERLAY" Font="10, OUTLINE" TextColor="1, 1, 1, 0.9"
+              Point="BOTTOMLEFT, @root, BOTTOMLEFT, 3, 3" JustifyH="LEFT"/>
+        <texture key="bindOverlay" layer="OVERLAY" sublevel="-1" AllPoints="@root" ColorTexture="0.2, 0.9, 0.3, 0.35"
+                 Hide=""/>
+        <!-- the texts are the button's (b.hotkey, b.count, b.name, b.bindOverlay) -->
+        <run call="Texts"/>
+      </frame>
+
+      <do RegisterForDrag="LeftButton" RegisterForClicks="LeftButtonUp, RightButtonUp"/>
+      <!-- a click (or Modern's own key) presses the slot as the game layer does: wire, main.lua's Press -->
+      <on script="OnClick" call="Press"/>
+      <on script="OnDragStart" call="DragStart"/>
+      <on script="OnReceiveDrag" call="ReceiveDrag"/>
+      <on script="OnEnter" call="Enter"/>
+      <on script="OnLeave" call="Leave"/>
+      <!-- its key in the key bindings -->
+      <run call="Bindable"/>
+    </frame>
+  </template>
+</ui>

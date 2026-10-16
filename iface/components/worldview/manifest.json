@@ -1,0 +1,9 @@
+{
+  "name": "worldview",
+  "title": "World View",
+  "version": "0.1.0",
+  "order": 50,
+  "description": "The world object as a placeholder: a grid of 48-pixel tiles drawn at 1x into a render texture, 17 x 15 by default and up to 25 x 25, with the outer ring darkened, shown at 1x, a whole-number upscale or smoothly scaled.",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

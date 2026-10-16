@@ -1,0 +1,9 @@
+{
+  "name": "tooltips",
+  "title": "Tooltips",
+  "version": "0.1.0",
+  "order": 70,
+  "description": "WoW-style tooltips: where they show, and the world's players, creatures and items under the mouse.",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

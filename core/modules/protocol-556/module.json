@@ -1,0 +1,10 @@
+{
+  "id": "protocol-556",
+  "name": "OriginalTK 5.56 (built from the owner's capture)",
+  "kind": "protocol",
+  "version": "0.2.0",
+  "contract": 2,
+  "assembly": "protocol-556.dll",
+  "entry": "TK.Modules.Protocol556.Codec",
+  "serves": ["5.56"]
+}

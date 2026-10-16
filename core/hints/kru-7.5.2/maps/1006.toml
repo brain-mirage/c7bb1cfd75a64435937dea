@@ -1,0 +1,9 @@
+# Kugnae Houses (map 1006) on the test server: indoors (s6-effects, from the test server's own MapIndoor flag): no sky, so no
+# clouds, wind or lightning, and its plants stand still. Applies only when the map the server sends passes the check (3.5).
+
+[check]
+size = "16x16"
+
+[map]
+indoor = true
+outdoor = 0 # Kugnae, through its doors (the test server's warps)

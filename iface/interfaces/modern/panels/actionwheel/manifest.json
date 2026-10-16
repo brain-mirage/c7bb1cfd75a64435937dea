@@ -1,0 +1,13 @@
+{
+  "name": "actionwheel",
+  "title": "Action Wheel",
+  "version": "0.1.0",
+  "order": 60,
+  "description": "A wheel of actions that a key opens at the mouse; a click on a segment runs its action.",
+  "settings": "settings.lua",
+  "main": "main.lua",
+  "commands": [
+    { "name": "ACTIONWHEEL", "text": "Action Wheel", "keys": ["X"], "newer": true },
+    { "name": "ACTIONWHEEL_MULTI", "text": "Action Wheel (multi-pick)", "keys": ["SHIFT-X"], "newer": true }
+  ]
+}

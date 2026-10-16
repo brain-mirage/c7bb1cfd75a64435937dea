@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 5.x's look of the music dialog (its XML twin's layout; musiclayout.lua reads it, musicart.lua draws with it), 5.33's
+     MusicControlDialog (constructor 0x00478720). Format: core/xml.md. The shared X8 renderer owns the controls, their
+     selections, enabled rules and audio; this is art data only.
+     WIRE: a control's rectangle is where a press on it lands (moving one changes which control a press reaches); the
+     control ids are the shared original's, and changing an id or a binding changes what 4a 0x00529790 sends. -->
+<ui>
+  <!-- 407 x 410 on DLGSCNTL.EPF's frame 0 in NPAL8.PAL -->
+  <data key="MUSIC" width="407" height="410">
+    <data key="background" file="DLGSCNTL.EPF" palette="NPAL8.PAL" frame="0"/>
+    <!-- the controls' rectangles (left, top, right, bottom) by id, 1 to 14 -->
+    <data key="rects">
+      <rect value="109, 97, 313, 108"/>
+      <rect value="109, 112, 301, 125"/>
+      <rect value="109, 159, 333, 170"/>
+      <rect value="109, 175, 301, 188"/>
+      <rect value="88, 202, 200, 263"/>
+      <rect value="87, 234, 261, 246"/>
+      <rect value="261, 232, 333, 248"/>
+      <rect value="234, 250, 308, 266"/>
+      <rect value="88, 279, 301, 290"/>
+      <rect value="88, 294, 301, 305"/>
+      <rect value="94, 314, 166, 330"/>
+      <rect value="168, 314, 240, 330"/>
+      <rect value="242, 314, 314, 330"/>
+      <rect value="168, 360, 240, 376"/>
+    </data>
+    <!-- the radio groups' options' rectangles, by the group's id -->
+    <data key="options">
+      <group id="1">
+        <rect value="109, 97, 154, 108"/>
+        <rect value="260, 97, 305, 108"/>
+      </group>
+      <group id="3">
+        <rect value="109, 159, 154, 170"/>
+        <rect value="182, 159, 227, 170"/>
+        <rect value="250, 159, 295, 170"/>
+      </group>
+      <group id="5">
+        <rect value="88, 202, 198, 213"/>
+        <rect value="88, 217, 198, 228"/>
+        <rect value="88, 252, 198, 263"/>
+      </group>
+      <group id="9">
+        <rect value="88, 279, 168, 290"/>
+        <rect value="205, 279, 285, 290"/>
+      </group>
+      <group id="10">
+        <rect value="88, 294, 168, 305"/>
+        <rect value="205, 294, 285, 305"/>
+      </group>
+    </data>
+    <!-- the image buttons' images (X.Image's ids) by the control's id -->
+    <data key="buttons">
+      <button id="7" image="50"/>
+      <button id="11" image="46"/>
+      <button id="12" image="48"/>
+      <button id="13" image="47"/>
+      <button id="14" image="14"/>
+    </data>
+    <!-- the volume sliders: SCRL001.EPF in SCRL001.PAL, 13-pixel caps; its frames -->
+    <data key="slider" file="SCRL001.EPF" palette="SCRL001.PAL" cap="13" left="0" right="1" leftPressed="4"
+          rightPressed="5" thumb="8" thumbPressed="9" track="11" trackPressed="10"/>
+    <!-- the CD choice: POPUPMNU.EPF in NPAL8.PAL, 16-pixel caps, its text in 0x25 -->
+    <data key="popup" file="POPUPMNU.EPF" palette="NPAL8.PAL" left="0" middle="1" right="2" cap="16" text="0x25"/>
+    <!-- the folder's text: 0x8F, disabled 0x80 -->
+    <data key="folder" active="0x8F" disabled="0x80"/>
+  </data>
+  <!-- the slider's thumb: its left at the cap + value x (span - 3 caps) / 100 (GetPartRect 0x0041A6F0) -->
+  <data key="THUMB" span="192"/>
+</ui>

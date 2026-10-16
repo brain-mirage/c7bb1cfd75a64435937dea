@@ -1,0 +1,9 @@
+{
+  "name": "actionbars",
+  "title": "Action Bars",
+  "version": "0.1.0",
+  "order": 10,
+  "description": "Bartender-style action bars: up to 10 bars of 12 buttons, bars 1-3 on by default at the bottom of the screen. Buttons show the action's icon, hotkey, item count and aether (the game's word for a cooldown); they are clicked or pressed with a bound key, and actions can be dragged between buttons.",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

@@ -1,0 +1,9 @@
+{
+  "name": "interfaces",
+  "title": "Interfaces",
+  "version": "0.1.0",
+  "order": 911,
+  "description": "s6-modular-g (interfaces, phase 2): the Interfaces page: the interface for the next start, and this profile's looks (the dialogs', the cursors').",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

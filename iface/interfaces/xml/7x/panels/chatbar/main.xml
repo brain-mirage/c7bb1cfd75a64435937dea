@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 7.x's chat bar (its XML twin's layout; main.lua is its scripts), the original's ChattingHandlePane at (74, 727)-(740, 751)
+     of the 7.x screen, in the frame layer. Format: core/xml.md.
+     WIRE: the buttons' presses and releases and the typing area's press are main.lua's scripts (4a
+     ChattingHandlePane::HandlePointerOrMouseEvent 0x00481D60, UserPane::OpenInputPaneForCurrentSayMode): which frame takes
+     which press, and the script it runs, decide what the client sends next. Changing them changes what the server sees. -->
+<ui>
+  <!-- its top left on the 7.x screen -->
+  <data key="PLACE" value="74, 727"/>
+  <!-- the open line (a LineInputPane at (100, 733)-(693, 745) on the screen): its place and right edge in the bar -->
+  <data key="LINE" x="26" y="6" right="619"/>
+  <!-- a button's picture: CHATBUTT.EPF in CHATBUTT.PAL, frame look x 3 + its column, from the last nine (off) while its
+       setting is off -->
+  <data key="ART" file="CHATBUTT.EPF" palette="CHATBUTT.PAL" off="9"/>
+
+  <!-- a button (GetChatButtonRect's regions): its picture's place on the bar and column, its setting -->
+  <template name="TK7xChatButton">
+    <frame type="Button">
+      <on script="OnMouseDown" call="ButtonDown"/>
+      <on script="OnMouseUp" call="ButtonUp"/>
+      <on script="OnEnter" call="ButtonEnter"/>
+      <on script="OnLeave" call="ButtonLeave"/>
+    </frame>
+  </template>
+
+  <!-- the frame layer, over the chat backdrop -->
+  <frame name="TK7xChatBar" key="frame" parent="UIParent" FrameStrata="LOW" FrameLevel="10" Size="666, 24" EnableMouse="true">
+    <do Hide=""/>
+    <run call="Own"/>
+    <!-- Back to Talk (0, 4)-(19, 21) -->
+    <frame from="TK7xChatButton" Point="TOPLEFT, @parent, TOPLEFT, 0, -4" Size="19, 17">
+      <data key="art" setting="backToTalk" column="0" x="0" y="4"/>
+      <run call="Button"/>
+    </frame>
+    <!-- the backdrop mode (630, 4)-(649, 21) -->
+    <frame from="TK7xChatButton" Point="TOPLEFT, @parent, TOPLEFT, 630, -4" Size="19, 17">
+      <data key="art" setting="backdrop" column="1" x="630" y="4"/>
+      <run call="Button"/>
+    </frame>
+    <!-- the chat switch (649, 4)-(668, 21) -->
+    <frame from="TK7xChatButton" Point="TOPLEFT, @parent, TOPLEFT, 649, -4" Size="19, 17">
+      <data key="art" setting="log" column="2" x="649" y="4"/>
+      <run call="Button"/>
+    </frame>
+    <run call="FollowSettings"/>
+    <!-- the typing area (21, 0)-(624, 24): the rules' chat:current while no line or prompt is open -->
+    <frame type="Button" name="TK7xChatTyping" key="typing" Point="TOPLEFT, @parent, TOPLEFT, 21, 0" Size="603, 24">
+      <on script="OnMouseDown" call="TypingPress"/>
+    </frame>
+    <!-- the open line's prompt and text -->
+    <text key="prompt" layer="OVERLAY"/>
+    <text key="text" layer="OVERLAY"/>
+    <data key="version" value="-1"/>
+    <!-- the offline line (the mock world): its prompt, and the game layer's box after it -->
+    <text key="offlinePrompt" layer="OVERLAY"/>
+    <frame type="EditBox" name="TK7xChatLine" key="box">
+      <run call="LineBox"/>
+    </frame>
+    <run call="ProvideLine"/>
+    <on script="OnUpdate" call="Update"/>
+    <run call="Register"/>
+  </frame>
+</ui>

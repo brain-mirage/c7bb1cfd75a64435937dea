@@ -1,0 +1,9 @@
+{
+  "name": "originalkeys",
+  "title": "Original Commands",
+  "version": "0.1.0",
+  "order": 85,
+  "description": "Key bindings for the original client's commands the other components do not reach: the option keys (E, G, F, F4, F5, F6, F12), power, take off, mixing, friends, the fitting room, the hotkey macros and the keypad digits.",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

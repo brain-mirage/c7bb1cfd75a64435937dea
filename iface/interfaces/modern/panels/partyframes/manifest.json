@@ -1,0 +1,9 @@
+{
+  "name": "partyframes",
+  "title": "Party Frames",
+  "version": "0.1.0",
+  "order": 22,
+  "description": "Small plates for the party members, stacked under the player frame: name, level, health and mana. Moved as a group.",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 5.x's message board (its XML twin's layout; main.lua adds, wraps and scrolls the messages): 5.33's
+     OldSystemMessagePane (constructor 0x004B8E00) at (441, 304)-(639, 369) of the 640 x 480 screen. Format: core/xml.md.
+     It draws only: only its bar takes a press, and nothing is sent. -->
+<ui>
+  <!-- its top left on the 5.x screen (Screen.PlacePanel follows the scaled screen until the player moves it) -->
+  <data key="PLACE" value="441, 304"/>
+  <!-- the messages: wrapped at 184 pixels (the legacy branch's AddWrappedText) in 12-pixel lines, five showing, 200 kept
+       (ScrollToLatest), six empty ones at the start; each in ColorStringSystemMessage's colour, 0x84 (132) -->
+  <data key="LINES" width="184" height="12" shown="5" keep="200" start="6" ink="0x84"/>
+
+  <frame name="TK5xBoard" key="frame" parent="UIParent" FrameStrata="LOW" Size="198, 65">
+    <!-- no fill: the paint clears it to colour 0, 5.33's transparent key in this keyed pane (main.lua) -->
+    <!-- the five lines, one 12-pixel line each, drawn from its top -->
+    <run call="Lines"/>
+    <do EnableMouseWheel="true"/>
+    <on script="OnMouseWheel" call="Wheel"/>
+    <!-- s6-interface-5x-b: ScrollablePane's skin 2 at its right 12 pixels (SetSkinIndex(2) in the constructor), its
+         arrows a line, its track 4 lines (the pane's page, sub_4B95C0); 5.33's position counts lines from the oldest -->
+    <scrollbar key="bar" skin="2" right="198" t="0" b="65" range="BarRange" set="BarSet"/>
+    <do Hide=""/>
+  </frame>
+</ui>

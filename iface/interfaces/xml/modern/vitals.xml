@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's health and mana bars' extras (its XML twin's layout; vitals.lua draws with it): the damage taken's colours
+     and timing, a previewed spell's colours, and the hovered spell's cost mark. Format: core/xml.md. Drawing only:
+     nothing here is sent or asked of the server. -->
+<ui>
+  <!-- the damage taken: its part of the bar, and on a bar whose own fill is red (the NPCs' bars over heads, a bar's
+       lossColour) a light one, so it shows -->
+  <data key="LOSS" value="0.9, 0.12, 0.1, 0.9"/>
+  <data key="LOSS_ON_RED" value="1, 0.82, 0.5, 0.95"/>
+  <!-- the damage taken: seconds it stays, then seconds it takes to shrink away -->
+  <data key="LOSS_TIME" hold="0.3" shrink="0.6"/>
+  <!-- a spell's effect previewed on the bar: healing as a light part, damage as a dark one -->
+  <data key="HEAL" value="0.55, 1, 0.55, 0.55"/>
+  <data key="HIT" value="0.15, 0, 0, 0.6"/>
+
+  <!-- the hovered spell's cost: a small red triangle under the bar, rows of 1, 3, 5 and 7 pixels, the tip against the
+       bar's bottom (vitals.lua places its tip at the cost and lifts it over what is below the bar) -->
+  <template name="MarkRow">
+    <texture layer="OVERLAY" ColorTexture="0.95, 0.15, 0.1, 1"/>
+  </template>
+  <template name="Mark">
+    <frame Size="7, 4">
+      <texture from="MarkRow" Size="1, 1" Point="TOP, @parent, TOP, 0, 0"/>
+      <texture from="MarkRow" Size="3, 1" Point="TOP, @parent, TOP, 0, -1"/>
+      <texture from="MarkRow" Size="5, 1" Point="TOP, @parent, TOP, 0, -2"/>
+      <texture from="MarkRow" Size="7, 1" Point="TOP, @parent, TOP, 0, -3"/>
+    </frame>
+  </template>
+</ui>

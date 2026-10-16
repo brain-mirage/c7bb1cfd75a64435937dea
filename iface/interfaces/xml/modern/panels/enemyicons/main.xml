@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's effects on others (their XML twin's layout; main.lua makes an icon group per unit shown and places it at the
+     unit's name or head): the layer over the whole screen the groups are on. Format: core/xml.md. Drawing only. -->
+<ui>
+  <frame name="TKEnemyIcons" key="frame" parent="UIParent" AllPoints="@parent" FrameStrata="LOW">
+    <!-- the groups followed every frame, refreshed four times a second -->
+    <run call="Ticker"/>
+  </frame>
+</ui>

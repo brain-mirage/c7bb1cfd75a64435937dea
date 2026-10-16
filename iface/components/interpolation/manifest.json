@@ -1,0 +1,9 @@
+{
+  "name": "interpolation",
+  "title": "Animation Interpolation",
+  "version": "0.1.0",
+  "order": 916,
+  "description": "s6-interp (the owner, 2026-10-03): the Experimental tab's Animation Interpolation, a test setting. On, the object layer draws in-between pictures between a creature's or a spell effect's frames (Quick, Balanced or Best; Frames 2 doubles them). Drawing only: the animations' frames and timing stay the logic's, and nothing is sent. The host's side is C# (TK.Objects.AnimationInterpolation).",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

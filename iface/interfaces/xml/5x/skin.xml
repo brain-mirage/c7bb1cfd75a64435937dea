@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 5.x's skin (its XML twin's; skin.lua draws with it): the screen, the scale of the base set's art, the font and the
+     colours 5.33's panes use. Format: core/xml.md. Drawing only: nothing here is sent. -->
+<ui>
+  <!-- 5.33's game screen (MainMenuPane::InitializeMainUiGraph 0x00457530: the BackPane is (0, 0)-(640, 480)) -->
+  <data key="SCREEN" width="640" height="480"/>
+  <!-- the scale 5.x draws the base set's game art at (7.5.2's, twice 5.33's own: skin.lua's note) -->
+  <data key="GAME_ART" value="0.5"/>
+  <!-- 5.33's font 0's face, BARAM00.EFT of the 5.33 set, in 12-pixel lines (GrafPort::DrawTextInRect 0x004381A0 steps a
+       line by the font's 12) -->
+  <data key="FONT" face="classic533" size="12" spacing="-2"/>
+  <!-- more of BARAM.PAL's indexes 5.33's panes use: white the chat's background, the status pane's name and the prompt
+       line's background -->
+  <data key="COLOURS" white="0x8F" red="12" blue="1" green="58"/>
+</ui>

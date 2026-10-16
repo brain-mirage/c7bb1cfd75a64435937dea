@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 5.x's look of the world map (its XML twin's layout; worldmap.lua draws with it), 5.33's FIELD pictures: WorldMapPane
+     constructor 0x004E4B80 and paint 0x004E51A0. Format: core/xml.md.
+     WIRE: only the drawing is here; the shared renderer keeps 4a's view, hover, hit tests and travel rules
+     (0x005C40C0/0x005C3E50). -->
+<ui>
+  <!-- FIELD1/10..18 are 640 x 480, each in its own palette (FIELDn.EPF in FIELDn.PAL); the figure at S.GAME_ART -->
+  <data key="ART" width="640" height="480"/>
+  <!-- the symbol: WMICON.EPF in BARAM.PAL; 5.33 offsets each frame's rectangle by (-20, -34), and the frames' rectangles
+       start at (7, 6) (frame 0) and (4, 3) (the hover's) in the native EPF canvas -->
+  <data key="SYMBOL" file="WMICON.EPF" palette="BARAM.PAL" x="-20" y="-34">
+    <data key="first" value="7, 6"/>
+    <data key="other" value="4, 3"/>
+  </data>
+</ui>

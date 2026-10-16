@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 7.x's screen (its XML twin's layout; main.lua sizes, places and shows it): the original's 1024 x 768 screen, scaled to
+     fit the window, its decoration pieces each a panel of its own with its own frame. A piece's pictures are placed on the
+     screen (the EPF layout's rows 1 and 8: Source-5's systems/entering-the-game-world.md); its frame is their rectangle
+     (main.lua's Build, from the pictures' sizes in the packs). Drawing only. Format: core/xml.md. -->
+<ui>
+  <!-- the original's screen -->
+  <data key="SCREEN" value="1024, 768"/>
+  <!-- The original's map view: its pane is (-48, -48)-(864, 768), 17 x 15 tiles and one beyond each edge (MapPane(17, 15)),
+       but it draws only through its clip, (48, 48)-(864, 768) in the pane (MapPane::AddToLayer), so (0, 0)-(816, 720) on
+       the screen: the backdrop shows beside and below it (the capture against the original 7.5.2, round 9). The world
+       view shows the pane's 19 x 17 cells there. -->
+  <data key="MAP_VIEW" value="0, 0, 816, 720"/>
+  <data key="MAP_CELLS" value="19, 17"/>
+  <!-- the side panel's tab header: TABS.EPF in TABS.PAL at (808, 79) (RecreateDynamicAboveFrame 0x004615D0) -->
+  <data key="TAB_HEADER" file="TABS.EPF" palette="TABS.PAL" x="808" y="79"/>
+  <!-- the divider piece's place is its pane's divider top at Config::m_systemMessageHeight's default, 70 -->
+  <data key="DIVIDER" top="70"/>
+  <!-- the chat backdrop for the chat log's rows (ChattingBackPane::ResizeForLineCount 0x004806D0: (9, 700 - 13 rows)-
+       (816, 720), growing upwards from its piece's bottom; OnPaint 0x00480740: BARAM.PAL's 128 over the scene, which keeps
+       22 of 32 parts in mode 1 and 10 in mode 2: its alpha the parts it covers) -->
+  <data key="CHAT" palette="BARAM.PAL" index="128" bottom="720" top="700" row="13" mode1="10" mode2="22" parts="32"/>
+
+  <!-- The pieces in the order they are made, each: its settings' key, its panel id (its place is "7x.<id>"), edit mode's
+       label, and its pictures on the screen or its rectangle. The frame layer (LOW) unless it says. -->
+
+  <!-- the backdrop (the BackPane, base layer) under the world view -->
+  <frame name="TK7xBackdrop" key="backdrop" parent="UIParent" FrameStrata="BACKGROUND" FrameLevel="0">
+    <data key="piece" setting="backdrop" id="backdrop" label="7.x Backdrop"/>
+    <data key="pictures">
+      <picture file="FRAME.EPF" frame="0" palette="FRAME.PAL" x="0" y="0"/>
+    </data>
+    <run call="Build"/>
+  </frame>
+  <frame name="TK7xFrame" key="border" parent="UIParent" FrameStrata="LOW">
+    <data key="piece" setting="border" id="border" label="7.x Border"/>
+    <data key="pictures">
+      <picture file="FRMPART.EPF" frame="0" palette="FRMPART.PAL" x="0" y="0"/>
+      <picture file="FRMPART.EPF" frame="1" palette="FRMPART.PAL" x="0" y="9"/>
+      <picture file="FRMPART.EPF" frame="2" palette="FRMPART.PAL" x="808" y="9"/>
+    </data>
+    <run call="Build"/>
+  </frame>
+  <!-- the header of the side panel's active tab; none is active when the game screen is built (m_activeChildIndex -1:
+       AboveFrame's index -1 + 5 = 4, entry 0 of TABS.EPF); it follows the side panel's tab (main.lua's ShowTabHeader) -->
+  <frame name="TK7xTabHeader" key="tabHeader" parent="UIParent" FrameStrata="LOW">
+    <data key="piece" setting="tabHeader" id="tabheader" label="7.x Tab Header"/>
+    <data key="pictures">
+      <picture file="TABS.EPF" frame="0" palette="TABS.PAL" x="808" y="79"/>
+    </data>
+    <run call="Build"/>
+  </frame>
+  <!-- the divider at its default height, Config::m_systemMessageHeight 70, in the messages panel at (832, 376):
+       NewSystemMessageModifyHeightPane -->
+  <frame name="TK7xDivider" key="divider" parent="UIParent" FrameStrata="LOW">
+    <data key="piece" setting="divider" id="divider" label="7.x Messages Divider"/>
+    <data key="pictures">
+      <picture file="SYSBAR.EPF" frame="0" palette="INVENBUT.PAL" x="835" y="446"/>
+    </data>
+    <run call="Build"/>
+  </frame>
+  <!-- the chat backdrop (ChattingBackPane, mode 1): palette index 128 of BARAM.PAL (black) over the scene, which keeps
+       70 %, on (9, 596)-(816, 720) -->
+  <frame name="TK7xChatBackdrop" key="chatBackdrop" parent="UIParent" FrameStrata="LOW">
+    <data key="piece" setting="chatBackdrop" id="chatbackdrop" label="7.x Chat Backdrop" rect="9, 596, 816, 720" alpha="0.3"/>
+    <run call="Build"/>
+  </frame>
+</ui>

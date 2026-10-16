@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 7.x's side panel (its XML twin's layout; main.lua is its scripts), the original's GeneralPurposePanel with its tab
+     strip (TabPane at (808, 79)-(831, 365)) and one tab pane at a time at (832, 79)-(1021, 367) of the 7.x screen. The
+     self look's, the look's and the options' pages are selflook.xml, look.xml and options.xml. Format: core/xml.md.
+     WIRE: the strip's buttons (BuildTabActionRect 0x004CFB20, HandlePointerOrMouseEvent 0x004CFA10: which presses each
+     takes, which pass on to MapPane 0x00507150, and the requests they carry), the pages' controls' rectangles (their
+     slots, cells, volumes and buttons: what a press there sends is the game layer's controls') and which frames take the
+     mouse decide what a press sends. Changing them changes what the server sees. -->
+<ui>
+  <!-- the strip's top left on the 7.x screen; the panel is the strip and the pane beside it -->
+  <data key="PLACE" value="808, 79"/>
+  <!-- an expanded pane's size (ToggleExpandedMode's SetBounds: (827, 79)-(1021, 637), its left 5 pixels left of the
+       pane's), its frame level (above the messages pane's, levels 4-9), and the tab header's rows over its left 5
+       columns -->
+  <data key="EXPANDED" width="194" height="558" level="20" headerRows="287"/>
+  <!-- the rows each page shows: the items' list and grid (13 rows, 15 cells; expanded 26 and 27), the group's members
+       (6; expanded 12), the collection's volumes (5) -->
+  <data key="SHOWN" itemRows="13" itemCells="15" itemRowsExpanded="26" itemCellsExpanded="27" groupRows="6"
+        groupRowsExpanded="12" volumes="5"/>
+  <!-- the items' 27 rows and 27 cells, the compact pane using the first 13 and 15; expanded the 27th row is pressed but
+       never drawn (the hit test runs to row 27, the paint to 26: InventoryPane.cpp:1190-1224 against :649-748). A row's
+       hit rectangle (2, 16 + 20n)-(160, 36 + 20n), its label's pen (15, 30 + 20n) (BuildInventorySlotOrigin
+       0x004EE4F0); a cell's (9 + 51c, 18 + 51r)-(57 + 51c, 66 + 51r), three a row, its pen (12 + 51c, 21 + 51r) -->
+  <data key="ITEM_ROWS" count="27" x="2" y="16" w="158" h="20" step="20" penX="15" penY="30"/>
+  <data key="ITEM_CELLS" count="27" x="9" y="18" size="48" step="51" columns="3" penX="12" penY="21"/>
+  <!-- the spells' 27 rows (the compact pane uses 13; the 27th is pressed while expanded, never drawn): the hit rectangle
+       (2, 16 + 20n)-(170, 36 + 20n), the label's pen (12, 19 + 20n) (BuildSpellRowOrigin 0x0057E960) -->
+  <data key="SPELL_ROWS" count="27" l="2" t="16" r="170" step="20" penX="12" penY="19"/>
+  <!-- the collection's volumes: the row (6, 14 + 50s)-(161, 62 + 50s), its name's glow in 12 copies -->
+  <data key="VOLUME_ROWS" l="6" t="14" r="161" b="62" step="50" glow="12"/>
+
+  <!-- a tab of TabPane's strip (BuildTabActionRect 0x004CFB20: x 2-20 of the strip, right and bottom exclusive;
+       main.lua's TabPress). Each takes the left press only (s6-modular-g round 22); a double click's second press (type
+       2) runs the self, items, spells and options buttons again and goes on to the map for the group and the
+       collection; sound: sample 0x198 after the switch; request: what the press carries, which the page runs when it
+       shows (TK.Game.Views' notes) -->
+  <template name="TK7xSideTab">
+    <frame type="Button" EnableMouse="false" ClaimButtons="LeftButton">
+      <on script="OnMouseDown" call="TabPress"/>
+    </frame>
+  </template>
+
+  <!-- the base layer, over the backdrop. s6-modular-g round 22: TabPane::HandlePointerOrMouseEvent (0x004CFA10) takes
+       only tab presses; blank strip pixels and right/release events pass to MapPane (0x00507150) -->
+  <frame name="TK7xSide" key="frame" parent="UIParent" FrameStrata="LOW" FrameLevel="5" Size="213, 288" EnableMouse="false">
+    <do Hide=""/>
+    <run call="Own"/>
+    <!-- the pane (832, 79)-(1021, 367); round 22: the page still takes its background, outside the map -->
+    <frame name="TK7xSidePane" key="pane" Point="TOPLEFT, @parent, TOPLEFT, 24, 0" Size="189, 288" EnableMouse="true">
+      <!-- the items: NewInventoryPane -->
+      <frame name="TK7xSideItems" key="items" AllPoints="@parent" EnableMouseWheel="true">
+        <data key="first" value="0"/>
+        <data key="grid" value="false"/>
+        <data key="resetOnToggle" value="true"/>
+        <texture key="back" layer="BACKGROUND"/>
+        <!-- NewInventoryPane::OnPaint (0x004EBB20) keeps both grid fills at once: behind the items -->
+        <texture key="drop" layer="BORDER"/>
+        <texture key="selected" layer="BORDER"/>
+        <run call="ItemSlots"/>
+        <!-- the buttons (GetButtonRect): List, Grid, Mix (the dialog model's opener on its press: Shift+I's action) and
+             Expand -->
+        <invenbutton key="buttons[]" l="168" t="37" r="185" b="54" picture="0" call="ListView"/>
+        <invenbutton key="buttons[]" l="168" t="55" r="185" b="72" picture="1" call="GridView"/>
+        <invenbutton key="mix" l="168" t="80" r="185" b="97" picture="2" call="Mix"/>
+        <run call="MixControl"/>
+        <invenbutton key="expand" l="168" t="99" r="185" b="116" picture="4" call="Expand"/>
+        <run call="ItemButtons"/>
+        <scrollbar key="bar" l="169" t="122" b="267" call="Scrolled"/>
+        <on script="OnMouseWheel" call="Wheel"/>
+        <run call="EndCarryOnHide"/>
+      </frame>
+      <!-- the spells: NewSpellInventoryPane -->
+      <frame name="TK7xSideSpells" key="spells" AllPoints="@parent" EnableMouseWheel="true">
+        <data key="first" value="0"/>
+        <data key="resetOnToggle" value="true"/>
+        <texture key="back" layer="BACKGROUND"/>
+        <texture key="drop" layer="BORDER"/>
+        <run call="SpellRows"/>
+        <invenbutton key="expand" l="168" t="37" r="185" b="54" picture="4" call="Expand"/>
+        <run call="ExpandButtons"/>
+        <scrollbar key="bar" l="169" t="57" b="267" call="Scrolled"/>
+        <on script="OnMouseWheel" call="Wheel"/>
+      </frame>
+      <!-- the self look (selflook.xml) and another player's (look.xml) -->
+      <run call="BuildSelf"/>
+      <run call="BuildLook"/>
+      <!-- the group: NewGroupPane; the wheel a member a notch (its ScrollPane) -->
+      <frame name="TK7xSideGroup" key="group" AllPoints="@parent" EnableMouseWheel="true">
+        <data key="first" value="0"/>
+        <texture key="back" layer="BACKGROUND"/>
+        <run call="GroupRows"/>
+        <invenbutton key="expand" l="168" t="37" r="185" b="54" picture="4" call="Expand"/>
+        <run call="ExpandButtons"/>
+        <scrollbar key="bar" l="169" t="60" b="270" call="Scrolled"/>
+        <on script="OnMouseWheel" call="Wheel"/>
+      </frame>
+      <!-- the collection: CollectionPane, CLTINV.EPF -->
+      <frame name="TK7xSideCollection" key="collection" AllPoints="@parent" EnableMouseWheel="true">
+        <data key="first" value="0"/>
+        <picture key="back" file="CLTINV.EPF" frame="0" palette="ITEMINV.PAL" x="0" y="0" layer="BACKGROUND"/>
+        <run call="Volumes"/>
+        <scrollbar key="bar" l="169" t="27" b="267" call="Scrolled"/>
+        <on script="OnMouseWheel" call="Wheel"/>
+      </frame>
+      <!-- the options (options.xml) -->
+      <run call="BuildOptions"/>
+    </frame>
+    <run call="HidePages"/>
+
+    <!-- TabPane's buttons (TK7xSideTab, above): 0 the self look, 1 the items, 2 the spells, 3 the group, 4 the
+         collection, 5 the options -->
+    <frame from="TK7xSideTab" name="TK7xSideTab1" Point="TOPLEFT, @parent, TOPLEFT, 2, -1" Size="18, 45" PassesDoubles="false">
+      <data key="tab" id="self" again="true" request="open:character"/>
+      <run call="TabRequest"/>
+    </frame>
+    <frame from="TK7xSideTab" name="TK7xSideTab2" Point="TOPLEFT, @parent, TOPLEFT, 2, -47" Size="18, 46" PassesDoubles="false">
+      <data key="tab" id="items" again="true" sound="true"/>
+    </frame>
+    <frame from="TK7xSideTab" name="TK7xSideTab3" Point="TOPLEFT, @parent, TOPLEFT, 2, -95" Size="18, 45" PassesDoubles="false">
+      <data key="tab" id="spells" again="true" sound="true"/>
+    </frame>
+    <frame from="TK7xSideTab" name="TK7xSideTab4" Point="TOPLEFT, @parent, TOPLEFT, 2, -142" Size="18, 45" PassesDoubles="true">
+      <data key="tab" id="group" sound="true" request="open:group"/>
+      <run call="TabRequest"/>
+    </frame>
+    <frame from="TK7xSideTab" name="TK7xSideTab5" Point="TOPLEFT, @parent, TOPLEFT, 2, -189" Size="18, 45" PassesDoubles="true">
+      <data key="tab" id="collection" request="open:collection"/>
+      <run call="TabRequest"/>
+    </frame>
+    <frame from="TK7xSideTab" name="TK7xSideTab6" Point="TOPLEFT, @parent, TOPLEFT, 2, -236" Size="18, 45" PassesDoubles="false">
+      <data key="tab" id="options" again="true" sound="true"/>
+    </frame>
+
+    <run call="Register"/>
+    <run call="Provide"/>
+    <!-- s6-modular-g (round 14 fix): the world's events come before any input after their packets (UIHost.CatchUp), so a
+         press reaches the rows, cells and volumes 4a's pane had then (its slot, spell or volume is what the press sends) -->
+    <frame>
+      <data key="events" value="BAG_UPDATE, SPELLS_CHANGED, CURSOR_CHANGED, UNIT_NAME_UPDATE, GROUP_ROSTER_UPDATE, TK_GROUP_UPDATE, UNIT_HEALTH, UNIT_POWER, UNIT_STATS, TK_CHARACTER_SHEET, TK_COLLECTION_UPDATE"/>
+      <run call="RegisterEvents"/>
+      <on script="OnEvent" call="Refresh"/>
+    </frame>
+    <on script="OnShow" call="Refresh"/>
+  </frame>
+</ui>

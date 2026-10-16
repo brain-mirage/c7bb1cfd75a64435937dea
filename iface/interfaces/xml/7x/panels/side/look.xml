@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 7.x's look at another player (side panel tab 1; its XML twin's layout; look.lua is its scripts), 4a's UserLookPane.
+     Format: core/xml.md.
+     WIRE: the action buttons' rectangles (GetActionButtonRect 0x005A1A70: button 0 (146, 112)-(182, 148) sends 4A 00,
+     button 1 (146, 148)-(182, 184) sends 2E, on the left press: HandlePointerOrMouseEvent 0x005A1580) and their actions
+     decide what a press on the page sends (look.lua's header). Changing them changes what the server sees. -->
+<ui>
+  <!-- view 1's items by the packet's record (CharacterSheet's order: weapon, armour, shield, helm, the two hands, the two
+       sub-hands, face, crown, mantle, necklace, boots, coat): the point each is centred on (OnPaint,
+       UserLookPane.cpp:494-662) -->
+  <data key="ITEMS">
+    <at x="34" y="92"/>
+    <at x="92" y="92"/>
+    <at x="150" y="92"/>
+    <at x="92" y="36"/>
+    <at x="147" y="146"/>
+    <at x="34" y="146"/>
+    <at x="34" y="198"/>
+    <at x="150" y="198"/>
+    <at x="36" y="36"/>
+    <at x="150" y="36"/>
+    <at x="92" y="146"/>
+    <at x="34" y="250"/>
+    <at x="92" y="250"/>
+    <at x="92" y="198"/>
+  </data>
+  <!-- the arrows' places by view (GetActionButtonRect: next in views 0-2, previous in 1-2, previous in next's place in
+       3) -->
+  <data key="NEXT">
+    <at view="0" x="169" y="268"/>
+    <at view="1" x="169" y="268"/>
+    <at view="2" x="169" y="268"/>
+  </data>
+  <data key="BACK">
+    <at view="1" x="149" y="268"/>
+    <at view="2" x="149" y="268"/>
+    <at view="3" x="169" y="268"/>
+  </data>
+  <!-- the views' pictures: USERLOOK.EPF 0, 1 and 3 in USERLOOK.PAL, PFLOOK.EPF 0 in PFLOOK.PAL for view 2 -->
+  <data key="FILES">
+    <view view="0" file="USERLOOK.EPF" frame="0" palette="USERLOOK.PAL"/>
+    <view view="1" file="USERLOOK.EPF" frame="1" palette="USERLOOK.PAL"/>
+    <view view="2" file="PFLOOK.EPF" frame="0" palette="PFLOOK.PAL"/>
+    <view view="3" file="USERLOOK.EPF" frame="3" palette="USERLOOK.PAL"/>
+  </data>
+
+  <!-- a text of the page, hidden until drawn (K.Text) -->
+  <template name="TK7xLookText">
+    <text key="texts[]" layer="OVERLAY">
+      <do Hide=""/>
+    </text>
+  </template>
+  <!-- an item of view 1 -->
+  <template name="TK7xLookItem">
+    <texture key="items[]" layer="ARTWORK"/>
+  </template>
+  <!-- an action button: Modern's look window's action on its left press (look.lua's ActionButton); its help on the right
+       press (look.lua's Help) -->
+  <template name="TK7xLookButton">
+    <frame type="Button" key="buttons[]" Size="36, 36"/>
+  </template>
+
+  <frame name="TK7xSideLook" key="frame" AllPoints="@parent">
+    <data key="view" value="0"/>
+    <texture key="back" layer="BACKGROUND"/>
+    <texture key="face" layer="ARTWORK"/>
+    <!-- 10 texts: the header, the name and the three identity lines, each a shadow and the text -->
+    <text from="TK7xLookText"/>
+    <text from="TK7xLookText"/>
+    <text from="TK7xLookText"/>
+    <text from="TK7xLookText"/>
+    <text from="TK7xLookText"/>
+    <text from="TK7xLookText"/>
+    <text from="TK7xLookText"/>
+    <text from="TK7xLookText"/>
+    <text from="TK7xLookText"/>
+    <text from="TK7xLookText"/>
+    <!-- the 14 items -->
+    <texture from="TK7xLookItem"/>
+    <texture from="TK7xLookItem"/>
+    <texture from="TK7xLookItem"/>
+    <texture from="TK7xLookItem"/>
+    <texture from="TK7xLookItem"/>
+    <texture from="TK7xLookItem"/>
+    <texture from="TK7xLookItem"/>
+    <texture from="TK7xLookItem"/>
+    <texture from="TK7xLookItem"/>
+    <texture from="TK7xLookItem"/>
+    <texture from="TK7xLookItem"/>
+    <texture from="TK7xLookItem"/>
+    <texture from="TK7xLookItem"/>
+    <texture from="TK7xLookItem"/>
+    <!-- button 0, Trade (4A 00; help string 200), and button 1, Group (2E; help string 201) -->
+    <frame from="TK7xLookButton" name="TK7xLookButton0" Point="TOPLEFT, @parent, TOPLEFT, 146, -112">
+      <data key="action" value="look:trade"/>
+      <data key="help" value="200"/>
+      <run call="ActionButton"/>
+      <texture key="tex" layer="ARTWORK"/>
+      <run call="Help"/>
+    </frame>
+    <frame from="TK7xLookButton" name="TK7xLookButton1" Point="TOPLEFT, @parent, TOPLEFT, 146, -148">
+      <data key="action" value="look:group"/>
+      <data key="help" value="201"/>
+      <run call="ActionButton"/>
+      <texture key="tex" layer="ARTWORK"/>
+      <run call="Help"/>
+    </frame>
+    <!-- the arrows: next (INVENBUT.EPF 6) and previous (5), placed by view -->
+    <arrow key="next" picture="6" call="Next"/>
+    <arrow key="previous" picture="5" call="Previous"/>
+    <!-- 4a's TextEditPanes: the more info (view 0), the profile (view 2), the legend (view 3) -->
+    <textpane key="moreInfo" l="7" t="205" r="182" b="266"/>
+    <textpane key="profile" l="17" t="120" r="174" b="240"/>
+    <textpane key="legend" l="7" t="15" r="182" b="265"/>
+    <run call="Watch"/>
+  </frame>
+</ui>

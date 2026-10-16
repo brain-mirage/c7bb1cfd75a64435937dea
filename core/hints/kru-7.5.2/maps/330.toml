@@ -1,0 +1,108 @@
+# Buya (map 330) on the test server: what its own cells need beyond the base hints. Applies only when the map the
+# server sends passes the check (3.5): its size, as packet 0x15 gives it. The canal's banks are in the base hints
+# (round 8), for every map with that canal.
+
+[check]
+size = "146x156"
+
+# s6-reprojection-c: the canals' moving water (the owner, 2026-10-03: "this is moving water this is still water?").
+# Each stretch flows the way surface_flow names, rippling gently downstream in the 3D modes; water no entry names lies
+# still (the house's moat south of the canal, x 64-76, rows 116-125, by its tiles in the base hints). The art paints no
+# current, so the directions are a reading of the network, not a fact: the west river (from row 39) and the east canal
+# (from row 22) both run down to the south canal (rows 91-93), which leaves south down the branch at x 85-88 and west
+# along rows 111-113. Only the water cells in a rectangle take its flow; the banks and land in it are untouched.
+[cells."13,39-19,71"]     # the west river, down to its pool
+surface_flow = "s"
+
+[cells."13,72-33,75"]     # out of the pool, east
+surface_flow = "e"
+
+[cells."34,72-36,90"]     # south to the south canal
+surface_flow = "s"
+
+[cells."35,91-85,93"]     # the south canal's west half, east to the branch
+surface_flow = "e"
+
+[cells."121,22-124,25"]   # the east canal's head in the north-east corner
+surface_flow = "s"
+
+[cells."111,25-123,26"]   # west along the town's north edge
+surface_flow = "w"
+
+[cells."111,27-114,90"]   # the east canal, south
+surface_flow = "s"
+
+[cells."88,91-114,93"]    # the south canal's east half, west to the branch
+surface_flow = "w"
+
+[cells."85,91-88,110"]    # the branch, south (the narrower entry: the junction's cells flow south)
+surface_flow = "s"
+
+[cells."62,111-88,113"]   # west past the well, where the water leaves the town
+surface_flow = "w"
+
+# The shrine in the west field (round 9, r5 findings W2 and W3): its roof is six pieces drawn from the row south of it
+# (202-207), which the rule laid in strips at three heights and Sphere hid as unsupported. Their group makes one roof,
+# hipped, at the height of the shrine's pillars (241, 242: four cells); the shrine's blocked cells under it stand up to it.
+[cells."71,104-76,104"]
+group = "shrine-roof"
+
+[group.shrine-roof]
+kind = "top"
+height = 4
+roof = "hip"
+
+# The palace hall north of the square (s6-reprojection-b's find at 72, 50; round 26). Its red ground floor, the doors and
+# lattice windows under a beam, is ground tiles (17987-18003 on rows 49-52, a plinth on row 53), painted flat as the game
+# draws a front; its roofs and upper storey are tops on rows 49, 51 and 53, in the game's drawing order, which the rule
+# laid flat at three heights (bands from the front). The hall's blocked cells stand as a terrace five cells high, so its
+# front shows those tiles standing up, by the game's own rule; its roof pieces are one hipped roof on the terrace. The
+# terrace is three boxes round the doorway (72-74, 52-53), which is walked into and stays on the ground (Astra's P2 on
+# round 26's first pass), the walls beside it the front folded.
+[cells."63,47-71,53"]     # west of the doorway
+footprint = "box"
+height = 5
+
+[cells."75,47-83,53"]     # east of the doorway
+footprint = "box"
+height = 5
+
+[cells."72,47-74,51"]     # behind the doorway
+footprint = "box"
+height = 5
+
+[cells."61,49-85,53"]
+group = "palace-hall"
+
+[group.palace-hall]
+kind = "top"
+height = 5
+roof = "hip"
+
+# The sunken court north of the palace (round 12, the design's 6.4): its curved stone wall (tiles 17819-17889) stood up
+# as a ring of blocks round a grass floor at the ground's level, a mound. The court is sunk: its north wall's inner face,
+# painted in its north rows, looks south and turns round the two round ends; its floor lies 1.6 cells down.
+[cells."85,23-95,27"]
+footprint = "rounded"
+inset = [0.3, 0.4, 1.0, 0.3]   # north, east, south, west, in from the cells' outer edges
+corner = 1.5
+height = -1.6
+
+# the steps down into it from the north (tiles 255-260): slopes, from the grass to the court's floor, where the last
+# row's low edge rests; footprint = "none" takes their cells out of the court's shape (its fields merge one by one)
+[cells."91,22-93,22"]
+ground = "slope"
+rises = "n"
+level = 0
+
+[cells."91,23-93,23"]
+footprint = "none"
+ground = "slope"
+rises = "n"
+level = -0.55
+
+[cells."91,24-93,24"]
+footprint = "none"
+ground = "slope"
+rises = "n"
+level = -1.1

@@ -1,0 +1,9 @@
+# Vale (map 1005) on the test server: the 3D modes' horizon past its edges (s6-reprojection round 30, the design's 3.14),
+# an example: the snowbound valley, white country on every side, whatever its edge tiles show. Applies only when the map
+# the server sends passes the check (3.5).
+
+[check]
+size = "250x180"
+
+[sky]
+all = "snow"

@@ -1,0 +1,28 @@
+# Buya's royal court (map 4609): what its own cells need beyond the base hints. Applies only when the map the server sends
+# passes the check (3.5).
+
+[check]
+size = "20x24"
+
+# The two long sunken channels (s6-reprojection round 19, for s6-reprojection-b's round 3, whose [sobj.11683-11699] lays
+# their rims flat where Normal draws them): each floor (tile 28518, walked on) lies 0.6 down, and the steps at its open
+# south end (tile 1123) rise from it to the court. The short middle one is only its steps under its north rim, with no
+# floor to go down to, and stays at the court's level
+[cells."4,6-4,10"]
+ground = "flat"
+level = -0.6
+
+[cells."15,6-15,10"]
+ground = "flat"
+level = -0.6
+
+# the steps: slopes rising south to the court's level, their low edge resting on the floor
+[cells."4,11-4,11"]
+ground = "slope"
+rises = "s"
+level = 0
+
+[cells."15,11-15,11"]
+ground = "slope"
+rises = "s"
+level = 0

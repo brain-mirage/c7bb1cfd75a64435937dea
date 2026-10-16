@@ -1,0 +1,9 @@
+{
+  "name": "menubutton",
+  "title": "Menu",
+  "version": "0.1.0",
+  "order": 915,
+  "description": "s6-modular-g (interfaces, phase 2): a small button at the bottom right, that opens the game menu whatever the interface's keys took; moved on its Layout tab or in edit mode. s6-ui-core (round 60): a shared panel, the Interface tab's Menu page under All interfaces, off by default in Modern and on in 7.x and 5.x.",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

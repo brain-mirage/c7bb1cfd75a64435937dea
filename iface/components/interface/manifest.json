@@ -1,0 +1,9 @@
+{
+  "name": "interface",
+  "title": "Interface",
+  "version": "0.1.0",
+  "order": 90,
+  "description": "Settings for the whole interface: the global UI scale, the UI transparency and reloading the Lua UI (the frame-time readout is on the Debug page).",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

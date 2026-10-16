@@ -1,0 +1,21 @@
+{
+  "id": "3d-objects",
+  "name": "3D",
+  "kind": "draw",
+  "version": "0.1.0",
+  "contract": 4,
+  "assembly": "3d-objects.dll",
+  "entry": "TK.Modules.Objects3d.Module",
+  "serves": ["map-objects"],
+  "artPacks": [],
+  "bundle": "3d-objects.bundle",
+  "over": "others",
+  "custom": "3d",
+  "options": [
+    { "key": "others", "name": "Objects Without a 3D Model", "values": "2d-7x=Modern (7.x);2d-5x=Retro (5.x)" }
+  ],
+  "models": [
+    { "name": "notice-board", "source": "notice-board", "objects": [1619, 1620] },
+    { "name": "signpost", "source": "signpost", "objects": [2051, 2052] }
+  ]
+}

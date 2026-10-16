@@ -1,0 +1,9 @@
+{
+  "name": "classic",
+  "title": "Classic Commands",
+  "version": "0.1.0",
+  "order": 90,
+  "description": "Opt-in: the original client's one-key commands and prompts (d drop, e eat, w wield, : emote, ...). Off by default.",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

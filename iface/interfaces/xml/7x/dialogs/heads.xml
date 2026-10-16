@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 7.x's look of the barber's head choice (its XML twin's layout; heads.lua draws with it), 4a's HeadSelectDialog
+     (PursuitMessageDialogCreator.cpp:1552-1631, the EPF branch). Format: core/xml.md; the dialog's attributes are its
+     look entry's values (interfaces/xml/entry.lua), its children where heads.lua draws its parts: rectangles (left, top, right,
+     bottom), pictures (file, palette) and image buttons (BUTT001.EPF's image id first).
+     WIRE: a control's rectangle is where a press on it lands; changing one changes which control a press reaches. -->
+<ui>
+  <!-- 374 x 316 at its slot 1 on DLGMSGH.EPF in NPAL8.PAL (7.5.2 ships neither DLGMSGH.EPF nor CAPSULE.EPD: 4a's standard
+       window stands in, docs/s5-notes/2026-10-04-head-choice-art-missing-in-7.5.2.md); OK (1, image 14), the page back
+       (2, image 18), on (3, image 19), CLOSE (4, image 15), all 63 x 24; the preview, 37 x 55; the text; the heads on the
+       5 x 2 grid of 41 x 54 buttons from (58, 113), 54 across and 64 down, the chosen one's capsule (CAPSULE.EPF in
+       NPAL3.PAL) behind it at (3, 1) of its button (ObjectImageButtonPane::OnPaint, TextMenuItemList.cpp:2357-2367). -->
+  <data key="Heads" width="374" height="316" button="63" page="63">
+    <data key="head" value="41, 54"/>
+    <data key="art" value="DLGMSGH.EPF, NPAL8.PAL"/>
+    <data key="ok" value="14, 40, 266, 103, 290"/>
+    <data key="left" value="18, 114, 266, 177, 290"/>
+    <data key="right" value="19, 188, 266, 251, 290"/>
+    <data key="close" value="15, 262, 266, 325, 290"/>
+    <data key="preview" value="36, 40, 73, 95"/>
+    <data key="text" value="86, 29, 336, 92"/>
+    <data key="heads" x="58" y="113" across="54" down="64" columns="5" count="10"/>
+    <data key="capsule" file="CAPSULE.EPF" palette="NPAL3.PAL" x="3" y="1"/>
+  </data>
+</ui>

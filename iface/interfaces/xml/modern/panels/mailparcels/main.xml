@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's mail and parcels panel (its XML twin's layout; main.lua takes the dialogs' parcel window in while it is
+     shown): the frame the original's parcel and letter buttons are drawn in. Format: core/xml.md. Drawing only. -->
+<ui>
+  <frame name="TKMailParcels" key="frame" parent="UIParent" Size="62, 25">
+    <run call="Hold"/>
+    <on script="OnShow" call="Hold"/>
+    <on script="OnHide" call="Release"/>
+  </frame>
+</ui>

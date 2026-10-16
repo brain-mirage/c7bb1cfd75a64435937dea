@@ -1,0 +1,9 @@
+{
+  "name": "nameplates",
+  "title": "Nameplates",
+  "version": "0.1.0",
+  "order": 54,
+  "description": "What is drawn over others: the names over the figures in the world view, where the original puts its name text; health bars over players and NPCs (each kind's own page: for whom, numbers, damage taken); the group members' HP and MP bars. N turns the names on or off, as the original's key. Local display only: nothing is sent.",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

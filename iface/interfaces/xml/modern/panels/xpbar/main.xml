@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's XP bar (its XML twin's layout; main.lua fills it and sizes it by its settings): a long experience bar, as
+     Bartender's, with tick marks every tenth and its numbers in the middle. Format: core/xml.md. Drawing only. -->
+<ui>
+  <!-- a tick mark: a thin dark line, placed by the bar's width (main.lua's ApplySettings) -->
+  <template name="Tick">
+    <texture layer="OVERLAY" Width="1" ColorTexture="0, 0, 0, 0.5"/>
+  </template>
+
+  <frame type="StatusBar" name="TKXPBar" key="frame" parent="UIParent" StatusBarTexture="tk:bar"
+         StatusBarColor="0.58, 0.25, 0.85, 1">
+    <texture layer="BACKGROUND" AllPoints="@parent" ColorTexture="0.08, 0.04, 0.12, 0.85"/>
+    <texture layer="OVERLAY">
+      <do Point="TOPLEFT, @parent, TOPLEFT, -1, 1"/>
+      <do Point="BOTTOMRIGHT, @parent, BOTTOMRIGHT, 1, -1"/>
+      <do Texture="tk:edge" VertexColor="0.1, 0.1, 0.1, 1"/>
+    </texture>
+    <!-- tick marks every tenth, as in WoW -->
+    <data key="ticks"/>
+    <texture from="Tick" key="ticks[]"/>
+    <texture from="Tick" key="ticks[]"/>
+    <texture from="Tick" key="ticks[]"/>
+    <texture from="Tick" key="ticks[]"/>
+    <texture from="Tick" key="ticks[]"/>
+    <texture from="Tick" key="ticks[]"/>
+    <texture from="Tick" key="ticks[]"/>
+    <texture from="Tick" key="ticks[]"/>
+    <texture from="Tick" key="ticks[]"/>
+    <label key="text" text="" size="10" colour="white" Font="10, OUTLINE" Point="CENTER, @parent, CENTER, 0, 0"/>
+    <do EnableMouse="true"/>
+    <on script="OnEnter" call="Enter"/>
+    <on script="OnLeave" call="Leave"/>
+    <do RegisterEvent="PLAYER_XP_UPDATE"/>
+    <do RegisterEvent="PLAYER_ENTERING_WORLD"/>
+    <on script="OnEvent" call="Changed"/>
+  </frame>
+</ui>

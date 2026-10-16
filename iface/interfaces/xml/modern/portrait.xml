@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's unit portrait (its XML twin's layout; portrait.lua makes one, sizes, places and colours it): a round frame,
+     a disc in the unit's colour, the character's picture over it (hidden until a portrait or a profile picture is
+     shown), the name's letter while there is neither, and the gold ring over them all. Format: core/xml.md. Drawing
+     only. -->
+<ui>
+  <template name="Portrait">
+    <frame>
+      <texture key="disc" layer="ARTWORK" AllPoints="@parent" Texture="tk:circle"/>
+      <texture layer="OVERLAY" AllPoints="@parent" Texture="tk:ring" VertexColor="0.85, 0.75, 0.45, 1"/>
+      <texture key="picture" layer="ARTWORK" sublevel="1" AllPoints="@parent" Hide=""/>
+      <label key="glyph" text="" size="26" colour="white" Font="26, OUTLINE" Point="CENTER, @parent, CENTER, 0, 1"/>
+    </frame>
+  </template>
+</ui>

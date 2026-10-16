@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 7.x's look of the NPC dialogs (its XML twin's layout; npc.lua draws with it), from Source-5's class pages:
+     MessageDialog 0x0054CE10 and MessageDialogLarger 0x0054DB90, MenuQuestionDialog and its Larger, TextDialog 0x00552110,
+     NexonclubRegistrationDialog. Format: core/xml.md; each dialog's attributes are its look entry's values
+     (interfaces/xml/entry.lua), its children where npc.lua draws its parts: rectangles (left, top, right, bottom), points (x, y),
+     pictures and image buttons (BUTT001.EPF's image id first).
+     WIRE: a control's rectangle is where a press on it lands (DialogPane::HitTestControls 0x0049FB10 gives a press to the
+     last control whose rectangle holds it); changing one changes which control a press reaches, so what the client
+     sends. -->
+<ui>
+  <!-- D-01, D-02: the text window (364 x 283; Larger 472 x 283): DLGMSG1 (or DLGMSG1B) with the portrait, DLGMSG11
+       without, DLGMSG1.PAL; Previous, Next, Close along y 211-235 from x (Larger's x), 77 apart; the text by size and
+       portrait. The small window (316 x 214, DLGMSG2 in BARAM.PAL): BUTT002's bars PREV 56, NEXT 55, QUIT 57, no text. -->
+  <data key="Message" width="364" height="283" button="63">
+    <data key="portrait" value="46, 36"/>
+    <data key="text" palette="DLGMSG1.PAL" top="211" bottom="235" step="77" images="18, 19, 15">
+      <data key="normal" width="364" height="283" picture="DLGMSG1.EPF" plain="DLGMSG11.EPF" x="77"
+            withPicture="122, 60, 307, 204" without="48, 60, 312, 204"/>
+      <data key="larger" width="472" height="283" picture="DLGMSG1B.EPF" plain="DLGMSG11.EPF" x="131"
+            withPicture="122, 60, 415, 204" without="48, 48, 326, 208"/>
+    </data>
+    <data key="small" width="316" height="214" file="DLGMSG2.EPF" palette="BARAM.PAL">
+      <data key="prev" value="56, 77, 88, 235, 103"/>
+      <data key="next" value="55, 77, 106, 235, 121"/>
+      <data key="close" value="57, 77, 124, 235, 139"/>
+    </data>
+  </data>
+
+  <!-- D-03, D-04: the text window (383 x 345; Larger 491 x 345): DLGMSG3 (DLGMSG3B) with the portrait at (42, 32),
+       DLGMSG31 without, DLGMSG3.PAL; the prompt, the answers' list (12-pixel rows of 269-pixel cells, the Larger's 302:
+       MenuQuestionItemList, MenuQuestionItemListLarger), OK, Previous, Next, Close along y 283-307, 74 apart. The small
+       window (374 x 286, DLGMSG4 in BARAM.PAL): the list and the buttons higher, no prompt. Without the portrait 4a
+       gives the larger window's prompt (55, 22)-(320, 67) (a slip in 4a, kept). -->
+  <data key="Question" width="383" height="345" button="63" listWidth="302" listHeight="120">
+    <data key="portrait" value="42, 32"/>
+    <data key="images" value="14, 18, 19, 15"/>
+    <data key="text" palette="DLGMSG3.PAL" top="283" bottom="307" step="74">
+      <data key="normal" width="383" height="345" picture="DLGMSG3.EPF" plain="DLGMSG31.EPF" x="51"
+            list="50, 149, 342, 269" cell="269" withPicture="122, 50, 332, 134" without="47, 50, 319, 134"/>
+      <data key="larger" width="491" height="345" picture="DLGMSG3B.EPF" plain="DLGMSG31.EPF" x="105"
+            list="50, 149, 450, 269" cell="302" withPicture="122, 50, 440, 134" without="55, 22, 320, 67"/>
+    </data>
+    <data key="small" width="374" height="286" file="DLGMSG4.EPF" palette="BARAM.PAL" x="40" top="236" bottom="260"
+          step="74" list="36, 71, 338, 215"/>
+  </data>
+
+  <!-- D-05: the text window (383 x 258, DLGMSG5 in DLGMSG5.PAL, the portrait at (30, 30)): the NPC's text, the prompt,
+       the edit and its caption, OK, Previous, Next, Close along y 197-221 from x 49, 74 apart. The small window (374 x
+       194, DLGMSG6 in BARAM.PAL): the same prompt, edit and caption, and the four buttons on the window's rectangle (0,
+       0)-(374, 194), as 4a sets their rectangles only for the text window (TextDialog 0x00552110): stacked in their order
+       (OK 1, PREVIOUS 2, NEXT 3, CLOSE 4), each picture at the window's top left, CLOSE's on top. WIRE: in the small
+       window a press on the prompt (5), the edit (6) or the caption (7) is theirs and any other press is CLOSE's (4)
+       (npc.lua's TextReply). -->
+  <data key="TextReply" width="383" height="258" button="63" editWidth="265" editHeight="12">
+    <data key="portrait" value="30, 30"/>
+    <data key="prompt" value="45, 144, 310, 156"/>
+    <data key="edit" value="49, 163, 314, 175"/>
+    <data key="caption" value="45, 182, 310, 194"/>
+    <data key="images" value="14, 18, 19, 15"/>
+    <data key="text" width="383" height="258" file="DLGMSG5.EPF" palette="DLGMSG5.PAL" x="49" top="197" bottom="221"
+          step="74" withPicture="110, 50, 331, 123" without="47, 50, 335, 140"/>
+    <data key="small" width="374" height="194" file="DLGMSG6.EPF" palette="BARAM.PAL" buttons="0, 0, 374, 194"/>
+  </data>
+
+  <!-- D-07 (s6-interface-7x-b, round 7): the Nexonclub registration (NexonclubRegistrationDialog.cpp:25-50, the EPF
+       branch): 334 x 214 at its slot 1 on DLGNC.EPF in DLGNC.PAL, no labels of its own (the picture carries them); the
+       text; the account and the password edits on their lines, 174 wide; OK (4, image 14), CANCEL (5, image 22), CREATE
+       (6, image 51). WIRE: 4a's edits take a press over taller rectangles (accountHit, passwordHit: the constructor
+       0x0052F950; the later control over the earlier), npc.lua's focus areas. -->
+  <data key="Nexonclub" width="334" height="214" title="" button="63" editWidth="174" editHeight="12">
+    <data key="art" value="DLGNC.EPF, DLGNC.PAL"/>
+    <data key="text" value="25, 38, 330, 131"/>
+    <data key="account" value="83, 104, 257, 116"/>
+    <data key="password" value="83, 134, 257, 146"/>
+    <data key="accountHit" value="83, 104, 257, 220"/>
+    <data key="passwordHit" value="83, 134, 257, 280"/>
+    <data key="ok" value="14, 67, 179, 130, 203"/>
+    <data key="cancel" value="22, 142, 179, 205, 203"/>
+    <data key="create" value="51, 217, 179, 280, 203"/>
+  </data>
+</ui>

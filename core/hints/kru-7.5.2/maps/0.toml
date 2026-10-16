@@ -1,0 +1,63 @@
+# Kugnae (map 0) on the test server: what its own cells need beyond the base hints (its city wall and tower are in
+# them). Applies only when the map the server sends passes the check (3.5).
+
+[check]
+size = "220x220"
+
+# s6-reprojection (round 30): the 3D modes' horizon past the map's edges (the design's 3.14), an example: the capital in
+# its river valley, hills rising behind its northern and western walls; to the east and south the map's own edge carries on
+# (fields and the river)
+[sky]
+north = "mountains"
+west = "mountains"
+
+# s6-reprojection-c: the eastern river's moving water (the owner, 2026-10-03: "this is moving water this is still
+# water?"), past the round-5 places (the canal at 170, 112 and the river at 188, 92). It leaves the lake in the north
+# (rows 15-24, still) down its outflow, bends west and south into the wide river (x 178-184), which the canal along rows
+# 115-116 joins from the west. The art paints no current, so the directions are a reading of the network. Kugnae's
+# other water (its pools and lakes, and the canals further west) lies still until a hint names it. Only the water
+# cells in a rectangle take its flow.
+[cells."198,24-201,44"]   # the lake's outflow, south
+surface_flow = "s"
+
+[cells."185,45-200,50"]   # west below the pool
+surface_flow = "w"
+
+[cells."188,51-191,79"]   # south
+surface_flow = "s"
+
+[cells."177,80-191,85"]   # widening into the river
+surface_flow = "sw"
+
+[cells."177,86-185,160"]  # the wide river, south
+surface_flow = "s"
+
+[cells."149,115-177,116"] # the canal, east into the river
+surface_flow = "e"
+
+[cells."149,117-152,130"] # its feeder, north
+surface_flow = "n"
+
+[cells."122,131-152,132"] # and the feeder's own, east
+surface_flow = "e"
+
+# The two posts of the stake fence round the shrine's yard, north of the east gate: each is three pieces stacked (the
+# west one 507, 507 and 499 on top; the east one 508, a gap, 504), which the rules took as separate pieces (the top ones
+# lying as tops). Each post's group joins its pieces into one statue, revolved: one round column.
+# s6-virtual-objects (round 6): this comment called them the totem poles, and the groups are still named so. The carved
+# totem poles are scenery 922, beside them at 193,98 and 199,98. These pieces are the fence's own side runs (499 and 504
+# its north corners, 507 and 508 its sides), the same on every stake fence of 29 of the server's maps, so these two
+# stay map entries and are no global object (docs/user-related/research/2026-10-09-totem-poles-virtual-object.md).
+[cells."192,97-192,99"]
+group = "totem-west"
+
+[cells."200,97-200,99"]
+group = "totem-east"
+
+[group.totem-west]
+kind = "statue"
+shape = "revolved"
+
+[group.totem-east]
+kind = "statue"
+shape = "revolved"

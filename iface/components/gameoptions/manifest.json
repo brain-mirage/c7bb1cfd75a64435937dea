@@ -1,0 +1,9 @@
+{
+  "name": "gameoptions",
+  "title": "Game Options",
+  "version": "0.1.0",
+  "order": 86,
+  "description": "The original's options tab (F10): the options the server keeps (magic, weather, advice, fixed movement, shouts, whispers, sound), each sent as the original's row sends it and shown as the server answers; this computer's switches (map effects, shadows, the balloon fill, Simple Click, orb share, Low, High and Manual), and the original's keys for click-look, show damage, Tab/V swap and click-to-move (Shift+R, Shift+F10-F12).",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

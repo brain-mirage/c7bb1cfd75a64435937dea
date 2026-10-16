@@ -1,0 +1,9 @@
+{
+  "name": "targetframe",
+  "title": "Target Frame",
+  "version": "0.1.0",
+  "order": 21,
+  "description": "The target's name and level, and the health percentage its last hit reported: the only health the client knows of an enemy.",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}
