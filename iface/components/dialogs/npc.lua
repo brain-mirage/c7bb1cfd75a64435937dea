@@ -72,7 +72,14 @@ function Question.update(win, view)
     win.text:SetText(K.Text(c.prompt))
     L.fit(win, ph)
     if win.opened then
-        win.list:SetItems(c.rows or {}, function(row, text, i) row.text:SetText(i .. ". " .. K.Text(text)) end)
+        -- s6-ui-core (round 94, beside the real 5.33): each answer's text as the server sent it, as 4a draws it
+        -- (MenuQuestionItemList::DrawListEntry, PursuitMessageDialogCreator.cpp:1384-1399) and 5.33 (its list takes the
+        -- text as it is; the real client's menu, run r94-help-quit-uicoreb-3); numbered only in a look that asks for it
+        -- (L.numbered: the default look's, Modern's). Drawing
+        -- only: the number that goes back is the answer's place (Values above), as before.
+        win.list:SetItems(c.rows or {}, function(row, text, i)
+            row.text:SetText(L.numbered and (i .. ". " .. K.Text(text)) or K.Text(text))
+        end)
     end
 end
 

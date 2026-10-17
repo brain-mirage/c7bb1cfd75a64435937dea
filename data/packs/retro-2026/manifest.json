@@ -4,16 +4,75 @@
   "packFormat": "1.0",
   "kind": "overlay",
   "setName": "retro",
-  "source": {"id":"baram-2026+nexustk-4.95+v5.65-2003+v6.51-2005","kind":"retro"},
-  "base": {"setName":"kru-7.5.2","setFingerprintSha256":"c4058ad0950f1c5094571c155ab94bf3df1fa1b90995baab170020f9df46c236"},
-  "categories": {"tile":true,"tilec":true,"sobj":true,"icon":true,"monster":true,"ridings":true,"effect":true,"part":true,"image":true},
-  "whole": ["v5.65-2003/chard.dat:body.epd","v5.65-2003/chard.dat:body.pad","v5.65-2003/chard.dat:head.epd","v5.65-2003/chard.dat:head.pad","v5.65-2003/chard.dat:headsp.epd","v5.65-2003/chard.dat:headsp.pad","v6.51-2005/chard.dat:sword.epd","v6.51-2005/chard.dat:sword.pad","v5.65-2003/chard.dat:spear.epd","v5.65-2003/chard.dat:spear.pad","v5.65-2003/chard.dat:fan.epd","v5.65-2003/chard.dat:fan.pad","v5.65-2003/chard.dat:shield.epd","v5.65-2003/chard.dat:shield.pad","v5.65-2003/chard.dat:face.epd","v5.65-2003/chard.dat:face.pad","v5.65-2003/chard.dat:deadsign.epd","v5.65-2003/chard.dat:ghost.epd","v5.65-2003/chard.dat:ghost.pad","v5.65-2003/chard.dat:ghostsp.epd","v6.51-2005/baramd.dat:emotion.epd","v6.51-2005/baramd.dat:emotiosp.epd","v6.51-2005/baramd.dat:emotion.pad","v5.65-2003/bint.dat:baram.pal","v5.65-2003/tile.dat:2tilec.epf","v6.51-2005/tiled.dat:tilec.epd","v6.51-2005/tiled.dat:tilec.pad"],
-  "scales": {"baram-2026":1,"nexustk-4.95":2,"v5.65-2003":2,"v6.51-2005":2},
-  "files": ["@file:old-figures.json","@file:old-objects.json","@file:old-wholes.jsonl"],
+  "source": {
+    "id": "baram-2026+nexustk-4.95+v5.65-2003+v6.51-2005",
+    "kind": "retro"
+  },
+  "base": {
+    "setName": "kru-7.5.2",
+    "setFingerprintSha256": "b2d70281c9f35791225dc8fe4a77a6c4fa6b7b2bc4e98add7665df92aea41877"
+  },
+  "categories": {
+    "tile": true,
+    "tilec": true,
+    "sobj": true,
+    "icon": true,
+    "monster": true,
+    "ridings": true,
+    "effect": true,
+    "part": true,
+    "image": true
+  },
+  "whole": [
+    "v5.65-2003/chard.dat:body.epd",
+    "v5.65-2003/chard.dat:body.pad",
+    "v5.65-2003/chard.dat:head.epd",
+    "v5.65-2003/chard.dat:head.pad",
+    "v5.65-2003/chard.dat:headsp.epd",
+    "v5.65-2003/chard.dat:headsp.pad",
+    "v6.51-2005/chard.dat:sword.epd",
+    "v6.51-2005/chard.dat:sword.pad",
+    "v5.65-2003/chard.dat:spear.epd",
+    "v5.65-2003/chard.dat:spear.pad",
+    "v5.65-2003/chard.dat:fan.epd",
+    "v5.65-2003/chard.dat:fan.pad",
+    "v5.65-2003/chard.dat:shield.epd",
+    "v5.65-2003/chard.dat:shield.pad",
+    "v5.65-2003/chard.dat:face.epd",
+    "v5.65-2003/chard.dat:face.pad",
+    "v5.65-2003/chard.dat:deadsign.epd",
+    "v5.65-2003/chard.dat:ghost.epd",
+    "v5.65-2003/chard.dat:ghost.pad",
+    "v5.65-2003/chard.dat:ghostsp.epd",
+    "v6.51-2005/baramd.dat:emotion.epd",
+    "v6.51-2005/baramd.dat:emotiosp.epd",
+    "v6.51-2005/baramd.dat:emotion.pad",
+    "v5.65-2003/bint.dat:baram.pal",
+    "v5.65-2003/tile.dat:2tilec.epf",
+    "v6.51-2005/tiled.dat:tilec.epd",
+    "v6.51-2005/tiled.dat:tilec.pad"
+  ],
+  "scales": {
+    "baram-2026": 1,
+    "nexustk-4.95": 2,
+    "v5.65-2003": 2,
+    "v6.51-2005": 2
+  },
+  "files": [
+    "@file:old-figures.json",
+    "@file:old-objects.json",
+    "@file:old-wholes.jsonl"
+  ],
   "entries": 100584,
   "keeps": 0,
   "packs": [
-    {"file":"overlay.tkp","role":"overlay","size":64787280,"sha256":"d3ec56581fcfcbda5764e1948621b5c16b2afa634e44e6286b95e36b9642b11b","assets":758}
+    {
+      "file": "overlay-b2d70281-923e4077.tkp",
+      "role": "overlay",
+      "size": 64787279,
+      "sha256": "923e40779ee1597656a35bd7c3cefe60c87ca34a72416ddf8e6dfcdfa2f89f5a",
+      "assets": 758
+    }
   ],
   "repairs": [
     {
@@ -22,7 +81,13 @@
       "changedBy": "Source-6 (s6-data-exporter), by hand: not the source's own data",
       "defect": "2 stray pixels 58 px left of the body",
       "removed": [
-        {"pixels":2,"left":-79,"top":-55,"right":-78,"bottom":-53}
+        {
+          "pixels": 2,
+          "left": -79,
+          "top": -55,
+          "right": -78,
+          "bottom": -53
+        }
       ],
       "sourceSha256": "72ea9ecd992f97f38fe10a4c2cdd981083fbb96e22520e105e62c41470dd4ab6",
       "sha256": "1eff54e8ce63dc34d8ab7ae7dbb683e1c49d699315d82edd1dece16b097a5253",
@@ -37,7 +102,13 @@
       "changedBy": "Source-6 (s6-data-exporter), by hand: not the source's own data",
       "defect": "1 stray pixel 72 px right of the body and 66 px below it",
       "removed": [
-        {"pixels":1,"left":110,"top":48,"right":111,"bottom":49}
+        {
+          "pixels": 1,
+          "left": 110,
+          "top": 48,
+          "right": 111,
+          "bottom": 49
+        }
       ],
       "sourceSha256": "1d5e93d03af761b508bbbc4c2f6a6e25c5f24a6e2e6c4f02189b892db9d6e5db",
       "sha256": "cba99aa3539c938a0d584b5aed225ef0c116fdcda5defebf251845c2fbe7e59b",
@@ -52,7 +123,13 @@
       "changedBy": "Source-6 (s6-data-exporter), by hand: not the source's own data",
       "defect": "1 stray pixel 64 px right of the figure",
       "removed": [
-        {"pixels":1,"left":98,"top":-24,"right":99,"bottom":-23}
+        {
+          "pixels": 1,
+          "left": 98,
+          "top": -24,
+          "right": 99,
+          "bottom": -23
+        }
       ],
       "sourceSha256": "4bf8d792ae4e65bd368759d45c6e76440652b5852230224c0028a872b7d8983d",
       "sha256": "7ca6624377ff4caa9870ba7c1f3a99a8f30ee2b0a61f5c30537541962c4ad2cd",

@@ -1804,9 +1804,10 @@ end
 --- (CreateUserDialogPane::SubmitCreateUser 0x0052ED80).
 function L:SubmitCreate()
     if self.creating then return end
+    -- WIRE (s6-gateway round 14): the fields are only read, never emptied, as SubmitCreateUser (0x0052ED80) and the
+    -- refusal's HandleCreateUserReply (0x0052F390) leave them: after a refused 02, Enter sends the same request again.
+    -- Emptying them here would make that Enter send nothing, which the server can tell.
     local account, password, again = create.account:GetText(), create.password:GetText(), create.repeatBox:GetText()
-    create.password:SetText("")
-    create.repeatBox:SetText("")
     if not TK.Machine.IsAccountName(account) then
         return self:CreateMessage("An account name has 1 to " .. L.MAX_ACCOUNT .. " letters, digits, '-' or '_'.")
     end

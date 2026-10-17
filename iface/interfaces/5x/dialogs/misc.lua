@@ -41,7 +41,9 @@ return function(L, X)
             X.EditBar(win.edit, win, 36, 71, 277, 174) -- with its scroll bar (round 93, as the XML form)
             X.Image(win, win.ok, 14, 83, 196, 155, 212)
             if win.cancel then X.Image(win, win.cancel, 22, 160, 196, 232, 212) end
-            X.Default(win, win.ok)
+            -- OK is the default (5.33's SetFocusedControl(1), asset_callers.c:12385) with its own 1-pixel frame and no
+            -- Enter frames round it, as the real 5.33 draws its profile (round 95; the XML form's misc.lua says why)
+            X.Default(win, win.ok, false)
         end,
     }
 

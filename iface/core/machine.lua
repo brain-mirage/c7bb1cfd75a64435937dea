@@ -51,7 +51,7 @@ M.defaults = {
 M.rules = {
     uiScale = { min = 0.5, max = 2 },
     gridSize = { min = 8, max = 128 },
-    frameCap = { min = 20, max = 240 },
+    frameCap = { min = 20, max = 240, stop = 0 }, -- round 58 (head note 024): 0 is "Unlimited", the slider's end stop
     master = { min = 0, max = 1 },
     music = { min = 0, max = 1 },
     effects = { min = 0, max = 1 },

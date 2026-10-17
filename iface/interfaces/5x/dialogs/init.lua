@@ -219,7 +219,8 @@ end
 --- The dialog's default button (DialogPane__SetFocusedControl 0x0041FC10): DialogPane's Enter frames round it
 --- (X.EnterFrame, the kit's) and its own 1-pixel frame in colour 1 (ButtonControlPane +240, drawn by
 --- ImageButtonControlPane_OnPaint 0x00419760 under the focus's 0x80 frame); none for a dialog without one (btn nil)
---- or whose paint draws none (frames false: TextMenuDialog__OnPaint 0x0046EDA0). Drawing only.
+--- or whose paint draws none (frames false: TextMenuDialog__OnPaint 0x0046EDA0; the profile, which the real 5.33 draws
+--- without them, misc.lua). Drawing only.
 function X.Default(win, btn, frames)
     win.x5enter = frames ~= false
     X.EnterFrame(win, win.x5enter and btn or nil)

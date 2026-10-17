@@ -100,23 +100,32 @@ return function(kit)
         -- key by 133 ms, and the menu's timers (its keep-alive 0x71) and any later click or key wait behind it, as the
         -- original's sleep holds them. Deferring the command here instead (a frame timer) would let those slip in first;
         -- changing this changes the order and timing the server sees. The pressed look is drawing only: it shows for the
-        -- same 133 ms on the clock (GetTime) while the command has already run (a closing dialog closes at once; the
-        -- login's OK keeps its look meanwhile, P.Refresh).
-        local pressing -- { button, at } while a key's pressed look shows
+        -- same 133 ms on the clock (GetTime) while the command has already run. The login's OK keeps its look meanwhile
+        -- and its dimmer waits for the press's end (P.Refresh), and Escape's Cancel shows pressed on the login dialog its
+        -- command has closed, which stays drawn until then (P.CloseDialog); the other dialogs close at once.
+        local pressing -- { button, at, after } while a key's pressed look shows
         local presser
+        local closing -- the login dialog, closed by Escape, still drawn while its Cancel shows pressed (P.CloseDialog)
+
+        --- The end of a key's pressed look: the button's normal look, then what waited for it (pressing.after).
+        local function pressed()
+            local p = pressing
+            pressing = nil
+            presser:Hide()
+            p.button:SetButtonState("NORMAL")
+            if p.after then p.after() end
+        end
+
         local function byKey(button, command)
             if not button:IsEnabled() then return end
-            if pressing then pressing.button:SetButtonState("NORMAL") end
+            if pressing then pressed() end
             pressing = { button = button, at = GetTime() + 0.133 }
             button:SetButtonState("PUSHED")
             if not presser then
                 presser = CreateFrame("Frame", nil, screen)
-                presser:SetScript("OnUpdate", function(self)
+                presser:SetScript("OnUpdate", function()
                     if GetTime() < pressing.at then return end
-                    local b = pressing.button
-                    pressing = nil
-                    self:Hide()
-                    b:SetButtonState("NORMAL")
+                    pressed()
                     P.Refresh()
                 end)
             end
@@ -132,11 +141,25 @@ return function(kit)
             S.Picture(page, page.selection, ITEMS.selected, i, ITEMS.selectedPalette, l, t)
         end
 
+        -- Whether entry 0 or 2 may pass now (s6-gateway round 13; the owner's answer 138: the rules move out of the XML
+        -- interfaces). With the gateway on, its answer (TK-Core MainMenuRules: menu:create, menu:password-open, route
+        -- "button") in place of this screen's own copy of the connection test; with it off (no answer, nil) that copy,
+        -- as before. The dimmer's busy state is the screen's own, not a rule. The original's ActivateMenuItem
+        -- (0x004F7A10) tests nothing itself: its menu exists only once connected. WIRE: this decides which menu calls
+        -- reach the session (the creation dialog's opening reseeds and makes its draws there, s6-protocol r51; the
+        -- password dialog's opening is the session's): changing it changes what the server can see.
+        local function may(kind)
+            if L.busy then return false end
+            local allowed = TK.Game.Can(kind, nil, nil, "button")
+            if allowed == nil then return L.connected end
+            return allowed
+        end
+
         -- the entries, by their index (ActivateMenuItem)
         local ENTRIES = {
-            [0] = function() if L.connected and not L.busy then L:ShowCreate() end end,
+            [0] = function() if may("menu:create") then L:ShowCreate() end end,
             [1] = function() P.OpenDialog() end,
-            [2] = function() if L.connected and not L.busy then L:OpenChangePassword() end end,
+            [2] = function() if may("menu:password-open") then L:OpenChangePassword() end end,
             [3] = function() L:OpenBook("STORY.EPF") end,
             [4] = function() L:OpenBook("HISTORY.EPF") end,
             [5] = function() L:Quit() end,
@@ -180,6 +203,31 @@ return function(kit)
                 -- the field that had the keyboard last, for a book or an alert to give it back (core/login.lua)
                 box:HookScript("OnEditFocusGained", function(self) screen.lastField = self end)
             end
+            -- A press on the dialog's background drags it, as DialogPane::HandlePointerOrMouseEvent does (0x0049E240,
+            -- DialogPane.cpp:316-374: part 10, where no control is hit, or control 0, the dialog's picture; the edits and
+            -- buttons are frames of their own and take their presses). Its place follows the pointer by the press's offset
+            -- until the release, unclamped and not saved (the login dialog has no placement id), and the next dialog
+            -- opens at its own place (P.OpenDialog: EnsureLoginDialogPane makes a new one). Drawing only: nothing is sent.
+            local grip
+            d:HookScript("OnMouseDown", function(_, button)
+                if button ~= "LeftButton" then return end
+                local _, _, _, x, y = d:GetPoint(1)
+                local px, py = X.ScreenPoint(TK.Util.CursorRoot())
+                grip = { px = px, py = py, x = x, y = y }
+            end)
+            local function follow()
+                if not grip then return end
+                local px, py = X.ScreenPoint(TK.Util.CursorRoot())
+                d:ClearAllPoints()
+                d:SetPoint("TOPLEFT", page, "TOPLEFT", grip.x + px - grip.px, grip.y - (py - grip.py))
+            end
+            -- the release's own point first: a move and the release handled in one frame end where the release is
+            d:HookScript("OnMouseUp", function() follow() grip = nil end)
+            d:HookScript("OnHide", function() grip = nil end)
+            -- a press the host cancels (the window's focus lost, UIHost.FocusChanged) ends the drag where it is
+            d:HookScript("OnPressCancelled", function() grip = nil end)
+            -- its own frame's update (the dialog's OnUpdate is the shared field-focus logic's, core/login.lua)
+            CreateFrame("Frame", nil, d):SetScript("OnUpdate", follow)
         end
 
         -- Change Password's layout (its fields, OK and Cancel; the logic's: core/login.lua's L.WirePasswordDialog)
@@ -670,16 +718,45 @@ return function(kit)
         TK.On("DISPLAY_SIZE_CHANGED", fit)
         TK.On("UI_SCALE_CHANGED", fit)
 
+        --- Whether the login dialog and its controls take the pointer (off while a closed one is still drawn).
+        local function takesPointer(on)
+            for _, f in ipairs({ dialog, dialog.ok, dialog.cancel, dialog.account, dialog.password }) do f:EnableMouse(on) end
+        end
+
         function P.CloseDialog()
             dialog.account:ClearFocus()
             dialog.password:ClearFocus()
+            -- Escape's Cancel (ActivatePendingControl 0x0049DF20, DialogPane.cpp:207-218): the original draws Cancel
+            -- pressed, sleeps 133 ms, then closes the dialog. The command has run already (byKey's WIRE), so the closed
+            -- dialog stays drawn, its fields without the keyboard and its keys the menu's (open()), until the press ends.
+            -- WIRE (input routing; round 95's review, P1): it takes no pointer meanwhile. 4a handles a click queued
+            -- behind the key after the Sleep, once the dialog is gone, so the click reaches what is under it (5.x's Login
+            -- entry lies under its Cancel: the dialog opens again, with its 120 ms slide on the session). Letting the drawn
+            -- dialog take it changes which control the click reaches, so what the client does and sends after it.
+            if pressing and pressing.button == dialog.cancel and dialog:IsShown() then
+                closing = true
+                takesPointer(false)
+                pressing.after = function() closing = nil dialog:Hide() takesPointer(true) end
+                return
+            end
+            closing = nil
             dialog:Hide()
         end
 
-        --- The Login entry: the dialog, one at a time (EnsureLoginDialogPane 0x004F8B30), as a new one opens: the last
-        --- account, no password, the account field's keyboard.
+        --- The login dialog is open: shown, and not one Escape has closed (P.CloseDialog).
+        local function open() return dialog:IsShown() and not closing end
+
+        --- The Login entry: the dialog, one at a time (EnsureLoginDialogPane 0x004F8B30), as a new one opens at its own
+        --- place: the last account, no password, the account field's keyboard.
         function P.OpenDialog()
-            if dialog:IsShown() then return end
+            if open() then return end
+            if closing then pressed() end -- the closed one's press ends first
+            if dialog.home then -- back from where a drag left the last one
+                dialog:ClearAllPoints()
+                dialog:SetPoint(table.unpack(dialog.home))
+            else
+                dialog.home = { dialog:GetPoint(1) }
+            end
             dialog.account:SetText(L.account or TK.Machine:Get().recentAccounts[1] or "")
             dialog.password:SetText("")
             dialog:Show()
@@ -694,7 +771,7 @@ return function(kit)
 
         --- OK (WIRE: above): the login's own entry, once enabled and not waiting.
         function P.OK()
-            if L.busy or not dialog:IsShown() or not dialog.ok:IsEnabled() then return end
+            if L.busy or not open() or not dialog.ok:IsEnabled() then return end
             L:LoginButton()
         end
 
@@ -705,11 +782,7 @@ return function(kit)
         --- The screen shows (core/login.lua's L:Show): the menu as it opens, entry 1 highlighted, no dialog.
         function P.Show()
             fit()
-            if pressing then -- a key's pressed look cut short by the screen going (its command has run)
-                pressing.button:SetButtonState("NORMAL")
-                pressing = nil
-                presser:Hide()
-            end
+            if pressing then pressed() end -- a key's pressed look cut short by the screen going (its command has run)
             P.CloseDialog()
             highlight(ITEMS.first)
             lastX, lastY = nil, nil
@@ -726,8 +799,16 @@ return function(kit)
             if not (pressing and pressing.button == dialog.ok) then
                 dialog.ok:SetEnabled(dialog.account:GetText() ~= "" and dialog.password:GetText() ~= "")
             end
+            -- WIRE (input routing): the dimmer takes every press from the moment the login waits (L.busy, set by OK's
+            -- command inside the key), as 4a's: input queued behind OK's Sleep(133) (ActivateDefaultControl,
+            -- DialogPane.cpp:199) is handled only after OK's command has sent the login and made the ScreenDimmer
+            -- (LoginDialogPane::OnControlCommand, MainMenuPane.cpp:1328-1332), which swallows it. Without it a click
+            -- queued behind Enter reaches the title, and Exit disconnects the login (round 95's final review, P1).
+            -- Changing it changes what the server sees. Only its drawing waits for the press's end, when byKey
+            -- refreshes it: drawing only.
             f.dim:SetShown(L.busy == true)
-            if L.lost and dialog:IsShown() then P.CloseDialog() end
+            f.dim.shade:SetShown(not (pressing and pressing.button == dialog.ok))
+            if L.lost and open() then P.CloseDialog() end
         end
 
         --- L:Error's message: a refusal's (or another error's) in the original's alert (AlertPane, HandlePacketEvent
@@ -761,7 +842,7 @@ return function(kit)
         --- other press). An alert that has just opened plays the open sound (DialogPane::AddToLayer: sample 0x198). Its
         --- slide is not drawn.
         function P.ShowAlert(text, opened)
-            local over = (dialog:IsShown() and dialog) or (P.passwordDialog:IsShown() and P.passwordDialog) or nil
+            local over = (open() and dialog) or (P.passwordDialog:IsShown() and P.passwordDialog) or nil
             local cx, cy = X.CENTRE[1], X.CENTRE[2]
             if over then
                 local _, _, _, x, y = over:GetPoint(1)
@@ -847,7 +928,7 @@ return function(kit)
                 return true
             end
             if L.busy then return true end -- the dimmer's
-            if dialog:IsShown() then
+            if open() then
                 if bare == "ENTER" then byKey(dialog.ok, P.OK) elseif bare == "ESCAPE" then byKey(dialog.cancel, P.Cancel) end
                 return true
             end

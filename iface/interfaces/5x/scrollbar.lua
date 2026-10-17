@@ -1,7 +1,8 @@
 -- s6-interface-5x-b (the 5.x interface: docs/development/jobs/s6-interface-5x/PLAN.md): 5.33's vertical scroll bar,
 -- the ScrollPane a ScrollablePane keeps at its right (ScrollPane.cpp's unit in 5.33, 0x0049A9C0-0x0049BAB0; 4a's
 -- ui/ScrollPane.cpp keeps the same classic code, ScrollPane::OnPaint's second branch, with names). For the 5.x panes that
--- scroll: the side panel's text boxes (skin 0), the chat (skin 1) and the message board (skin 2).
+-- scroll: the side panel's text boxes (skin 0), the chat (skin 1) and the message board (skin 2); s6-ui-core (round 94):
+-- the XML form's text boxes being written (skin 0, Bar.ForEdit below).
 --
 -- Its parts (GetScrollPartRect 0x0049B320), by skin a bar w wide with arrows e long (w: 13, 12, 12, word_52BF64; e: 13,
 -- 10, 10, kClassicScrollPanePartExtentBySkin 0x0052BF70): 0 the up arrow at the top, 4 the down arrow at the bottom, and
@@ -214,6 +215,9 @@ function Bar:Refresh()
         self:Tile(10, l, t, r, b)
         self:Draw(lit == 2 and 9 or 8, l, t, r, b)
         self.wash:Hide()
+    elseif self.quiet then
+        -- drawWhenInactive off (the paper windows': Bar.ForEdit): nothing while the pane does not scroll
+        self.wash:Hide()
     else
         local w, h = WIDTH[self.skin], math.floor(self.frame:GetHeight() + 0.5)
         self:Tile(10, 0, 0, w, h)
@@ -223,6 +227,61 @@ function Bar:Refresh()
         self:Draw(2, l, t, r, b)
         self.wash:SetShown(S.Image("SCRL001.EPF", 0, "SCRL001.PAL") ~= nil)
     end
+end
+
+--- s6-ui-core (round 94): 5.33's bar on a text box being written, an edit the kit placed at (l, t)-(r, b) of win with its
+--- scroll area (X.EditBar: the text 12 pixels short of the right edge, edit.scrollBar). 5.33 builds these boxes (the
+--- profile, the board editors', the paper) as a TextEditControlPane with its vertical bar (a8: control.c:2735), whose
+--- ScrollablePane keeps a skin-0 ScrollPane, 13 wide, at its right edge (ScrollablePane_Constructor, scrollpane.c:869),
+--- drawn dimmed while the text fits (drawWhenInactive, on by default: scrollpane.c:11); the paper windows turn that off
+--- (EditablePaperPane_BuildControlsWithText, 0x0048C889 and 0x0048C949), so an edit marked edit.quietBar draws nothing
+--- then. 4a's are the same (ScrollPane.cpp:24-25, EditablePaperPane.cpp:75 and 85). The kit's scroll area keeps the
+--- wheel and follows the caret, by whole 12-pixel lines; its own track stays hidden (sf.barStyle), as the folder
+--- dialog's list's (dialogs/folder.lua). Made once an edit (edit.nativeBar), placed again at each call; shown with the
+--- edit. Drawing and the player's own scrolling: nothing is sent.
+function Bar.ForEdit(edit, win, l, t, r, b)
+    local sf, bar = edit.scrollBar, edit.nativeBar
+    if not bar then
+        -- the edit's scroll is read only from the kit's first refresh on (its OnUpdate, once the window is laid out):
+        -- read while the window is built, the text's height made TMP measure the empty text, and the model's text set
+        -- just after it then put the caret out of TMP's bounds (round 94's dialog tests)
+        local ready = false
+        bar = Bar.New(win, r - WIDTH[0], t, b, 0, {
+            Range = function()
+                if not ready then return 0, 0, 1 end
+                local range, y = edit:GetVerticalScrollRange(), edit:GetVerticalScroll()
+                -- the last step is the clamped bottom, as the folder dialog's (a range that ends partway through a line)
+                local lines = math.ceil(range / 12)
+                return lines, y >= range and lines or y / 12, math.max(1, math.floor(edit:GetHeight() / 12))
+            end,
+            Set = function(pos) sf:SetVerticalScroll(pos * 12) end,
+        })
+        edit.nativeBar = bar
+        sf.barStyle = function() ready = true sf.track:Hide() bar:Refresh() end
+        -- after the kit's own hooks, which show its track with the edit
+        edit:HookScript("OnShow", function()
+            sf.track:Hide()
+            bar.frame:Show()
+            bar:Refresh()
+        end)
+        edit:HookScript("OnHide", function() bar.frame:Hide() end)
+        -- kept over the window: the dialog manager sets the window's stack level after the build and its show (as the
+        -- folder dialog's bar), which left the bar under the window's picture (round 94's live check)
+        bar.frame:HookScript("OnUpdate", function(f)
+            local strata, level = win:GetFrameStrata(), win:GetFrameLevel() + 2
+            if f:GetFrameStrata() ~= strata then f:SetFrameStrata(strata) end
+            if f:GetFrameLevel() < level then f:SetFrameLevel(level) end
+        end)
+    end
+    bar.quiet = edit.quietBar
+    local f = bar.frame
+    f:ClearAllPoints()
+    f:SetPoint("TOPLEFT", win, "TOPLEFT", r - WIDTH[0], -t)
+    f:SetSize(WIDTH[0], b - t)
+    f:SetFrameLevel(win:GetFrameLevel() + 2)
+    f:SetShown(edit:IsShown())
+    sf.track:Hide()
+    bar:Refresh()
 end
 
 return Bar

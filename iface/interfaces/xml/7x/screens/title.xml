@@ -156,9 +156,10 @@
         <do Hide=""/>
       </frame>
     </frame>
-    <!-- the wait after OK (ScreenDimmer(5): the screen dimmed, every press and key its own until the 0x02's answer) -->
+    <!-- the wait after OK (ScreenDimmer(5): the screen dimmed, every press and key its own until the 0x02's answer;
+         title.lua shows the frame from the key on and its shade once OK's pressed look ends) -->
     <frame name="TK7xLoginDimmer" key="dim" AllPoints="@parent" FrameLevel="80" EnableMouse="true">
-      <texture layer="BACKGROUND" AllPoints="@parent" ColorTexture="0, 0, 0, 0.45"/>
+      <texture key="shade" layer="BACKGROUND" AllPoints="@parent" ColorTexture="0, 0, 0, 0.45"/>
       <do Hide=""/>
     </frame>
     <!-- Change Password's wait after OK, the same (until the 0x26's answer) -->

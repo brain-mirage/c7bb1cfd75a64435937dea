@@ -2410,7 +2410,9 @@ TK.GraphicsNode = { id = "graphics", title = "General", parent = "Graphics", ord
                      { value = "fullscreen", text = "Full screen" } } },
         { type = "toggle", key = "vsync", name = "Vertical Sync" },
         -- s6-ui-core (round 54): no effect while Vertical Sync is on (its (!)), and still set
+        -- s6-reprojection (round 58, head note 024): past 240 an "Unlimited" stop, stored as 0 (no cap)
         { type = "range", key = "frameCap", name = "Frame Rate Cap", min = 20, max = 240, step = 5,
+          stop = { text = "Unlimited", value = 0 },
           requires = { TK.Needs("Vertical Sync off", function(db) return not db.vsync end) } },
     } } } }
 

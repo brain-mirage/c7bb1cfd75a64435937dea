@@ -19,9 +19,10 @@ return function(L, P, W)
     }
 
     -- D-03, D-04 (MenuQuestionDialog, MenuQuestionDialogLarger): the prompt, the answers' list under it, OK, Prev, Next
-    -- and Close from the bottom right.
+    -- and Close from the bottom right; the answers numbered (numbered: this look's own, as it always had them; the
+    -- original's looks show the server's text as it is, components/dialogs/npc.lua).
     L.Question = {
-        width = 440, height = 320, button = 80, listWidth = 380, listHeight = 150,
+        width = 440, height = 320, button = 80, listWidth = 380, listHeight = 150, numbered = true,
         place = function(win)
             textAt(win, 0, -36)
             P.Row(win, { win.close, win.next, win.prev, win.ok }, 16, 14, 8)

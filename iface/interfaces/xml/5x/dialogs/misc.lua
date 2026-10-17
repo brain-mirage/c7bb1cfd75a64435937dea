@@ -45,13 +45,19 @@ return function(L, X)
         place = function(win)
             X.Art(win, unpack(P.art))
             -- the text with its scroll bar at the right: 5.33's TextEditControlPane with a8 set (asset_callers.c:12362,
-            -- 12 pixels taken for the bar: control.c:2735), as 4a's (OptionPane.cpp:615) and 7.x's profile (round 93).
-            -- The kit's bar is 7.5.2's (nothing while the text fits), as the 5.x board and paper editors'; 5.33's grey
-            -- bar with its arrows, drawn always, is not built
+            -- 12 pixels taken for the bar: control.c:2735), as 4a's (OptionPane.cpp:615) and 7.x's profile (round 93);
+            -- 5.33's own bar, drawn dimmed while the text fits (round 94: init.lua's X.EditBar)
             X.EditBar(win.edit, win, unpack(P.edit))
             X.Image(win, win.ok, unpack(P.ok))
             if win.cancel then X.Image(win, win.cancel, unpack(P.cancelButton)) end
-            X.Default(win, win.ok)
+            -- OK is the default (5.33's ProfileDialog: SetFocusedControl(1), asset_callers.c:12385): its own 1-pixel
+            -- frame in colour 1, and no Enter frames round it. The real 5.33 draws none on its profile's OK (run
+            -- r93-pages-uicoreb-2: no line 2 to 4 pixels outside it, only the button's blue edge; the Options dialog's OK
+            -- the same). 5.33's paint (0x420EC0, dialogbase2.c:135-160) draws the three frames only while +492 is set,
+            -- which its AlertPane sets itself (dialogbase.c:265); SetFocusedControl's body (0x0041FC10) is not in the
+            -- dumps, so the picture decides. 7.5.2 differs (DialogPane::OnPaint 0x0049F090 draws them for its
+            -- m_defaultControlId). Drawing only (round 95).
+            X.Default(win, win.ok, false)
         end,
     })
 
@@ -64,6 +70,9 @@ return function(L, X)
         --- in the screen's palette; it slides open as it opens, as 7.x's (5.33's EditablePaperPane 0x0048C6B0 calls
         --- 0x004208F0)
         fit = function(win, c)
+            -- its bar draws nothing while the text fits (round 94: 5.33's paper turns drawWhenInactive off,
+            -- EditablePaperPane_BuildControlsWithText 0x0048C889; scrollbar.lua's Bar.ForEdit)
+            win.edit.quietBar = true
             X.Paper(win, c, PAPER.art.file, nil)
             if win.opened then X.SlideOpen(win) end
         end,

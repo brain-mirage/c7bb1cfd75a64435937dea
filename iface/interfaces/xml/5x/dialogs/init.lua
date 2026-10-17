@@ -28,6 +28,7 @@
 
 local fallback = TK.Dialogs.DefaultLook()
 local S = require("interfaces.5x.skin")
+local Bar = require("interfaces.5x.scrollbar")
 local Screen = require("interfaces.screen")
 local D = TK.Xml.Data("look.xml")
 
@@ -44,6 +45,18 @@ local X = require("interfaces.original.dialogkit")({
 X.Fallback = fallback
 
 X.DIALOG_FRAME = D.DIALOG_FRAME
+
+-- the kit's text box being written, with its 7.5.2 bar
+local kitEditBar = X.EditBar
+
+--- s6-ui-core (round 94): a text box being written (the profile, the board editors', the paper) with 5.33's own scroll
+--- bar, SCRL001.EPF's arrows and track, drawn while the text fits too (interfaces/5x/scrollbar.lua, Bar.ForEdit), for
+--- the kit's 7.5.2 bar; the kit's edit, wheel and caret-following stay. New in this form only: the hand-written form is
+--- kept as it is until it is archived. Drawing only: nothing is sent.
+function X.EditBar(edit, win, l, t, r, b, colour)
+    kitEditBar(edit, win, l, t, r, b, colour)
+    Bar.ForEdit(edit, win, l, t, r, b)
+end
 
 --- The standard window's frames (look.xml's FRAME_TILES: which frame is which, and the background's inset).
 local FRAME_TILES = D.FRAME_TILES
@@ -227,7 +240,8 @@ end
 --- The dialog's default button (DialogPane__SetFocusedControl 0x0041FC10): DialogPane's Enter frames round it
 --- (X.EnterFrame, the kit's) and its own 1-pixel frame in colour 1 (ButtonControlPane +240, drawn by
 --- ImageButtonControlPane_OnPaint 0x00419760 under the focus's 0x80 frame); none for a dialog without one (btn nil)
---- or whose paint draws none (frames false: TextMenuDialog__OnPaint 0x0046EDA0). Drawing only.
+--- or whose paint draws none (frames false: TextMenuDialog__OnPaint 0x0046EDA0; the profile, which the real 5.33 draws
+--- without them, misc.lua). Drawing only.
 function X.Default(win, btn, frames)
     win.x5enter = frames ~= false
     X.EnterFrame(win, win.x5enter and btn or nil)
