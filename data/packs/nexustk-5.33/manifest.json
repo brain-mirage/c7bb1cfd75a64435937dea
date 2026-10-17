@@ -1,0 +1,17 @@
+{
+  "format": "tk-packset",
+  "formatVersion": 1,
+  "packFormat": "1.0",
+  "kind": "interface",
+  "setName": "nexustk-5.33",
+  "source": {
+    "id": "nexustk-5.33",
+    "kind": "interface",
+    "archive": "NInt.dat",
+    "archiveSha256": "a05770fd4695835220b8ecfd0d162362f6b7e493f34955796643b7f1bf041b9e",
+    "dependencies": {"Efx.dat":"a620f234ccb37765e1fcc4e694a352b0fd1704d8a2770c68a084588bcc387f5c","NexusTK.dat":"8863cfd454ad59f8854d944666cfabf69f40d67ee2641e6fe2d429e025d1f670"}
+  },
+  "packs": [
+    {"file":"interface.tkp","role":"interface","size":7745693,"sha256":"11d8c4d8ee1bd4d806316edb88b4c10d6d319cd1af97b89ca3a5b5cdd19ece09","assets":133}
+  ]
+}
