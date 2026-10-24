@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 5.x's look of the profile, the paper and the music dialog (its XML twin's layout; misc.lua draws with it), 5.33's own
+     windows by its own numbers (misc.lua's header). Format: core/xml.md; each dialog's attributes are its look entry's
+     values (interfaces/original/entry.lua), its children where misc.lua draws its parts: rectangles (left, top, right, bottom),
+     points (x, y), pictures and image buttons (BUTT001.EPF's image id first). The music dialog's controls are
+     musiclayout.xml's.
+     WIRE: a control's rectangle is where a press on it lands; changing one changes which control a press reaches. -->
+<ui>
+  <!-- the profile (ProfileDialog__ProfileDialog 0x00489090): 314 x 246 on PROFILE.EPF in NPAL8.PAL, placed by its top
+       left at (250, 200) (its AddToLayer, no slot); the text; OK (image 14), the default; CANCEL (image 22), the legacy
+       branch's control 3 -->
+  <data key="Profile" width="314" height="246" button="72" editWidth="241" editHeight="103" cancel="true" slide="true">
+    <data key="at" value="250, 200"/>
+    <data key="art" value="PROFILE.EPF, NPAL8.PAL"/>
+    <data key="edit" value="36, 71, 277, 174"/>
+    <data key="ok" value="14, 83, 196, 155, 212"/>
+    <data key="cancelButton" value="22, 160, 196, 232, 212"/>
+  </data>
+  <!-- the paper (EditablePaperPane): sized by the packet; LINE001.EPF in the screen's palette -->
+  <data key="Paper" width="64" height="80" editWidth="32" editHeight="24">
+    <data key="art" file="LINE001.EPF"/>
+  </data>
+  <!-- the music dialog (MusicControlDialog__MusicControlDialog 0x00478720): its size and rectangles musiclayout.xml's;
+       72 x 16 buttons, 45-pixel radio options, the play buttons 72 wide -->
+  <data key="Music" button="72" buttonHeight="16" switch="45" frequency="45" play="72"/>
+</ui>

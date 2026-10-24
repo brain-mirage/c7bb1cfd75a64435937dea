@@ -108,6 +108,26 @@ kind = "prop"
 shape = "thin"
 depth = 0.05
 
+# The haunted houses' rooms (s6-reprojection-cloud-3, run 20, head note 53; the owner: "the rooms in haunted house have
+# a ceiling that divides the rooms; those are not drawn correctly in 3d"). Buya's (451, 453-455, 457, 458) and Kugnae's
+# (122, 124-126, 128, 129) interiors part their rooms with walls two cells thick: a front three cells tall on the south
+# (1042-1066), and the ceiling's dark band over them, its pieces drawn two cells above their own (1318-1341). The rules
+# already lay the band on the fronts' tops, three cells up, and stand the blocked cells under it up to it. Two pieces
+# went wrong:
+# - Over each doorway the beam with its hanging moss (1054-1055) paints nothing in its bottom cell, the opening, so the
+#   rule took it for a top and laid it on the floor a cell up; and the band over the doorway, finding no front under it,
+#   lay a cell lower and a cell north of the band beside it. Standing upright in its row, as 1536 does, the beam is the
+#   doorway's lintel and the band over it lies at the others' height.
+# - Where a wall's end has no front south of it in its column, its block wears the band's own picture on its sides, a
+#   stack of dark stripes. The band's plain dark brown (ground tile 2173) is its side there instead.
+[sobj.1054-1055]
+kind = "prop"
+shape = "thin"
+depth = 0.05
+
+[sobj.1318-1341]
+skin = "tile/2173"
+
 # This native upper-layer square stays upright on its own row; its empty base is not a roof.
 # Its semantic purpose is unknown: preserve the original pixels and transparent base gap.
 [sobj.1536]
@@ -125,10 +145,12 @@ depth = 0.05
 # Mount Baekdu, Weaver of Dreams...). The rules stood each as a card, so from the side the sky was full of upright sheets.
 # They lie flat where Normal draws them. Floating them stood the blocked cells under them up to them (the rule's blocks
 # under tops), white pillars over the rivers, until s6-reprojection's round 21 gave tops `floats = true`: nothing stands
-# under them, and they drift two cells up, over the figures' heads
+# under them, and they drift two cells up, over the figures' heads. s6-reprojection-cloud-3 (run 21, the sweep): three
+# cells up, so that they clear the hills' first tier (1201-1225 below, two cells up), whose plateaus they drift
+# over (the Vale's canopy); at two they lay in its top, half hidden
 [sobj.7766-7805]
 kind = "top"
-height = 2
+height = 3
 roof = "flat"
 floats = true
 
@@ -219,6 +241,68 @@ footprint = "relief"
 # The oasis waterfall strip contains the same ridge, pool and rim as its neighboring rock pieces.
 [sobj.8134]
 footprint = "relief"
+
+# s6-reprojection-cloud-1 (run 24, head note 90; the 3D audit's group Q): the waterfall (7626-7628, a picture nine rows
+# high) is the river's dark water going back over its top rows and the falling water under them. As the rule's prop each
+# piece stood as tall as its picture, a navy wall several cells high (a row before another cast its shadow on it), and
+# from behind it hid most of the view. As a wall with height 3 the whole picture stands three cells high on its cell's
+# block (the Wall case scales the picture to the hinted height): a low fall, no longer a wall over the view (Astra
+# 20-27's P2). Splitting it, the falls upright and the river lying back, was not tried; the terrace support may give it.
+# It is on 49 maps of the test server, nearly all at the map's north edge, where it falls from past the map (Kinung and
+# its twin 750, Kinung Crafters and its twins 591 and 17265, 3927, the 26165 family and the rest); seen in the editor's
+# preview on maps 720, 742, 1453, 3927 and 26165. Where it falls inside the map from a raised pool or down terraces
+# (Vale, 1005; 1451), or stands before cells with no ground that its picture covered (3929), the map's own file keeps
+# the rule's prop (maps/1005.toml, 1451.toml, 3929.toml).
+[sobj.7626-7628]
+kind = "wall"
+height = 3
+
+# s6-reprojection-cloud-1 (run 24, the 3D audit's group E): the wide props the base hints turn (shape = "turning"),
+# where their cell is blocked, stood as the rule's walls (a block one cell deep, its front the picture) and so never
+# turned: here they are props wherever they stand. And the purple blossom tree (1875-1878, on 68 maps), which the rule
+# did not take for a tree (a thin dark bar from the side), is a tree, drawn as the player's Trees option draws the
+# others.
+[sobj.12253-12255]
+kind = "prop"
+
+[sobj.3236-3241]
+kind = "prop"
+
+[sobj.3245-3247]
+kind = "prop"
+
+[sobj.3254-3256]
+kind = "prop"
+
+[sobj.1018-1021]
+kind = "prop"
+
+[sobj.12837-12843]
+kind = "prop"
+
+[sobj.10822-10827]
+kind = "prop"
+
+[sobj.10543-10564]
+kind = "prop"
+
+[sobj.10788-10795]
+kind = "prop"
+
+[sobj.7685-7688]
+kind = "prop"
+
+[sobj.7862-7863]
+kind = "prop"
+
+[sobj.16946-16954]
+kind = "prop"
+
+[sobj.13575-13590]
+kind = "prop"
+
+[sobj.1875-1878]
+kind = "tree"
 
 [sobj.5437-5456]
 footprint = "relief"
@@ -639,3 +723,573 @@ oval = 0.45
 # Forest of Elders' (10766-10779) paint their doorway as a dark dither, which the shared painted-shadow rule takes for
 # shadow; as the yurt group's dome, that doorway left a see-through band across the dome and spoiled the front. They
 # stay one card until a doorway can be kept. KaMing's gold tents (5485-5498) are cones, which a dome cut off at the peak.
+
+# cloud-1 run 27: six exact cap/rim/front layouts identify market platforms.
+[vobj.market-platform-floor]
+label = "Market platform floor"
+# The enclosure is one cell high; its interior per-piece override is flat at level 1.
+ground = "block"
+[vobj.market-platform-floor.tile.25994-25996]
+ground = "flat"
+level = 1
+[vobj.market-platform-floor.variant.7x5]
+tile = [
+        "25920 25921 25922 25923 25922 25923 25925",
+        "25936 25995 25994 25995 25994 25995 25937",
+        "25936 25995 25994 25995 25994 25995 25937",
+        "25936 25995 25994 25995 25994 25995 25937",
+        "25958 25959 26014 14327 25945 14330 25963"
+]
+[vobj.market-platform-floor.variant.10x7]
+tile = [
+        "25920 25921 25923 25922 25922 25923 25922 25923 25924 25925",
+        "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25958 25959 25959 26014 14327 25945 14330 25961 25961 25963"
+]
+[vobj.market-platform-floor.variant.11x7]
+tile = [
+        "25920 25921 25922 25923 25922 25922 25923 25922 25923 25924 25925",
+        "25936 25995 25994 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25936 25995 25994 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25936 25995 25994 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25936 25995 25994 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25936 25995 25994 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25958 25959 25959 25959 26014 14327 25945 14330 25961 25961 25963"
+]
+[vobj.market-platform-floor.variant.7x8]
+tile = [
+        "25920 25921 25922 25923 25922 25923 25925",
+        "25936 25995 25994 25995 25994 25995 25937",
+        "25936 25995 25994 25995 25994 25995 25937",
+        "25936 25995 25994 25995 25994 25995 25937",
+        "25936 25995 25994 25995 25994 25995 25937",
+        "25936 25995 25994 25995 25994 25995 25937",
+        "25936 25995 25994 25995 25994 25995 25937",
+        "25958 25959 26014 14327 25945 14330 25963"
+]
+[vobj.market-platform-floor.variant.10x9]
+tile = [
+        "25920 25921 25923 25922 25922 25923 25922 25923 25924 25925",
+        "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25958 25959 25959 26014 14327 25945 14330 25961 25961 25963"
+]
+[vobj.market-platform-floor.variant.11x9]
+tile = [
+        "25920 25921 25922 25923 25922 25922 25923 25922 25923 25924 25925",
+        "25936 25995 25994 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25936 25995 25994 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25936 25995 25994 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25936 25995 25994 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25936 25995 25994 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25936 25995 25994 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25936 25995 25994 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25958 25959 25959 25959 26014 14327 25945 14330 25961 25961 25963"
+]
+
+# cloud-1 run 38: two partial market-platform layouts from the native-map census; _ keeps zero slots wildcard.
+[vobj.market-platform-floor.variant.7x5-partial-cap]
+tile = [
+        "_ _ _ _ _ 25923 25925",
+        "25936 25995 25994 25995 25994 25995 25937",
+        "25936 25995 25994 25995 25994 25995 25937",
+        "25936 25995 25994 25995 25994 25995 25937",
+        "25958 25959 26014 14327 25945 14330 25963"
+]
+
+[vobj.market-platform-floor.variant.10x9-partial-cap]
+tile = [
+        "_ 25921 25923 25922 25922 25923 25922 25923 25924 25925",
+        "_ 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+        "_ 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+        "25958 25959 25959 26014 14327 25945 14330 25961 25961 25963"
+]
+
+# cloud-1 run 39: positive platform cells stay fixed; core zeroes require the recorded gaps without claiming or painting them.
+# Outer-frame zeroes are wildcards; 15 exact frames cover non-isolated components, followed by one singleton.
+[vobj.market-platform-floor.variant.tk004501_55_46_3x4]
+tile = [
+    "_ _ _",
+    "25936 25995 _",
+    "25936 25995 _",
+    "25958 25959 25959"
+]
+
+[vobj.market-platform-floor.variant.tk004501_16_47_10x3]
+tile = [
+    "_ _ _ _ _ _ _ _ _ _",
+    "_ 25994 25995 25994 25994 25995 25994 25995 25996 25937",
+    "_ 25959 25959 26014 14327 25945 14330 25961 25961 25963"
+]
+
+[vobj.market-platform-floor.variant.tk004501_9_57_3x5]
+tile = [
+    "_ _ 25937",
+    "_ 25996 25937",
+    "_ 25996 25937",
+    "_ 25996 25937",
+    "_ 25961 25963"
+]
+
+[vobj.market-platform-floor.variant.tk004601_46_14_5x5]
+tile = [
+    "_ _ _ 25923 _",
+    "_ 0 0 25995 _",
+    "25936 25995 25994 25995 _",
+    "_ 0 0 25995 _",
+    "_ _ _ 14327 _"
+]
+
+[vobj.market-platform-floor.variant.tk004601_30_15_5x3]
+tile = [
+    "_ _ _ _ _",
+    "_ 25995 25994 25995 25937",
+    "_ _ _ _ _"
+]
+
+[vobj.market-platform-floor.variant.tk004601_37_15_7x3]
+tile = [
+    "_ _ _ _ _ _ _",
+    "25936 25995 25994 25995 25994 25995 25937",
+    "_ _ _ _ _ _ _"
+]
+
+[vobj.market-platform-floor.variant.tk004601_2_16_10x7]
+tile = [
+    "25920 25921 25923 25922 25922 25923 25922 25923 25924 25925",
+    "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+    "_ 0 25995 0 0 0 0 0 0 _",
+    "_ 0 25995 0 0 0 0 0 0 _",
+    "_ 0 25995 0 0 0 0 0 0 _",
+    "_ 0 25995 0 0 0 0 0 0 _",
+    "_ _ 25959 _ _ _ _ _ _ _"
+]
+
+[vobj.market-platform-floor.variant.tk004601_15_16_7x7]
+tile = [
+    "25920 25921 25922 25923 25922 25922 _",
+    "25936 25995 25994 25995 25994 25994 _",
+    "_ 0 0 0 25994 25994 _",
+    "_ 0 0 0 25994 25994 _",
+    "_ 0 0 0 25994 25994 _",
+    "_ 0 0 0 25994 25994 _",
+    "_ _ _ _ 26014 14327 _"
+]
+
+[vobj.market-platform-floor.variant.tk004601_55_16_10x7]
+tile = [
+    "_ _ _ _ _ _ _ _ _ _",
+    "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+    "_ 0 25995 25994 25994 25995 25994 25995 25996 25937",
+    "_ 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+    "_ 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+    "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+    "_ 25959 25959 26014 14327 25945 14330 25961 25961 25963"
+]
+
+[vobj.market-platform-floor.variant.tk004601_68_16_10x7]
+tile = [
+    "_ _ _ _ _ _ _ _ _ _",
+    "25936 25995 25995 25994 25994 25995 0 0 0 _",
+    "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+    "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+    "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+    "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+    "25958 25959 25959 26014 14327 25945 14330 25961 25961 25963"
+]
+
+[vobj.market-platform-floor.variant.tk004601_18_28_4x7]
+tile = [
+    "_ 25922 25922 _",
+    "_ 25994 25994 _",
+    "_ 25994 25994 _",
+    "_ 25994 25994 _",
+    "_ 25994 25994 _",
+    "_ 25994 25994 _",
+    "_ _ _ _"
+]
+
+[vobj.market-platform-floor.variant.tk004601_29_34_6x8]
+tile = [
+    "_ _ _ _ _ 25925",
+    "_ 25994 25995 25994 25995 25937",
+    "_ 25994 25995 25994 25995 25937",
+    "_ 25994 25995 25994 25995 25937",
+    "_ 25994 25995 25994 25995 25937",
+    "_ 25994 25995 25994 25995 25937",
+    "_ 25994 25995 25994 25995 25937",
+    "_ 26014 14327 25945 14330 25963"
+]
+
+[vobj.market-platform-floor.variant.tk004601_29_47_6x5]
+tile = [
+    "_ 25922 25923 25922 25923 25925",
+    "_ 25994 25995 25994 25995 25937",
+    "_ 25994 25995 25994 25995 25937",
+    "_ 25994 25995 25994 25995 25937",
+    "_ 26014 14327 25945 14330 25963"
+]
+
+[vobj.market-platform-floor.variant.tk004601_8_55_4x7]
+tile = [
+    "_ _ _ _",
+    "_ 25995 25996 25937",
+    "_ 25995 25996 25937",
+    "_ 25995 25996 25937",
+    "_ 25995 25996 25937",
+    "_ 25995 25996 25937",
+    "_ 25961 25961 25963"
+]
+
+[vobj.market-platform-floor.variant.tk004601_1_68_3x8]
+tile = [
+    "25920 25921 _",
+    "25936 25995 _",
+    "25936 25995 _",
+    "25936 25995 _",
+    "25936 25995 _",
+    "25936 25995 _",
+    "25936 25995 _",
+    "25958 25959 _"
+]
+
+# run39 singleton: native-zero gaps distinguish this 3x3 market frame; only the 25995 floor gets flat/level 1.
+[vobj.market-platform-floor.variant.tk004601_47_23_3x3]
+tile = [
+    "0 25923 0",
+    "0 25995 0",
+    "0 0 0"
+]
+
+# cloud-1 run 27: Received empty tavern-wall cells draw plain 607 only when the southern neighbour has both
+# wall-family scenery and floor 607.
+[tile.0.when.south]
+is = ["sobj/1554", "sobj/625"]
+also = "tile/607"
+skin = "tile/607"
+
+# s6-reprojection-cloud-3 run 21 projection classifications are module-only: these kinds apply in 3D modes, so
+# Normal sun shadows are unchanged.
+#
+# The boulders' middle pieces are walled on blocked cells, so the rule stood them up as walls, a grey box in each
+# boulder with its card turning behind it (the Wilderness's, 136 maps), as the module's mounds stood before round 2 made
+# them props (1578-1612). As props, their pieces join along their row.
+[sobj.555-562]
+kind = "prop"
+
+# The yellow huts and shrines (Kugnae's under the north wall, 175-182,10-13, and its shrine, 195-204,49-52; maps 6428,
+# 6415 and 52904). Their front faces (4091-4124: the plaster, the doors, the lattice windows) are based on the cell in
+# front of the hut with their bottom layer empty, so the rule took them for tops and laid them flat a cell up: a low open
+# box. Their sign bands (3820-3850) and the shrine's green beams (3936-3950) are the same a row higher, and lay flat over
+# the hut. As storeys (tier) each stands on the line the game paints its foot on: a face from the ground on the hut's
+# south side, a band or a beam on the face's top.
+[sobj.4091-4124]
+kind = "wall"
+tier = true
+
+[sobj.3820-3850]
+kind = "wall"
+tier = true
+
+[sobj.3936-3950]
+kind = "wall"
+tier = true
+
+# The purple-topped rock mound (Kugnae's at 144-151,12-17 by the north wall; the instanced rooms' purple-topped north
+# walls, maps 2546-2576, 2590 and 4549). Its front, the rock face with the cave mouth (1637-1655), stood as walls as tall
+# as their pictures, and its purple rims (1660-1696, empty bottom layers) lay as tops at their own empty layers, one or
+# two cells up: a ring of rock round a lower floor, the rims scattered over it. The face paints about a cell and five
+# eighths of rock under the purple top, so the front is a terrace that tall (its face stands, the purple edge lies at its
+# top) and the rims lie at the same height, raising the blocked cells under them. 1641, a yellow scrap among them, is
+# left to the rules.
+[sobj.1637-1640]
+kind = "top"
+height = 1.625
+roof = "flat"
+terrace = true
+
+[sobj.1642-1655]
+kind = "top"
+height = 1.625
+roof = "flat"
+terrace = true
+
+[sobj.1660-1696]
+kind = "top"
+height = 1.625
+roof = "flat"
+
+# The blue-tiled water running over steps and floors (699-700): pools and channels in the palaces and halls (maps 3961,
+# 4513, 2985, 3915, 3951, 3918, 3963, 4510, 4011 and 15 more) and the fords at the ends of Kugnae's wooden bridges
+# (30-31,30 and 42-43,28). On blocked cells with a full picture the rule stood each piece as a wall two cells tall, so a
+# pool was a row of blue walls and each bridge ended in one. They lie on the ground where Normal draws them, a pixel over
+# it, as the fishing net does.
+[sobj.699-700]
+kind = "top"
+roof = "flat"
+height = 0.02
+
+# The domed rock with a cave mouth (779-792: Kugnae's 180-189,182 on its island, Buya's 92-101,101, Nagnang's twelve,
+# and 30 more maps; nine or ten pieces in a row, the open mouth 790-791 or the wooden door 783-784 in the middle). The
+# rocks' full bottom layers made them walls as tall as their pictures and the mouth and its edges tops at their empty
+# layer, so each cave stood as two tall slabs with a low plate between. As one terrace, as the purple mound is: the face
+# stands three cells, as tall as the mouth's dark opening, the rock's top lies flat on it, and the blocked cells behind
+# rise to it; the walkable mouth stays open under the ledge.
+[sobj.779-792]
+kind = "top"
+height = 3
+roof = "flat"
+terrace = true
+
+# The red-tiled hall front (15998-16014: Buya's hall at 45-61,23 and the porch of map 5382 along row 5, its back
+# corners on row 3). Each piece paints a strip of the roof over what stands under it: a green post (16001, 16004, 16007,
+# 16008, 16011), the top of the lattice front, or the curled ends (15998-15999, 16013-16014). Buya's posts stand on
+# blocked cells, so each stood as a wall with its strip of roof on top, a row of tall red spikes, and the strips between
+# stood up as signs. Joined as one front, as the module's blue gate is: cut at the eaves (the roof's bottom is 4.5 to
+# 4.75 cells over the pieces' foot in the pictures), the roof is held up as one hip and the posts stand under it.
+[sobj.15998-16014]
+group = "red-hall-front"
+
+[group.red-hall-front]
+kind = "prop"
+roof = "hip"
+height = 4.5
+depth = 0.25
+wind = "none"
+
+# The stone gate with a great round arch (2602-2615, its green roof 2618-2629 two rows north: Nagnang's two at 7-20,1-3
+# and 33-46,14-16, map 4606's and map 3819's). The arch's middle strips have an empty bottom layer, the passage, so the
+# rule laid them flat at it and the ring lay squashed at the gate's foot; and the gate's blocked cells behind the arch
+# rose to the roof as blocks, filling the arch with stone. The front stands as one deep piece, as the module's town gates
+# do. The roof keeps the module's hall-roof (at its native contact); it floats over the arch only in the maps' own hints
+# (maps/2500.toml, maps/4606.toml), since the same roof holds up the walls of the halls on maps 3624, 1008 and 50910.
+# The separate 2618-2629 roof strips do not use the inline-roof prop anchor. This facade is centred in its native
+# foot row; its base-layer paint is ground shadow. Its standing foot is one row north of its cell; drawing moves down 1 and
+# north 1 to preserve the original 45-degree projection. No map exception is needed; one-cell depth keeps its front on the row
+# boundary, clear of figures in the South row.
+[sobj.2602-2615]
+group = "moon-gate"
+
+[group.moon-gate]
+kind = "prop"
+shadow_base = true
+depth = 1
+wind = "none"
+
+# The dead trees of the fields and caves (855-857, three pieces, and 858-859, two; 60 on the Wilderness and 185 maps in
+# all, among them 2527, 30993, 32192, 2529 and 752). Their thin dark branches carry no foliage, so the rule did not take
+# them for trees, and each lay on the ground as a black tangle. They stand as trees, as the bare trees of Hallowed Pass
+# (814-817) do, and sway whole.
+[sobj.855-859]
+kind = "tree"
+
+# The white puffs lying in the Wilderness's grass (18443-18445 and 18446-18448, three pieces each, 30 cells; only that
+# map). Full bottom layers and no foliage, so the rule laid each as a top on the ground, a flat grey oval, where Normal
+# paints a rounded puff. Each stands as one turning card, as the module's mounds and boulders do (its pieces, props,
+# join along their row).
+[sobj.18443-18448]
+kind = "prop"
+
+# The canopy's pieces painted over the Vale's plateau, about four rows above their cells (1232-1234; 1234 alone 169 times
+# on the Vale). Each lies flat on the plateau, two cells up, as the rims' ledges.
+[sobj.1232-1234]
+kind = "top"
+roof = "flat"
+height = 2
+
+# s6-reprojection-cloud-3 (run 22, head notes 71 and 73): Gypsy Camp's cave front, the classifier's 13-piece row
+# at 14-26,3 (5884-5887, 5878-5883, 5888-5890). The native columns paint one cell of soil above three layers of
+# cliff, with the opening across 5879-5882. The full columns otherwise stand as walls while the opening's empty
+# lower layers make it a separate top. As the other cave fronts, one terrace: stand the lower three cells and
+# lay the soil strip on the ledge. Reusable artwork hints; no map override or Normal shadow classification.
+[sobj.5878-5890]
+kind = "top"
+height = 3
+roof = "flat"
+terrace = true
+
+# The cave's dark dither belongs to the mouth, as in the domed caves: retain it on the standing face rather than
+# removing it as a painted ground shadow and exposing the invented rock behind the opening.
+[sobj.5879-5882]
+painted_shadow = false
+
+# Small blue gate (994-997): its same-row posts/lintel read as split walls and flat tops; together they form
+# variable-width strips. Eaves are 182 native pixels above the foot: in the 299-pixel central strips, blue ends at
+# row 116 and the full brown beam starts at 117. Height 182/48 keeps the beam standing under the joined ridge roof.
+# Map 4619 clears these fields in maps/4619.toml; keep that clear list in step with this group.
+[sobj.994-997]
+group = "blue-post-gate"
+
+[group.blue-post-gate]
+kind = "prop"
+depth = 0.25
+wind = "none"
+roof = "ridge-ew"
+height = 3.7916667
+
+# Carved jade arch pieces and pillars frame a magical blue opening as one upright picture, preserving its native
+# pixels; the curved ring stays still. Two-post and middle-pair subsets use the same art.
+[sobj.12667-12670]
+group = "jade-arch"
+
+[group.jade-arch]
+kind = "prop"
+depth = 0.5
+wind = "none"
+
+# Wooden gate posts and lintel stand together around the native cutout, one quarter-cell deep.
+# Native five- and six-piece arrangements join without adding a roof form.
+[sobj.7666-7671]
+group = "wooden-lintel-gate"
+
+[group.wooden-lintel-gate]
+kind = "prop"
+depth = 0.25
+wind = "none"
+
+# Unhinted, the six same-row pieces had blocked ends that read as walls while the middle lay split and flat.
+# Depth 1 keeps the no-roof ThinSolid slab within its native row, clear of figures walking south. The joined face
+# keeps its native mouth; dark dither belongs to it, not a ground shadow, as at 5879-5882.
+[sobj.1087-1092]
+group = "blue-stone-face"
+
+[group.blue-stone-face]
+kind = "prop"
+depth = 1
+wind = "none"
+painted_shadow = false
+
+# The brown counterpart includes its leftmost piece at 1093 and keeps the complete cave front upright.
+[sobj.1093-1098]
+group = "brown-stone-face"
+
+[group.brown-stone-face]
+kind = "prop"
+depth = 1
+wind = "none"
+
+# One native pine has a left crown, two central trunk halves and a right crown. The ascending row-strip join keeps
+# both crowns and trunk pieces with the upright tree. Existing tree grouping keeps repeated pines separate.
+[sobj.7106-7109]
+group = "four-part-pine"
+
+[group.four-part-pine]
+kind = "tree"
+wind = "foliage"
+
+# The stone shelter is a facade with openings and a variable-width repeated middle pair, not a sloping roof.
+# Depth 1 keeps each slab in its own native row. Its dark base-cell dither beneath the timber lintels uses the
+# existing base-shadow handling, so this group does not override painted_shadow.
+[sobj.15531-15534]
+group = "stone-shelter-front"
+
+[group.stone-shelter-front]
+kind = "prop"
+depth = 1
+wind = "none"
+
+# Arctic Village's full fronts 1160-1164 and 1166 have two face layers below their painted ledge; these hints make
+# them two-cell, single-step cliffs. Interior cells vary, and how caps behind a stacked step should connect remains
+# open. Cap art 1165 and 1167-1187 has two empty bottom layers; lay its snow flat at height 2 without a terrace flag.
+[sobj.1160-1164]
+kind = "top"
+roof = "flat"
+height = 2
+terrace = true
+
+[sobj.1166]
+kind = "top"
+roof = "flat"
+height = 2
+terrace = true
+
+[sobj.1165]
+kind = "top"
+roof = "flat"
+height = 2
+
+[sobj.1167-1187]
+kind = "top"
+roof = "flat"
+height = 2
+
+# Common Arctic ice grounds use native blue/white tile 1418 on invented perimeter faces
+# to avoid stretching edge texels into streaks. Native top pictures and existing geometry/heights remain.
+[tile.1411-1429]
+skin = "tile/1418"
+
+# One blue roof spans five hut strips; its common foot is 210 pixels, the central blue ends at row 111,
+# and posts begin at 112. Eaves are (210 - 112) = 98 pixels, or 98/48 = 2.0416667 cells.
+# Existing SplitGateRoofs handles the single roof cut and upright posts; small details stay in their
+# respective cut bands. Empty-base 14942 and 14946 flank base-bearing 14943-14945, retaining the
+# native MAP foot row under the existing base-bearing-member rule. The 210 value is a pixel reference.
+# In 742/17265, depth 2 keeps the original south front clear and extends the facade north over the blocked
+# two-row body. Do not copy depth 2 to unroofed bodies, where it would intrude south.
+[sobj.14942-14946]
+group = "blue-fishing-hut"
+
+[group.blue-fishing-hut]
+kind = "prop"
+roof = "hip"
+height = 2.0416667
+depth = 2
+wind = "none"
+
+# The seven shed strips share foot 232. Shingles/fascia end at 127 and the timber wall starts at 128:
+# eaves (232 - 128) / 48 = 2.1666667. The inline roof keeps its depth north of the native front.
+[sobj.15656-15662]
+group = "crafters-shed"
+
+[group.crafters-shed]
+kind = "prop"
+roof = "hip"
+height = 2.1666667
+depth = 2
+wind = "none"
+
+# Native 15657 starts at cell Y -184. The chimney crop is x29-40, native image y0-41;
+# its pixels stand on the same roof surface instead of being folded into the shingles.
+[sobj.15657]
+upright = [29, -184, 12, 42]
+
+# Forest of Elders hall roofs: lower source rows 117-191, with wood rows 117-143 lifted full-width as an upright
+# on the lower-roof back; upper source rows 0-116 sit at physical top 1.5625 cells (1 + 2.5625 - 2).
+# Depth 4 follows the painted roof's 3.44-cell reach; native pass flags do not define the closed hall's depth.
+# See decisions/2026-10-24-forest-hall-drawing-depth.md for the reversible drawing choice.
+[sobj.14464-14470]
+group = "forest-blue-hall"
+[sobj.14612]
+group = "forest-blue-hall"
+
+[group.forest-blue-hall]
+kind = "prop"
+roof = "hip"
+roof_bands = [1, 2, 2.5625]
+depth = 4
+wind = "none"
+
+[sobj.14478-14484]
+group = "forest-red-hall"
+[sobj.14615]
+group = "forest-red-hall"
+
+[group.forest-red-hall]
+kind = "prop"
+roof = "hip"
+roof_bands = [1, 2, 2.5625]
+depth = 4
+wind = "none"

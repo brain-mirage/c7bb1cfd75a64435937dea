@@ -6,10 +6,15 @@
 --   alpha, scale   General: its alpha and scale
 --   fadeOut        General: fade to fadeOutAlpha when the mouse is not over it, after fadeOutDelay seconds
 --
--- One driver checks the registered frames every frame and eases alpha changes.
+-- One driver checks the registered frames every frame and eases alpha changes. s6-ui-core (round 101, the graphics plan's
+-- T11 step 4): only while one of them needs it every frame (a modifier to show by, a fade on the mouse) or an alpha is
+-- easing; every other change comes with an Apply (the settings, edit mode, the game state, the target frame's target),
+-- which shows or hides at once, as before, and starts it again. So each frame is shown on the same frames as when it ran
+-- every frame, and a press reaches the same frame.
 
 local V = { frames = {} }
 TK.Visibility = V
+local driver -- made below
 
 local defaults = {
     enabled = true, alwaysHide = false, showModifier = "none",
@@ -26,7 +31,8 @@ end
 
 --- Registers a frame to follow its settings table (read again on every check, so it may be replaced).
 --- cond, if given, is one more condition outside edit mode (the target frame: while there is a target); it is
---- checked every frame, so it should only read a cached value.
+--- checked at each Apply and while the driver runs, so it should only read a cached value, and its owner calls Apply
+--- when it changes.
 function V:Attach(frame, getDB, cond)
     self.frames[frame] = { get = getDB, cond = cond, alpha = nil, leftAt = 0 }
     -- The component whose OnEnable or ApplySettings attaches it owns it (TK.ReplaceComponent).
@@ -85,6 +91,7 @@ function V:Apply(frame)
     frame:SetShown(state.shown)
     state.alpha = targetAlpha(frame, state, db, GetTime())
     frame:SetAlpha(state.alpha)
+    if driver then TK.Util.Updating(driver, true) end -- it looks again from the next frame, and stops if nothing needs it
 end
 
 --- Re-applies every registered frame (after entering or leaving the world, or edit mode).
@@ -92,14 +99,15 @@ function V:ApplyAll()
     for frame in pairs(self.frames) do self:Apply(frame) end
 end
 
-local driver = CreateFrame("Frame", nil, UIParent)
+driver = CreateFrame("Frame", nil, UIParent)
 driver:SetScript("OnUpdate", function(_, elapsed)
     -- Checked every frame, so showing by modifier feels instant; alpha changes are eased. The state is kept here,
     -- so a frame with nothing to do costs no call into C# (the review's allocation note).
-    local now
+    local now, busy = nil, false
     for frame, state in pairs(V.frames) do
         local db = state.get()
         if db then
+            if db.fadeOut or (db.showModifier or "none") ~= "none" then busy = true end
             local shown = wantShown(db, state)
             if shown ~= state.shown then
                 state.shown = shown
@@ -115,8 +123,10 @@ driver:SetScript("OnUpdate", function(_, elapsed)
                     elseif target > a then a = a + step else a = a - step end
                     state.alpha = a
                     frame:SetAlpha(a)
+                    busy = true
                 end
             end
         end
     end
+    if not busy then TK.Util.Updating(driver, false) end
 end)

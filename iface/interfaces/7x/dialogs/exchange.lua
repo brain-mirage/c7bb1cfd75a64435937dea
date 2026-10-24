@@ -10,9 +10,14 @@
 -- (ExchangeItemListPane::DrawListEntry 0x004AE1C0): 156 x 24 cells, the item's picture at half size centred on x 25,
 -- its name from x 50 in 0x25, no bar for the selected row. Drawing only: the indexes, the money field's digits and what
 -- is sent are the renderer's and the model's.
+-- s6-ui-core (round 85): the XML twin's; the windows' sizes, pictures and the parts' places are exchange.xml's
+-- (core/xml.md).
 
 local S = require("interfaces.7x.skin")
 local K = TK.Dialogs
+local unpack = table.unpack
+local entry = require("interfaces.original.entry")
+local D = TK.Xml.Data("exchange.xml")
 
 return function(L, X)
     --- One of the window's own texts (the player's name, the two numbers, the partner's money with commas), made once.
@@ -28,31 +33,31 @@ return function(L, X)
         end
     end
 
-    L.Trade = {
-        width = 451, height = 371, button = 63, listWidth = 156, listHeight = 173, moneyWidth = 124, editHeight = 12,
+    local T = D.Trade
+    L.Trade = entry(T, {
         place = function(win)
-            X.Size(win, 451, 371)
-            X.Art(win, "DLGEXC1.EPF", "DLGEXC1.PAL")
-            X.Image(win, win.accept, 14, 84, 335, 147, 359)
-            X.Image(win, win.add, 36, 188, 335, 251, 359)
-            X.Image(win, win.cancel, 22, 292, 335, 355, 359)
-            X.Text(own(win, "x7myName"), win, 30, 60, 197, 72)
-            X.List(win, win.mine, 30, 110, 222, 283, 156, 24)
-            X.Edit(win.money, win, 73, 295, 197, 307)
+            X.Size(win, T.width, T.height)
+            X.Art(win, unpack(T.art))
+            X.Image(win, win.accept, unpack(T.accept))
+            X.Image(win, win.add, unpack(T.add))
+            X.Image(win, win.cancel, unpack(T.cancel))
+            X.Text(own(win, "x7myName"), win, unpack(T.myName))
+            X.List(win, win.mine, unpack(T.mine))
+            X.Edit(win.money, win, unpack(T.money))
             -- the money field drawn as 4a's input mode 1 draws it (TextEditPane::DrawTextCharacters): its digits with a
             -- comma every three, while it is typed in too; "0" while it is empty (4a's field starts as "0"). Over the
             -- edit, whose own text and caret are clear; what goes to the model is the edit's text, unchanged
-            X.Text(own(win, "x7money"), win, 73, 295, 197, 307)
+            X.Text(own(win, "x7money"), win, unpack(T.money))
             __tk:SetTextColor(win.money.__h, 0, 0, 0, 0)
             win.money:HookScript("OnTextChanged", function(self)
                 win.x7money:SetText(TK.Util.FormatNumber(tonumber(self:GetText()) or 0))
             end)
-            X.Text(win.theirLabel, win, 241, 60, 408, 72)
-            X.List(win, win.theirs, 241, 110, 432, 283, 156, 24)
-            X.Text(own(win, "x7theirMoney"), win, 284, 295, 408, 307)
+            X.Text(win.theirLabel, win, unpack(T.theirLabel))
+            X.List(win, win.theirs, unpack(T.theirs))
+            X.Text(own(win, "x7theirMoney"), win, unpack(T.theirMoney))
             win.theirMoney:Hide()
-            X.Text(own(win, "x7myNumber"), win, 82, 83, 210, 95)
-            X.Text(own(win, "x7theirNumber"), win, 295, 83, 423, 95)
+            X.Text(own(win, "x7myNumber"), win, unpack(T.myNumber))
+            X.Text(own(win, "x7theirNumber"), win, unpack(T.theirNumber))
             win.ready:Hide()
             -- no bar for the selected row; its name always in 0x25
             for _, list in ipairs({ win.mine, win.theirs }) do
@@ -77,54 +82,54 @@ return function(L, X)
             win.x7theirMoney:SetText(TK.Util.FormatNumber(tonumber(c.theirMoney) or 0))
             -- the rows: the item's picture (with its colour: s6-interface-7x round 2) centred on x 25, its name from 50
             -- (rows {slot, item, colour, name})
+            local r = T.row
             for _, list in ipairs({ win.mine, win.theirs }) do
                 for i, it in ipairs(list.items) do
-                    X.ItemRow(list, list.rows[i], { item = it[2], colour = it[3], name = K.Text(it[4]) }, 25, 50, 156 - 50)
+                    X.ItemRow(list, list.rows[i], { item = it[2], colour = it[3], name = K.Text(it[4]) }, r.icon, r.name, r.width)
                 end
             end
             if win.opened then X.SlideOpen(win) end
         end,
-    }
+    })
 
     -- The item pickers (AddItemDialog 0x004AE4C0 and the two built on it, AddEmployeeItemDialog and AddMixingItemDialog):
     -- 241 x 340 on DLGEXC2.EPF in PAL01.PAL, at placement slot 9, sliding open; ADD (1, image 36) (55, 303)-(118, 327),
     -- CANCEL (2, image 22) (132, 303)-(195, 327); the player's items (3: MyItemListPane, 170 x 24 cells, several may
     -- be picked) at (30, 30)-(218, 270): the item's picture centred on x 25, its name from 50 fitted with "...", the
     -- picked rows on a 0x25 bar the cell wide.
-    L.Picker = {
-        width = 241, height = 340, button = 63, listWidth = 170, listHeight = 240,
-        slide = true,
+    local P = D.Picker
+    L.Picker = entry(P, {
         place = function(win)
-            X.Art(win, "DLGEXC2.EPF", "PAL01.PAL")
-            X.Image(win, win.ok, 36, 55, 303, 118, 327)
-            X.Image(win, win.cancel, 22, 132, 303, 195, 327)
-            X.List(win, win.list, 30, 30, 218, 270, 170, 24)
+            X.Art(win, unpack(P.art))
+            X.Image(win, win.ok, unpack(P.ok))
+            X.Image(win, win.cancel, unpack(P.cancel))
+            X.List(win, win.list, unpack(P.list))
             picked(win.list)
         end,
-        row = function(win, row, it) X.ItemRow(win.list, row, it, 25, 50, 170 - 50) end,
-    }
+        row = function(win, row, it) X.ItemRow(win.list, row, it, P.row.icon, P.row.name, P.row.width) end,
+    })
 
     -- The mixing window (MixItemDialog 0x004AF570): 292 x 309 on MIXITEM.EPF in MIXITEM.PAL, at placement slot 9, sliding
     -- open; ADD (1, image 36) (23, 273), DELETE (2, 21) (85, 273), OK (3, 14) (147, 273), CANCEL (4, 22) (209, 273); the
     -- mix's rows (5: a MyItemListPane, 170 x 24 cells) at (37, 68)-(264, 236), as the pickers' rows: the item's picture
     -- centred on x 25, its name (the slot's) from 50 fitted with "...", the selected row on a 0x25 bar the cell wide.
-    L.Mix = {
-        width = 292, height = 309, button = 63, listWidth = 214, listHeight = 168, slide = true,
+    local M = D.Mix
+    L.Mix = entry(M, {
         place = function(win)
-            X.Art(win, "MIXITEM.EPF", "MIXITEM.PAL")
-            X.Image(win, win.add, 36, 23, 273, 86, 297)
-            X.Image(win, win.delete, 21, 85, 273, 148, 297)
-            X.Image(win, win.ok, 14, 147, 273, 210, 297)
-            X.Image(win, win.cancel, 22, 209, 273, 272, 297)
-            X.List(win, win.list, 37, 68, 264, 236, 170, 24)
+            X.Art(win, unpack(M.art))
+            X.Image(win, win.add, unpack(M.add))
+            X.Image(win, win.delete, unpack(M.delete))
+            X.Image(win, win.ok, unpack(M.ok))
+            X.Image(win, win.cancel, unpack(M.cancel))
+            X.List(win, win.list, unpack(M.list))
             picked(win.list)
         end,
         -- a row ({ slot, quantity }): the slot's item
         row = function(win, row, r)
             local _, name, _, _, icon, colour = __tk:GetItemSlot(r[1])
-            X.ItemRow(win.list, row, { icon = icon, colour = colour, name = name or "" }, 25, 50, 170 - 50)
+            X.ItemRow(win.list, row, { icon = icon, colour = colour, name = name or "" }, M.row.icon, M.row.name, M.row.width)
         end,
-    }
+    })
 
     -- The trade's counts and the stack's number (AddItemWithCountDialog 0x004AF040, NumberInputDialog 0x00530640):
     -- built by the purchase's input renderer (merchant.lua's L.Input draws them, by class), 7.x windows by this entry.

@@ -40,6 +40,10 @@
 -- key, the Spells icon and a spell prompt's ? the spells, the character key, the Info icon and the server's 0x3E (D-77)
 -- the self look (on the view 0x3E asked for), a look at another player (0x34) the look page; the group key and button
 -- (7.5.2's tab 4, its 2D 01) the self look's status view with the group list (round 7, Y1: C:Show("group")).
+--
+-- s6-ui-core (round 85): the XML twin's scripts; the panel's frames, the pages' pictures, buttons, texts and boxes and
+-- their places are main.xml's (core/xml.md), and so are the numbers the pages draw by (the rows, the cells, the worn
+-- places, the lines).
 
 local C = TK.GetComponent("5x.side")
 local H = __tk
@@ -51,9 +55,13 @@ local Help = require("interfaces.5x.help") -- s6-interface-5x-b
 local ItemBox = require("interfaces.5x.itembox")
 local Effects = require("interfaces.5x.sideeffects")
 local DragLabel = require("interfaces.original.draglabel")
+local E = require("interfaces.5x.elements")
 
-local PLACE = { 434, 12 }
-local WIDTH, HEIGHT = 192, 288
+local L = TK.Xml.Data("main.xml")
+local ITEMS, SPELLS = L.ITEMS, L.SPELLS
+
+-- the scripts main.xml names
+local scripts = {}
 
 -- ----- drawing helpers -----
 
@@ -62,14 +70,6 @@ local function rect(frame, page, l, t, r, b)
     frame:ClearAllPoints()
     frame:SetPoint("TOPLEFT", page, "TOPLEFT", l, -t)
     frame:SetSize(r - l, b - t)
-end
-
---- An invisible button over (l, t)-(r, b) of the page, pressed on its left press (the panes' type 1).
-local function pressButton(page, l, t, r, b, fn)
-    local btn = CreateFrame("Button", nil, page)
-    rect(btn, page, l, t, r, b)
-    btn:SetScript("OnMouseDown", function(_, button) if button == "LeftButton" then fn() end end)
-    return btn
 end
 
 --- A text drawn as 5.33's MoveTo(x, y) and DrawWideText draw it: the pen 12 below its line's top (font 0's line), the
@@ -117,10 +117,12 @@ local function frameSize(iconId)
     return 0, 0
 end
 
---- SPELLBUT.EPF's frame n over (x, y) of the page (a button's first-page, last-page or chosen view mark), or hidden.
-local function mark(page, key, on, frame, x, y)
+--- SPELLBUT.EPF's frame over a button of the page (its markAt in main.xml: a button's first-page, last-page or chosen
+--- view mark), or hidden.
+local function mark(page, key, on)
+    local at = page.markAt[key]
     if on then
-        page.marks[key] = S.Picture(page, page.marks[key], "SPELLBUT.EPF", frame, "NPAL6.PAL", x, y, "BORDER")
+        page.marks[key] = S.Picture(page, page.marks[key], "SPELLBUT.EPF", at.frame, "NPAL6.PAL", at.x, at.y, "BORDER")
     elseif page.marks[key] then
         page.marks[key]:Hide()
     end
@@ -206,6 +208,10 @@ local function textBox(page, l, t, r, b)
     return box
 end
 
+-- main.xml's elements: 5.x's (interfaces/5x/elements.lua) and the pages' text boxes, <textbox l t r b/> (textBox)
+local elements = setmetatable({}, { __index = E })
+function elements.textbox(page, a) return textBox(page, a.l, a.t, a.r, a.b) end
+
 --- A text's lines (split at its line breaks, as 5.33's panes take a tab or a CR), one entry each.
 local function linesOf(text)
     local list = {}
@@ -237,16 +243,11 @@ end
 
 -- ----- the items (NewInventoryPane) -----
 
-local ITEMS_PAGE = 15
-
-local function buildItems(f)
-    local p = CreateFrame("Frame", "TK5xSideItems", f)
-    p:SetAllPoints(f)
-    p.back = S.Picture(p, nil, "ITEMINV.EPF", 0, "NPAL6.PAL", 0, 0, "BACKGROUND")
-    p.marks, p.number, p.icons = {}, 0, false
-    p.slots = {}
+--- The drag label and the slots (ITEMS.page of them, main.xml's ITEMS), then their help and their actions.
+function scripts.ItemSlots(p)
+    local list, grid = ITEMS.list, ITEMS.grid
     p.dragLabel = DragLabel.New(p, S, S.GAME_ART, 0x25) -- this inventory's native list-name colour on black
-    for i = 1, ITEMS_PAGE do
+    for i = 1, ITEMS.page do
         local b = CreateFrame("Button", "TK5xItemSlot" .. i, p)
         Inv.SlotControl(b, { help = function(slot) Inv.ShowHelp(ItemBox, p, slot) end,
             tooltip = function() end, leave = function() end }) -- G2: the single right press's local sheet
@@ -254,8 +255,10 @@ local function buildItems(f)
         -- selection/carry/drop handlers still decide every server-visible action.
         p.dragLabel:Attach(b, function()
             local k = i - 1
-            if p.icons then return "grid", 40 + 45 * (k % 3), 40 + 41 * math.floor(k / 3) end
-            return "list", 30, 58 + 13 * k
+            if p.icons then
+                return "grid", grid.x + grid.dx * (k % grid.columns), grid.y + grid.dy * math.floor(k / grid.columns)
+            end
+            return "list", list.x, list.y + list.step * k
         end)
         b:Hide()
         b.icon = p:CreateTexture(nil, "ARTWORK")
@@ -265,23 +268,27 @@ local function buildItems(f)
     end
     Inv.HelpOwner(p, Help)
     Inv.Track(p.slots) -- the slots' actions (TK.Game.Inventory.UpdateActions)
-    -- the buttons (GetButtonBounds: 0 back, 1 on, 2 the list, 3 the pictures), on their press as 5.33's case 1
-    pressButton(p, 59, 259, 81, 277, function() if p.number > 0 then p.number = p.number - 1 C:Refresh() end end)
-    pressButton(p, 112, 259, 134, 277, function() if not p.last then p.number = p.number + 1 C:Refresh() end end)
-    pressButton(p, 81, 259, 103, 277, function() p.icons = false C:Refresh() end)
-    pressButton(p, 104, 259, 112, 277, function() p.icons = true C:Refresh() end)
-    -- no carry outlives the page (as the bag window's closing ends one)
-    Inv.EndCarryOnHide(p)
-    return p
 end
 
+--- The items' and the spells' buttons back and on (main.xml's <press>, 5.33's case 1): the page turned, within the
+--- pages; local, nothing sent.
+function scripts.Back(p) if p.number > 0 then p.number = p.number - 1 C:Refresh() end end
+function scripts.On(p) if not p.last then p.number = p.number + 1 C:Refresh() end end
+
+--- The items' list and pictures buttons.
+function scripts.ListView(p) p.icons = false C:Refresh() end
+function scripts.PictureView(p) p.icons = true C:Refresh() end
+
+--- No carry outlives the page (as the bag window's closing ends one).
+function scripts.EndCarryOnHide(p) Inv.EndCarryOnHide(p) end
+
 local function showItems(p)
-    local list = Inv.HeldSlots()
-    local pages = math.max(1, math.ceil(#list / ITEMS_PAGE))
+    local list, n, LIST, GRID = Inv.HeldSlots(), ITEMS.page, ITEMS.list, ITEMS.grid
+    local pages = math.max(1, math.ceil(#list / n))
     p.number = math.max(0, math.min(p.number, pages - 1))
-    p.last = (p.number + 1) * ITEMS_PAGE >= #list
+    p.last = (p.number + 1) * n >= #list
     for i, b in ipairs(p.slots) do
-        local slot = list[p.number * ITEMS_PAGE + i]
+        local slot = list[p.number * n + i]
         b.slot = slot
         b:SetShown(slot ~= nil)
         b.icon:Hide()
@@ -292,75 +299,67 @@ local function showItems(p)
             local fw, fh = frameSize(iconId)
             local k = i - 1
             if p.icons then
-                -- the pictures: three a row from the pen (40, 72), each at pen.x - w / 2 + 6, pen.y - h / 2 - 6; its
-                -- button (40 + 45c, 40 + 41r)-(75 + 45c, 75 + 41r)
-                local px, py = 40 + 45 * (k % 3), 72 + 41 * math.floor(k / 3)
-                itemPicture(b.icon, p, iconId, px - math.floor(fw / 2) + 6, py - math.floor(fh / 2) - 6, S.GAME_ART, colour)
-                rect(b, p, px, py - 32, px + 35, py + 3)
+                -- the pictures (GRID): three a row, each at pen.x - w / 2 + 6, pen.y - h / 2 - 6 of its cell's pen; its
+                -- button the cell
+                local cx, cy = GRID.x + GRID.dx * (k % GRID.columns), GRID.y + GRID.dy * math.floor(k / GRID.columns)
+                local py = cy + GRID.pen
+                itemPicture(b.icon, p, iconId, cx - math.floor(fw / 2) + 6, py - math.floor(fh / 2) - 6, S.GAME_ART, colour)
+                rect(b, p, cx, cy, cx + GRID.size, cy + GRID.size)
             else
-                -- the list: the pen (30, 58) down 13 a row; the half-size picture centred on (pen.x + 6, pen.y - 6),
-                -- the letter at pen.x + 12 in 9 and the name after it in 0x25; its button (30, 46 + 13k)-(160,
-                -- 59 + 13k)
-                local py = 58 + 13 * k
+                -- the list (LIST): the pen down a row at a time; the half-size picture centred on (pen.x + 6,
+                -- pen.y - 6), the letter and the name after it; its button (pen.x, pen.y - 12)-(right, pen.y + 1)
+                local py = LIST.y + LIST.step * k
                 local sx, sy = math.floor(fw / 2), math.floor(fh / 2)
-                itemPicture(b.icon, p, iconId, 30 + 6 - math.floor(sx / 2), py - 6 - math.floor(sy / 2), S.GAME_ART / 2, colour)
-                local x = textAt(b.letter, p, H:SlotLetter(slot) .. ": ", 42, py, 9)
-                textAt(b.name, p, name, x, py, 0x25)
-                rect(b, p, 30, py - 12, 160, py + 1)
+                itemPicture(b.icon, p, iconId, LIST.x + 6 - math.floor(sx / 2), py - 6 - math.floor(sy / 2), S.GAME_ART / 2, colour)
+                local x = textAt(b.letter, p, H:SlotLetter(slot) .. ": ", LIST.letter, py, LIST.letterColour)
+                textAt(b.name, p, name, x, py, LIST.nameColour)
+                rect(b, p, LIST.x, py - 12, LIST.right, py + 1)
             end
         end
     end
-    mark(p, "back", p.number == 0, 12, 59, 259)
-    mark(p, "on", p.last, 15, 112, 259)
-    mark(p, "list", not p.icons, 13, 81, 259)
-    mark(p, "pictures", p.icons, 14, 104, 259)
+    mark(p, "back", p.number == 0)
+    mark(p, "on", p.last)
+    mark(p, "list", not p.icons)
+    mark(p, "pictures", p.icons)
     Inv.UpdateActions()
 end
 
 -- ----- the spells (NewSpellInventoryPane) -----
 
-local SPELLS_PAGE = 13
-
-local function buildSpells(f)
-    local p = CreateFrame("Frame", "TK5xSideSpells", f)
-    p:SetAllPoints(f)
-    p.back = S.Picture(p, nil, "SPELLINV.EPF", 0, "NPAL6.PAL", 0, 0, "BACKGROUND")
-    p.marks, p.number = {}, 0
-    p.rows = {}
+--- The drag label and the rows (SPELLS.page of them, main.xml's SPELLS).
+function scripts.SpellRows(p)
     p.dragLabel = DragLabel.New(p, S, S.GAME_ART)
-    for i = 1, SPELLS_PAGE do
+    for i = 1, SPELLS.page do
         local b = CreateFrame("Button", "TK5xSpellRow" .. i, p)
         TK.Actions:SetPath(b, "spellbook")
         Spells.CellControl(b) -- the book cell's input path whole (the game layer's)
-        p.dragLabel:Attach(b, function() return "spell", 35, 51 + 13 * (i - 1) end)
+        local t = SPELLS.t + SPELLS.step * (i - 1)
+        p.dragLabel:Attach(b, function() return "spell", SPELLS.penX, t end)
         b:Hide()
-        rect(b, p, 22, 51 + 13 * (i - 1), 170, 64 + 13 * (i - 1))
+        rect(b, p, SPELLS.l, t, SPELLS.r, t + SPELLS.step)
         b.text = p:CreateFontString(nil, "OVERLAY")
         p.rows[i] = b
     end
-    pressButton(p, 14, 221, 36, 239, function() if p.number > 0 then p.number = p.number - 1 C:Refresh() end end)
-    pressButton(p, 157, 221, 179, 239, function() if not p.last then p.number = p.number + 1 C:Refresh() end end)
-    return p
 end
 
 local function showSpells(p)
-    local list = Spells.HeldSlots()
-    local pages = math.max(1, math.ceil(#list / SPELLS_PAGE))
+    local list, n = Spells.HeldSlots(), SPELLS.page
+    local pages = math.max(1, math.ceil(#list / n))
     p.number = math.max(0, math.min(p.number, pages - 1))
-    p.last = (p.number + 1) * SPELLS_PAGE >= #list
+    p.last = (p.number + 1) * n >= #list
     for i, b in ipairs(p.rows) do
-        local slot = list[p.number * SPELLS_PAGE + i]
+        local slot = list[p.number * n + i]
         b.slot = slot
         b:SetShown(slot ~= nil)
         if slot then
             local _, name = H:GetSpellSlot(slot)
-            textAt(b.text, p, H:SlotLetter(slot) .. ": " .. name, 35, 63 + 13 * (i - 1), S.TEXT)
+            textAt(b.text, p, H:SlotLetter(slot) .. ": " .. name, SPELLS.penX, SPELLS.penY + SPELLS.step * (i - 1), S.TEXT)
         else
             b.text:Hide()
         end
     end
-    mark(p, "back", p.number == 0, 6, 14, 221)
-    mark(p, "on", p.last, 7, 157, 221)
+    mark(p, "back", p.number == 0)
+    mark(p, "on", p.last)
     local held = TK.Cursor:Get()
     for _, b in ipairs(p.rows) do
         if b.slot then Spells.SetCellAction(b, held) else TK.Actions:Clear(b) end
@@ -369,83 +368,52 @@ end
 
 -- ----- the self look and the look (SelfLookPane, UserLookPane): three views each -----
 
--- The worn items both equipment views draw, by their record in 7.5.2's order (the helm, the two hands, the two
--- sub-hands: slot codes 4, 7, 8, 20, 21, SetEquipmentSlotFromPacket 0x0049EE30): each centred on (x, y) of the page,
--- or (sub-hands) centred on x with its top at y. On the self look each place is also its take-off control: over the
--- drawn item's whole frame, or, with none worn, over an EMPTY_PLACE box placed the same way.
-local WORN = {
-    { record = 4, x = 96, y = 120 },               -- the helm
-    { record = 5, x = 122, y = 176 },              -- the left hand
-    { record = 6, x = 71, y = 176 },               -- the right hand
-    { record = 7, x = 34, y = 116, top = true },   -- the left sub-hand
-    { record = 8, x = 34, y = 149, top = true },   -- the right sub-hand
-}
--- An empty place's take-off box (s6-interface-5x round 13): 7.5.2's slot box is 48 x 48 at its pane's size
--- (SelfLookPane::GetSlotRect), and 5.x draws the items at S.GAME_ART, half of it. Drawing only; what a press sends is
--- S.TakeOff's.
-local EMPTY_PLACE = 24
+-- The worn items both equipment views draw (main.xml's WORN, by their record in 7.5.2's order), each place also the self
+-- look's take-off control; the two buttons by the figure (main.xml's BUTTONS).
+local WORN, BUTTONS = L.WORN, L.BUTTONS
 
--- The two buttons by the figure (SelfLookPane_GetSlotRect, UserLookPane__GetActionButtonRect 0 and 1): LOOKBTN.EPF's
--- frame on or off by the state (0 or 3, 1 or 4); 0xFF or -1 before the server's: the rectangle filled 0x8F.
-local BUTTONS = {
-    { rect = { 149, 107, 175, 133 }, on = 0, off = 3 },
-    { rect = { 149, 134, 175, 160 }, on = 1, off = 4 },
-}
-
---- The views' arrows (rects 2 and 3: (34, 254) back, (137, 254) on), as 5.33's cases 2 and 3: view 0 -> 1 -> 2 and
---- back; the first view's back arrow and the last's on arrow are SPELLBUT's plain frames 2 and 3.
-local function arrows(p)
-    pressButton(p, 34, 254, 56, 272, function() if p.view > 0 then p.view = p.view - 1 C:Refresh() end end)
-    pressButton(p, 137, 254, 159, 272, function() if p.view < 2 then p.view = p.view + 1 C:Refresh() end end)
-end
-
---- What both equipment views have: five lines, the figure, the worn items, the two buttons (made by the page: their
---- actions differ) and the box under them.
-local function buildEquipment(p)
-    p.back = p:CreateTexture(nil, "BACKGROUND")
-    p.marks, p.view = {}, 0
-    p.lines = {}
-    for i = 1, 5 do p.lines[i] = p:CreateFontString(nil, "OVERLAY") end
-    p.figure = p:CreateTexture(nil, "BORDER")
-    p.worn = {}
-    for i = 1, #WORN do p.worn[i] = p:CreateTexture(nil, "ARTWORK") end
+--- The two buttons' faces and places (BUTTONS), made after the equipment view's own parts (main.xml).
+function scripts.ButtonFaces(p)
     for _, b in ipairs(p.buttons) do
         b.tex = b:CreateTexture(nil, "ARTWORK")
         b.tex:SetAllPoints(b)
     end
     for i, def in ipairs(BUTTONS) do rect(p.buttons[i], p, def.rect[1], def.rect[2], def.rect[3], def.rect[4]) end
-    arrows(p)
-    -- the figure and the buttons' states change with the look and the logic thread
-    p:SetScript("OnUpdate", TK.Util.Throttled(0.25, function() C:Refresh() end))
 end
 
---- An equipment view: lines { (174, 48), (174, 65), (174, 82), (94, 103), (174, 103) } right-aligned, the figure
---- (figure key) centred on (96, 154), the worn items by record (worn(i): the icon of record i, nil for none, and its
+--- The views' arrows (main.xml's <press>), as 5.33's cases 2 and 3: view 0 -> 1 -> 2 and back; local, nothing sent.
+function scripts.ViewBack(p) if p.view > 0 then p.view = p.view - 1 C:Refresh() end end
+function scripts.ViewOn(p) if p.view < 2 then p.view = p.view + 1 C:Refresh() end end
+
+--- The figure and the buttons' states change with the look and the logic thread: a look four times a second (a throttle
+--- of its own for each page).
+function scripts.Ticker(p) p:SetScript("OnUpdate", TK.Util.Throttled(0.25, function() C:Refresh() end)) end
+
+--- An equipment view: the lines right-aligned at main.xml's LINES, the figure (figure key) centred on FIGURE, the worn
+--- items by record (worn(i): the icon of record i, nil for none, and its
 --- slot code), the buttons by their states. A page with take-off controls (p.takeOff) puts each over its place. The
 --- figure and the items are the base set's pictures at S.GAME_ART, the size 5.33's own art has in its pane.
 local function showEquipment(p, lines, figureKind, worn, states)
-    local places = { { 174, 48 }, { 174, 65 }, { 174, 82 }, { 94, 103 }, { 174, 103 } }
-    for i, at in ipairs(places) do textRight(p.lines[i], p, lines[i] or "", at[1], at[2], S.TEXT) end
+    for i, at in ipairs(L.LINES) do textRight(p.lines[i], p, lines[i] or "", at.x, at.y, S.TEXT) end
     local key, w, h = H:GetFigure(figureKind, 0)
     if key ~= "" and w > 0 then
-        -- 5.33 centres the figure's box on (96, 154) (SelfLookPane paint 0x0049D590, UserLookPane 0x004D22F0: the
-        -- box of its body and head, sub_4461B0; the whole picture here, see the notes' known limitations)
-        local bw, bh = math.floor(w * S.GAME_ART), math.floor(h * S.GAME_ART)
+        -- 5.33 centres the figure's box on FIGURE (main.xml's note)
+        local bw, bh, at = math.floor(w * S.GAME_ART), math.floor(h * S.GAME_ART), L.FIGURE
         p.figure:SetTexture(key)
         p.figure:SetSize(w * S.GAME_ART, h * S.GAME_ART)
         p.figure:ClearAllPoints()
-        p.figure:SetPoint("TOPLEFT", p, "TOPLEFT", 96 - math.floor(bw / 2), -(154 - math.floor(bh / 2)))
+        p.figure:SetPoint("TOPLEFT", p, "TOPLEFT", at.x - math.floor(bw / 2), -(at.y - math.floor(bh / 2)))
         p.figure:Show()
     else
         p.figure:Hide()
     end
     -- the worn items: centred on their place by their whole frame (GetItemGlyphBounds); an empty place's control by
-    -- an EMPTY_PLACE box
+    -- WORN's empty box
     for i, def in ipairs(WORN) do
         local iconId, code, colour = worn(def.record)
         local b = p.takeOff and p.takeOff[i]
         local drawn = iconId and iconId >= 0
-        local fw, fh = EMPTY_PLACE, EMPTY_PLACE
+        local fw, fh = WORN.empty, WORN.empty
         if drawn then fw, fh = frameSize(iconId) end
         local left, top = def.x - math.floor(fw / 2), def.top and def.y or def.y - math.floor(fh / 2)
         if drawn then itemPicture(p.worn[i], p, iconId, left, top, S.GAME_ART, colour) else p.worn[i]:Hide() end
@@ -481,8 +449,8 @@ local function showView(p, parts)
         for _, part in ipairs(list) do part:SetShown(view == p.view) end
     end
     for _, fs in ipairs(p.numbers or {}) do fs:SetShown(p.view == 1) end
-    mark(p, "back", p.view == 0, 2, 34, 254)
-    mark(p, "on", p.view == 2, 3, 137, 254)
+    mark(p, "back", p.view == 0)
+    mark(p, "on", p.view == 2)
 end
 
 --- The legend's entries (0x39's or 0x34's marks), each its symbol and its text in its colour (BARAM.PAL's index).
@@ -497,49 +465,54 @@ end
 
 -- ----- the self look -----
 
-local function buildSelf(f)
-    local p = CreateFrame("Frame", "TK5xSideSelf", f)
-    p:SetAllPoints(f)
-    p.buttons = {}
-    for i, def in ipairs({ { "exchange", 8 }, { "group", 2 } }) do
-        p.buttons[i] = CreateFrame("Button", "TK5xSelfSwitch" .. def[1], p)
-        SelfLook.SwitchControl(p.buttons[i], def[2])
-    end
-    -- s6-interface-5x-b: their help lines on a right press (SelfLookPane_HandlePointerOrMouseEvent 0x0049E150, case 4:
-    -- 5.33's lines 195 and 196, 7.5.2's 197 and 198; interfaces/5x/help.lua)
-    for i, b in ipairs(p.buttons) do Help.OnRightPress(p, function() return Help.String(196 + i) end, b) end
+--- A switch of the self look: the option it sends (its def's: 8 the exchange, 2 the group). Wire: what its press sends
+--- is TK.Game.SelfLook.SwitchControl's (7.5.2's option switch); changing the option changes what the server sees.
+function scripts.Switch(b) SelfLook.SwitchControl(b, b.def.option) end
+
+--- A button of the look: its action (look:trade, look:group). Wire: what its press sends is TK.Game.Look.ActionButton's
+--- (7.5.2's look buttons); changing the action changes what the server sees.
+function scripts.LookButton(b) TK.Game.Look.ActionButton(b, b.def.action) end
+
+--- A look page's buttons' help lines, using each button's existing frame and text (interfaces/5x/help.lua).
+-- WIRE: 7.5.2's UserLookPane 0x005A1580 creates help on a single-right press; SelfLookPane 0x00568CB0 also tests the
+-- bow first. The interface supplies the frame and text, while shared Tips.ForPress decides the trigger; changing that
+-- condition can change which next game press the catcher consumes and what the server sees.
+local function buttonHelp(p, bowFirst)
+    for _, b in ipairs(p.buttons) do Help.OnRightPress(p, function() return Help.String(b.def.help) end, b, bowFirst) end
+end
+
+-- XML <run> supplies build context after the frame, so public callbacks must not interpret that context as bowFirst.
+function scripts.ButtonHelp(p) buttonHelp(p) end
+
+function scripts.SelfButtonHelp(p) buttonHelp(p, true) end
+
+--- The self look's take-off controls, one over each worn place (WORN), with their item's sheet on a right press. Wire:
+--- each is 7.5.2's gear slot (TK.Game.SelfLook.WornControl; what it takes off: showEquipment's S.TakeOff); changing
+--- them changes what the server sees.
+function scripts.TakeOff(p)
     p.takeOff = {}
-    for i = 1, #WORN do
+    for i, def in ipairs(WORN) do
         p.takeOff[i] = CreateFrame("Button", "TK5xSelfWorn" .. i, p)
         SelfLook.WornControl(p.takeOff[i])
-        local record = WORN[i].record
+        local record = def.record
         SelfLook.WornHelp(p.takeOff[i], p, ItemBox, function() return H:GetEquipment(record) end)
     end
-    buildEquipment(p)
-    p.effects = textBox(p, 17, 192, 174, 251)  -- view 0: the SpelledPane
-    p.group = textBox(p, 17, 36, 174, 131)     -- view 1: the GroupListPane
-    p.legend = textBox(p, 17, 36, 174, 251)    -- view 2: the LegendPane
-    p.numbers = {}
-    for i = 1, 6 do p.numbers[i] = p:CreateFontString(nil, "OVERLAY") end
-    TK.Game.Views.RequestPage(p, "open:character")
-    -- s6-interface-5x-b (round 7, s6-interface-5x's Y1): the group's request page, shown while 4a's tab 4 is the active
-    -- one (C:Show("group")): 5.33 shows the group in this view's GroupListPane, 7.5.2 in its group tab, whose activation
-    -- asks for the members (open:group, 2D 01: NewGroupPane::OnActivate 0x0056CB80). Wire: it runs when this frame
-    -- becomes visible during the input that froze the group's key or button, so once for each accepted switch to tab 4;
-    -- changing when it shows changes when the server gets 2D 01.
-    p.groupRequest = CreateFrame("Frame", "TK5xSideGroupRequest", p)
-    p.groupRequest:Hide()
-    TK.Game.Views.RequestPage(p.groupRequest, "open:group")
-    return p
 end
+
+--- Modern's character page's request (open:character, 2D 00) on the self page: it runs when the page becomes visible
+--- during the input that froze it (C:Show). Wire: changing when the page shows changes when the server gets 2D 00.
+function scripts.CharacterRequest(p) TK.Game.Views.RequestPage(p, "open:character") end
+
+--- The group's request page (main.xml's note; open:group, 2D 01: NewGroupPane::OnActivate 0x0056CB80). Wire: changing
+--- when it shows changes when the server gets 2D 01.
+function scripts.GroupRequest(r) TK.Game.Views.RequestPage(r, "open:group") end
 
 --- The self look's view now (looked at four times a second while it shows, and on its events).
 local function showSelf(p)
     local _, totem = H:GetPlayerOrigin()
-    local files = { [0] = "SELFLOOK.EPF", "SELFLOK2.EPF", "SELFLOK3.EPF" }
     -- view 0's frame is the totem's (OldUserStatusPane's byte 265, sub_4E0D50), the other views' frame 0
     local frame = p.view == 0 and ((totem and totem >= 0 and totem <= 3) and totem or 0) or 0
-    S.Picture(p, p.back, files[p.view], frame, "NPAL6.PAL", 0, 0, "BACKGROUND")
+    S.Picture(p, p.back, L.SELF_FILES[p.view + 1], frame, "NPAL6.PAL", 0, 0, "BACKGROUND")
     local has, clan, clanTitle, title, fifth = H:GetSheet()
     local _, name = H:GetUnitInfo("player")
     if not has then clan, clanTitle, title, fifth = "", "", "", "" end
@@ -561,14 +534,15 @@ local function showSelf(p)
         p.effects:Lines(list)
     elseif p.view == 1 then
         -- the group list: 5.33's group text written from the roster 7.5.2's server gives (groupText), else 0x39's fourth
-        -- string as 5.33 shows it; the numbers right-aligned at 172
+        -- string as 5.33 shows it; the numbers right-aligned (NUMBERS)
         p.group:Lines(linesOf(groupText() or H:GetSheetAuxiliary()))
         local _, _, hpMax, _, mpMax = H:GetUnitVitals("player")
         local ok, ac, dam, hit, nextLevel = H:GetSheetSummary()
         if not ok then ac, dam, hit, nextLevel = 0, 0, 0, 0 end
         local values = { string.format("%d", hpMax or 0), string.format("%d", mpMax or 0), string.format("%d", ac),
                          string.format("%d", dam), string.format("%d", hit), string.format("%d", nextLevel) }
-        for i, v in ipairs(values) do textRight(p.numbers[i], p, v, 172, 155 + 19 * (i - 1), S.TEXT) end
+        local at = L.NUMBERS
+        for i, v in ipairs(values) do textRight(p.numbers[i], p, v, at.x, at.y + at.step * (i - 1), S.TEXT) end
     else
         p.legend:Lines(legendEntries(H:GetNumLegend(), function(i) return H:GetLegend(i) end))
     end
@@ -577,32 +551,12 @@ end
 
 -- ----- the look at another player -----
 
-local function buildLook(f)
-    local p = CreateFrame("Frame", "TK5xSideLook", f)
-    p:SetAllPoints(f)
-    p.buttons = {}
-    for i, def in ipairs({ { "Trade", "look:trade" }, { "Group", "look:group" } }) do
-        p.buttons[i] = CreateFrame("Button", "TK5xLook" .. def[1], p)
-        TK.Game.Look.ActionButton(p.buttons[i], def[2])
-    end
-    -- s6-interface-5x-b: their help lines on a right press (UserLookPane__HandlePointerOrMouseEvent 0x004D2B30, case 4:
-    -- 5.33's lines 198 and 199, 7.5.2's 200 and 201; interfaces/5x/help.lua)
-    for i, b in ipairs(p.buttons) do Help.OnRightPress(p, function() return Help.String(199 + i) end, b) end
-    buildEquipment(p)
-    p.moreInfo = textBox(p, 17, 192, 174, 251) -- view 0
-    p.profile = textBox(p, 17, 143, 174, 251)  -- view 1
-    p.legend = textBox(p, 17, 36, 174, 251)    -- view 2
-    p.face = p:CreateTexture(nil, "ARTWORK")
-    return p
-end
-
 local function showLook(p)
     -- view 0 on SELFLOOK.EPF at 0x34's byte after the legend (5.33 from version 531: UserLookPane_OnActivate 0x004D19C0;
     -- before it, USERLOOK.EPF), a totem's frame as the self look's (0-3)
-    local files = { [0] = "SELFLOOK.EPF", "PFLOOK.EPF", "SELFLOK3.EPF" }
     local frame = p.view == 0 and H:GetLookTrailingState() or 0
     if frame > 3 then frame = 0 end
-    S.Picture(p, p.back, files[p.view], frame, "NPAL6.PAL", 0, 0, "BACKGROUND")
+    S.Picture(p, p.back, L.LOOK_FILES[p.view + 1], frame, "NPAL6.PAL", 0, 0, "BACKGROUND")
     local _, name, header, line1, line2, line3 = H:GetLook()
     local _, moreInfo, profile, groupState, tradeState, _, portrait = H:GetLookDetail()
     p.face:Hide()
@@ -615,11 +569,12 @@ local function showLook(p)
         end, { tradeState, groupState })
         p.moreInfo:Lines(linesOf(moreInfo))
     elseif p.view == 1 then
-        -- the face (72, 46)-(120, 102): the portrait the packet carries, else FACE.EPF's frame for the look's kind
+        -- the face (FACE): the portrait the packet carries, else FACE.EPF's frame for the look's kind
         local key = portrait ~= "" and portrait or TK.Art.Image("FACE.EPF", H:GetLookFaceFrame(), "PFLOOK.PAL")
         if key then
             p.face:SetTexture(key)
-            rect(p.face, p, 72, 46, 120, 102)
+            local at = L.FACE
+            rect(p.face, p, at[1], at[2], at[3], at[4])
             p.face:Show()
         end
         p.profile:Lines(linesOf(profile))
@@ -706,6 +661,13 @@ local function totemFrame(self, f)
     f.totem:Show()
 end
 
+--- s6-ui-core (round 105, T11 step 9): whether event e changes nothing the page shows: the group's (each change of a
+--- member's vitals, the player's own among them) is drawn by the self look alone (its status view's group list), so the
+--- items and the spells, which are drawn again whole at each Refresh, are not. Drawing only: nothing is sent.
+function C.NotShown(page, e)
+    return (e == "TK_GROUP_UPDATE" or e == "GROUP_ROSTER_UPDATE") and (page == "items" or page == "spells")
+end
+
 function C:Refresh()
     local f = self.frame
     if not f then return end
@@ -755,40 +717,50 @@ end
 --- pages.
 function C:IsShowing() return self.frame ~= nil and self.frame:IsShown() end
 
-function C:OnEnable()
-    local f = CreateFrame("Frame", "TK5xSide", UIParent)
-    f:SetFrameStrata("LOW")
-    f:SetSize(WIDTH, HEIGHT)
-    f:EnableMouse(true)
-    f:Hide()
-    self:Own(f)
-    self.frame = f
-    f.pages = { items = buildItems(f), spells = buildSpells(f), self = buildSelf(f), look = buildLook(f) }
-    self.effects = Effects(f)
+--- The component's root (Astra's review of round 1): a replaced component keeps it hidden (TK.ReplaceComponent).
+function scripts.Own(f)
+    C:Own(f)
+    C.frame = f
+end
+
+--- The pages by id (C:Show's and C:Refresh's), 5.33's InterfaceEfxMgr's animations (interfaces/5x/sideeffects.lua) and
+--- the page it starts on.
+function scripts.Pages(f)
+    f.pages = { items = f.items, spells = f.spells, self = f.selfPage, look = f.lookPage }
+    C.effects = Effects(f)
     -- s6-interface-5x (round 12; the head's review of round 11): after a UI reload, the page of the session's active tab
     -- (the game layer's, kept on the host); at the client's start (no tab) the items. Drawing only: nothing is sent.
-    self.page = KEPT_PAGE[TK.Game.SidePanel.Active()] or "items"
-    self.shownTab = KEPT_PAGE[TK.Game.SidePanel.Active()] and TK.Game.SidePanel.Active() or 2 -- C:FollowTab
-    -- s6-interface-5x-b (round 6): the totem's picture in front of the pages (totemFrame), looked at four times a second
-    f.totem = CreateFrame("Frame", nil, f)
-    f.totem:SetFrameLevel(f:GetFrameLevel() + 50)
-    f.totem:SetPoint("TOPLEFT", f, "TOPLEFT", 1, 1)
-    f.totem:SetSize(WIDTH, HEIGHT)
-    f.totem:EnableMouse(false)
-    f.totem:Hide()
-    -- s6-ui-core (round 84): made again in the world by a live switch to 5.x, the totem the status has now is the one seen,
-    -- so its picture shows only when the totem changes, as 5.33's; it showed again over the page at each switch to 5.x
-    -- until a page switch. (A UI reload starts at the login state, so it still shows the picture once.) Drawing only.
-    if TK.GameState:InWorld() then self.totemSeen = select(2, H:GetPlayerOrigin()) end
-    f:SetScript("OnUpdate", TK.Util.Throttled(0.25, function() totemFrame(self, f) end))
-    self.entry = Screen.Register(f, "5x.side", "5.x Side Panel", function() return self:DB().enabled == true end)
-    local events = CreateFrame("Frame", nil, f)
-    for _, e in ipairs({ "BAG_UPDATE", "SPELLS_CHANGED", "CURSOR_CHANGED", "TK_CHARACTER_SHEET", "UNIT_NAME_UPDATE",
-                         "UNIT_AURA", "GROUP_ROSTER_UPDATE", "TK_GROUP_UPDATE" }) do
-        events:RegisterEvent(e)
-    end
-    events:SetScript("OnEvent", function() if f:IsShown() then self:Refresh() end end)
-    f:SetScript("OnShow", function() self:Refresh() end)
+    C.page = KEPT_PAGE[TK.Game.SidePanel.Active()] or "items"
+    C.shownTab = KEPT_PAGE[TK.Game.SidePanel.Active()] and TK.Game.SidePanel.Active() or 2 -- C:FollowTab
+end
+
+--- The totem's frame in front of the pages (totemFrame).
+function scripts.InFront(t) t:SetFrameLevel(t:GetParent():GetFrameLevel() + 50) end
+
+--- s6-ui-core (round 84): made again in the world by a live switch to 5.x, the totem the status has now is the one seen,
+--- so its picture shows only when the totem changes, as 5.33's; it showed again over the page at each switch to 5.x
+--- until a page switch. (A UI reload starts at the login state, so it still shows the picture once.) Drawing only.
+function scripts.TotemSeen()
+    if TK.GameState:InWorld() then C.totemSeen = select(2, H:GetPlayerOrigin()) end
+end
+
+--- s6-interface-5x-b (round 6): the totem's picture looked at four times a second (totemFrame).
+function scripts.TotemTicker(f) f:SetScript("OnUpdate", TK.Util.Throttled(0.25, function() totemFrame(C, f) end)) end
+
+function scripts.Register(f)
+    C.entry = Screen.Register(f, "5x.side", "5.x Side Panel", function() return C:DB().enabled == true end)
+end
+
+function scripts.RegisterEvents(events)
+    for _, e in ipairs(events.events) do events:RegisterEvent(e) end
+end
+
+function scripts.Changed(_, e) if C.frame:IsShown() and not C.NotShown(C.page, e) then C:Refresh() end end
+
+function scripts.Refresh() C:Refresh() end
+
+--- The openers, the game layer's tab switches and the session's state.
+function scripts.Provide(f)
     -- the openers (TK.Game.Views, s6-interface-5x round 12, step 1): the bag key, the spell book key, the character key
     -- (and the server's page switches), a look at another player and the group key and button (s6-interface-5x-b round 7,
     -- Y1: the group in the self look's status view) show this panel's pages while it shows; the options and the
@@ -797,20 +769,20 @@ function C:OnEnable()
     TK.Game.Views.Provide("5x.side", {
         views = { bag = "items", spellbook = "spells", character = "self", legend = "legend", look = "look",
                   group = "group" },
-        IsShowing = function() return self:IsShowing() end,
-        Show = function(page, _, how, key, view) self:Show(page, view) return true end,
-        Page = function(delta) return self:Page(delta) end,
-        StatusKey = function() return self:StatusKey() end,
+        IsShowing = function() return C:IsShowing() end,
+        Show = function(page, _, how, key, view) C:Show(page, view) return true end,
+        Page = function(delta) return C:Page(delta) end,
+        StatusKey = function() return C:StatusKey() end,
     })
     -- the game layer's accepted tab switches (C:FollowTab)
-    TK.On("TK_SIDE_PANEL_TAB", function(_, index) self:FollowTab(index) end)
+    TK.On("TK_SIDE_PANEL_TAB", function(_, index) C:FollowTab(index) end)
     -- s6-ui-core (round 93): a 0x39 the player did not ask for (the one at the world's entry) shows the self page too, as
     -- 5.33's 0x39 switches its panel to tab 0 and that pane shows (dispatchers.c:523-524, GeneralPurposePanel__SwitchActive-
     -- Tab; the real 5.33 client's capture shows its self page after the entry's 0x39, sending no 2D); an asked-for one
     -- shows it through TK.Game.Views (views.lua). Drawing only: the page becomes visible in the packet's notice, not in a
     -- physical input, so its 2D 00 does not run (A:SetOpen), and the keys go by the game layer's tab, not the page.
     TK.On("TK_RULES_PANEL_TAB", function(_, tab, view, requested)
-        if tab == 0 and not requested then self:Show("self", view) end
+        if tab == 0 and not requested then C:Show("self", view) end
     end)
     -- a new game screen starts on the items (MainMenuPane's graph at the login's accepted 02): the page that shows, as
     -- if its tab were the active one (asked again it keeps the totem; the game layer's tab is none, -1, which sends
@@ -818,15 +790,19 @@ function C:OnEnable()
     -- (and its status pane starts again, its totem at -1: the next status shows the totem's picture, totemFrame)
     TK.On("TK_SESSION_STATE", function(_, state)
         if state == "Accepted" then
-            self.page, self.shownTab, self.groupSwitch = "items", 2, false
-            self.totemSeen = -1
+            C.page, C.shownTab, C.groupSwitch = "items", 2, false
+            C.totemSeen = -1
             f.totem:Hide()
             f.pages.self.groupRequest:Hide()
         end
     end)
 end
 
+function C:OnEnable()
+    TK.Xml.Load("main.xml", { scripts = scripts, elements = elements })
+end
+
 --- At 5.33's place on the scaled 5.x screen unless moved, at the screen's scale times its own; in the game only.
-function C:ApplySettings() Screen.PlacePanel(self, S.WIDTH, S.HEIGHT, PLACE[1], PLACE[2]) end
+function C:ApplySettings() Screen.PlacePanel(self, S.WIDTH, S.HEIGHT, L.PLACE[1], L.PLACE[2]) end
 
 Screen.Follow(C, "ApplySettings")

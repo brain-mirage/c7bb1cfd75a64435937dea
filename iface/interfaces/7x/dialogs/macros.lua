@@ -12,12 +12,18 @@
 -- S or I from 40; from 50 a spell's or an item's "letter:name", or the text macro's line in its edit at (50, 4) of the
 -- row; the row with the focus framed in 0x80. Under the picture, OnPaint's (0x00541E50) three help lines from x 9 on the
 -- lines 413, 431 and 449, outlined (0x8F on 0x80), which show where the picture is colour 0.
+-- s6-ui-core (round 85): the XML twin's; the window's picture, buttons, rows and help lines are macros.xml's
+-- (core/xml.md).
 
 local S = require("interfaces.7x.skin")
+local unpack = table.unpack
+local entry = require("interfaces.original.entry")
+local D = TK.Xml.Data("macros.xml")
 
 return function(L, X)
-    local HELP = { "Spell : Select 'SPELLS' tab and press key.", "Item  : Select 'ITEMS' tab and press key.", "Text  : Press ';' key" }
-    local KEY_X = { [0] = 18, [1] = 0, [2] = 4 } -- the key's x by the record's page (1-0, Ctrl+, Alt+)
+    local M = D.MacroSetup
+    local ROWS, EDIT, HELP = M.rows, M.rowEdit, M.help
+    local KEY_X = M.keyX -- the key's x by the record's page + 1 (1-0, Ctrl+, Alt+)
 
     --- One of the row's texts, from x on the row's line 16.
     local function text(row, fs, x)
@@ -25,20 +31,20 @@ return function(L, X)
         fs:SetWordWrap(false)
         fs:SetJustifyH("LEFT")
         fs:ClearAllPoints()
-        fs:SetPoint("TOPLEFT", row, "TOPLEFT", x, -(16 - 12 + 1))
+        fs:SetPoint("TOPLEFT", row, "TOPLEFT", x, -(ROWS.line - 12 + 1))
     end
 
     --- Row i (0-9) of the window: its rectangle, its edit (the line, 12 high from 4 down so its text is at 4a's), its
     --- texts and its focus frame (made once).
     local function placeRow(win, row, i)
-        local t = 54 + 29 * i
-        X.Rect(row, win, 19, t, 268, t + 20)
-        X.Edit(row.edit, win, 69, t + 4, 288, t + 16, S.TEXT)
+        local t = ROWS.y + ROWS.step * i
+        X.Rect(row, win, ROWS.x, t, ROWS.right, t + ROWS.height)
+        X.Edit(row.edit, win, ROWS.x + EDIT.x, t + EDIT.y, ROWS.x + EDIT.right, t + EDIT.y + EDIT.height, S.TEXT)
         if row.x7kind then return end
         row.x7kind = row:CreateFontString(nil, "OVERLAY")
-        text(row, row.x7kind, 40)
-        text(row, row.does, 50)
-        text(row, row.key, KEY_X[0])
+        text(row, row.x7kind, ROWS.kind)
+        text(row, row.does, ROWS.does)
+        text(row, row.key, KEY_X[1])
         -- the focused row's frame (DrawRectFrame in 0x80), as the kit's focus mark of its edit (L.FocusEdge)
         local lines = {}
         for _, side in ipairs({ "top", "left", "bottom", "right" }) do
@@ -51,23 +57,24 @@ return function(L, X)
         row.edit.x7mark = { SetShown = function(_, on) for _, tex in ipairs(lines) do tex:SetShown(on) end end }
         --- The record as 4a's row shows it (the component's refreshRow): its key at its page's x, its kind, its name.
         row.paint = function(kind, label)
-            text(row, row.key, KEY_X[math.floor((row.record or 0) / 10)] or KEY_X[0])
+            text(row, row.key, KEY_X[math.floor((row.record or 0) / 10) + 1] or KEY_X[1])
             row.x7kind:SetText(kind or "")
             row.does:SetText(label or "")
         end
     end
 
-    L.MacroSetup = {
-        width = 289, height = 449, button = 63, editWidth = 219, editHeight = 12, slide = true,
+    L.MacroSetup = entry(M, {
         place = function(win)
             local p = win.panel
-            X.Art(win, "DLGMAC2.EPF", "DLGMACRO.PAL")
+            X.Art(win, unpack(M.art))
             win.art:SetDrawLayer("ARTWORK") -- over the help lines, as 4a's picture control is over the dialog's own paint
-            X.Image(win, p.ok, 14, 118, 362, 181, 386)
-            X.Image(win, p.prev, 18, 30, 362, 93, 386)
-            X.Image(win, p.next, 19, 200, 362, 263, 386)
-            for i, line in ipairs(HELP) do X.Outlined(win, "x7help" .. i, 9, 413 + 18 * (i - 1), line, nil, "BACKGROUND") end
+            X.Image(win, p.ok, unpack(M.ok))
+            X.Image(win, p.prev, unpack(M.prev))
+            X.Image(win, p.next, unpack(M.next))
+            for i, line in ipairs(HELP) do
+                X.Outlined(win, "x7help" .. i, HELP.x, HELP.line + HELP.step * (i - 1), line.text, nil, "BACKGROUND")
+            end
             for i, row in ipairs(p.rows) do placeRow(win, row, i - 1) end
         end,
-    }
+    })
 end

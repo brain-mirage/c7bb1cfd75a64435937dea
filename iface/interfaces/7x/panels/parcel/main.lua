@@ -13,6 +13,9 @@
 -- count went to 0 goes back to state 0 at once (SetParcelSlotData 0x005464B0). The letter's flight (FlyingParcelPane,
 -- LETTER.EPF) is not built: 7.5.2 never makes one (Source-5, FlyingParcelPane).
 --
+-- s6-ui-core (round 85): the XML twin's scripts; its frames, their places, the sides' rectangles and pictures are
+-- main.xml's (core/xml.md).
+--
 -- Wire: ParcelPane::HandlePointerOrMouseEvent (0x00546610) takes a left press anywhere in the strip (it is used up there,
 -- before the chat bar under it: the strip is registered after ChattingHandlePane under the BackPane, so it is asked
 -- first) and a release in the strip; the release over the parcel button sends 41 while parcels wait, over the letter
@@ -35,18 +38,11 @@ local S = require("interfaces.7x.skin")
 local Hud = require("interfaces.7x.hud")
 local Screen = require("interfaces.screen")
 
--- the strip's top left on the 7.x screen
-local STRIP = { 630, 726 }
-
--- each side: its panel (settings key and place), its part of the strip, its button's rectangle in the strip, its control,
--- its blink's first frame and the frame it starts from (the parcels wait three ticks first: m_leftAnimationFrame -3).
--- Its state: state (0-3), anim (the blink's frame), seen (the count last drawn); panel its frame.
-local SIDES = {
-    { key = "parcel", control = 0, name = "TK7xParcel", label = "7.x Parcel Button",
-      part = { 0, 0, 31, 25 }, button = { 0, 0, 30, 25 }, first = 6, start = -3 },
-    { key = "letter", control = 1, name = "TK7xLetter", label = "7.x Letter Button",
-      part = { 31, 0, 68, 25 }, button = { 31, 0, 62, 25 }, first = 20, start = 0 },
-}
+-- each side (main.xml's SIDES): its panel (settings key and place), its part of the strip, its button's rectangle in the
+-- strip, its control, its blink's first frame and the frame it starts from. Its state: state (0-3), anim (the blink's
+-- frame), seen (the count last drawn); panel its frame.
+local L = TK.Xml.Data("main.xml")
+local STRIP, SIDES = L.STRIP, L.SIDES
 
 -- s6-input (round 49, separation step 4b): the pane's counts, frames, blink and presses are the game layer's
 local Parcels = TK.Game.Parcels
@@ -113,7 +109,7 @@ function C:Paint()
         -- s6-interface-5x (round 13's hotfix, a marked edit): a side turned off is not painted (it is when it shows again:
         -- Layout)
         if f and f:IsShown() then
-            f.art = S.Picture(f, f.art, "ALERTBTN.EPF", face(side), "ALERTBTN.PAL", side.button[1] - side.part[1], 0, "ARTWORK")
+            f.art = S.Picture(f, f.art, L.ART.file, face(side), L.ART.palette, side.button[1] - side.part[1], 0, "ARTWORK")
         end
     end
 end
@@ -140,63 +136,66 @@ local function pointerEvent(down, button)
     Parcels.Press(over, down, button)
 end
 
-function C:OnEnable()
+-- the scripts main.xml names
+local scripts = {}
+
+function scripts.Press(_, button) pointerEvent(true, button) end
+
+function scripts.Release(_, button)
+    pressedOn[button] = nil
+    pointerEvent(false, button)
+end
+
+function scripts.Side(f)
+    local side = SIDES[f.side]
+    -- s6-input (round 50, the round 49 review's P2): the strip's frames are the pane's controls for the game layer's
+    -- release lookup, by 4a's rectangles (a gap -1), so another interface's parcel or letter button released over
+    -- this button reaches it (Modern's Mail button released over the parcel button sends 41) and over a gap sends
+    -- nothing (ParcelPane::HandlePointerOrMouseEvent 0x00546610, case 3). Round 51: each frame by its own side's
+    -- rectangle, as the lookup asks the frame on top. Changing it changes what is sent.
+    Parcels.Control(f, function() return hit(side) end)
+    side.panel, side.state, side.anim, side.seen = f, 0, side.start, 0
+    C:Own(f)
+    local key = side.key
+    side.entry = Screen.Register(f, "7x." .. key, side.label, function() return C:DB()[key].enabled == true end)
+end
+
+-- the pane's timer: every 200 ms the waiting sides step and the strip is repainted; a count that changed repaints at
+-- once, and a side whose count went to 0 rests (SetParcelSlotData). Drawing only.
+local wait
+function scripts.Tick(_, elapsed)
+    if not (SIDES[1].panel:IsShown() or SIDES[2].panel:IsShown()) then return end
+    moved()
+    local changed = false
+    -- s6-interface-5x (round 13's hotfix, a marked edit): a side turned off is neither read nor stepped
     for _, side in ipairs(SIDES) do
-        local f = CreateFrame("Frame", side.name, UIParent)
-        f:SetFrameStrata("LOW")
-        f:SetFrameLevel(12) -- over the chat bar, whose typing area runs under the strip (above)
-        f:SetSize(side.part[3] - side.part[1], side.part[4] - side.part[2])
-        f:EnableMouse(true)
-        f:SetScript("OnMouseDown", function(_, button) pointerEvent(true, button) end)
-        f:SetScript("OnMouseUp", function(_, button)
-            pressedOn[button] = nil
-            pointerEvent(false, button)
-        end)
-        f:Hide()
-        -- s6-input (round 50, the round 49 review's P2): the strip's frames are the pane's controls for the game layer's
-        -- release lookup, by 4a's rectangles (a gap -1), so another interface's parcel or letter button released over
-        -- this button reaches it (Modern's Mail button released over the parcel button sends 41) and over a gap sends
-        -- nothing (ParcelPane::HandlePointerOrMouseEvent 0x00546610, case 3). Round 51: each frame by its own side's
-        -- rectangle, as the lookup asks the frame on top. Changing it changes what is sent.
-        Parcels.Control(f, function() return hit(side) end)
-        side.panel, side.state, side.anim, side.seen = f, 0, side.start, 0
-        self:Own(f)
-        local key = side.key
-        side.entry = Screen.Register(f, "7x." .. key, side.label, function() return self:DB()[key].enabled == true end)
+        if side.panel:IsShown() then
+            local count = model(side)
+            if count ~= side.seen then
+                side.seen, changed = count, true
+                if count == 0 then side.state = 0 end
+            end
+        end
     end
-    -- the pane's timer: every 200 ms the waiting sides step and the strip is repainted; a count that changed repaints at
-    -- once, and a side whose count went to 0 rests (SetParcelSlotData). Drawing only.
-    local driver = CreateFrame("Frame", nil, UIParent)
-    local wait = 0.1 -- 4a's first tick comes 100 ms after the pane is made
-    driver:SetScript("OnUpdate", function(_, elapsed)
-        if not (SIDES[1].panel:IsShown() or SIDES[2].panel:IsShown()) then return end
-        moved()
-        local changed = false
-        -- s6-interface-5x (round 13's hotfix, a marked edit): a side turned off is neither read nor stepped
+    wait = wait - (elapsed or 0)
+    if wait <= 0 then
+        wait = 0.2
         for _, side in ipairs(SIDES) do
             if side.panel:IsShown() then
-                local count = model(side)
-                if count ~= side.seen then
-                    side.seen, changed = count, true
-                    if count == 0 then side.state = 0 end
-                end
+                local count, acknowledged = model(side)
+                if count > 0 and not acknowledged then advance(side) end
             end
         end
-        wait = wait - (elapsed or 0)
-        if wait <= 0 then
-            wait = 0.2
-            for _, side in ipairs(SIDES) do
-                if side.panel:IsShown() then
-                    local count, acknowledged = model(side)
-                    if count > 0 and not acknowledged then advance(side) end
-                end
-            end
-            changed = true
-        end
-        if changed then self:Paint() end
-    end)
-    self:Own(driver)
-    self.driver = driver
+        changed = true
+    end
+    if changed then C:Paint() end
+end
+
+function scripts.Own(f) C:Own(f) end
+
+function C:OnEnable()
+    wait = 0.1 -- 4a's first tick comes 100 ms after the pane is made
+    self.driver = TK.Xml.Load("main.xml", { scripts = scripts }).driver
     self.ready = true
 end
 

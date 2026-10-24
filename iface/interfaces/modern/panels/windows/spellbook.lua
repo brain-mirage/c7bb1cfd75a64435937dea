@@ -26,15 +26,20 @@
 -- Moving a spell (30 01) is offered in the slots' order only: sorted, the rows hold no action while a book spell is on
 -- the cursor, so a drop on one sends nothing. Changing what a row's action carries changes the 0F and 30 01 the server
 -- gets. The table, its values and its sort are drawing only: nothing is sent or asked for to fill them.
+--
+-- s6-ui-core (round 85): the XML twin's scripts; the page, its header, rows and cells are spellbook.xml's (core/xml.md).
 
 local H = __tk
 local W = require("interfaces.modern.skin").UI -- s6-devtools (round 5, the separation's step 5): Modern's skin
 local Mark = require("interfaces.modern.slotmark") -- s6-ui-core (round 83): the red edge, as the action bars'
 local CW = TK.CharacterWindow
 
-local ROW_H, ICON = 40, 34
-local LIST_W = 508 -- the scroll area: the page's 536 less its margins (12, 16) and the scroll bar beside it
-local MARKS = 5    -- the aura marks a cell shows at most; the tooltip names them all
+-- the scripts spellbook.xml names, and its build (its templates: the page, a sort button, a row, a cell's line, a mark)
+local scripts = {}
+local ui = TK.Xml.Load("spellbook.xml", { scripts = scripts, elements = require("interfaces.modern.elements") })
+
+-- a row's height, the icon's side, the list's width, the aura marks a cell shows at most (spellbook.xml's)
+local ROW_H, ICON, LIST_W, MARKS = ui.SIZES.row, ui.SIZES.icon, ui.SIZES.list, ui.SIZES.marks
 
 local UNKNOWN = { 0.5, 0.5, 0.5 }
 local RANGE = { 0.55, 0.7, 1 }
@@ -42,7 +47,8 @@ local GOOD, BAD = { 0.35, 0.85, 0.35 }, { 1, 0.35, 0.35 } -- green: to the enemy
 local PLAIN_MARK = { 0.8, 0.8, 0.8 } -- an aura nothing calls a buff or a debuff
 
 --- The columns, left to right: each shows TK.SpellInfo's field of its key, and field2 as a second line (the damage to
---- the caster); unit follows a number. The spell's column takes the width the others leave. x and w are set below.
+--- the caster); unit follows a number. The spell's column takes the width the others leave. x and w are set below, and
+--- justify (its title's: the spell's at the left, over the names; the others centred).
 local COLUMNS = {
     { key = "name", title = "Spell", tip = "The spells by name." },
     { key = "mana", title = "Mana", width = 56, tip = "Its mana cost." },
@@ -60,6 +66,7 @@ do
     for _, c in ipairs(COLUMNS) do
         BY_KEY[c.key] = c
         c.x, c.w = x, c.width or LIST_W - fixed
+        c.justify = c.key == "name" and "LEFT" or "CENTER"
         x = x + c.w
     end
 end
@@ -180,58 +187,6 @@ end
 
 -- ----- the table -----
 
---- The header: a button a column, whose click sorts by it, and an arrow beside the sorted one's title. Named
---- TKSpellBookSort<key>.
-local function header(page)
-    local h = CreateFrame("Frame", nil, page)
-    h:SetSize(LIST_W, 22)
-    h:SetPoint("TOPLEFT", page, "TOPLEFT", 12, -10)
-    local bg = h:CreateTexture(nil, "BACKGROUND")
-    bg:SetAllPoints(h)
-    local band = W.titleBand.color
-    bg:SetColorTexture(band[1], band[2], band[3], 1)
-    local rule = h:CreateTexture(nil, "ARTWORK")
-    rule:SetHeight(1)
-    rule:SetPoint("BOTTOMLEFT", h, "BOTTOMLEFT", 0, 0)
-    rule:SetPoint("BOTTOMRIGHT", h, "BOTTOMRIGHT", 0, 0)
-    rule:SetColorTexture(W.headerRule[1], W.headerRule[2], W.headerRule[3], 1)
-    h.buttons = {}
-    for _, c in ipairs(COLUMNS) do
-        local b = CreateFrame("Button", "TKSpellBookSort" .. c.key, h)
-        b:SetSize(c.w, 22)
-        b:SetPoint("TOPLEFT", h, "TOPLEFT", c.x, 0)
-        local hl = b:CreateTexture(nil, "HIGHLIGHT")
-        hl:SetAllPoints(b)
-        hl:SetTexture("tk:button-hl")
-        hl:SetVertexColor(1, 0.85, 0.4, 0.3)
-        b.label = W.Label(b, c.title, 11, W.buttonText, c.key == "name" and "LEFT" or "CENTER")
-        if c.key == "name" then
-            b.label:SetPoint("LEFT", b, "LEFT", ICON + 6, 0) -- over the names
-        else
-            b.label:SetPoint("CENTER", b, "CENTER", 0, 0)
-        end
-        b.arrow = b:CreateTexture(nil, "ARTWORK")
-        b.arrow:SetSize(8, 8)
-        b.arrow:SetPoint("LEFT", b.label, "RIGHT", 2, 0)
-        b.arrow:SetVertexColor(W.gold[1], W.gold[2], W.gold[3], 1)
-        b.arrow:Hide()
-        b:SetScript("OnClick", function()
-            TK.Game.Sound.PlayClick()
-            sortBy(page, c.key)
-        end)
-        b:SetScript("OnEnter", function(self)
-            GameTooltip:SetOwner(self, "ANCHOR_TOP")
-            GameTooltip:AddLine(c.title, 1, 1, 1)
-            GameTooltip:AddLine(c.tip, 0.8, 0.8, 0.8)
-            GameTooltip:AddLine("Click to sort by it; click again to reverse it.", 0.5, 0.5, 0.5)
-            GameTooltip:Show()
-        end)
-        b:SetScript("OnLeave", function() GameTooltip:Hide() end)
-        h.buttons[c.key] = b
-    end
-    return h
-end
-
 --- s6-ui-core (round 83; the owner, 2026-10-09: the red edge "on spells, not only the bars"): a row's icon edged in red
 --- while its spell cannot be cast now (in its aether, or costing more than the mana), each part a switch of the Character
 --- Window's page (windows/settings.lua; interfaces/modern/slotmark.lua). Drawing only.
@@ -246,84 +201,6 @@ local bookPage -- the page, once built
 local function markShown()
     if not (bookPage and bookPage:IsVisible()) then return end
     for _, b in ipairs(bookPage.shown) do markRow(b, b.cooling) end
-end
-
---- Slot i's row, in the table's scrolling content. Wire: b.slot is fixed here and is what its cast and swap send; its
---- input path is the book cell's (TK.Game.Spells.CellControl; the file's comment).
-local function spellRow(list, i)
-    local b = CreateFrame("Button", "TKSpellBookSlot" .. i, list)
-    TK.Actions:SetPath(b, "spellbook")
-    b.slot = i
-    b.spell = { kind = "spell", slot = i } -- the action its icon shows (s6-optimize round 11: one table, not one a draw)
-    b:SetSize(LIST_W, ROW_H - 2)
-    b.stripe = b:CreateTexture(nil, "BACKGROUND") -- every other row a shade lighter, as a spreadsheet's
-    b.stripe:SetAllPoints(b)
-    b.stripe:SetColorTexture(1, 1, 1, 0.035)
-    local hl = b:CreateTexture(nil, "HIGHLIGHT")
-    hl:SetAllPoints(b)
-    hl:SetColorTexture(0.25, 0.4, 0.8, 0.3)
-    b.box = CreateFrame("Frame", nil, b)
-    b.box:SetSize(ICON, ICON)
-    b.box:SetPoint("LEFT", b, "LEFT", 0, 0)
-    -- s6-ui-core (round 62): the shared slot's picture, an item's edge (round 83: red while marked, markRow)
-    b.icon, b.edge = select(2, W.SlotArt(b.box))
-    b.glyph = b.box:CreateFontString(nil, "ARTWORK", nil, 3)
-    b.glyph:SetFont(18, "OUTLINE")
-    b.glyph:SetPoint("CENTER", b.box, "CENTER", 0, 1)
-    b.cooldown = CreateFrame("Cooldown", "TKSpellBookSlot" .. i .. "Cooldown", b.box)
-    b.cooldown:SetAllPoints(b.box)
-    b.cooldown:SetFrameLevel(b.box:GetFrameLevel() + 1)
-    b.cooldown:SetCountdownFontSize(14)
-    b.cooldown:SetScript("OnCooldownDone", function() markRow(b, false) end) -- s6-ui-core (round 83): the aether's end
-    -- The slot's letter, only with the Classic preset (the original's book is lettered).
-    b.letter = W.Label(b.box, H:SlotLetter(i), 10, W.gold, "LEFT")
-    b.letter:SetFont(10, "OUTLINE")
-    b.letter:SetPoint("TOPLEFT", b.box, "TOPLEFT", 2, -2)
-    b.name = W.Label(b, "", 12, W.white, "LEFT")
-    b.name:SetPoint("LEFT", b.box, "RIGHT", 6, 0)
-    b.name:SetWidth(BY_KEY.name.w - ICON - 10)
-    b.name:SetWordWrap(true)
-    -- A value column's cell: one line (a), or two (a over b: the damage), or the auras' marks.
-    b.cells = {}
-    for _, c in ipairs(COLUMNS) do
-        if c.key ~= "name" then
-            local cell = { a = W.Label(b, "", 11, W.white, "CENTER"), b = W.Label(b, "", 11, W.white, "CENTER"), marks = {} }
-            cell.a:SetWordWrap(true)
-            if c.key == "auras" then
-                for k = 1, MARKS do
-                    local m = b:CreateTexture(nil, "ARTWORK")
-                    m:SetSize(8, 8)
-                    m:SetTexture("tk:circle")
-                    m:Hide()
-                    cell.marks[k] = m
-                end
-            end
-            b.cells[c.key] = cell
-        end
-    end
-    TK.Game.Spells.CellControl(b)
-    b:SetScript("OnEnter", function(self)
-        local ok, name = H:GetSpellSlot(self.slot)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        if ok then
-            GameTooltip:AddLine(name, 1, 1, 1)
-            TK.AddSpellCostLine(name)
-            addDetails(TK.SpellInfo:Get(name))
-            GameTooltip:AddLine((TK.Game.Spells.DoubleClickMode() and "Double-click" or "Click") .. " to cast it; drag it to an action bar or the action wheel.",
-                0.5, 0.5, 0.5)
-            GameTooltip:AddLine("Right-click to change its icon.", 0.5, 0.5, 0.5) -- s6-spell-icons
-            TK.ManaPreview.Show(name)
-        else
-            GameTooltip:AddLine("An empty place: drop a spell here to move it.", 0.7, 0.7, 0.7)
-        end
-        GameTooltip:Show()
-    end)
-    b:SetScript("OnLeave", function()
-        GameTooltip:Hide()
-        TK.ManaPreview.Hide()
-    end)
-    b:Hide()
-    return b
 end
 
 --- A cell's one value, or two as two lines (t2: the damage to the caster under the enemy's), centred in its column.
@@ -471,54 +348,157 @@ function refresh(page)
     updateRowActions(page, moving)
 end
 
-CW:AddTab({ id = "spellbook", title = "Spell Book", icon = "emoji:1f4d6", order = 20, key = "TOGGLESPELLBOOK",
-    build = function(page)
-        page.rows, page.shown = {}, {}
-        page.header = header(page)
-        page.scroll, page.list = W.ScrollArea(page)
-        page.scroll:SetPoint("TOPLEFT", page, "TOPLEFT", 12, -36)
-        page.scroll:SetPoint("BOTTOMRIGHT", page, "BOTTOMRIGHT", -16, 40)
-        page.scroll.wheelStep = ROW_H -- a notch of the wheel is a row
-        page.list:SetWidth(LIST_W)
-        for i = 1, 52 do page.rows[i] = spellRow(page.list, i) end
-        measure = W.Label(page, "", 11)
-        measure:Hide()
-        -- s6-ui-character: PgUp and PgDn (K-097), here a screenful of the list each.
-        page.turn = function(delta)
-            local sf = page.scroll
-            sf:SetVerticalScroll(math.max(0, math.min(sf:GetVerticalScrollRange(), sf:GetVerticalScroll() + delta * sf:GetHeight())))
-            sf.Refresh()
-        end
-        page.hint = W.Label(page, "Right-click a spell to change its icon.", 11, { 0.7, 0.7, 0.7 }, "LEFT")
-        page.hint:SetPoint("BOTTOMLEFT", page, "BOTTOMLEFT", 14, 14)
-        page.serverOrder = W.Button(page, "Server Order", 110, 22, nil, function() sortBy(page, nil) end)
-        page.serverOrder:SetPoint("BOTTOMRIGHT", page, "BOTTOMRIGHT", -14, 9)
-        page.serverOrder:SetScript("OnEnter", function(self)
-            GameTooltip:SetOwner(self, "ANCHOR_TOP")
-            GameTooltip:AddLine("Server Order", 1, 1, 1)
-            GameTooltip:AddLine("The spells in their slots' order, where one is moved by dropping it on another.", 0.8, 0.8, 0.8)
-            GameTooltip:Show()
-        end)
-        page.serverOrder:SetScript("OnLeave", function() GameTooltip:Hide() end)
-        page.empty = CW.Note(page, "", -40)
-        -- s6-ui-core (round 83): the rows' red edges as the player's mana changes (an aether's begin is a refresh, below)
-        bookPage = page
-        local power = CreateFrame("Frame", nil, page)
-        power:RegisterEvent("UNIT_POWER")
-        power:SetScript("OnEvent", function(_, _, unit) if unit == "player" then markShown() end end)
-        CW.RefreshOn(page, { "SPELLS_CHANGED", "CURSOR_CHANGED", "ACTIONBAR_UPDATE_COOLDOWN", "TK_SPELL_ICONS_CHANGED",
-            "TK_DRAWING_STYLE_CHANGED", "TK_SPELLINFO_CHANGED" }, "spellbook") -- s6-ui-bars: the pictures in a drawing style
-        -- Head note 44: with spell icons animating, the page's spells draw their icons' frame showing now.
-        -- s6-optimize (round 11): the rows the page shows are the ones refresh last showed (page.shown; nothing else shows
-        -- or hides them), so none is asked whether it shows. Registered by name (TK.SetSpellIconAnimator: s6-modular-g
-        -- round 16).
-        TK.SetSpellIconAnimator("spellbook", function()
-            if not page:IsVisible() then return end
-            for _, b in ipairs(page.shown) do
-                if H:GetSpellSlot(b.slot) then W.ActionIcon(b.icon, b.glyph, b.box, b.spell, ICON, 2) end
+-- ----- spellbook.xml's scripts -----
+
+function scripts.Band(bg)
+    local band = W.titleBand.color
+    bg:SetColorTexture(band[1], band[2], band[3], 1)
+end
+
+function scripts.Rule(rule) rule:SetColorTexture(W.headerRule[1], W.headerRule[2], W.headerRule[3], 1) end
+
+function scripts.SortButtons(h, build)
+    for _, c in ipairs(COLUMNS) do h.buttons[c.key] = build:New("SortButton", h, "TKSpellBookSort" .. c.key, nil, c) end
+end
+
+function scripts.Column(b, _, c) b.column = c end
+
+function scripts.SortLabel(b)
+    if b.column.key == "name" then
+        b.label:SetPoint("LEFT", b, "LEFT", ICON + 6, 0) -- over the names
+    else
+        b.label:SetPoint("CENTER", b, "CENTER", 0, 0)
+    end
+end
+
+function scripts.Gold(arrow) arrow:SetVertexColor(W.gold[1], W.gold[2], W.gold[3], 1) end
+
+function scripts.Sort(b)
+    TK.Game.Sound.PlayClick()
+    sortBy(b:GetParent():GetParent(), b.column.key)
+end
+
+function scripts.SortTip(self)
+    local c = self.column
+    GameTooltip:SetOwner(self, "ANCHOR_TOP")
+    GameTooltip:AddLine(c.title, 1, 1, 1)
+    GameTooltip:AddLine(c.tip, 0.8, 0.8, 0.8)
+    GameTooltip:AddLine("Click to sort by it; click again to reverse it.", 0.5, 0.5, 0.5)
+    GameTooltip:Show()
+end
+
+function scripts.Untip() GameTooltip:Hide() end
+
+-- a notch of the wheel is a row; the 52 slots' rows, in the table's scrolling content
+function scripts.List(page, build)
+    page.scroll.wheelStep = ROW_H
+    page.list:SetWidth(LIST_W)
+    local nameWidth = BY_KEY.name.w - ICON - 10
+    for i = 1, 52 do
+        page.rows[i] = build:New("Row", page.list, "TKSpellBookSlot" .. i, nil,
+            { slot = i, cooldown = "TKSpellBookSlot" .. i .. "Cooldown", letter = H:SlotLetter(i), nameWidth = nameWidth })
+    end
+end
+
+--- Wire: b.slot is fixed here and is what its cast and swap send; its input path is the book cell's
+--- (TK.Game.Spells.CellControl; the file's comment: 4a's NewSpellInventoryPane::ResolveVisibleSpellSlot 0x0057E8D0).
+--- Changing what a row's action carries changes the 0F and 30 01 the server gets.
+function scripts.RowSlot(b, _, with)
+    TK.Actions:SetPath(b, "spellbook")
+    b.slot = with.slot
+    b.spell = { kind = "spell", slot = with.slot } -- the action its icon shows (s6-optimize round 11: one table, not one a draw)
+end
+
+function scripts.OverBox(cooldown) cooldown:SetFrameLevel(cooldown:GetParent():GetFrameLevel() + 1) end
+
+function scripts.AetherEnd(cooldown) markRow(cooldown:GetParent():GetParent(), false) end
+
+function scripts.BoxParts(b)
+    local box = b.box
+    b.icon, b.edge, b.glyph, b.cooldown, b.letter = box.icon, box.edge, box.glyph, box.cooldown, box.letter
+end
+
+function scripts.Cells(b, build)
+    b.cells = {}
+    for _, c in ipairs(COLUMNS) do
+        if c.key ~= "name" then
+            local cell = { a = build:New("CellLine", b), b = build:New("CellLine", b), marks = {} }
+            cell.a:SetWordWrap(true)
+            if c.key == "auras" then
+                for k = 1, MARKS do cell.marks[k] = build:New("AuraMark", b) end
             end
-        end)
-    end,
+            b.cells[c.key] = cell
+        end
+    end
+end
+
+-- Wire: the row takes the book cell's input path whole (TK.Game.Spells.CellControl); changing it changes what the server
+-- sees.
+function scripts.CellControl(b) TK.Game.Spells.CellControl(b) end
+
+function scripts.RowTip(self)
+    local ok, name = H:GetSpellSlot(self.slot)
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    if ok then
+        GameTooltip:AddLine(name, 1, 1, 1)
+        TK.AddSpellCostLine(name)
+        addDetails(TK.SpellInfo:Get(name))
+        GameTooltip:AddLine((TK.Game.Spells.DoubleClickMode() and "Double-click" or "Click") .. " to cast it; drag it to an action bar or the action wheel.",
+            0.5, 0.5, 0.5)
+        GameTooltip:AddLine("Right-click to change its icon.", 0.5, 0.5, 0.5) -- s6-spell-icons
+        TK.ManaPreview.Show(name)
+    else
+        GameTooltip:AddLine("An empty place: drop a spell here to move it.", 0.7, 0.7, 0.7)
+    end
+    GameTooltip:Show()
+end
+
+function scripts.RowLeave()
+    GameTooltip:Hide()
+    TK.ManaPreview.Hide()
+end
+
+function scripts.Measure(fs) measure = fs end
+
+function scripts.Turn(page)
+    page.turn = function(delta)
+        local sf = page.scroll
+        sf:SetVerticalScroll(math.max(0, math.min(sf:GetVerticalScrollRange(), sf:GetVerticalScroll() + delta * sf:GetHeight())))
+        sf.Refresh()
+    end
+end
+
+function scripts.ServerOrder(b) sortBy(b:GetParent(), nil) end
+
+function scripts.ServerOrderTip(self)
+    GameTooltip:SetOwner(self, "ANCHOR_TOP")
+    GameTooltip:AddLine("Server Order", 1, 1, 1)
+    GameTooltip:AddLine("The spells in their slots' order, where one is moved by dropping it on another.", 0.8, 0.8, 0.8)
+    GameTooltip:Show()
+end
+
+function scripts.BookPage(page) bookPage = page end
+
+function scripts.PowerChanged(_, _, unit) if unit == "player" then markShown() end end
+
+function scripts.Changed(f)
+    local page = f:GetParent()
+    if page:IsVisible() then TK.SafeCall(CW:Tab("spellbook").refresh, page) end
+end
+
+-- s6-optimize (round 11): the rows the page shows are the ones refresh last showed (page.shown; nothing else shows or hides
+-- them), so none is asked whether it shows. Registered by name (TK.SetSpellIconAnimator: s6-modular-g round 16).
+function scripts.Animator(page)
+    TK.SetSpellIconAnimator("spellbook", function()
+        if not page:IsVisible() then return end
+        for _, b in ipairs(page.shown) do
+            if H:GetSpellSlot(b.slot) then W.ActionIcon(b.icon, b.glyph, b.box, b.spell, ICON, 2) end
+        end
+    end)
+end
+
+CW:AddTab({ id = "spellbook", title = "Spell Book", icon = "emoji:1f4d6", order = 20, key = "TOGGLESPELLBOOK",
+    build = function(page) ui:New("BookPage", page) end,
     refresh = refresh })
 
 return { MarkShown = markShown } -- s6-ui-core (round 83): windows/main.lua

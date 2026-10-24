@@ -2,6 +2,7 @@
 -- 0x005BC970) at (744, 727)-(805, 751) on the 7.x screen, in the frame layer: MENUVAR.EPF in MENUVAR.PAL, frame 0 while its
 -- popup is closed and frame 2 while it is open (OnPaint 0x005BC800; frame 1, a hover picture, is never drawn). Its place
 -- follows the scaled screen (interfaces/screen.lua's Screen.Place) until the player moves it (edit mode, its Layout tab).
+-- s6-ui-core (round 85): the XML twin's scripts; its frame, place and pictures are main.xml's (core/xml.md).
 --
 -- Wire: MenuVarietyPane::HandlePointerOrMouseEvent (0x005BC690) opens the popup (MenuVarietySelectPane) on the left
 -- press, or closes the open one. The press goes to the dialogs' model in its own event, as the micro menu's Menu button's
@@ -13,20 +14,18 @@ local C = TK.GetComponent("7x.menu")
 local Screen = require("interfaces.screen")
 local S = require("interfaces.7x.skin")
 
--- the button on the 7.x screen (MenuVarietyPane's rectangle)
-local RECT = { 744, 727, 805, 751 }
+local L = TK.Xml.Data("main.xml")
+
+-- the scripts main.xml names
+local scripts = {}
+
+-- WIRE: the press to the dialogs' model (above); changing it changes what the server sees
+function scripts.Press(_, button)
+    if TK.Dialogs then TK.Dialogs.MenuPress(button) end
+end
 
 function C:OnEnable()
-    local f = CreateFrame("Button", "TK7xMenuButton", UIParent)
-    f:SetFrameStrata("LOW")
-    f:SetFrameLevel(10) -- over the screen's border, as the frame layer's panes are over its backdrop
-    f:SetSize(RECT[3] - RECT[1], RECT[4] - RECT[2])
-    f.art = f:CreateTexture(nil, "ARTWORK")
-    f:EnableMouse(true)
-    f:SetScript("OnMouseDown", function(_, button)
-        if TK.Dialogs then TK.Dialogs.MenuPress(button) end
-    end)
-    f:Hide()
+    local f = TK.Xml.Load("main.xml", { scripts = scripts }).frame
     self.frame = f
     self:Own(f)
     self.entry = Screen.Register(f, "7x.menu", "7.x Menu Button", function() return self:DB().enabled == true end)
@@ -39,11 +38,12 @@ end
 function C:SetOpen(open)
     local f = self.frame
     if not f then return end
-    S.Picture(f, f.art, "MENUVAR.EPF", open and 2 or 0, "MENUVAR.PAL", 0, 0)
+    local a = L.ART
+    S.Picture(f, f.art, a.file, open and a.open or a.closed, a.palette, a.x, a.y)
 end
 
 --- At the original's place on the scaled screen (unless moved), at the screen's scale times its own; in the game only.
-function C:Layout() Screen.PlacePanel(self, 1024, 768, RECT[1], RECT[2]) end
+function C:Layout() Screen.PlacePanel(self, 1024, 768, L.PLACE[1], L.PLACE[2]) end
 
 function C:ApplySettings() self:Layout() end
 

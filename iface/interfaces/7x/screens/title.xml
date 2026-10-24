@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 7.x's own title screen (the XML twin's only; title.lua makes it with the twins' shared script,
+     interfaces/original/title.lua, which takes its input and gives core/login.lua its controls): 7.5.2's MainMenuPane (constructor 0x004F6700, OnPaint 0x004F76D0) on its 1024 x 768 screen, scaled to fit the window and
+     letterboxed, and its Login entry's LoginDialogPane (constructor 0x004FA7A0). It shows in place of ours with Settings >
+     Experimental's Original Login Screens and the XML interface on (decision 2026-10-12-original-pregame-screens).
+     Format: core/xml.md.
+     Wire: the rectangles below decide which entry a release or a key activates (MainMenuPane::MainMenuHitTest 0x004F8C10,
+     ComputeMenuItemRect 0x004F8B90) and which control of the dialog a press reaches; changing them changes which input
+     opens the login or sends it. What the entries and OK send is core/login.lua's (interfaces/original/title.lua). -->
+<ui>
+  <data key="SCREEN" value="1024, 768"/>
+  <!-- the version over the picture, "V%d.%d" of the exe's product version: 752 and 0 for 7.5.2 (Application's version
+       info, the numbers its version packet sends: TK-Core's ProtocolProfile.Kru752), colour 9, the pen at (16, 28) -->
+  <data key="VERSION" text="V752.0" x="16" y="28" colour="9"/>
+  <!-- the six entries: entry i's rectangle (781, 493 + 41 i)-(972, 532 + 41 i), its picture TITLEBUT.EPF frame i in
+       TITLEBUT.PAL at the rectangle's top left; the highlighted one's TITLESEL.EPF frame i in TITLESEL.PAL over it. Entry 1
+       (Login) is highlighted as the menu opens (m_selectedMenuItemIndex = 1). -->
+  <data key="ITEMS" left="781" top="493" right="972" bottom="532" step="41" count="6" first="1"
+        file="TITLEBUT.EPF" palette="TITLEBUT.PAL" selected="TITLESEL.EPF" selectedPalette="TITLESEL.PAL"/>
+  <!-- the login dialog: 241 x 124, centred on the screen ((1024 - 241) / 2, (768 - 124) / 2); DLGLOGIN.EPF frame 0 in
+       DLGLOGIN.PAL; the account field (80, 23)-(208, 35) and the password field (80, 53)-(208, 65), at most 8 and masked,
+       both colour 0x80 (TextEditControlPane's 128); OK, image button 14 at (51, 85)-(114, 109), and Cancel, 22 at
+       (135, 85)-(198, 109) -->
+  <data key="DIALOG" maxPassword="8">
+    <data key="account" value="80, 23, 208, 35"/>
+    <data key="password" value="80, 53, 208, 65"/>
+    <data key="ok" id="14" rect="51, 85, 114, 109"/>
+    <data key="cancel" id="22" rect="135, 85, 198, 109"/>
+  </data>
+  <!-- Change Password (ChangePasswordDialogPane 0x004FDD40, the EPF layout): 275 x 232, centred on the screen
+       ((1024 - 275) / 2, (768 - 232) / 2); DLGPASS.EPF frame 0 in DLGPASS.PAL; the account field (113, 30)-(233, 42), then
+       the current password, the new one and its repetition, masked, 30 lower each; OK, image button 14 at (62, 197)-(125,
+       221), and Cancel, 22 at (150, 197)-(213, 221) -->
+  <data key="PASSWORD">
+    <data key="account" value="113, 30, 233, 42"/>
+    <data key="current" value="113, 60, 233, 72"/>
+    <data key="new" value="113, 90, 233, 102"/>
+    <data key="again" value="113, 120, 233, 132"/>
+    <data key="ok" id="14" rect="62, 197, 125, 221"/>
+    <data key="cancel" id="22" rect="150, 197, 213, 221"/>
+  </data>
+  <!-- the New User dialog (CreateUserDialogPane 0x0052DD30, the EPF layout): the whole screen, DLGNEW3.EPF frame 0 in
+       DLGNEW3.PAL; the account field (232, 132)-(414, 144), the password (232, 168)-(414, 180) and its repetition (232,
+       206)-(414, 218), the last two masked, their text colour 143; picture buttons (PrettyButtonControlPane: the file, the
+       palette, the normal, pressed and selected frames, the rectangle): male and female, the four totems (the chosen one's
+       description, string 212 + the totem, at (627, 124)-(909, 250) in colour 143), OK and Cancel, and the preview's turn;
+       the hair grid (170, 342)-(926, 477), nine cells to a row, and the face grid (170, 545)-(676, 662), six, two rows of
+       82 x 58 cells each; the hair colours at (814, 545) and the face colours at (663, 545), sixteen 32 x 32 swatches four
+       to a row; the preview (65, 355)-(147, 472) -->
+  <data key="CREATE" colour="143">
+    <data key="account" value="232, 132, 414, 144"/>
+    <data key="password" value="232, 168, 414, 180"/>
+    <data key="again" value="232, 206, 414, 218"/>
+    <data key="male" file="GENDER.EPF" palette="NEWBUTT.PAL" frames="4, 0, 6" rect="68, 480, 118, 530"/>
+    <data key="female" file="GENDER.EPF" palette="NEWBUTT.PAL" frames="5, 1, 7" rect="110, 480, 160, 530"/>
+    <data key="totems">
+      <data file="NTOTEM.EPF" palette="NEWBUTT.PAL" frames="8, 0, 12" rect="501, 146, 551, 196"/>
+      <data file="NTOTEM.EPF" palette="NEWBUTT.PAL" frames="9, 1, 13" rect="559, 146, 609, 196"/>
+      <data file="NTOTEM.EPF" palette="NEWBUTT.PAL" frames="10, 2, 14" rect="501, 201, 551, 251"/>
+      <data file="NTOTEM.EPF" palette="NEWBUTT.PAL" frames="11, 3, 15" rect="559, 201, 609, 251"/>
+    </data>
+    <data key="totemText" value="627, 124, 909, 250"/>
+    <data key="ok" file="NEWUSERS.EPF" palette="NEWUSERS.PAL" frames="0, 4, 2" rect="371, 713, 484, 749"/>
+    <data key="cancel" file="NEWUSERS.EPF" palette="NEWUSERS.PAL" frames="1, 5, 3" rect="539, 713, 652, 749"/>
+    <data key="turn" file="DIREC.EPF" palette="NEWBUTT.PAL" frames="5, 2, 5" rect="85, 541, 135, 591"/>
+    <data key="hair" rect="170, 342, 926, 477" columns="9" count="18"/>
+    <data key="face" rect="170, 545, 676, 662" columns="6" count="12"/>
+    <data key="hairColours" value="814, 545"/>
+    <data key="faceColours" value="663, 545"/>
+    <data key="preview" value="65, 355, 147, 472"/>
+  </data>
+
+  <!-- the title over our screen (its parent), its window's sides black -->
+  <frame name="TK7xTitle" key="frame" AllPoints="@parent" FrameLevel="50" EnableMouse="true">
+    <texture key="black" layer="BACKGROUND" AllPoints="@parent" ColorTexture="0, 0, 0, 1"/>
+    <on script="OnMouseUp" call="Release"/>
+    <on script="OnUpdate" call="Track"/>
+    <!-- the 1024 x 768 screen (title.lua fits it to the window) -->
+    <frame name="TK7xTitleScreen" key="page" Size="1024, 768">
+      <picture file="TITLE.EPF" frame="0" palette="TITLE.PAL" x="0" y="0" layer="BACKGROUND"/>
+      <text key="version" layer="OVERLAY"/>
+      <run call="Items"/>
+      <!-- the login dialog, on the screen's dialog layer -->
+      <frame name="TK7xLoginDialog" key="dialog" Size="241, 124" Point="TOPLEFT, @parent, TOPLEFT, 391, -322" FrameLevel="60"
+             EnableMouse="true">
+        <picture file="DLGLOGIN.EPF" frame="0" palette="DLGLOGIN.PAL" x="0" y="0" layer="BACKGROUND"/>
+        <frame name="TK7xLoginAccount" key="account" type="EditBox"/>
+        <frame name="TK7xLoginPassword" key="password" type="EditBox"/>
+        <frame name="TK7xLoginOK" key="ok" type="Button"/>
+        <frame name="TK7xLoginCancel" key="cancel" type="Button"/>
+        <run call="Dialog"/>
+        <do Hide=""/>
+      </frame>
+      <!-- Change Password, on the dialog layer too -->
+      <frame name="TK7xPassword" key="password" Size="275, 232" Point="TOPLEFT, @parent, TOPLEFT, 374, -268" FrameLevel="60"
+             EnableMouse="true">
+        <picture file="DLGPASS.EPF" frame="0" palette="DLGPASS.PAL" x="0" y="0" layer="BACKGROUND"/>
+        <frame name="TK7xPasswordAccount" key="account" type="EditBox"/>
+        <frame name="TK7xPasswordCurrent" key="current" type="EditBox"/>
+        <frame name="TK7xPasswordNew" key="new" type="EditBox"/>
+        <frame name="TK7xPasswordAgain" key="again" type="EditBox"/>
+        <frame name="TK7xPasswordOK" key="ok" type="Button"/>
+        <frame name="TK7xPasswordCancel" key="cancel" type="Button"/>
+        <run call="Password"/>
+        <do Hide=""/>
+      </frame>
+      <!-- the New User dialog (title.lua's scripts.Create), the whole screen over the menu, on the dialog layer; its
+           request's dimmer over it until the 0x02's answers (SubmitCreateUser 0x0052ED80's ScreenDimmer) -->
+      <frame name="TK7xCreate" key="create" AllPoints="@parent" FrameLevel="60" EnableMouse="true">
+        <picture file="DLGNEW3.EPF" frame="0" palette="DLGNEW3.PAL" x="0" y="0" layer="BACKGROUND"/>
+        <frame name="TK7xCreateAccount" key="account" type="EditBox"/>
+        <frame name="TK7xCreatePassword" key="password" type="EditBox"/>
+        <frame name="TK7xCreateAgain" key="repeatBox" type="EditBox"/>
+        <frame name="TK7xCreateMale" key="male" type="Button"/>
+        <frame name="TK7xCreateFemale" key="female" type="Button"/>
+        <frame name="TK7xCreateHair" key="hair"/>
+        <frame name="TK7xCreateFace" key="face"/>
+        <frame name="TK7xCreateHairColours" key="hairColours"/>
+        <frame name="TK7xCreateFaceColours" key="faceColours"/>
+        <frame name="TK7xCreateTotem1" key="totems[]" type="Button"/>
+        <frame name="TK7xCreateTotem2" key="totems[]" type="Button"/>
+        <frame name="TK7xCreateTotem3" key="totems[]" type="Button"/>
+        <frame name="TK7xCreateTotem4" key="totems[]" type="Button"/>
+        <text key="totemText" layer="OVERLAY"/>
+        <frame name="TK7xCreateOK" key="ok" type="Button"/>
+        <frame name="TK7xCreateCancel" key="cancel" type="Button"/>
+        <frame name="TK7xCreateTurn" key="turn" type="Button"/>
+        <frame name="TK7xCreatePreview" key="preview"/>
+        <frame name="TK7xCreateDimmer" key="dim" AllPoints="@parent" FrameLevel="68" EnableMouse="true">
+          <texture layer="BACKGROUND" AllPoints="@parent" ColorTexture="0, 0, 0, 0.45"/>
+          <do Hide=""/>
+        </frame>
+        <run call="Create"/>
+        <do Hide=""/>
+      </frame>
+      <!-- an alert (AlertPane: title.lua sizes, draws and places it), on the layer over the dialogs and their wait -->
+      <frame name="TK7xAlert" key="alert" FrameLevel="90" EnableMouse="true">
+        <text key="text" layer="OVERLAY"/>
+        <frame name="TK7xAlertOK" key="ok" type="Button"/>
+        <run call="Alert"/>
+        <do Hide=""/>
+      </frame>
+      <!-- the connect screen (TerminalPane, title.lua's P.Terminal): the screen black while a connection starts from it,
+           over the menu and its dialogs and under the alerts' layer; its own alert (AlertPane: the connecting one, string
+           156, no button; a failure's VersatileAlertPane, string 157, Reconnect and Leave). Over the whole window, so no
+           column of the title shows at the screen's fitted edge and no press beside it reaches the menu (the live check). -->
+      <frame name="TK7xTerminal" key="terminal" AllPoints="TK7xTitle" FrameLevel="70" EnableMouse="true">
+        <texture layer="BACKGROUND" AllPoints="@parent" ColorTexture="0, 0, 0, 1"/>
+        <frame name="TK7xTerminalAlert" key="alert" FrameLevel="75" EnableMouse="true">
+          <text key="text" layer="OVERLAY"/>
+          <frame name="TK7xTerminalReconnect" key="reconnect" type="Button"/>
+          <frame name="TK7xTerminalLeave" key="leave" type="Button"/>
+          <do Hide=""/>
+        </frame>
+        <run call="Terminal"/>
+        <do Hide=""/>
+      </frame>
+    </frame>
+    <!-- the wait after OK (ScreenDimmer(5): the screen dimmed, every press and key its own until the 0x02's answer;
+         title.lua shows the frame from the key on and its shade once the login is sent: TK_LOGIN_SENT) -->
+    <frame name="TK7xLoginDimmer" key="dim" AllPoints="@parent" FrameLevel="80" EnableMouse="true">
+      <texture key="shade" layer="BACKGROUND" AllPoints="@parent" ColorTexture="0, 0, 0, 0.45"/>
+      <do Hide=""/>
+    </frame>
+    <!-- Change Password's wait after OK, the same (until the 0x26's answer) -->
+    <frame name="TK7xPasswordDimmer" key="passwordDim" AllPoints="@parent" FrameLevel="80" EnableMouse="true">
+      <texture layer="BACKGROUND" AllPoints="@parent" ColorTexture="0, 0, 0, 0.45"/>
+      <do Hide=""/>
+    </frame>
+    <!-- an alert is modal (on the modal list, in front): every press outside it is its own; nothing drawn -->
+    <frame name="TK7xAlertModal" key="alertModal" AllPoints="@parent" FrameLevel="85" EnableMouse="true">
+      <do Hide=""/>
+    </frame>
+  </frame>
+</ui>

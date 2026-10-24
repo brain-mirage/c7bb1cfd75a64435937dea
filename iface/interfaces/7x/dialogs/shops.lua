@@ -34,11 +34,17 @@
 -- The rewards (RankingRewardInfoDialog 0x0045DBA0): 620 x 500 at (202, 104), sliding open; the web board's frame; OK (0,
 -- 14) (279, 468); outlined texts: the category's title at (30, 64), Rank, Reward Legend and Reward Items on the line 86
 -- at x 30, 110 and 290; the tiers from the line 110, 26 apart (OnPaint 0x0045DF90).
+-- s6-ui-core (round 85): the XML twin's; the windows' pictures, buttons, slots, rows and the texts' places are
+-- shops.xml's (core/xml.md).
 
 local S = require("interfaces.7x.skin")
+local unpack = table.unpack
+local entry = require("interfaces.original.entry")
+local D = TK.Xml.Data("shops.xml")
 
 return function(L, X)
     local K = TK.Dialogs
+    local TEXT = D.TEXT
 
     --- A text of the window's own (made once under key), its pen at (x, line): the glyphs from line - 11, in colour.
     local function pen(win, key, x, line, colour, parent)
@@ -47,7 +53,7 @@ return function(L, X)
             fs = (parent or win):CreateFontString(nil, "OVERLAY")
             win[key] = fs
         end
-        S.Text(fs, colour or 0x8F)
+        S.Text(fs, colour or TEXT)
         fs:SetWordWrap(false)
         fs:SetJustifyH("LEFT")
         fs:ClearAllPoints()
@@ -58,7 +64,7 @@ return function(L, X)
 
     --- A text centred on the rectangle (l, t)-(r, b) by 6 pixels a character, its line on b (EmployeeDialogPane's).
     local function centred(win, key, text, l, r, b)
-        pen(win, key, math.floor((l + r) / 2) - 3 * #text, b, 0x8F):SetText(text)
+        pen(win, key, math.floor((l + r) / 2) - 3 * #text, b, TEXT):SetText(text)
     end
 
     -- a text drawn outlined (DrawOutlinedTextAt): the look's helper (s6-interface-7x round 2: X.Outlined, moved there)
@@ -82,29 +88,39 @@ return function(L, X)
         tex:SetPoint("TOPLEFT", owner, "TOPLEFT", cx - math.floor(w / 2), -(cy - math.floor(h / 2)))
     end
 
+    --- A window placed at (x, y) of the 7.x screen where its AddToLayer puts it (no placement slot), unclamped: its
+    --- centre for the look's L.Place.
+    local function at(e)
+        return function(win) return e.at[1] + math.floor(e.width / 2), e.at[2] + math.floor(e.height / 2), false end
+    end
+
+    --- The window's image buttons (shops.xml's buttons: { image, rect } each) on its controls from 0.
+    local function buttons(win, list)
+        for i, b in ipairs(list) do X.Image(win, win.controls[i - 1], b.image, unpack(b.rect)) end
+    end
+
     --- The item icons of the renderers (the hired merchant's slots, the bank's rows) are this look's own: nothing here.
     function L.ItemIcon(r, item, size) end
 
     -- ----- the hired merchant -----
 
+    local HM = D.HiredMerchant
+    local SLOTS = HM.slots
+
     --- Slot i's rectangle (EmployeeDialogPane's m_slotRects: 48 x 48 from (20, 109), 56 apart, the second row 84 lower).
     local function slotAt(i)
-        local col, row = (i - 1) % 5, math.floor((i - 1) / 5)
-        return 20 + 56 * col, 109 + 84 * row
+        local col, row = (i - 1) % SLOTS.columns, math.floor((i - 1) / SLOTS.columns)
+        return SLOTS.x + SLOTS.across * col, SLOTS.y + SLOTS.down * row
     end
 
     -- the demolition's hours ("철거까지 %d 시간 미만 남았습니다.": less than %d hours to demolition)
     local DEMOLITION = "\236\178\160\234\177\176\234\185\140\236\167\128 %d \236\139\156\234\176\132 \235\175\184\235\167\140 \235\130\168\236\149\152\236\138\181\235\139\136\235\139\164."
 
-    L.HiredMerchant = {
-        width = 307, height = 350, button = 63, icon = 44, slide = true,
+    L.HiredMerchant = entry(HM, {
         place = function(win)
-            X.Frame(win, 307, 350, "DLGFRAME.EPF", "PAL01.PAL", 14)
-            X.Art(win, "SELLER.EPF", "SELLER.PAL")
-            X.Image(win, win.controls[0], 36, 22, 314, 85, 338)
-            X.Image(win, win.controls[1], 52, 90, 314, 153, 338)
-            X.Image(win, win.controls[2], 54, 157, 314, 220, 340)
-            X.Image(win, win.controls[3], 14, 223, 314, 286, 338)
+            X.Frame(win, HM.width, HM.height, unpack(HM.frame))
+            X.Art(win, unpack(HM.art))
+            buttons(win, HM.buttons)
             win.owner:Hide()
             win.money:Hide()
         end,
@@ -112,7 +128,7 @@ return function(L, X)
         slot = function(win, i)
             local b = CreateFrame("Button", nil, win)
             local x, y = slotAt(i)
-            X.Rect(b, win, x, y, x + 48, y + 48)
+            X.Rect(b, win, x, y, x + SLOTS.size, y + SLOTS.size)
             b.text = b:CreateFontString(nil, "OVERLAY")
             b.text:Hide()
             b:HookScript("OnEnter", function() win.x7over = i L.HiredMerchant.message(win) end)
@@ -122,21 +138,22 @@ return function(L, X)
         -- after the renderer's update: the texts, the slots' pictures and counts, the message line
         fill = function(win, c)
             win.x7contents = c
-            centred(win, "x7owner", K.Text(c.owner), 90, 162, 71)
-            centred(win, "x7money", TK.Util.FormatNumber(c.money or 0), 246, 324, 95)
+            local o, m, f = HM.owner, HM.money, HM.filled
+            centred(win, "x7owner", K.Text(c.owner), o[1], o[2], o[3])
+            centred(win, "x7money", TK.Util.FormatNumber(c.money or 0), m[1], m[2], m[3])
             local filled = 0
-            for i = 1, 10 do
+            for i = 1, SLOTS.count do
                 local r = c.slots and c.slots[i]
                 local x, y = slotAt(i)
-                picture(win, "x7pic" .. i, type(r) == "table" and r[2] or nil, x + 22, y + 22, type(r) == "table" and r[3] or nil)
+                picture(win, "x7pic" .. i, type(r) == "table" and r[2] or nil, x + SLOTS.icon, y + SLOTS.icon, type(r) == "table" and r[3] or nil)
                 if type(r) == "table" then
                     filled = filled + 1
-                    centred(win, "x7count" .. i, string.format("%d", r[5] or 0), x + 10, x + 34, y + 64)
+                    centred(win, "x7count" .. i, string.format("%d", r[5] or 0), x + SLOTS.countLeft, x + SLOTS.countRight, y + SLOTS.countLine)
                 elseif win["x7count" .. i] then
                     win["x7count" .. i]:Hide()
                 end
             end
-            centred(win, "x7slots", string.format("%2d/%2d", filled, 10), 78, 114, 95)
+            centred(win, "x7slots", string.format("%2d/%2d", filled, SLOTS.count), f[1], f[2], f[3])
             L.HiredMerchant.message(win)
         end,
         --- The message line (EmployeeDialogPane::OnPaint): over a filled slot its item, count and price, else the
@@ -151,19 +168,18 @@ return function(L, X)
             elseif c.demolitionShown ~= false then
                 text = string.format(DEMOLITION, math.floor((c.seconds or 0) / 3600) + 1)
             end
-            pen(win, "x7message", 24, 285, 0x8F):SetText(text)
+            pen(win, "x7message", HM.message[1], HM.message[2], TEXT):SetText(text)
         end,
-    }
+    })
 
-    L.Price = {
-        width = 307, height = 124, button = 63, editWidth = 163, editHeight = 12, slide = true,
+    local P = D.Price
+    L.Price = entry(P, {
         place = function(win)
-            X.Frame(win, 307, 124, "DLGFRAME.EPF", "PAL01.PAL", 14)
-            X.Art(win, "SELLITEM.EPF", "SELLITEM.PAL")
-            X.Image(win, win.controls[0], 53, 42, 90, 105, 114)
-            X.Image(win, win.controls[1], 14, 119, 90, 182, 114)
-            X.Image(win, win.controls[2], 22, 196, 90, 259, 114)
-            X.Edit(win.edit, win, 120, 47, 283, 59, 0x8F)
+            X.Frame(win, P.width, P.height, unpack(P.frame))
+            X.Art(win, unpack(P.art))
+            buttons(win, P.buttons)
+            local e = P.edit
+            X.Edit(win.edit, win, e[1], e[2], e[3], e[4], TEXT)
             win.text:Hide()
         end,
         -- after the renderer's update: the item's name, count and picture (the record's, from the merchant's window)
@@ -172,59 +188,67 @@ return function(L, X)
             local slots = merchant and merchant.view and merchant.view.contents.slots or {}
             local r
             for _, s in pairs(slots) do if type(s) == "table" and s[1] == c.record then r = s end end
-            local name = pen(win, "x7name", 120, 37, 0x8F)
-            name:SetText(r and X.Fit(K.Text(r[4]), 60) or "")
-            pen(win, "x7count", 259, 37, 0x8F):SetText(string.format("%d", c.count or 0))
-            picture(win, "x7pic", r and r[2] or nil, 42, 43, r and r[3] or nil)
+            local n = P.name
+            local name = pen(win, "x7name", n.x, n.line, TEXT)
+            name:SetText(r and X.Fit(K.Text(r[4]), n.width) or "")
+            pen(win, "x7count", P.count[1], P.count[2], TEXT):SetText(string.format("%d", c.count or 0))
+            picture(win, "x7pic", r and r[2] or nil, P.picture[1], P.picture[2], r and r[3] or nil)
         end,
-    }
+    })
 
     -- ----- the clan bank -----
 
-    L.Bank = {
-        width = 448, height = 475, button = 63, listWidth = 387, listHeight = 280, amountWidth = 24, editHeight = 12,
+    local B = D.Bank
+    L.Bank = entry(B, {
         -- at (50, 50), where ClanBankPane's AddToLayer puts it (no placement slot), unclamped
-        centre = function(win) return 50 + 224, 50 + 237, false end,
+        centre = at(B),
         place = function(win)
-            X.Art(win, "CLANBAN1.EPF", "CLANBAN1.PAL")
-            X.Image(win, win.close, 30, 190, 438, 253, 462)
-            X.Edit(win.amount, win, 300, 402, 324, 414, 0x8F)
-            X.List(win, win.list, 15, 95, 415, 375, 387, 40)
+            X.Art(win, unpack(B.art))
+            X.Image(win, win.close, unpack(B.close))
+            local a = B.amount
+            X.Edit(win.amount, win, a[1], a[2], a[3], a[4], TEXT)
+            X.List(win, win.list, unpack(B.list))
             win.list.rowPainter = function(row, selected)
                 S.Fill(row.sel, S.TEXT)
-                if row.x7name then row.x7name:SetTextColor(S.Colour(0x8F)) end
+                if row.x7name then row.x7name:SetTextColor(S.Colour(TEXT)) end
             end
-            X.Text(win.count, win, 328, 62, 388, 74, 0x8F)
+            local n = B.count
+            X.Text(win.count, win, n[1], n[2], n[3], n[4], TEXT)
         end,
         --- A row: its item's picture at its size centred on x 30 and the middle; its text from x 70, fitted to 330.
         row = function(r, item)
-            picture(r, "x7pic", item, 30, 20)
+            local rw = B.row
+            picture(r, "x7pic", item, rw.picture[1], rw.picture[2])
             r.text:Hide()
-            local name = X.RowText(r, "x7name", 70)
+            local name = X.RowText(r, "x7name", rw.text)
             if not r.x7fit then
                 r.x7fit = true
                 local set = r.text.SetText
                 r.text.SetText = function(self, text)
                     set(self, text)
-                    r.x7name:SetText(X.Fit(text or "", 330))
+                    r.x7name:SetText(X.Fit(text or "", rw.width))
                 end
             end
             return name
         end,
         -- after the renderer's update: the action's picture by the mode (WITHDRAW 53, SEND 23)
         fill = function(win, c)
-            X.Image(win, win.action, c.mode == 1 and 23 or 53, 340, 397, 403, 421)
+            local a = B.action
+            X.Image(win, win.action, c.mode == 1 and a.send or a.withdraw, unpack(a.rect))
         end,
-    }
+    })
 
     -- ----- the power dialog -----
 
     -- s6-interface-5x-b (round 7): the shared layout with 7.5.2's 63 x 24 buttons at y 307 (interfaces/power.lua)
-    L.Power = require("interfaces.power").Entry(X, S, { width = 63, height = 24, top = 307 })
+    L.Power = require("interfaces.power").Entry(X, S, D.Power)
 
     -- ----- the rankings and their rewards -----
 
     local GLYPHS = { [0] = 0xC2A6, [1] = 0xC2A9 } -- a category's state's glyph (state 2: none; others: 0xC2A9)
+
+    local R = D.Rankings
+    local BOX, TABLE = R.box, R.table
 
     --- A category row's box (made once): the row itself (category below), on SUBWIN's frame, its chosen frame three
     --- pixels deep round it in 0x80; its glyph and title are drawn on it (over its tiles).
@@ -232,9 +256,9 @@ return function(L, X)
         if row.x7box then return row.x7box end
         local box = CreateFrame("Frame", nil, row)
         box:SetAllPoints(row)
-        X.Frame(box, 222, 43, "SUBWIN.EPF", "SUBWIN.PAL", 7)
+        X.Frame(box, BOX.width, BOX.height, BOX.file, BOX.palette, BOX.tile)
         row.x7chosen = {}
-        for k = 1, 3 do
+        for k = 1, BOX.depth do
             for _, side in ipairs({ "top", "left", "bottom", "right" }) do
                 local t = X.Solid(box, "OVERLAY", S.TEXT)
                 X.Line(box, t, side, k, true)
@@ -245,19 +269,23 @@ return function(L, X)
         return box
     end
 
-    L.Rankings = {
-        width = 820, height = 560, button = 63, categoriesWidth = 222, categoriesHeight = 470, rowsWidth = 500,
-        rowsHeight = 300, slide = true,
+    --- A text of the table at (x, line) of it, outlined.
+    local function tabled(win, key, x, line, text, parent)
+        outlined(win, key, TABLE.x + x, TABLE.y + line, text, parent)
+    end
+
+    L.Rankings = entry(R, {
         -- at (102, 74), where RankingDialog's AddToLayer puts it (no placement slot), unclamped
-        centre = function(win) return 102 + 410, 74 + 280, false end,
+        centre = at(R),
         place = function(win)
-            X.WebFrame(win, 820, 560, { 265 })
-            X.Image(win, win.controls[0], 30, 379, 528, 442, 552)
-            X.Image(win, win.controls[3], 44, 460, 480, 523, 504)
-            X.Image(win, win.controls[4], 45, 580, 480, 643, 504)
-            X.TextButton(win, win.controls[5], 320, 480, 400, 504, 0xD4, 0xD0, 0xD8)
-            X.TextButton(win, win.controls[6], 700, 480, 780, 504, 0xD4, 0xD0, 0xD8)
-            X.List(win, win.categories, 10, 44, 265, 514, 222, 47)
+            X.WebFrame(win, R.width, R.height, { R.edges })
+            X.Image(win, win.controls[0], unpack(R.close))
+            X.Image(win, win.controls[3], unpack(R.previous))
+            X.Image(win, win.controls[4], unpack(R.next))
+            local i, rw, flat = R.info, R.reward, R.flat
+            X.TextButton(win, win.controls[5], i[1], i[2], i[3], i[4], flat[1], flat[2], flat[3])
+            X.TextButton(win, win.controls[6], rw[1], rw[2], rw[3], rw[4], flat[1], flat[2], flat[3])
+            X.List(win, win.categories, unpack(R.categories))
             win.categories.rowPainter = function(row, selected)
                 row.sel:SetAlpha(0)
                 row.text:Hide()
@@ -265,17 +293,20 @@ return function(L, X)
                 for _, t in ipairs(row.x7chosen) do t:SetShown(selected) end
             end
             -- the table's own parts: its headers and its separator
-            outlined(win, "x7rank", 290 + 50, 44 + 78, "Rank")
-            outlined(win, "x7nameHead", 290 + 150, 44 + 78, "Name")
-            outlined(win, "x7score", 290 + 390, 44 + 78, "Score")
-            for k = 0, 2 do
+            local cols, names = TABLE.columns, TABLE.names
+            tabled(win, "x7rank", cols[1], TABLE.heads, names[1])
+            tabled(win, "x7nameHead", cols[2], TABLE.heads, names[2])
+            tabled(win, "x7score", cols[3], TABLE.heads, names[3])
+            local rule = TABLE.rule
+            for k = 0, rule.lines - 1 do
                 local t = win["x7line" .. k] or X.Solid(win, "ARTWORK", 0x8F)
                 win["x7line" .. k] = t
-                X.Rect(t, win, 290 + 30, 44 + 384 + k, 290 + 490, 44 + 385 + k)
+                X.Rect(t, win, TABLE.x + rule.left, TABLE.y + rule.top + k, TABLE.x + rule.right, TABLE.y + rule.top + 1 + k)
             end
             for _, key in ipairs({ "head", "total", "dates", "own" }) do win[key]:Hide() end
             -- the ten rows on the table's lines 100 + 30 i: each row 30 high, its line 21 down (from the table's 79)
-            X.List(win, win.rows, 290, 44 + 79, 790, 44 + 379, 487, 30)
+            local rows = TABLE.rows
+            X.List(win, win.rows, TABLE.x + rows[1], TABLE.y + rows[2], TABLE.x + rows[3], TABLE.y + rows[4], rows[5], rows[6])
             win.rows.rowPainter = function(row) row.sel:SetAlpha(0) row.text:Hide() end
         end,
         -- a category's row: its 222 x 43 box at (8, 4) of the 47-pixel row the list placed, its glyph and its outlined
@@ -283,26 +314,28 @@ return function(L, X)
         -- Input routing (wire): RankingEventListPane::HitTestRow (0x0045BD10) takes a press on a row's box only, so the
         -- row is its box: a press in the 4 pixels above a box or beside it is no row's and asks for no category's rows
         -- (7D 02), as a press below the rows of the kit's own list (in a slide, K.PressAt gives it as the list's miss).
-        -- Changing the row's rectangle changes what such a press sends.
+        -- Changing the row's rectangle (shops.xml's box) changes what such a press sends.
         category = function(win, row, cat)
             local _, rel, _, _, y = row:GetPoint(1)
             row:ClearAllPoints()
-            row:SetPoint("TOPLEFT", rel, "TOPLEFT", 8, y - 4)
-            row:SetSize(222, 43)
+            row:SetPoint("TOPLEFT", rel, "TOPLEFT", BOX.x, y - BOX.y)
+            row:SetSize(BOX.width, BOX.height)
             local box = categoryBox(row)
             local glyph = cat[3] ~= 2 and (GLYPHS[cat[3]] or GLYPHS[1]) or nil
-            picture(box, "x7glyph", glyph, 10 + 10, 10 + 10)
+            local half = BOX.glyph // 2
+            picture(box, "x7glyph", glyph, BOX.glyphAt[1] + half, BOX.glyphAt[2] + half)
             if box.x7glyph and glyph then
                 local w, h = box.x7glyph:GetSize()
-                if w > 20 or h > 20 then box.x7glyph:SetSize(math.floor(w / 2), math.floor(h / 2)) end
+                if w > BOX.glyph or h > BOX.glyph then box.x7glyph:SetSize(math.floor(w / 2), math.floor(h / 2)) end
             end
-            outlined(row, "x7title", 40, 26, K.Text(cat[2]), box)
+            outlined(row, "x7title", BOX.title[1], BOX.title[2], K.Text(cat[2]), box)
         end,
         -- a row of the table ({ rank, name, score }): its three columns, outlined
         row = function(win, row, r)
-            outlined(row, "x7c1", 50, 21, string.format("%d", r[1] or 0), row)
-            outlined(row, "x7c2", 150, 21, K.Text(r[2]), row)
-            outlined(row, "x7c3", 390, 21, string.format("%d", r[3] or 0), row)
+            local cols, line = TABLE.columns, TABLE.rowLine
+            outlined(row, "x7c1", cols[1], line, string.format("%d", r[1] or 0), row)
+            outlined(row, "x7c2", cols[2], line, K.Text(r[2]), row)
+            outlined(row, "x7c3", cols[3], line, string.format("%d", r[3] or 0), row)
         end,
         -- after the renderer's update: the chosen category's title, total and dates; the player's own row
         fill = function(win, c)
@@ -313,29 +346,32 @@ return function(L, X)
                 return string.format("%02d/%02d/%04d %02d:%02d:%02d", math.floor(d / 100) % 100, d % 100, math.floor(d / 10000),
                     math.floor(t / 10000), math.floor(t / 100) % 100, t % 100)
             end
-            outlined(win, "x7title", 290 + 30, 44 + 24, sel and K.Text(sel[2]) or "")
-            outlined(win, "x7total", 290 + 380, 44 + 24, sel and string.format("Total : %d", c.total or 0) or "")
-            outlined(win, "x7from", 290 + 30, 44 + 50, sel and ("From : " .. date(sel[4], sel[5])) or "")
-            outlined(win, "x7to", 290 + 210, 44 + 50, sel and ("To : " .. date(sel[6], sel[7])) or "")
+            local T = TABLE
+            tabled(win, "x7title", T.title[1], T.title[2], sel and K.Text(sel[2]) or "")
+            tabled(win, "x7total", T.total[1], T.total[2], sel and string.format("Total : %d", c.total or 0) or "")
+            tabled(win, "x7from", T.from[1], T.from[2], sel and ("From : " .. date(sel[4], sel[5])) or "")
+            tabled(win, "x7to", T.to[1], T.to[2], sel and ("To : " .. date(sel[6], sel[7])) or "")
             local own = c.own
             local shown = sel and type(own) == "table" and own[1] and own[1] > 0
-            outlined(win, "x7own1", 290 + 50, 44 + 412, shown and string.format("%d", own[1]) or "")
-            outlined(win, "x7own2", 290 + 150, 44 + 412, shown and K.Text(c.ownName) or "")
-            outlined(win, "x7own3", 290 + 390, 44 + 412, shown and string.format("%d", own[2] or 0) or "")
+            local cols = T.columns
+            tabled(win, "x7own1", cols[1], T.own, shown and string.format("%d", own[1]) or "")
+            tabled(win, "x7own2", cols[2], T.own, shown and K.Text(c.ownName) or "")
+            tabled(win, "x7own3", cols[3], T.own, shown and string.format("%d", own[2] or 0) or "")
         end,
-    }
+    })
 
-    L.Rewards = {
-        width = 620, height = 500, button = 63, slide = true,
+    local RW = D.Rewards
+    L.Rewards = entry(RW, {
         -- at (202, 104), where RankingRewardInfoDialog's AddToLayer puts it (no placement slot), unclamped
-        centre = function(win) return 202 + 310, 104 + 250, false end,
+        centre = at(RW),
         place = function(win)
-            X.WebFrame(win, 620, 500)
-            X.Image(win, win.ok, 14, 279, 468, 342, 492)
+            X.WebFrame(win, RW.width, RW.height)
+            X.Image(win, win.ok, unpack(RW.ok))
             win.text:Hide()
-            outlined(win, "x7rank", 30, 86, "Rank")
-            outlined(win, "x7legend", 110, 86, "Reward Legend")
-            outlined(win, "x7items", 290, 86, "Reward Items")
+            local h, names = RW.heads, RW.headNames
+            outlined(win, "x7rank", h.rank, h.line, names[1])
+            outlined(win, "x7legend", h.legend, h.line, names[2])
+            outlined(win, "x7items", h.items, h.line, names[3])
         end,
         -- after the renderer's update: the category's title and each tier's rank, legend and items on its line
         fill = function(win, c)
@@ -344,7 +380,7 @@ return function(L, X)
             for _, cat in ipairs(rankings and rankings.view and rankings.view.contents.categories or {}) do
                 if cat[1] == c.category then title = K.Text(cat[2]) end
             end
-            outlined(win, "x7title", 30, 64, title)
+            outlined(win, "x7title", RW.title[1], RW.title[2], title)
             -- a pooled window opened again with fewer tiers: the earlier tiers' texts go first (Astra's re-review of round
             -- 13); the tiers drawn now show theirs again
             for key, set in pairs(win) do
@@ -352,15 +388,16 @@ return function(L, X)
                     for _, part in ipairs(set) do part.fs:Hide() end
                 end
             end
-            for i, t in ipairs(c.tiers or {}) do
-                local line = 110 + 26 * (i - 1)
-                local rank = t[1] == t[2] and K.Text(t[1]) or (K.Text(t[1]) .. " ~ " .. K.Text(t[2]))
-                outlined(win, "x7tierRank" .. i, 30, line, rank)
-                outlined(win, "x7tierLegend" .. i, 110 + 20, line, K.Text(t[3]))
+            local h, t = RW.heads, RW.tiers
+            for i, tier in ipairs(c.tiers or {}) do
+                local line = t.line + t.step * (i - 1)
+                local rank = tier[1] == tier[2] and K.Text(tier[1]) or (K.Text(tier[1]) .. " ~ " .. K.Text(tier[2]))
+                outlined(win, "x7tierRank" .. i, h.rank, line, rank)
+                outlined(win, "x7tierLegend" .. i, h.legend + t.legend, line, K.Text(tier[3]))
                 local items = {}
-                for _, it in ipairs(t[5] or {}) do items[#items + 1] = string.format("%s(%d)", K.Text(it[1]), it[2] or 0) end
-                outlined(win, "x7tierItems" .. i, 290 + 10, line, table.concat(items, "   "))
+                for _, it in ipairs(tier[5] or {}) do items[#items + 1] = string.format("%s(%d)", K.Text(it[1]), it[2] or 0) end
+                outlined(win, "x7tierItems" .. i, h.items + t.items, line, table.concat(items, "   "))
             end
         end,
-    }
+    })
 end

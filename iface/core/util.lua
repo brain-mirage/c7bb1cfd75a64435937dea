@@ -28,16 +28,42 @@ function U.Wipe(t)
     return t
 end
 
---- An OnUpdate script that runs fn(frame, elapsed) on its first frame, then on the first frame at least period seconds
---- after the last run (the time over the period is not carried over). s6-optimize R66: for the drivers that look at
---- something a few times a second, which each wrote this countdown out before.
-function U.Throttled(period, fn)
-    local wait = 0
-    return function(frame, elapsed)
+--- An OnUpdate script that runs fn(frame, elapsed) on its first frame (or once first seconds have passed, when given),
+--- then on the first frame at least period seconds after the last run (the time over the period is not carried over).
+--- s6-optimize R66: for the drivers that look at something a few times a second, which each wrote this countdown out
+--- before. s6-ui-core (round 101, the graphics plan's T11 step 2): while it is its frame's OnUpdate, it hands the
+--- countdown to the host (Frame:SetUpdatePeriod), which then calls it only on the frames it is due, by the same rule in
+--- the same arithmetic; wrapped by a hook (HookScript) or called some other way, it counts here as before (on from what
+--- the host had left, when it was counting).
+function U.Throttled(period, fn, first)
+    local wait = first or 0
+    local script
+    script = function(frame, elapsed)
+        local own = frame.GetScript ~= nil and frame:GetScript("OnUpdate") == script
+        if own and frame.__updatePeriod == period then return fn(frame, elapsed) end -- the host found it due
+        if frame.__updateLeftOf == script then -- the host counted until its OnUpdate was replaced (Frame:SetScript)
+            wait, frame.__updateLeft, frame.__updateLeftOf = frame.__updateLeft, nil, nil
+        end
         wait = wait - (elapsed or 0)
-        if wait > 0 then return end
-        wait = period
-        fn(frame, elapsed)
+        local due = wait <= 0
+        if due then wait = period end
+        if own then frame:SetUpdatePeriod(period, wait) end
+        if due then fn(frame, elapsed) end
+    end
+    return script
+end
+
+--- s6-ui-core (round 101, the graphics plan's T11 step 4): the frame's OnUpdate is called only while on. Off, the script
+--- is set aside (the frame keeps it); on, it is put back. For an animation or a drag with nothing to do most of the time,
+--- which turns itself off when done; not for a script with a period or a watch (SetScript drops them). Drawing only.
+function U.Updating(frame, on)
+    local script = frame:GetScript("OnUpdate")
+    if on and not script and frame.__updatingAside then
+        frame:SetScript("OnUpdate", frame.__updatingAside)
+        frame.__updatingAside = nil
+    elseif not on and script then
+        frame.__updatingAside = script
+        frame:SetScript("OnUpdate", nil)
     end
 end
 

@@ -1,0 +1,8 @@
+# Map 4619 (Soldiers Quarters): only middle 995/996 blue art forms roof bands at rows 4 and 29; there are no
+# 994/997 gateposts. The global gate assembly treatment does not fit this context. Clear its group and geometry
+# fields so native top, support, and eave behavior returns dynamically without pinning a new height.
+[check]
+size = "30x30"
+
+[sobj.995-996]
+clear = ["group", "kind", "roof", "height", "depth", "wind"]

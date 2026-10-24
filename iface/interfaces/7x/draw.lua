@@ -4,6 +4,7 @@
 -- messages' and the chat log's bars, the map name's and the say mode's texts and frames) took them from the dialogs look's
 -- file before (require("interfaces.7x.dialogs").X); the look builds its windows on these (its X). Drawing only, except
 -- the input routing the kit keeps (its X.List, X.Blocker and X.SlideOpen: WIRE there).
+-- s6-ui-core (round 85): the XML twin's; the standard window is skin.xml's (core/xml.md).
 
 local S = require("interfaces.7x.skin")
 
@@ -15,7 +16,8 @@ local X = require("interfaces.original.dialogkit")({
     place = function(win) require("interfaces.7x.dialogs").Place(win) end,
 })
 
--- 4a's standard window: DLGFRAME.EPF in PAL01.PAL, 14-pixel tiles (DialogPane::DrawBackground and DrawBorder)
-X.DIALOG_FRAME = { file = "DLGFRAME.EPF", palette = "PAL01.PAL", tile = 14 }
+-- 4a's standard window: DLGFRAME.EPF in PAL01.PAL, 14-pixel tiles (DialogPane::DrawBackground and DrawBorder;
+-- skin.xml's DIALOG_FRAME)
+X.DIALOG_FRAME = TK.Xml.Data("skin.xml").DIALOG_FRAME
 
 return X

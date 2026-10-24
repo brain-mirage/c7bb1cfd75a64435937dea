@@ -1,0 +1,8 @@
+# Vale (map 1005). s6-reprojection-cloud-1 (run 24): its waterfalls (7626-7628 at 149-151,89, 162-165,115, 159-161,140
+# and 150-152,151) pour from pools on the plateaus, whose sides are other pieces standing round them. The module hints'
+# wall of falls, three rows high, left the pools in pieces there, so the rule's prop stays.
+[check]
+size = "250x180"
+
+[sobj.7626-7628]
+kind = "prop"

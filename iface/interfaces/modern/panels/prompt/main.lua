@@ -8,24 +8,24 @@
 --                   text, or nil when it closes).
 -- Drawing only: nothing is sent. A live prompt's keys are the rules' and an offline one's Classic's key layer, whether
 -- this line shows or not.
+-- s6-ui-core (round 85): the XML twin's scripts; the lines and the watcher are main.xml's templates (core/xml.md).
 
 local C = TK.GetComponent("prompt")
-local W = require("interfaces.modern.skin").UI -- s6-devtools (round 5, the separation's step 5): Modern's skin
+local E = require("interfaces.modern.elements")
 local H = __tk
 
 local function on() return C:DB().enabled ~= false end
 
+-- the scripts main.xml names
+local scripts = {}
+
+-- the lines and the watcher are the panel's own (they go when it is turned off)
+function scripts.Own(f) C:Own(f) end
+
+local ui = TK.Xml.Load("main.xml", { scripts = scripts, elements = E })
+
 --- One prompt line, hidden: the bar a prompt's text is drawn on, above the chat (both lines are alike).
-local function makeBar(name)
-    local f = C:Own(W.Panel(UIParent, name))
-    f:SetFrameStrata("DIALOG")
-    f:SetSize(460, 30)
-    f:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, 190)
-    f.text = W.Label(f, "", 13, W.white, "LEFT")
-    f.text:SetPoint("LEFT", f, "LEFT", 12, 0)
-    f:Hide()
-    return f
-end
+local function makeBar(name) return ui:New("Bar", nil, name) end
 
 -- ----- Classic Commands' own prompt (offline) -----
 
@@ -60,6 +60,14 @@ local function promptHere()
     return not TK.Game.Prompts.Drawn(H:GetLineKind())
 end
 
+--- The watcher: shows the rules' line when a prompt it draws comes.
+function scripts.Watch()
+    if promptHere() and not view:IsShown() then
+        view.version = -1
+        view:Show()
+    end
+end
+
 --- The logic's line when it is a prompt's: its label, and a line prompt's text with the caret.
 function C:OnEnable()
     view = makeBar("TKRulesPrompt")
@@ -74,15 +82,12 @@ function C:OnEnable()
         view.version = line.Version
         view.text:SetText(line.Label .. " " .. TK.Util.WithCaret(line.Text, line.SelectionEnd))
     end)
+    -- s6-ui-core (round 101, T11 step 3): called only when the line changed or a frame was shown or hidden (a chat that
+    -- draws the prompt, the panel turned off: promptHere's other sources); the watcher alike (main.xml)
+    view:SetUpdateWhen("line", "shown")
     -- Shown by a frame that runs while the panel is on: the prompt comes from the logic, not from a key of ours. Off
     -- (7.x's and 5.x's first profiles), it is hidden, so the panel neither runs nor shows anything.
-    C.watch = C:Own(CreateFrame("Frame", nil, UIParent))
-    C.watch:SetScript("OnUpdate", function()
-        if promptHere() and not view:IsShown() then
-            view.version = -1
-            view:Show()
-        end
-    end)
+    C.watch = ui:New("Watch")
     C.watch:SetShown(on())
     if pending then classicPrompt(pending) end -- (loaded while Classic's prompt is open)
 end

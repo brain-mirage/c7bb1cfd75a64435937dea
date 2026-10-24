@@ -16,21 +16,21 @@
 -- Its scroll bar (s6-interface-5x-b): ScrollablePane's skin 2 at its right 12 pixels (SetSkinIndex(2) in the
 -- constructor; interfaces/5x/scrollbar.lua), its arrows a line, its track 4 lines (the pane's page, sub_4B95C0), its
 -- thumb dragged; the wheel scrolls it too. It draws only: nothing here is sent, and only its bar takes a press.
+-- s6-ui-core (round 85): the XML twin's scripts; its frame, lines, bar and place are main.xml's (core/xml.md).
 
 local C = TK.GetComponent("5x.board")
 local S = require("interfaces.5x.skin")
 local Screen = require("interfaces.screen")
-local Bar = require("interfaces.5x.scrollbar") -- s6-interface-5x-b
 local Wrap = require("interfaces.original.wrap") -- s6-interface-5x-b (round 9, the separation's step 5)
+local E = require("interfaces.5x.elements")
 
-local PLACE = { 441, 304 }
-local W_, H_, TEXT_W, LINE_H, SHOWN, KEEP = 198, 65, 184, 12, 5, 200
-local INK = 0x84 -- ColorStringSystemMessage's colour (132), as every line of it
+local L = TK.Xml.Data("main.xml")
+local LINES = L.LINES
 
 --- The board as 5.33's starts it: six empty messages, the view at the newest.
 function C:Clear()
     self.messages, self.offset = {}, 0
-    for i = 1, 6 do self.messages[i] = "" end
+    for i = 1, LINES.start do self.messages[i] = "" end
     self:Draw()
 end
 
@@ -38,8 +38,8 @@ end
 --- AddWrappedText's at the legacy branch's 184 in 5.33's font 0 (the original client's wrap, interfaces/original/wrap.lua;
 --- s6-interface-5x-b, round 9: this panel's C.Cut before, moved there as it was).
 function C:Add(text)
-    for _, line in ipairs(Wrap.Lines(text, TEXT_W, S.TextWidth)) do self.messages[#self.messages + 1] = line end
-    while #self.messages > KEEP do table.remove(self.messages, 1) end
+    for _, line in ipairs(Wrap.Lines(text, LINES.width, S.TextWidth)) do self.messages[#self.messages + 1] = line end
+    while #self.messages > LINES.keep do table.remove(self.messages, 1) end
     self.offset = 0
     self:Draw()
 end
@@ -49,8 +49,8 @@ function C:Draw()
     local f = self.frame
     if not f then return end
     local n = #self.messages
-    local first = math.max(1, n - SHOWN + 1 - self.offset)
-    for k = 1, SHOWN do
+    local first = math.max(1, n - LINES.shown + 1 - self.offset)
+    for k = 1, LINES.shown do
         local fs = f.lines[k]
         local text = self.messages[first + k - 1]
         fs:SetText(text or "")
@@ -61,37 +61,39 @@ end
 
 --- Scrolls the view n lines back (older), up to the oldest five, or forward for a negative n, down to the newest.
 function C:Scroll(n)
-    self.offset = math.max(0, math.min(self.offset + n, #self.messages - SHOWN))
+    self.offset = math.max(0, math.min(self.offset + n, #self.messages - LINES.shown))
     self:Draw()
 end
 
 --- Whether the board shows now (the chat leaves its lines to it then).
 function C:IsShowing() return self.frame ~= nil and self.frame:IsShown() end
 
-function C:OnEnable()
-    local f = CreateFrame("Frame", "TK5xBoard", UIParent)
-    f:SetFrameStrata("LOW")
-    f:SetSize(W_, H_)
+-- the scripts main.xml names
+local scripts = {}
+
+--- The five lines, one 12-pixel line each, drawn from its top (a measured box let a new line stand 6 pixels high).
+function scripts.Lines(f)
     f.lines = {}
-    for k = 1, SHOWN do
-        local fs = S.Text(f:CreateFontString(nil, "ARTWORK"), INK)
+    for k = 1, LINES.shown do
+        local fs = S.Text(f:CreateFontString(nil, "ARTWORK"), LINES.ink)
         fs:SetWordWrap(false)
         fs:SetJustifyH("LEFT")
-        -- one 12-pixel line each, drawn from its top (a measured box let a new line stand 6 pixels high)
         fs:SetJustifyV("TOP")
-        fs:SetSize(TEXT_W, LINE_H)
-        fs:SetPoint("TOPLEFT", f, "TOPLEFT", 0, -((k - 1) * LINE_H + 1))
+        fs:SetSize(LINES.width, LINES.height)
+        fs:SetPoint("TOPLEFT", f, "TOPLEFT", 0, -((k - 1) * LINES.height + 1))
         f.lines[k] = fs
     end
-    f:EnableMouseWheel(true)
-    f:SetScript("OnMouseWheel", function(_, delta) C:Scroll(delta > 0 and 1 or -1) end)
-    -- s6-interface-5x-b: its bar; 5.33's position counts lines from the oldest, this view's offset from the newest
-    local function range() return math.max(0, #(self.messages or {}) - SHOWN) end
-    f.bar = Bar.New(f, W_ - Bar.Width(2), 0, H_, 2, {
-        Range = function() return range(), range() - (self.offset or 0), 4 end,
-        Set = function(pos) self:Scroll(range() - pos - self.offset) end,
-    })
-    f:Hide()
+end
+
+function scripts.Wheel(_, delta) C:Scroll(delta > 0 and 1 or -1) end
+
+-- s6-interface-5x-b: the bar; 5.33's position counts lines from the oldest, this view's offset from the newest
+local function range() return math.max(0, #(C.messages or {}) - LINES.shown) end
+function scripts.BarRange() return range(), range() - (C.offset or 0), 4 end
+function scripts.BarSet(_, pos) C:Scroll(range() - pos - C.offset) end
+
+function C:OnEnable()
+    local f = TK.Xml.Load("main.xml", { scripts = scripts, elements = E }).frame
     self:Own(f)
     self.frame = f
     self.entry = Screen.Register(f, "5x.board", "5.x Message Board", function() return self:DB().enabled == true end)
@@ -107,6 +109,6 @@ function C:OnEnable()
 end
 
 --- At 5.33's place on the scaled 5.x screen unless moved, at the screen's scale times its own; in the game only.
-function C:ApplySettings() Screen.PlacePanel(self, S.WIDTH, S.HEIGHT, PLACE[1], PLACE[2]) end
+function C:ApplySettings() Screen.PlacePanel(self, S.WIDTH, S.HEIGHT, L.PLACE[1], L.PLACE[2]) end
 
 Screen.Follow(C, "ApplySettings")

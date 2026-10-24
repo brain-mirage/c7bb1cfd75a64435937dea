@@ -1,0 +1,15 @@
+# Nagnang (map 2500) on the test server: what its own cells need beyond the base hints. Applies only when the map the
+# server sends passes the check (3.5).
+
+[check]
+size = "146x156"
+
+# s6-reprojection-cloud-3 (run 21, the sweep): the green roofs over the two great arches (the base hints' moon-gate,
+# 2602-2615, and the roof 2618-2629 two rows north of it). The roof art also covers halls elsewhere, whose walls it
+# holds up, so only here does it float: the blocked cells behind each arch stay on the ground, and the arch shows the
+# grass behind it, as the picture does, instead of a wall of stone.
+[cells."8,1-19,1"]        # the arch at the north edge
+floats = true
+
+[cells."34,14-45,14"]     # the arch north of the square
+floats = true

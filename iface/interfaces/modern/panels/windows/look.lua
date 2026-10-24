@@ -10,6 +10,8 @@
 --   - the views as tabs: Info (the more-info text), Equipment (the fourteen items where the original's view 1 draws
 --     them), Profile (the portrait and the profile text) and Legend.
 -- Opening and closing it send nothing; it closes with its button or Esc.
+--
+-- s6-ui-core (round 85): the XML twin's scripts; the window, its views and slots are look.xml's (core/xml.md).
 
 local H = __tk
 local W = require("interfaces.modern.skin").UI -- s6-devtools (round 5, the separation's step 5): Modern's skin
@@ -17,126 +19,19 @@ local W = require("interfaces.modern.skin").UI -- s6-devtools (round 5, the sepa
 local Look = {}
 TK.Look = Look
 
--- The figure's background (0xRRGGBB), the box it is painted onto, as the character window's.
-local BG = { 0x1C, 0x1C, 0x21 }
+-- the scripts look.xml names, and its build (its templates: the window, a slot)
+local scripts = {}
+local ui = TK.Xml.Load("look.xml", { scripts = scripts, elements = require("interfaces.modern.elements") })
 
-local WIDTH, HEIGHT = 300, 524
-local VIEWS = { { id = "info", label = "Info" }, { id = "equipment", label = "Equipment" },
-    { id = "profile", label = "Profile" }, { id = "legend", label = "Legend" } }
-
--- UserLookPane::OnPaint, view 1: each record's place in the 3 x 5 grid (column, row), in the packet's order (weapon,
--- armour, shield, helm, the two accessories, the two sub-accessories, face, crown, mantle, necklace, boots, coat).
-local GRID = { { 0, 1 }, { 1, 1 }, { 2, 1 }, { 1, 0 }, { 2, 2 }, { 0, 2 }, { 0, 3 }, { 2, 3 }, { 0, 0 }, { 2, 0 },
-    { 1, 2 }, { 0, 4 }, { 1, 4 }, { 1, 3 } }
+-- The figure's background (0xRRGGBB), the box it is painted onto, as the character window's; the views in their order
+-- (ids); each equipment record's place in the grid (look.xml's)
+local BG, VIEWS, GRID = ui.BG, ui.VIEWS, ui.GRID
 
 local frame
 
 local function stateText(v)
     if v == 0xFF then return "" elseif v ~= 0 then return ": On" end
     return ": Off"
-end
-
---- A Trade or Group button: the game layer's look action (TK.Game.Look.ActionButton: on the left press).
-local function actionButton(f, label, kind, tip)
-    local b = W.Button(f, label, 124, 22)
-    TK.Game.Look.ActionButton(b, kind)
-    b:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine(label, 1, 1, 1)
-        GameTooltip:AddLine(tip, 0.7, 0.7, 0.7)
-        GameTooltip:Show()
-    end)
-    b:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    return b
-end
-
-local function itemSlot(parent, i)
-    local s = CreateFrame("Frame", nil, parent)
-    s:SetSize(34, 34)
-    local cell = GRID[i]
-    s:SetPoint("TOPLEFT", parent, "TOPLEFT", 54 + cell[1] * 58, -6 - cell[2] * 38)
-    s.icon = select(2, W.SlotArt(s)) -- s6-ui-core (round 62): the shared slot's picture, an item's edge
-    s:EnableMouse(true)
-    s:SetScript("OnEnter", function(self)
-        local _, slotName, _, name = H:GetLookItem(i)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine(name ~= "" and name or slotName, 1, 1, 1)
-        if name ~= "" then GameTooltip:AddLine(slotName, 0.7, 0.7, 0.7) end
-        GameTooltip:Show()
-    end)
-    s:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    return s
-end
-
-local function build()
-    local f = W.Panel(UIParent, "TKLookWindow")
-    TK.GetComponent("windows"):Own(f) -- (as the character window: made by the shared widgets, it goes with the windows)
-    f:SetFrameStrata("DIALOG")
-    f:SetSize(WIDTH, HEIGHT)
-    f:SetPoint("CENTER", UIParent, "CENTER", 260, 40)
-    f:EnableMouse(true)
-    f:SetMovable(true)
-    f:SetClampedToScreen(true)
-    f:RegisterForDrag("LeftButton")
-    f:SetScript("OnDragStart", function(self) self:StartMoving() end)
-    f:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
-    f.name = W.Label(f, "", 16, W.white)
-    f.name:SetPoint("TOP", f, "TOP", 0, -12)
-    f.header = W.Label(f, "", 12, W.gold)
-    f.header:SetPoint("TOP", f.name, "BOTTOM", 0, -4)
-    f.box = CreateFrame("Frame", nil, f)
-    f.box:SetSize(120, 190)
-    f.box:SetPoint("TOPLEFT", f, "TOPLEFT", 12, -54)
-    f.box:SetBackdrop({ bg = { BG[1] / 255, BG[2] / 255, BG[3] / 255, 1 }, edge = false, bgFile = "tk:white" })
-    f.figure = f.box:CreateTexture(nil, "ARTWORK")
-    f.figure:SetPoint("BOTTOM", f.box, "BOTTOM", 0, 8)
-    f.lines = W.Label(f, "", 11, { 0.85, 0.85, 0.85 }, "LEFT")
-    f.lines:SetWordWrap(true)
-    f.lines:SetWidth(WIDTH - 156)
-    f.lines:SetPoint("TOPLEFT", f.box, "TOPRIGHT", 12, -2)
-    -- The original's action buttons 0 (Trade) and 1 (Group).
-    f.trade = actionButton(f, "Trade", "look:trade", "Asks this player to trade (4A 00 and the player's id).")
-    f.trade:SetPoint("BOTTOMLEFT", f.box, "BOTTOMRIGHT", 12, 30)
-    f.group = actionButton(f, "Group", "look:group", "Invites this player to your group (2E and the name).")
-    f.group:SetPoint("TOPLEFT", f.trade, "BOTTOMLEFT", 0, -6)
-    -- Named for the gate's driver (s6-gate round 37, H-17): gate mode logs a named control's place while it shows
-    -- (core/gatecontrols.lua), so the gate can click these as it clicks the original's look page. Names only.
-    _G.TKLookTrade, _G.TKLookGroup = f.trade, f.group
-
-    -- The four views, as tabs.
-    f.tabs, f.views = {}, {}
-    for i, v in ipairs(VIEWS) do
-        local b = W.Tab(f, v.label, 66, 20, function() Look:ShowView(v.id) end) -- s6-ui-core (round 61): the shared tab
-        b:SetPoint("TOPLEFT", f.box, "BOTTOMLEFT", (i - 1) * 70, -10)
-        f.tabs[v.id] = b
-        local view = W.Panel(f, nil, true)
-        view:SetPoint("TOPLEFT", f.box, "BOTTOMLEFT", 0, -36)
-        view:SetSize(WIDTH - 24, 200)
-        view:Hide()
-        f.views[v.id] = view
-    end
-    f.moreInfo = W.Label(f.views.info, "", 12, W.white, "LEFT")
-    f.moreInfo:SetWordWrap(true)
-    f.moreInfo:SetWidth(WIDTH - 44)
-    f.moreInfo:SetPoint("TOPLEFT", f.views.info, "TOPLEFT", 10, -10)
-    f.slots = {}
-    for i = 1, #GRID do f.slots[i] = itemSlot(f.views.equipment, i) end
-    -- View 2: the portrait (48 x 56, shown twice its size) or the original's FACE.EPF without one, and the profile.
-    f.portrait = f.views.profile:CreateTexture(nil, "ARTWORK")
-    f.portrait:SetSize(96, 112)
-    f.portrait:SetPoint("TOPLEFT", f.views.profile, "TOPLEFT", 10, -10)
-    f.profile = W.Label(f.views.profile, "", 12, W.white, "LEFT")
-    f.profile:SetWordWrap(true)
-    f.profile:SetWidth(WIDTH - 150)
-    f.profile:SetPoint("TOPLEFT", f.portrait, "TOPRIGHT", 10, 0)
-    f.legend = W.Character.LegendList(f.views.legend, WIDTH - 36, 188)
-    f.legend.sf:SetPoint("TOPLEFT", f.views.legend, "TOPLEFT", 4, -6)
-
-    f.close = W.Button(f, "Close", 90, 22, "red", function() f:Hide() end)
-    f.close:SetPoint("BOTTOM", f, "BOTTOM", 0, 10)
-    TK.Escape:AddWindow(f, function() f:Hide() end)
-    f:Hide()
-    return f
 end
 
 --- The look's figure, scaled by whole steps to its box; nothing while the drawing has none.
@@ -150,6 +45,76 @@ local function showFigure(f)
     f.figure:SetTexture(key)
     f.figure:SetSize(w * scale, h * scale)
 end
+
+-- ----- look.xml's scripts -----
+
+local making -- the index of the equipment slot being made (scripts.Slots), for its SlotPlace
+
+function scripts.Own(f) TK.GetComponent("windows"):Own(f) end
+
+function scripts.DragStart(self) self:StartMoving() end
+
+function scripts.DragStop(self) self:StopMovingOrSizing() end
+
+function scripts.BoxBackdrop(box)
+    box:SetBackdrop({ bg = { BG[1] / 255, BG[2] / 255, BG[3] / 255, 1 }, edge = false, bgFile = "tk:white" })
+end
+
+function scripts.Figure(f) f.figure = f.box.figure end
+
+-- Wire: a Trade or Group button is the game layer's look action (TK.Game.Look.ActionButton: 4A 00 or 2E on the left
+-- press, UserLookPane::HandlePointerOrMouseEvent's type 1); changing it changes what the server sees.
+function scripts.ActionButton(b) TK.Game.Look.ActionButton(b, b.kind) end
+
+function scripts.ActionTip(self)
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:AddLine(self.tip.title, 1, 1, 1)
+    GameTooltip:AddLine(self.tip.text, 0.7, 0.7, 0.7)
+    GameTooltip:Show()
+end
+
+function scripts.Untip() GameTooltip:Hide() end
+
+function scripts.GateNames(f) _G.TKLookTrade, _G.TKLookGroup = f.trade, f.group end
+
+function scripts.Tab(b) b:GetParent().tabs[b.id] = b end
+
+function scripts.View(view) view:GetParent().views[view.id] = view end
+
+function scripts.ShowView(b) Look:ShowView(b.id) end
+
+function scripts.Slots(f, build)
+    f.slots = {}
+    for i = 1, #GRID do
+        making = i
+        f.slots[i] = build:New("Slot", f.views.equipment)
+    end
+    making = nil
+end
+
+function scripts.SlotPlace(s)
+    local cell = GRID[making]
+    s:SetPoint("TOPLEFT", s:GetParent(), "TOPLEFT", 54 + cell.x * 58, -6 - cell.y * 38)
+    s.index = making
+end
+
+function scripts.SlotTip(self)
+    local _, slotName, _, name = H:GetLookItem(self.index)
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:AddLine(name ~= "" and name or slotName, 1, 1, 1)
+    if name ~= "" then GameTooltip:AddLine(slotName, 0.7, 0.7, 0.7) end
+    GameTooltip:Show()
+end
+
+function scripts.LegendPlace(f) f.legend.sf:SetPoint("TOPLEFT", f.views.legend, "TOPLEFT", 4, -6) end
+
+function scripts.Close() frame:Hide() end
+
+function scripts.Escape(f) TK.Escape:AddWindow(f, function() f:Hide() end) end
+
+function scripts.Ticker(f) f:SetScript("OnUpdate", TK.Util.Throttled(0.2, function() showFigure(f) end)) end
+
+local function build() return ui:New("Window") end
 
 --- Shows one of the views (the tabs).
 function Look:ShowView(id)
@@ -166,21 +131,16 @@ end
 function Look:Page(delta)
     if not frame then return end
     local at = 1
-    for i, v in ipairs(VIEWS) do
-        if v.id == frame.view then at = i end
+    for i, id in ipairs(VIEWS) do
+        if id == frame.view then at = i end
     end
-    self:ShowView(VIEWS[math.max(1, math.min(#VIEWS, at + delta))].id)
+    self:ShowView(VIEWS[math.max(1, math.min(#VIEWS, at + delta))])
 end
 
 --- Opens the window on the last look, on its first view (UserLookPane::OnActivate ends in ShowMoreInfoView): the views'
 --- window for the look (TK.Game.Views, below), shown when no interface's page takes it. Showing sends nothing.
 local function showWindow()
-    if not frame then
-        frame = build()
-        -- The figure is looked at again while the window shows (its picture follows the drawing's state), every 0.2 s as
-        -- the look driver did before round 12 (a new look is the game layer's: TK.Game.Views' driver opens the view).
-        frame:SetScript("OnUpdate", TK.Util.Throttled(0.2, function() showFigure(frame) end))
-    end
+    if not frame then frame = build() end
     local _, name, header, line1, line2, line3 = H:GetLook()
     local _, moreInfo, profile, groupState, tradeState, highlighted, portrait = H:GetLookDetail()
     frame.name:SetText(name)

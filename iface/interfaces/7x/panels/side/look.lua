@@ -28,23 +28,26 @@
 -- 0x005A1A70: -1 in the others), so a press where they were sends nothing in the other views. Changing their place,
 -- their views, their actions or the press that runs them changes what the server sees. A right press on them shows 4a's
 -- help line (strings 200 and 201, 5 s); the arrows and the keys send nothing.
+-- s6-ui-core (round 85): the XML twin's scripts; the page, its buttons', items' and arrows' places are look.xml's
+-- (core/xml.md).
 
 local H = __tk
 local S = require("interfaces.7x.skin")
 local K = require("interfaces.7x.panels.side.kit")
+local Elements = require("interfaces.7x.panels.side.elements") -- the kit as layout elements (the twin's own)
 local Hud = require("interfaces.7x.hud")
 
 local L = {}
 
--- View 1's items by the packet's record (CharacterSheet's order: weapon, armour, shield, helm, the two hands, the two
--- sub-hands, face, crown, mantle, necklace, boots, coat): the point each is centred on (OnPaint, UserLookPane.cpp:494-662).
-local ITEMS = { { 34, 92 }, { 92, 92 }, { 150, 92 }, { 92, 36 }, { 147, 146 }, { 34, 146 }, { 34, 198 }, { 150, 198 },
-    { 36, 36 }, { 150, 36 }, { 92, 146 }, { 34, 250 }, { 92, 250 }, { 92, 198 } }
+local X = TK.Xml.Data("look.xml")
 
--- The arrows' places by view (GetActionButtonRect: next in views 0-2, previous in 1-2, previous in next's place in 3)
--- (indexed by view: a positional entry after [1] = would be [1] again; s6-interface-7x-b round 7, seen beside 7.5.2)
-local NEXT = { [0] = { 169, 268 }, [1] = { 169, 268 }, [2] = { 169, 268 } }
-local BACK = { [1] = { 149, 268 }, [2] = { 149, 268 }, [3] = { 169, 268 } }
+-- View 1's items by the packet's record: the point each is centred on (look.xml's ITEMS)
+local ITEMS = X.ITEMS
+
+-- The arrows' places by view (look.xml's NEXT and BACK)
+local NEXT, BACK = {}, {}
+for _, at in ipairs(X.NEXT) do NEXT[at.view] = { at.x, at.y } end
+for _, at in ipairs(X.BACK) do BACK[at.view] = { at.x, at.y } end
 
 --- Whole equipment frames retain their colour byte and the active panel's 500 ms
 --- palette repaint (4a ScreenPane 0x00556D50). Use the same native item placement
@@ -58,45 +61,41 @@ local function step(p, delta)
     L.Show(p)
 end
 
-function L.Build(parent)
-    local p = CreateFrame("Frame", "TK7xSideLook", parent)
-    p:SetAllPoints(parent)
-    p.view = 0
-    p.back = p:CreateTexture(nil, "BACKGROUND")
-    p.face = p:CreateTexture(nil, "ARTWORK")
-    p.texts = {}
-    for i = 1, 10 do p.texts[i] = K.Text(p) end
-    p.items = {}
-    for i = 1, #ITEMS do p.items[i] = p:CreateTexture(nil, "ARTWORK") end
-    -- the action buttons: Modern's look window's actions on their left press (the header)
-    p.buttons = {}
-    for i, def in ipairs({ { "look:trade", 112, 200 }, { "look:group", 148, 201 } }) do
-        local b = K.Hit(p, 146, def[2], 182, def[2] + 36, "TK7xLookButton" .. (i - 1))
-        TK.Game.Look.ActionButton(b, def[1])
-        b.tex = b:CreateTexture(nil, "ARTWORK")
-        -- its help on the right press. WIRE (s6-interface-7x-b round 6): UserLookPane::HandlePointerOrMouseEvent
-        -- (0x005A1580) shows it for type 4 only, so a right double press (type 5) shows none; the tip uses up the next
-        -- press (Hud.HelpLine.Show), so a tip 4a does not show would take a press 4a sends on (Trade's 4A 00)
-        b:HookScript("OnMouseDown", function(_, button, double)
-            if button == "RightButton" and not double then Hud.HelpLine.Show(p, H:OriginalString(def[3]) or "", 5000) end
-        end)
-        p.buttons[i] = b
-    end
-    p.next = K.Arrow(p, 6, function() step(p, 1) end)
-    p.previous = K.Arrow(p, 5, function() step(p, -1) end)
-    p.moreInfo = K.TextPane(p, 7, 205, 182, 266)
-    p.profile = K.TextPane(p, 17, 120, 174, 240)
-    p.legend = K.TextPane(p, 7, 15, 182, 265)
-    -- a new look's data may come a moment after its tab switch, and its figure once the drawing has painted it: the page
-    -- draws the look again when it changes, and view 0's picture a few times a second (as Modern's look window does)
+-- the scripts look.xml names
+local scripts = {}
+
+-- WIRE: Modern's look window's action on the button's left press (the header)
+function scripts.ActionButton(b) TK.Game.Look.ActionButton(b, b.action) end
+
+-- its help on the right press. WIRE: which press shows it, and its life, are the game layer's tip rule (TK.Game.Tips,
+-- core/game/tips.lua: UserLookPane::HandlePointerOrMouseEvent 0x005A1580; s6-gateway-research round 37 moved it there);
+-- the tip uses up the next press (Hud.HelpLine.Show), so the button shows it only when the rule says so (Trade's 4A 00)
+function scripts.Help(b)
+    b:HookScript("OnMouseDown", function(_, button, double)
+        local life = TK.Game.Tips.ForPress(button, double)
+        if life then Hud.HelpLine.Show(b:GetParent(), H:OriginalString(b.help) or "", life) end
+    end)
+end
+
+function scripts.Next(p) step(p, 1) end
+
+function scripts.Previous(p) step(p, -1) end
+
+-- a new look's data may come a moment after its tab switch, and its figure once the drawing has painted it: the page
+-- draws the look again when it changes, and view 0's picture a few times a second (as Modern's look window does)
+function scripts.Watch(p)
     p:SetScript("OnUpdate", TK.Util.Throttled(0.2, function()
         if H:GetLook() ~= p.serial then L.Show(p) elseif p.view == 0 then L.Background(p) end
     end))
-    return p
 end
 
-local FILES = { [0] = { "USERLOOK.EPF", 0, "USERLOOK.PAL" }, { "USERLOOK.EPF", 1, "USERLOOK.PAL" },
-    { "PFLOOK.EPF", 0, "PFLOOK.PAL" }, { "USERLOOK.EPF", 3, "USERLOOK.PAL" } }
+function L.Build(parent)
+    return TK.Xml.Load("look.xml", { scripts = scripts, elements = Elements, parent = parent }).frame
+end
+
+-- the views' pictures (look.xml's FILES)
+local FILES = {}
+for _, v in ipairs(X.FILES) do FILES[v.view] = v end
 
 --- The view's picture: view 0's with the figure painted in at its place (the drawing's "look-pane"), without one yet
 --- USERLOOK.EPF 0 alone; the other views' their own.
@@ -113,7 +112,7 @@ function L.Background(p)
         p.back:Show()
     else
         local f = FILES[p.view]
-        S.Picture(p, p.back, f[1], f[2], f[3], 0, 0, "BACKGROUND")
+        S.Picture(p, p.back, f.file, f.frame, f.palette, 0, 0, "BACKGROUND")
     end
     p.backKey = key
 end
@@ -173,7 +172,7 @@ function L.Show(p)
     elseif view == 1 then
         for i, at in ipairs(ITEMS) do
             local _, _, iconId = H:GetLookItem(i)
-            if iconId and iconId >= 0 then L.Item(p.items[i], p, iconId, H:GetLookItemColour(i), at[1], at[2]) end
+            if iconId and iconId >= 0 then L.Item(p.items[i], p, iconId, H:GetLookItemColour(i), at.x, at.y) end
         end
     elseif view == 2 then
         -- the portrait in (70, 48)-(118, 104), 48 x 56, as it came; else FACE.EPF's frame at half size, with no palette of

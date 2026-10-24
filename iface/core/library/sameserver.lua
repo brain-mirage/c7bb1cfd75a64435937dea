@@ -55,12 +55,10 @@ end
 -- is shown at once: none is held back, so a question is always the connection's of the moment (Astra's review: a held
 -- one could outlive a switch of server). Round 23 (the head's review of round 22): a question showing when its session
 -- changes (another server, or none) is taken down unanswered, so it never stands over another server's session.
+-- Every ASK_EVERY seconds, the first ASK_EVERY after the start (s6-ui-core round 101, T11 step 2: the host keeps the
+-- countdown, TK.Util.Throttled).
 local watch = CreateFrame("Frame", nil, UIParent)
-local since = 0
-watch:SetScript("OnUpdate", function(_, elapsed)
-    since = since + (elapsed or 0)
-    if since < ASK_EVERY then return end
-    since = 0
+watch:SetScript("OnUpdate", TK.Util.Throttled(ASK_EVERY, function()
     local c = W.confirm
     if shown and not (c and c:IsShown() and c.onYes == shown.yes) then shown = nil end -- answered, or another question
     if shown and H:LibrarySession() ~= shown.q.session then
@@ -70,6 +68,6 @@ watch:SetScript("OnUpdate", function(_, elapsed)
     local prebuild = TK.LibraryPrebuild
     if c and c:IsShown() and not (prebuild and prebuild:Showing()) then return end
     S:Poll()
-end)
+end, ASK_EVERY))
 
 return S

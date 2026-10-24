@@ -3,7 +3,7 @@
 -- layout files. A Lua file loads one (TK.Xml.Load), and the loader builds what it describes with the WoW-style frame API
 -- (core/frame.lua), call for call and in the file's order, so a frame built from XML is the frame the same Lua calls
 -- would have built. The format, for the owner and plugin authors: core/xml.md, beside this file. The host reads a file
--- (H:ReadXml, LuaApi.Xml.cs); the interfaces' XML twins are the first users (TK.Interfaces:Xml).
+-- (H:ReadXml, LuaApi.Xml.cs); the XML interfaces (7.x, 5.x, Modern) are the first users.
 --
 -- Drawing only: building frames sends nothing. What a frame's scripts do is its Lua's.
 

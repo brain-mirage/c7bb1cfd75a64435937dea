@@ -3,6 +3,7 @@
 -- show, where, and their alpha and scale. Hidden, the dialog model's pane is the same: it takes the counts, and the
 -- minimap's mail and parcel icons are its controls, so nothing on the wire changes. Off, this code is not loaded at all
 -- (step 11; s6-characters round 49: no longer kept loaded): the pane, its counts and its presses are the dialogs' alone.
+-- s6-ui-core (round 85): the XML twin's scripts; the panel's frame is main.xml's (core/xml.md).
 
 local C = TK.GetComponent("mailparcels")
 
@@ -24,13 +25,16 @@ local function hold(f, on)
     end
 end
 
+-- the scripts main.xml names
+local scripts = {}
+
+function scripts.Hold(f) hold(f, true) end
+
+function scripts.Release(f) hold(f, false) end
+
 function C:OnEnable()
-    local f = CreateFrame("Frame", "TKMailParcels", UIParent)
-    f:SetSize(62, 25)
+    local f = TK.Xml.Load("main.xml", { scripts = scripts }).frame
     self.frame = f
-    hold(f, true)
-    f:SetScript("OnShow", function() hold(f, true) end)
-    f:SetScript("OnHide", function() hold(f, false) end)
     TK.Visibility:Attach(f, function() return self:DB() end)
     TK.EditMode:Register(f, "mailparcels", "Mail and Parcels", C.defaultPosition, "mailparcels")
 end

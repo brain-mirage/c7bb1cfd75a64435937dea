@@ -12,39 +12,50 @@
 -- 5 x 2 grid of 41 x 54 buttons from (58, 113), 54 across and 64 down, the chosen one's capsule (5.33's CAPSULE.EPF in
 -- NPAL3.PAL) centred behind it. The base set's heads and figure are 7.5.2's art, twice 5.33's: drawn at S.GAME_ART,
 -- centred in their boxes.
+--
+-- s6-ui-core (round 85): the XML twin's; the window's picture, buttons, preview, text and grid are heads.xml's
+-- (core/xml.md).
 
 local S = require("interfaces.5x.skin")
+local unpack = table.unpack
+local entry = require("interfaces.original.entry")
+local D = TK.Xml.Data("heads.xml")
 
 return function(L, X)
-    L.Heads = {
-        width = 374, height = 316, button = 72, head = { 41, 54 }, page = 72,
+    local H = D.Heads
+    local GRID, CAPSULE = H.heads, H.capsule
+
+    L.Heads = entry(H, {
+        head = H.head,
         -- the preview's pane, and the scale its base-set picture is asked at
-        preview = { 35, 48, S.GAME_ART },
+        preview = { H.previewSize[1], H.previewSize[2], S.GAME_ART },
         place = function(win)
-            local key = TK.Art.Image("DLGMSGH.EPF", 0, "NPAL8.PAL")
+            local file, palette = unpack(H.art)
+            local key = TK.Art.Image(file, 0, palette)
             if key then
                 win.art:SetTexture(key)
-                X.Rect(win.art, win, 0, 0, 374, 316)
+                X.Rect(win.art, win, 0, 0, H.width, H.height)
                 win.art:Show()
             else
                 -- neither set holds DLGMSGH.EPF (Astra's review of round 6): 5.33's standard window behind it meanwhile
                 local frame = X.DIALOG_FRAME
-                X.Frame(win, 374, 316, frame.file, frame.palette, frame.tile)
+                X.Frame(win, H.width, H.height, frame.file, frame.palette, frame.tile)
             end
-            X.Image(win, win.ok, 14, 40, 266, 112, 282)
-            X.Image(win, win.left, 18, 114, 266, 186, 282)
-            X.Image(win, win.right, 19, 188, 266, 260, 282)
-            X.Image(win, win.close, 15, 262, 266, 334, 282)
+            X.Image(win, win.ok, unpack(H.ok))
+            X.Image(win, win.left, unpack(H.left))
+            X.Image(win, win.right, unpack(H.right))
+            X.Image(win, win.close, unpack(H.close))
             X.Default(win, win.ok)
-            X.Rect(win.preview, win, 36, 40, 71, 88)
-            X.Text(win.text, win, 86, 29, 336, 92)
+            X.Rect(win.preview, win, unpack(H.previewRect))
+            X.Text(win.text, win, unpack(H.text))
             win.text:SetWordWrap(true)
-            for i = 0, 9 do
+            local w, h = unpack(H.head)
+            for i = 0, GRID.count - 1 do
                 local b = win.heads[i]
-                local l, t = 58 + i % 5 * 54, 113 + math.floor(i / 5) * 64
-                X.Rect(b, win, l, t, l + 41, t + 54)
+                local l, t = GRID.x + i % GRID.columns * GRID.across, GRID.y + math.floor(i / GRID.columns) * GRID.down
+                X.Rect(b, win, l, t, l + w, t + h)
                 b.capsule = b.capsule or b:CreateTexture(nil, "BORDER")
-                local capsule, cw, ch = S.Image("CAPSULE.EPF", 0, "NPAL3.PAL")
+                local capsule, cw, ch = S.Image(CAPSULE.file, 0, CAPSULE.palette)
                 if capsule then
                     b.capsule:SetTexture(capsule)
                     b.capsule:SetSize(cw, ch)
@@ -61,5 +72,5 @@ return function(L, X)
             tex:SetSize(w * S.GAME_ART, h * S.GAME_ART)
             tex:SetPoint("CENTER", box, "CENTER", 0, 0)
         end,
-    }
+    })
 end

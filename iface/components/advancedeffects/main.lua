@@ -32,6 +32,8 @@ function C:ApplySettings()
     CS.TK.WorldView.AdvancedEffects.SetPrecipitation(on("rain"), on("snow"), -- s6-effects-b
         tonumber(db.rain_sound) or C.defaults.rain_sound) -- s6-effects-b
     CS.TK.WorldView.AdvancedEffects.SetExtras(on("snow_cover"), on("footprints"), on("leaves")) -- s6-effects-b
+    -- s6-reprojection-cloud-3 (the owner, 2026-10-21): Max Snow Cover, as stored (it counts only while Snow Cover is on)
+    CS.TK.WorldView.AdvancedEffects.SetMaxSnowCover(tonumber(db.max_snow_cover) or C.defaults.max_snow_cover)
     -- s6-effects (round 2): the lightning (on unless off: a profile always has it, its default) and its thunder
     CS.TK.WorldView.AdvancedEffects.SetLightning(self:Applied("lightning", db) ~= false,
         tonumber(db.thunder_sound) or C.defaults.thunder_sound)

@@ -28,7 +28,13 @@ require("components.dialogs.music")
 -- at half strength (the port's m_alpha) in the current palette's colours by its state; the marker is s6-characters'
 -- walking figure, centred on the player's point. Round 24: at sea on WM2 (HitTestSpecialRegions 0x005C5200) it is
 -- s6-characters' boat (GetFigure('boat', 0): BOAT.EPF's back frame, the figure in walking frame 0, the front frame),
--- centred the same way. Known limitation: our label font is ours.
+-- centred the same way. Known limitation: our label font is ours (Modern's still; 7.x's and 5.x's since round 99).
+-- s6-ui-core (round 99): as OnPaint draws them, beside the real 7.5.2's and 5.33's pictures: the symbol at its frame's
+-- rectangle less 6 each way from the point (m_nodeSymbol.bounds.Offset(-6, -6); WMSYMBOL's is (-5, -5)-(19, 19), so
+-- centred it was drawn 1 pixel left and up); a look that has its own world map entry (C.look.WorldMap: 7.x's and
+-- 5.x's) gives the names its font (text: the original's, measured by its advances) and draws no "At ..." line (OnPaint
+-- draws no text but the names; the default look, Modern's, keeps it and its font); the marker last, over the nodes,
+-- their boxes and names (OnPaint 0x005C3950 draws it after them). Drawing only.
 -- s6-input (round 46; FOR s6-rules-dialogs): the pane covers the screen, as 4a's does (MapPane::CreateWorldMapPaneLayer
 -- 0x0050F270 puts it at (0, 0)-(screen width, height) on its own layer under the dialogs'): the window is the whole game
 -- window, black (OnPaint's fill in colour 0x80), and the 1024 x 768 pane (win.pane) is 4a's screen scaled to fit it as
@@ -44,8 +50,16 @@ local Screen = require("interfaces.screen")
 
 local PANE_W, PANE_H = 1024, 768
 
+--- HitTestNode (0x005C37E0): a node takes the pointer strictly within 20 pixels of its point, 19 each way.
+local NODE_REACH = 19
+
 --- C's (int) of a float: toward zero.
 local function int(v) return v < 0 and math.ceil(v) or math.floor(v) end
+
+--- The original's font 0: GrafPort::GetLineHeight is always 12 (its metrics: 4a FontImageLib.cpp:29-36), and the
+--- glyph loop puts a glyph's top 1 below its line's (the pen's y less the line, plus the glyph's top, plus 1:
+--- GrafPort.cpp:1143-1148). For a look's text (C.look.WorldMap.text).
+local LINE, GLYPH_TOP = 12, 1
 
 --- OnPaint's colours: indices of the current palette (BARAM.PAL; Source-5's read of it when the packs have none).
 local SELECTED_FILL, REACHABLE_FILL, OTHER_FILL, LIT_TEXT, DIM_TEXT = 4, 6, 0x86, 0x8F, 0x80
@@ -237,7 +251,11 @@ function Map.build()
     win.picture:SetPoint("TOPLEFT", win.pane, "TOPLEFT", 0, 0)
     win.picture:Hide()
     win.nodes = {}
-    win.marker = win.pane:CreateTexture(nil, "OVERLAY")
+    -- the marker on a layer of its own over the nodes' buttons (child frames of the pane, drawn over its textures):
+    -- OnPaint draws it last (Map.marker keeps the layer above them); it takes no pointer, so presses still find the nodes
+    win.markerLayer = CreateFrame("Frame", nil, win.pane)
+    win.markerLayer:SetAllPoints(win.pane)
+    win.marker = win.markerLayer:CreateTexture(nil, "OVERLAY")
     win.status = W.Label(win.pane, "", 12, W.white, "LEFT")
     win.status:SetPoint("BOTTOMLEFT", win.pane, "BOTTOMLEFT", 12, 10)
     Map.place(win)
@@ -308,15 +326,25 @@ function Map.layout(win)
         local b = win.nodes[i]
         local x, y = (n[2] or 0) - left, (n[3] or 0) - top
         b:ClearAllPoints()
-        b:SetPoint("CENTER", win.pane, "TOPLEFT", x, -y)
+        -- s6-ui-core (round 98): from its top left, at whole pixels: the node's button is 39 wide (HitTestNode 0x005C37E0's
+        -- strict 20 pixels each way), so placed by its centre its edges fell on half pixels, which the host rounds; a 5.x
+        -- hut anchored to it was drawn 1 pixel right and up of 5.33's. WIRE: the button takes the press on the node
+        -- (K.Wire) from x - 19 to x + 19 and y - 19 to y + 19, 4a's square, and its hit test (Map.update) refuses the
+        -- right and bottom edges the host's raycast includes; moving it changes which node a press travels to.
+        b:SetPoint("TOPLEFT", win.pane, "TOPLEFT", x - NODE_REACH, -(y - NODE_REACH))
         -- GetNodeLabelRect (0x005C4850): the name's width + 12 by a line + 4, centred under the point from 8 below it;
-        -- the text 6 in from its left.
-        local w, h = b.label:GetStringWidth() + 12, b.label:GetStringHeight() + 4
+        -- the text 6 in from its left, its line 2 below the top (the pen 2 above the bottom). s6-ui-core (round 99): in
+        -- a look's text (the original's font) by the original's measures: its advances (our font string measures one
+        -- more), its 12-pixel line (ours is 13) and the glyph 1 below the line; the 5.x names were drawn 1 pixel high.
+        local text = win.mapLook and win.mapLook.text
+        local tw = text and text.width(b.label:GetText())
+        local w = (tw or b.label:GetStringWidth()) + 12
+        local h = (text and LINE or b.label:GetStringHeight()) + 4
         b.fill:ClearAllPoints()
         b.fill:SetPoint("TOPLEFT", win.pane, "TOPLEFT", x - int(w / 2), -(y + 8))
         b.fill:SetSize(w, h)
         b.label:ClearAllPoints()
-        b.label:SetPoint("TOPLEFT", b.fill, "TOPLEFT", 6, -2)
+        b.label:SetPoint("TOPLEFT", b.fill, "TOPLEFT", 6, -(2 + (text and GLYPH_TOP or 0)))
         -- s6-input (round 46): every node drawn, the pane clipping it at its edges as OnPaint's are (one half off the pane
         -- shows its other half, and that half takes a press as HitTestNode's 20 pixels do)
         b:Show()
@@ -353,6 +381,8 @@ function Map.marker(win)
         win.marker:SetSize(12, 12)
     end
     win.marker:SetPoint("CENTER", win.pane, "TOPLEFT", x, -y)
+    -- drawn last (OnPaint): above the nodes' buttons, which take the pane's level + 1 (the window's level may change)
+    win.markerLayer:SetFrameLevel(win.pane:GetFrameLevel() + 2)
 end
 
 --- OnFrameUpdate's view, every 20 ms: a twentieth of the way to the target (the player while it walks), or there.
@@ -395,7 +425,9 @@ function Map.update(win, view)
         local name = tostring(c.map or ""):upper()
         win.name = name
         local key, pw, ph
-        win.mapArt = C.look.WorldMap and C.look.WorldMap.select(name)
+        -- the look's own world map entry (7.x's, 5.x's): its picture for a map (select), its text for the names
+        win.mapLook = C.look.WorldMap
+        win.mapArt = win.mapLook and win.mapLook.select and win.mapLook.select(name)
         if win.mapArt then key, pw, ph = win.mapArt.image(name .. ".EPF", 0, name .. ".PAL") end
         if not key and name ~= "" then key, pw, ph = TK.Art.Image(name .. ".EPF", 0, name .. ".PAL") end
         win.drawWidth, win.drawHeight = win.mapArt and win.mapArt.width, win.mapArt and win.mapArt.height
@@ -414,14 +446,19 @@ function Map.update(win, view)
             local b = win.nodes[i]
             if not b then
                 b = CreateFrame("Button", nil, win.pane)
-                b:SetSize(39, 39)
+                b:SetSize(2 * NODE_REACH + 1, 2 * NODE_REACH + 1)
+                b.reach = NODE_REACH -- the node's point is (reach, reach) from its top left (a look's symbol: mapArt.symbol)
                 b.symbol = b:CreateTexture(nil, "ARTWORK")
-                b.symbol:SetPoint("CENTER", b, "CENTER", 0, 0)
+                b.symbol:SetPoint("CENTER", b, "TOPLEFT", NODE_REACH, -NODE_REACH) -- on the node's point
                 b.symbol:SetSize(12, 12)
                 b.fill = win.pane:CreateTexture(nil, "ARTWORK")
                 b.label = W.Label(win.pane, "", 11, W.white, "LEFT")
                 b.__dialogParent = win
                 local idx = i - 1
+                -- s6-ui-core (round 98, Astra's self-review): WIRE: HitTestNode (0x005C37E0) is strict, but the host's
+                -- raycast takes the button's right and bottom edges, x + 20 and y + 20; there the press is no node's (-1),
+                -- as 4a's. Changing it changes which node a press sends the server to.
+                b.__dialogHitTest = function() return nodeAt(win, pointer(win)) == idx end
                 K.Wire(win, b, idx)
                 -- Round 25: a press on an unreachable node with nothing hovered finds no destination either (the press's
                 -- UpdateHoverFromMouse keeps the hover at -1), so it drags the picture as a press off the nodes does.
@@ -438,13 +475,21 @@ function Map.update(win, view)
                 win.nodes[i] = b
             end
             b.label:SetText(K.Text(n[1]))
+            if win.mapLook and win.mapLook.text then win.mapLook.text.style(b.label) else b.label:SetFont(11, "") end
             local key, sw, sh = TK.Art.Image("WMSYMBOL.EPF", 0, "BARAM.PAL")
-            if win.mapArt then win.mapArt.node(b)
-            else
+            if not win.mapArt then
+                -- OnPaint's BlitTileContextAt(x, y, symbol): the frame's rectangle (both frames' alike) less 6 each way
+                -- from the node's point (the constructor's bounds.Offset(-6, -6)); the picture's drawn pixels from
+                -- their origin in it
                 b.symbol:ClearAllPoints()
-                b.symbol:SetPoint("CENTER", b, "CENTER", 0, 0)
-                if key then b.symbol:SetSize(sw, sh) end
-                b.label:SetFont(11, "")
+                local fl, ft = TK.Art.FrameRect(key)
+                if key and fl then
+                    local ox, oy = TK.Art.Origin(key)
+                    b.symbol:SetPoint("TOPLEFT", b, "TOPLEFT", NODE_REACH + fl - 6 + ox, -(NODE_REACH + ft - 6 + oy))
+                    b.symbol:SetSize(sw, sh)
+                else
+                    b.symbol:SetPoint("CENTER", b, "TOPLEFT", NODE_REACH, -NODE_REACH) -- on the node's point
+                end
             end
         end
         for i = #nodes + 1, #win.nodes do
@@ -461,7 +506,7 @@ function Map.update(win, view)
         end
     end
     local cur = nodes[(c.current or 0) + 1]
-    win.status:SetShown(win.mapArt == nil)
+    win.status:SetShown(win.mapLook == nil) -- OnPaint draws no text but the names: the default look's (Modern's) line
     win.status:SetText((cur and ("At " .. K.Text(cur[1])) or "") .. (c.walking and "   (travelling)" or ""))
     Map.layout(win)
     win:Paint()

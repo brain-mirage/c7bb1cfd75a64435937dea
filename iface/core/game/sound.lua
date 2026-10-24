@@ -5,9 +5,10 @@
 -- (MusicVolume, SetMusicVolume).
 --
 -- Wire: the music's draws. Music off opens no stream, so a zone playlist draws no further on the main rand() stream
--- (MidiPlayer::Disable and Enable, MidiPlayer.cpp:256-270; AudioLogic.SetMusicOn), and the End key's next track opens one
--- (UserPane.cpp:1726-1735). SetMusicOn and NextTrack decide when a track opens, so when a draw is made: changing them
--- changes the random stream the client's later packets are drawn from, which the server can see.
+-- (MidiPlayer::Disable and Enable, MidiPlayer.cpp:256-270; AudioLogic.SetMusicOn). Moving that switch changes the random
+-- stream the client's later packets use, which the server can see. End advances a folder track without a packet or an
+-- immediate random draw (UserPane::HandleKeyOrTextEvent 0x005A5BD0, UserPane.cpp:1726-1735); keep that silence and its
+-- existing input order. Playlist-end draws are a separate later stream notification.
 
 local A = CS.TK.Unity.Audio.AudioHost
 

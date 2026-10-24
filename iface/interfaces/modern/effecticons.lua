@@ -8,6 +8,7 @@
 -- letter ("?" when unknown); optionally its time as tiny text under it. The tooltip gives the name or "???", where it
 -- comes from, and the time ("4:47 left", "about 30-60 s left", "0-20 s left, possibly over", "time unknown"). The look is
 -- the style table below. Display only: nothing here is sent.
+-- s6-ui-core (round 85): the XML twin's; the style, the icon and the group are effecticons.xml's (core/xml.md).
 
 local W = require("interfaces.modern.skin").UI -- s6-devtools (round 5, the separation's step 5): Modern's skin
 local U = TK.Util
@@ -16,14 +17,12 @@ local art = require("interfaces.modern.data.effects")
 
 local G = {}
 
-G.style = {
-    edge = { buff = { 0.3, 0.85, 0.35, 1 }, debuff = { 0.9, 0.25, 0.2, 1 }, unknown = { 0.62, 0.62, 0.66, 1 } },
-    fill = { buff = { 0.1, 0.32, 0.14, 0.95 }, debuff = { 0.38, 0.07, 0.06, 0.95 }, unknown = { 0.2, 0.2, 0.23, 0.95 } },
-    estimateAlpha = 0.72, -- an estimate's icon is a little fainter than the server's word
-    gap = 2,              -- between two icons
-    timeColour = { 1, 0.95, 0.75 },
-    timeWidth = 28,       -- a column's width at least, with the times shown ("~30-60" in the 8-point font)
-}
+-- the scripts effecticons.xml names
+local scripts = {}
+
+local ui = TK.Xml.Load("effecticons.xml", { scripts = scripts, elements = require("interfaces.modern.elements") })
+
+G.style = ui.style
 
 --- A column's width: the icon's, or a time's under it when times are shown (wider than a very small icon).
 function G.ColumnWidth(size, timeText)
@@ -101,41 +100,22 @@ function G.SetListMenu(g, on)
     end
 end
 
+-- Round 44: a right-click puts the effect's name on a list (G.ListMenu), where the group allows it (G.SetListMenu).
+function scripts.ListMenu(self, button)
+    if button == "RightButton" and self.listMenu and self.row then G.ListMenu(self.row) end
+end
+
 local function icon(g, i)
     local f = g.icons[i]
     if f then return f end
-    f = CreateFrame("Frame", g.name .. "Icon" .. i, g)
-    f.fill = f:CreateTexture(nil, "BACKGROUND")
-    f.fill:SetAllPoints(f)
-    f.edge = {}
-    for k = 1, 4 do f.edge[k] = f:CreateTexture(nil, "BORDER") end
-    f.edge[1]:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 0)
-    f.edge[1]:SetPoint("TOPRIGHT", f, "TOPRIGHT", 0, 0)
-    f.edge[2]:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 0, 0)
-    f.edge[2]:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", 0, 0)
-    f.edge[3]:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 0)
-    f.edge[3]:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 0, 0)
-    f.edge[4]:SetPoint("TOPRIGHT", f, "TOPRIGHT", 0, 0)
-    f.edge[4]:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", 0, 0)
-    f.picture = f:CreateTexture(nil, "ARTWORK")
-    f.picture:SetPoint("TOPLEFT", f, "TOPLEFT", 1, -1)
-    f.picture:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -1, 1)
-    f.letter = W.Label(f, "", 8, W.white)
-    f.letter:SetPoint("CENTER", f, "CENTER", 0, 0)
-    f.time = W.Label(f, "", 8, G.style.timeColour)
-    f.time:SetFont(8, "OUTLINE")
-    f.time:SetPoint("TOP", f, "BOTTOM", 0, -1)
+    f = ui:New("Icon", g, g.name .. "Icon" .. i)
     if g.mouse then
         f:EnableMouse(true)
         f:SetScript("OnEnter", function(self) if self.row then G.ShowTooltip(self, self.row) end end)
         f:SetScript("OnLeave", function() GameTooltip:Hide() end)
     end
-    -- Round 44: a right-click puts the effect's name on a list (G.ListMenu), where the group allows it (G.SetListMenu).
     f.listMenu = g.listMenu
     if g.listMenu and not g.mouse then f:SetClaimButtons("RightButton") end
-    f:SetScript("OnMouseUp", function(self, button)
-        if button == "RightButton" and self.listMenu and self.row then G.ListMenu(self.row) end
-    end)
     g.icons[i] = f
     return f
 end
@@ -150,11 +130,8 @@ end
 --- A group of icons on a parent. mouse: the icons take the mouse for their tooltip (the target frame's); without it the
 --- owner shows the tooltip itself (G.IconAt), so the icons over the world never take a click meant for a figure.
 function G.NewGroup(parent, name, mouse)
-    local g = CreateFrame("Frame", name, parent)
-    g:SetSize(1, 1)
+    local g = ui:New("Group", parent, name)
     g.name, g.icons, g.mouse = name, {}, mouse
-    g.more = W.Label(g, "", 9, W.white, "LEFT")
-    g.more:SetFont(9, "OUTLINE")
     return g
 end
 

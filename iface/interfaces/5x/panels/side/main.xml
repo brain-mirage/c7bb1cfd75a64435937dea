@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 5.x's side panel (its XML twin's layout; main.lua is its scripts): 5.33's GeneralPurposePanel (constructor
+     0x004355F0), one page at a time at (434, 12)-(626, 300) of the 640 x 480 screen: the items (NewInventoryPane), the
+     spells (NewSpellInventoryPane), the self look (SelfLookPane) and the look at another player (UserLookPane); main.lua's
+     header says what each draws. Format: core/xml.md.
+     WIRE: the pages' controls are the game layer's (TK.Game.Inventory's slots, TK.Game.Spells' cells, TK.Game.SelfLook's
+     switches and worn items, TK.Game.Look's trade and group, the self page's 2D 00 and the group's 2D 01:
+     TK.Game.Views.RequestPage); which control each button is, its rectangle, and which frames take the mouse decide what
+     a press sends. Changing them changes what the server sees. The <press> buttons only turn a page or a view (5.33's
+     type 1 buttons): nothing is sent. -->
+<ui>
+  <!-- its top left on the 5.x screen (Screen.PlacePanel follows the scaled screen until the player moves it) -->
+  <data key="PLACE" value="434, 12"/>
+  <!-- the items: 15 a page, of the slots that hold one. The list (the default): the pen (30, 58) down 13 a row, the
+       half-size picture centred on (pen.x + 6, pen.y - 6), "%c: " at x 42 in colour 9 and the name after it in 0x25, the
+       row's button (30, pen.y - 12)-(160, pen.y + 1). The pictures: three a row, 45 x 41 apart, each cell's button 35 x 35
+       from (40, 40) and its pen 32 below its top; the picture centred on (pen.x + 6, pen.y - 6) by its whole frame -->
+  <data key="ITEMS" page="15">
+    <data key="list" x="30" y="58" step="13" letter="42" right="160" letterColour="9" nameColour="0x25"/>
+    <data key="grid" x="40" y="40" dx="45" dy="41" columns="3" size="35" pen="32"/>
+  </data>
+  <!-- the spells: 13 a page, "%c: %s" in 0x80 at x 35 on the pen 63 + 13 n; a row's button (22, 51 + 13 n)-(170, 64 + 13 n) -->
+  <data key="SPELLS" page="13" l="22" t="51" r="170" step="13" penX="35" penY="63"/>
+  <!-- the worn items both equipment views draw, by their record in 7.5.2's order (the helm, the two hands, the two
+       sub-hands: slot codes 4, 7, 8, 20, 21, SetEquipmentSlotFromPacket 0x0049EE30): each centred on (x, y) of the page,
+       or (top) centred on x with its top at y. On the self look each place is also its take-off control: over the drawn
+       item's whole frame, or, with none worn, over an empty box (s6-interface-5x round 13: 7.5.2's slot box is 48 x 48
+       at its pane's size, SelfLookPane::GetSlotRect, and 5.x draws the items at S.GAME_ART, half of it) -->
+  <data key="WORN" empty="24">
+    <place record="4" x="96" y="120"/>
+    <place record="5" x="122" y="176"/>
+    <place record="6" x="71" y="176"/>
+    <place record="7" x="34" y="116" top="true"/>
+    <place record="8" x="34" y="149" top="true"/>
+  </data>
+  <!-- the two buttons by the figure (SelfLookPane_GetSlotRect, UserLookPane__GetActionButtonRect 0 and 1): LOOKBTN.EPF's
+       frame on or off by the state (0 or 3, 1 or 4); 0xFF or -1 before the server's: the rectangle filled 0x8F -->
+  <data key="BUTTONS">
+    <button rect="149, 107, 175, 133" on="0" off="3"/>
+    <button rect="149, 134, 175, 160" on="1" off="4"/>
+  </data>
+  <!-- an equipment view's five lines, right-aligned at x on the pen y, and the figure's centre (5.33 centres the box of
+       its body and head on it: SelfLookPane paint 0x0049D590, UserLookPane 0x004D22F0, sub_4461B0; the whole picture
+       here, see the notes' known limitations) -->
+  <data key="LINES">
+    <at x="174" y="48"/>
+    <at x="174" y="65"/>
+    <at x="174" y="82"/>
+    <at x="94" y="103"/>
+    <at x="174" y="103"/>
+  </data>
+  <data key="FIGURE" x="96" y="154"/>
+  <!-- the self look's status view: VITA, MANA, AC, DAM, HIT, NEXTLEV right-aligned at 172 from y 155, 19 apart -->
+  <data key="NUMBERS" x="172" y="155" step="19"/>
+  <!-- the look's profile view: the face at (72, 46)-(120, 102) -->
+  <data key="FACE" value="72, 46, 120, 102"/>
+  <!-- the views' pictures by view (0 the equipment, 1 the status or the profile, 2 the legend), in NPAL6.PAL -->
+  <data key="SELF_FILES" value="SELFLOOK.EPF, SELFLOK2.EPF, SELFLOK3.EPF"/>
+  <data key="LOOK_FILES" value="SELFLOOK.EPF, PFLOOK.EPF, SELFLOK3.EPF"/>
+
+  <!-- a text of an equipment view, drawn by the view -->
+  <template name="TK5xSideLine">
+    <text key="lines[]" layer="OVERLAY"/>
+  </template>
+  <!-- a worn item's picture -->
+  <template name="TK5xSideWorn">
+    <texture key="worn[]" layer="ARTWORK"/>
+  </template>
+
+  <frame name="TK5xSide" key="frame" parent="UIParent" FrameStrata="LOW" Size="192, 288" EnableMouse="true">
+    <do Hide=""/>
+    <run call="Own"/>
+
+    <!-- the items: NewInventoryPane (paint 0x0044FF00), ITEMINV.EPF -->
+    <frame name="TK5xSideItems" key="items" AllPoints="@parent">
+      <picture key="back" file="ITEMINV.EPF" frame="0" palette="NPAL6.PAL" x="0" y="0" layer="BACKGROUND"/>
+      <data key="marks"/>
+      <data key="number" value="0"/>
+      <data key="icons" value="false"/>
+      <!-- the marks: SPELLBUT.EPF's frame over a button for the first page, the last page and the chosen view -->
+      <data key="markAt">
+        <data key="back" frame="12" x="59" y="259"/>
+        <data key="on" frame="15" x="112" y="259"/>
+        <data key="list" frame="13" x="81" y="259"/>
+        <data key="pictures" frame="14" x="104" y="259"/>
+      </data>
+      <data key="slots"/>
+      <!-- the drag label and the 15 slots (ITEMS), then their help and their actions -->
+      <run call="ItemSlots"/>
+      <!-- the buttons (GetButtonBounds: 0 back, 1 on, 2 the list, 3 the pictures), on their press as 5.33's case 1 -->
+      <press l="59" t="259" r="81" b="277" call="Back"/>
+      <press l="112" t="259" r="134" b="277" call="On"/>
+      <press l="81" t="259" r="103" b="277" call="ListView"/>
+      <press l="104" t="259" r="112" b="277" call="PictureView"/>
+      <!-- no carry outlives the page (as the bag window's closing ends one) -->
+      <run call="EndCarryOnHide"/>
+    </frame>
+
+    <!-- the spells: NewSpellInventoryPane (paint 0x004A9A80), SPELLINV.EPF -->
+    <frame name="TK5xSideSpells" key="spells" AllPoints="@parent">
+      <picture key="back" file="SPELLINV.EPF" frame="0" palette="NPAL6.PAL" x="0" y="0" layer="BACKGROUND"/>
+      <data key="marks"/>
+      <data key="number" value="0"/>
+      <data key="markAt">
+        <data key="back" frame="6" x="14" y="221"/>
+        <data key="on" frame="7" x="157" y="221"/>
+      </data>
+      <data key="rows"/>
+      <!-- the drag label and the 13 rows (SPELLS) -->
+      <run call="SpellRows"/>
+      <press l="14" t="221" r="36" b="239" call="Back"/>
+      <press l="157" t="221" r="179" b="239" call="On"/>
+    </frame>
+
+    <!-- the self look: SelfLookPane (paint 0x0049D590), three views paged by its arrows -->
+    <frame name="TK5xSideSelf" key="selfPage" AllPoints="@parent">
+      <!-- the exchange and group switches: the option each sends (TK.Game.SelfLook.SwitchControl) and their help line
+           on a right press (SelfLookPane_HandlePointerOrMouseEvent 0x0049E150, case 4: 5.33's lines 195 and 196,
+           7.5.2's 197 and 198) -->
+      <frame type="Button" name="TK5xSelfSwitchexchange" key="buttons[]">
+        <data key="def" option="8" help="197"/>
+        <run call="Switch"/>
+      </frame>
+      <frame type="Button" name="TK5xSelfSwitchgroup" key="buttons[]">
+        <data key="def" option="2" help="198"/>
+        <run call="Switch"/>
+      </frame>
+      <!-- WIRE: 7.5.2's SelfLookPane 0x00568CB0 tests the bow before its help tip; this affects which next game press reaches the server. -->
+      <run call="SelfButtonHelp"/>
+      <!-- the worn places' take-off controls (WORN) -->
+      <run call="TakeOff"/>
+      <!-- the equipment view: the page's picture (by view), five lines, the figure, the worn items, the buttons' faces,
+           and the views' arrows (34, 254) back and (137, 254) on (cases 2 and 3 of 0x0049E150: view 0 -> 1 -> 2 and
+           back; local, nothing sent) -->
+      <texture key="back" layer="BACKGROUND"/>
+      <data key="marks"/>
+      <data key="view" value="0"/>
+      <!-- the arrows' marks: SPELLBUT.EPF's plain frames for the first view's back arrow and the last's on arrow -->
+      <data key="markAt">
+        <data key="back" frame="2" x="34" y="254"/>
+        <data key="on" frame="3" x="137" y="254"/>
+      </data>
+      <text from="TK5xSideLine"/>
+      <text from="TK5xSideLine"/>
+      <text from="TK5xSideLine"/>
+      <text from="TK5xSideLine"/>
+      <text from="TK5xSideLine"/>
+      <texture key="figure" layer="BORDER"/>
+      <texture from="TK5xSideWorn"/>
+      <texture from="TK5xSideWorn"/>
+      <texture from="TK5xSideWorn"/>
+      <texture from="TK5xSideWorn"/>
+      <texture from="TK5xSideWorn"/>
+      <run call="ButtonFaces"/>
+      <press l="34" t="254" r="56" b="272" call="ViewBack"/>
+      <press l="137" t="254" r="159" b="272" call="ViewOn"/>
+      <!-- the figure and the buttons' states change with the look and the logic thread -->
+      <run call="Ticker"/>
+      <!-- view 0: the effects on the player (SpelledPane); view 1: the group (GroupListPane); view 2: the legend
+           (LegendPane) -->
+      <textbox key="effects" l="17" t="192" r="174" b="251"/>
+      <textbox key="group" l="17" t="36" r="174" b="131"/>
+      <textbox key="legend" l="17" t="36" r="174" b="251"/>
+      <!-- the status view's numbers (NUMBERS) -->
+      <data key="numbers"/>
+      <text key="numbers[]" layer="OVERLAY"/>
+      <text key="numbers[]" layer="OVERLAY"/>
+      <text key="numbers[]" layer="OVERLAY"/>
+      <text key="numbers[]" layer="OVERLAY"/>
+      <text key="numbers[]" layer="OVERLAY"/>
+      <text key="numbers[]" layer="OVERLAY"/>
+      <!-- Modern's character page's request (open:character, 2D 00), run when it becomes visible during the input that
+           froze it (C:Show) -->
+      <run call="CharacterRequest"/>
+      <!-- s6-interface-5x-b (round 7, s6-interface-5x's Y1): the group's request page, shown while 4a's tab 4 is the
+           active one (C:Show("group")): 5.33 shows the group in this view's GroupListPane, 7.5.2 in its group tab, whose
+           activation asks for the members (open:group, 2D 01: NewGroupPane::OnActivate 0x0056CB80). Wire: it runs when
+           this frame becomes visible during the input that froze the group's key or button, so once for each accepted
+           switch to tab 4; changing when it shows changes when the server gets 2D 01. -->
+      <frame name="TK5xSideGroupRequest" key="groupRequest">
+        <do Hide=""/>
+        <run call="GroupRequest"/>
+      </frame>
+    </frame>
+
+    <!-- the look at another player: UserLookPane (paint 0x004D22F0), the same three views -->
+    <frame name="TK5xSideLook" key="lookPage" AllPoints="@parent">
+      <!-- the trade and group buttons (TK.Game.Look.ActionButton) and their help line on a right press
+           (UserLookPane__HandlePointerOrMouseEvent 0x004D2B30, case 4: 5.33's lines 198 and 199, 7.5.2's 200 and 201) -->
+      <frame type="Button" name="TK5xLookTrade" key="buttons[]">
+        <data key="def" action="look:trade" help="200"/>
+        <run call="LookButton"/>
+      </frame>
+      <frame type="Button" name="TK5xLookGroup" key="buttons[]">
+        <data key="def" action="look:group" help="201"/>
+        <run call="LookButton"/>
+      </frame>
+      <run call="ButtonHelp"/>
+      <!-- the equipment view, as the self look's -->
+      <texture key="back" layer="BACKGROUND"/>
+      <data key="marks"/>
+      <data key="view" value="0"/>
+      <!-- the arrows' marks: SPELLBUT.EPF's plain frames for the first view's back arrow and the last's on arrow -->
+      <data key="markAt">
+        <data key="back" frame="2" x="34" y="254"/>
+        <data key="on" frame="3" x="137" y="254"/>
+      </data>
+      <text from="TK5xSideLine"/>
+      <text from="TK5xSideLine"/>
+      <text from="TK5xSideLine"/>
+      <text from="TK5xSideLine"/>
+      <text from="TK5xSideLine"/>
+      <texture key="figure" layer="BORDER"/>
+      <texture from="TK5xSideWorn"/>
+      <texture from="TK5xSideWorn"/>
+      <texture from="TK5xSideWorn"/>
+      <texture from="TK5xSideWorn"/>
+      <texture from="TK5xSideWorn"/>
+      <run call="ButtonFaces"/>
+      <press l="34" t="254" r="56" b="272" call="ViewBack"/>
+      <press l="137" t="254" r="159" b="272" call="ViewOn"/>
+      <run call="Ticker"/>
+      <!-- view 0: the more-info text; view 1: the profile; view 2: the legend -->
+      <textbox key="moreInfo" l="17" t="192" r="174" b="251"/>
+      <textbox key="profile" l="17" t="143" r="174" b="251"/>
+      <textbox key="legend" l="17" t="36" r="174" b="251"/>
+      <texture key="face" layer="ARTWORK"/>
+    </frame>
+
+    <!-- the pages by id, 5.33's InterfaceEfxMgr's animations, the page to start on -->
+    <run call="Pages"/>
+    <!-- s6-interface-5x-b (round 6): 5.33's TotemFrame, the totem's picture in front of the pages, one pixel right of and
+         above them; it takes no press (main.lua's totemFrame) -->
+    <frame key="totem">
+      <run call="InFront"/>
+      <do Point="TOPLEFT, @parent, TOPLEFT, 1, 1" Size="192, 288" EnableMouse="false" Hide=""/>
+    </frame>
+    <run call="TotemSeen"/>
+    <run call="TotemTicker"/>
+    <run call="Register"/>
+    <frame>
+      <data key="events" value="BAG_UPDATE, SPELLS_CHANGED, CURSOR_CHANGED, TK_CHARACTER_SHEET, UNIT_NAME_UPDATE, UNIT_AURA, GROUP_ROSTER_UPDATE, TK_GROUP_UPDATE"/>
+      <run call="RegisterEvents"/>
+      <on script="OnEvent" call="Changed"/>
+    </frame>
+    <on script="OnShow" call="Refresh"/>
+    <!-- the openers (TK.Game.Views) and the game layer's tab switches and session state -->
+    <run call="Provide"/>
+  </frame>
+</ui>

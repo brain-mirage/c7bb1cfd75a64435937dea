@@ -156,6 +156,7 @@ function B.New(box, name, key, def, db, onPointer)
             if button == "LeftButton" then
                 self.dragging = true
                 self:SetFrameLevel(61)
+                TK.Util.Updating(self, true)
             end
         elseif onPointer then
             onPointer(self, true, button)
@@ -171,13 +172,16 @@ function B.New(box, name, key, def, db, onPointer)
             onPointer(self, false, button)
         end
     end)
+    -- s6-ui-core (round 101, T11 step 4): called on its first frame and after edit mode is unlocked or locked (the
+    -- raise), and while it is dragged; then it turns itself off
     item:SetScript("OnUpdate", function(self)
         if self.raised ~= TK.EditMode.unlocked then raise(self, TK.EditMode.unlocked) end
-        if not self.dragging then return end
+        if not self.dragging then return TK.Util.Updating(self, false) end
         local x, y = U.CursorRoot()
         local l, b, w, h = U.RootRect(box)
         if l then B.Place(self, B.Nearest(x - l, y - b, w, h)) end
     end)
+    TK.On("TK_EDIT_MODE", function() TK.Util.Updating(item, true) end)
     return item
 end
 

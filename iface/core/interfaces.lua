@@ -31,7 +31,6 @@ end
 --- Loads every installed interface's interface.lua (once, at the start), the default interface (Modern) first.
 function T:Load()
     self.list, self.byId = {}, {}
-    H:SetXmlInterfaces(self:Xml()) -- s6-ui-core (round 85): the form the interfaces' modules load in (T:Xml)
     for _, id in ipairs(H:InterfaceList() or {}) do
         local ok, interface = xpcall(require, debug.traceback, "interfaces." .. id .. ".interface")
         if ok and type(interface) == "table" and not T.Offered(interface, H:InterfaceFromTests(id)) then
@@ -147,11 +146,10 @@ end
 -- running it inside a press would change what the release sends. Changing this changes what the server sees.
 local switcher = CreateFrame("Frame", nil, UIParent)
 switcher:SetScript("OnUpdate", function()
-    local p, form = T.pending, T.pendingForm
-    if (not p and form == nil) or H:AnyFramePressed() or TK.Bindings:HeldForRelease() then return end
-    T.pending, T.pendingForm = nil, nil
-    if form ~= nil then T:SwitchFormNow(form) end -- s6-ui-core (round 85): the XML form's switch, the same wait
-    if p then T:SwitchNow(p.id, p.byKey) end
+    local p = T.pending
+    if not p or H:AnyFramePressed() or TK.Bindings:HeldForRelease() then return end
+    T.pending = nil
+    T:SwitchNow(p.id, p.byKey)
 end)
 
 --- The switch itself, in the UI's tick (T:SwitchTo): the profile in use saved (nothing switches when it cannot be), the
@@ -188,11 +186,7 @@ function T:SwitchNow(id, byKey)
     if TK.GameState:InWorld() then self:BindCarried() end -- the character's own profile is final here (no entering)
     TK.Panels:View(id)
     TK.Components:ReapplyAll()
-    -- Q147 (the owner, 2026-10-15: highlight the open tab after an interface switch): a 7.x screen started by the switch
-    -- shows the side panel's open tab in its strip, in either form, rather than the start's unhighlighted one. Drawing
-    -- only (AboveFrame's header, 4a 0x004615D0); nothing is sent. (Its component without its code loaded: not in use.)
-    local screen = TK.GetComponent("7x.screen")
-    if screen and screen.ShowTabHeader then screen:ShowTabHeader(TK.Game.SidePanel.Active()) end
+    -- (Q147's highlight of 7.x's open tab after the switch is the 7.x screen's own, on this event: its main.lua)
     TK.FireEvent("TK_INTERFACE_CHANGED", id)
     TK.Notify("Interface: " .. (self:Active().name or id), "interfaceswitch")
 end
@@ -206,106 +200,6 @@ function T:Next(byKey)
         if interface.id == self.active then return self:SwitchTo(list[i % #list + 1].id, byKey) end
     end
     return list[1] ~= nil and self:SwitchTo(list[1].id, byKey)
-end
-
--- ----- the XML form (s6-ui-core round 85; the owner, 2026-10-11: "3 more interfaces so the game has 6 total. To select
--- these you click a box in experimental called Enable XML Interface ... When the xml checkbox is selected the current non
--- xml interface will automatically switch"; "These versions must match the originals exactly") -----
---
--- Each interface may have an XML twin (interfaces/xml/<id>/): the same interface, its layout in XML files (core/xml.lua,
--- core/xml.md) and its behaviour in Lua. The twin is the interface's other form, not another interface: the same id,
--- panels, components, settings, profile and keys, so nothing but the box shows the switch. The host loads an interface's
--- modules from the form in use (LuaHost.FormPath: require('interfaces.7x.skin') is the twin's skin.lua while the box is
--- ticked); the interface's registration (its interface.lua, its panels' settings.lua) is the same file in both forms.
-
---- Whether the interfaces show in their XML form: Experimental > Misc's Enable XML Interface, a computer setting (as the
---- interface is). An interface without a twin shows its original either way.
-function T:Xml() return TK.Machine:Get().interfaceXml == true end
-
---- A module of an interface's form (one the switch reloads): interfaces.<id>.<...> of an interface with a twin, but its
---- registration (interface, panels.<panel>.settings), as LuaHost.FormPath maps them.
-local function formModule(module)
-    local id, rest = module:match("^interfaces%.([^.]+)%.(.+)$")
-    if not id or id == "xml" or rest == "interface" or rest:match("^panels%.[^.]+%.settings$") then return false end
-    return H:HasXmlTwin(id)
-end
-
---- Switches the interfaces' form at once (Enable XML Interface), as T:SwitchTo switches the interface: on the frame after
---- the input, once no press is held on a frame and no key acts on its release (the switcher above). False when it cannot
---- now (a login under way).
-function T:SetXml(on)
-    if on == self:Xml() then return false end
-    local state = TK.GameState:Get()
-    if (TK.Login and TK.Login.busy) or not (state == "world" or state == "login") then
-        TK.Notify("Switch interfaces once the login has finished.", "interfaceswitch")
-        return false
-    end
-    self.pendingForm = on
-    return true
-end
-
--- s6-ui-core (round 86, round 85's final review, P2): the windows open outside the game layer's views (Modern's Game
--- Options, the options' fallback window; Modern's Chat Settings), each kept across the form's switch by its owner. An
--- entry goes with its panel (TK.Mark), and the form loaded afterwards registers its own under the same name.
-T.keepers = {}
-TK.OnWithdraw(function(name, panel) TK.DropOwned(T.keepers, name, panel) end)
-
---- A window's owner keeps it open across the form's switch (T:SwitchFormNow): save() returns what to open again (nil:
---- nothing), and the same name's restore(kept), registered by the form now in use, opens it again as the server opens a
---- window (no tab switched, no request). Drawing only: nothing is sent.
-function T:KeepAcrossForms(name, save, restore)
-    table.insert(self.keepers, TK.Mark({ name = name, save = save, restore = restore }))
-end
-
---- The form's switch, in the UI's tick: the settings saved (nothing switches when they cannot be), the views' open windows
---- noted and closed as the player closes them, every interface panel loaded unloaded (TK.Components:Unload: closed by its
---- own path, its frames, listeners and code gone) and the interfaces' modules dropped, the form set and saved, then the
---- whole profile applied again: TK.Components:ReapplyAll loads the panels in use from the form now in use (as a panel
---- turned on in the game starts: Components:Start), and the dialogs take the form's look for the windows they open from
---- now on. The windows that were open open again, as the server opens a window (no tab switched, no request). The
---- profile, the keys, the bars, the places and the game layer's state (the side panel's tab, the chat's lines) are
---- untouched. Wire: nothing is sent, as an interface switch (T:SwitchNow): a close and an opening outside an input send
---- nothing, and the panels started are started as at a switch; changing this changes what the server sees.
-function T:SwitchFormNow(on)
-    if on == self:Xml() then return end
-    if not TK.FlushAll() then
-        TK.Notify("Settings could not be saved: not switched.", "interfaceswitch")
-        return
-    end
-    local open = TK.Game.Views.OpenWindows()
-    -- 7.x's tab header is read here, not kept by 7.x's own screen: the original interfaces are frozen (the XML work leaves
-    -- them untouched), and both forms' screens give the same pieces.tabHeader, so the switch notes its art and puts it back.
-    local function tabHeader()
-        local screen = TK.GetComponent("7x.screen")
-        return screen, screen and screen.pieces and screen.pieces.tabHeader
-    end
-    local _, header = tabHeader()
-    local headerTexture = header and header[1]:GetTexture()
-    local kept = {}
-    for _, k in ipairs(self.keepers) do kept[k.name] = k.save() end
-    TK.Game.Views.CloseWindows()
-    TK.Components:UnloadPanels()
-    for module in pairs(package.loaded) do
-        if formModule(module) then package.loaded[module] = nil end
-    end
-    TK.Machine:Get().interfaceXml = on
-    TK.Machine:MarkDirty()
-    H:SetXmlInterfaces(on)
-    TK.Components:ReapplyAll()
-    -- A newly built 7.x screen can still show its default, unhighlighted header while the active tab is already set.
-    -- Keep that appearance too: only restore art differing from the new screen's default. The drawing-only method
-    -- matches AboveFrame (4a 0x004615D0); replaying SwitchActiveTab (0x004B8650) or its page request changes the wire.
-    local screen
-    screen, header = tabHeader()
-    if headerTexture and header and headerTexture ~= header[1]:GetTexture() then
-        screen:ShowTabHeader(TK.Game.SidePanel.Active())
-    end
-    TK.Game.Views.Reopen(open)
-    for _, k in ipairs(self.keepers) do
-        if kept[k.name] ~= nil then TK.SafeCall(k.restore, kept[k.name]) end
-    end
-    -- s6-ui-core (round 86): the login screen follows the form (an interface's own login screen is its twin's)
-    if TK.Login then TK.Login:ApplyScreens() end
 end
 
 --- The other interfaces' panels as components: { name, dir } manifests for the component registry, for each panel whose

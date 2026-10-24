@@ -7,50 +7,34 @@
 -- piece's default place is the original's on the scaled screen, followed as the window changes while the player has not
 -- moved it (edit mode's default, given again at each layout); its own scale multiplies the screen's. In the game only:
 -- the pre-game is ours in every interface. It draws only; nothing here is sent.
+-- s6-ui-core (round 85): the XML twin's scripts; the pieces, their pictures and the screen's places are main.xml's
+-- (core/xml.md).
 
 local C = TK.GetComponent("7x.screen")
 local H = __tk
 local Screen = require("interfaces.screen")
 
-local SCREEN_W, SCREEN_H = 1024, 768
+local L = TK.Xml.Data("main.xml")
+local SCREEN_W, SCREEN_H = L.SCREEN[1], L.SCREEN[2]
+local MAP_VIEW = L.MAP_VIEW
 
--- The pieces: their settings' key, their panel id (their place is "7x.<id>"), their frame's name, and their pictures
--- { file, frame, palette, x, y } on the screen (the EPF layout's rows 1 and 8; the divider at its default height,
--- Config::m_systemMessageHeight 70, in the messages panel at (832, 376): NewSystemMessageModifyHeightPane). A piece's
--- frame is its pictures' rectangle on the screen.
-local PIECES = {
-    { key = "backdrop", id = "backdrop", name = "TK7xBackdrop", label = "7.x Backdrop", strata = "BACKGROUND", level = 0,
-      pictures = { { "FRAME.EPF", 0, "FRAME.PAL", 0, 0 } } },
-    { key = "border", id = "border", name = "TK7xFrame", label = "7.x Border",
-      pictures = { { "FRMPART.EPF", 0, "FRMPART.PAL", 0, 0 }, { "FRMPART.EPF", 1, "FRMPART.PAL", 0, 9 },
-                   { "FRMPART.EPF", 2, "FRMPART.PAL", 808, 9 } } },
-    -- the header of the side panel's active tab; none is active when the game screen is built (m_activeChildIndex -1:
-    -- AboveFrame's index -1 + 5 = 4, entry 0 of TABS.EPF); it follows the side panel's tab (C:ShowTabHeader)
-    { key = "tabHeader", id = "tabheader", name = "TK7xTabHeader", label = "7.x Tab Header", pictures = { { "TABS.EPF", 0, "TABS.PAL", 808, 79 } } },
-    { key = "divider", id = "divider", name = "TK7xDivider", label = "7.x Messages Divider", pictures = { { "SYSBAR.EPF", 0, "INVENBUT.PAL", 835, 446 } } },
-    -- the chat backdrop (ChattingBackPane, mode 1): palette index 128 of BARAM.PAL (black) over the scene, which keeps 70 %
-    { key = "chatBackdrop", id = "chatbackdrop", name = "TK7xChatBackdrop", label = "7.x Chat Backdrop", rect = { 9, 596, 816, 720 } },
-}
+-- the scripts main.xml names
+local scripts = {}
 
--- The original's map view: its pane is (-48, -48)-(864, 768), 17 x 15 tiles and one beyond each edge (MapPane(17, 15)),
--- but it draws only through its clip, (48, 48)-(864, 768) in the pane (MapPane::AddToLayer), so (0, 0)-(816, 720) on the
--- screen: the backdrop shows beside and below it (the capture against the original 7.5.2, round 9).
-local MAP_VIEW = { 0, 0, 816, 720 }
-
---- A piece's frame and its pictures at their places on it; its rectangle on the screen (left, top) is kept as piece.at.
-local function build(piece)
-    local f = CreateFrame("Frame", piece.name, UIParent)
-    f:SetFrameStrata(piece.strata or "LOW")
-    if piece.level then f:SetFrameLevel(piece.level) end
+--- A piece's pictures at their places on its frame, its size their rectangle (or its own); the rectangle on the screen
+--- (left, top) is kept as f.at, its textures as f.textures. Hidden until the layout shows it; then its panel's, with its
+--- edit-mode place.
+function scripts.Build(f)
+    local piece = f.piece
     local textures, rect = {}, piece.rect
     if not rect then
         -- the pictures' rectangle: each at its frame's place plus where its crop starts (TK.Art.Origin)
         local placed = {}
-        for i, p in ipairs(piece.pictures) do
-            local key, w, h = TK.Art.Image(p[1], p[2], p[3])
+        for i, p in ipairs(f.pictures) do
+            local key, w, h = TK.Art.Image(p.file, p.frame, p.palette)
             local ox, oy = 0, 0
             if key then ox, oy = TK.Art.Origin(key) end
-            placed[i] = { key = key, x = p[4] + ox, y = p[5] + oy, w = w or 1, h = h or 1 }
+            placed[i] = { key = key, x = p.x + ox, y = p.y + oy, w = w or 1, h = h or 1 }
             local r = { placed[i].x, placed[i].y, placed[i].x + placed[i].w, placed[i].y + placed[i].h }
             rect = rect and { math.min(rect[1], r[1]), math.min(rect[2], r[2]), math.max(rect[3], r[3]), math.max(rect[4], r[4]) } or r
         end
@@ -63,27 +47,26 @@ local function build(piece)
         end
     else
         local t = f:CreateTexture(nil, "BACKGROUND")
-        local ok, r, g, b = H:GetPaletteColour("BARAM.PAL", 128)
-        if ok then t:SetColorTexture(r, g, b, 0.3) else t:SetColorTexture(0, 0, 0, 0.3) end
+        local ok, r, g, b = H:GetPaletteColour(L.CHAT.palette, L.CHAT.index)
+        if ok then t:SetColorTexture(r, g, b, piece.alpha) else t:SetColorTexture(0, 0, 0, piece.alpha) end
         t:SetAllPoints(f)
         textures[1] = t
     end
     f:SetSize(rect[3] - rect[1], rect[4] - rect[2])
-    piece.at = rect
+    f.at, f.textures = rect, textures
     f:Hide()
-    return f, textures
+    C:Own(f)
+    local key = piece.setting
+    -- edit mode moves it while it is on; its default (the original's place) is given at each layout
+    C.entries[key] = TK.EditMode:Register(f, "7x." .. piece.id, piece.label, { "TOPLEFT", "TOPLEFT", 0, 0 },
+        "7x." .. piece.id, function() return C:DB()[key].enabled == true end)
 end
 
 function C:OnEnable()
     self.frames, self.pieces, self.entries = {}, {}, {}
-    for _, piece in ipairs(PIECES) do
-        local f, textures = build(piece)
-        self.frames[piece.key], self.pieces[piece.key] = f, textures
-        self:Own(f)
-        local key = piece.key
-        -- edit mode moves it while it is on; its default (the original's place) is given at each layout
-        self.entries[key] = TK.EditMode:Register(f, "7x." .. piece.id, piece.label, { "TOPLEFT", "TOPLEFT", 0, 0 },
-            "7x." .. piece.id, function() return self:DB()[key].enabled == true end)
+    self.pieceFrames = TK.Xml.Load("main.xml", { scripts = scripts }).roots
+    for _, f in ipairs(self.pieceFrames) do
+        self.frames[f.piece.setting], self.pieces[f.piece.setting] = f, f.textures
     end
     self.bars = Screen.MakeBars("TK7xLetterbox")
     -- s6-interface-5x (round 14; Astra's review of round 13, P2): the shared screen code makes them on UIParent, which
@@ -97,10 +80,11 @@ function C:Layout()
     if not self.frames then return end
     local db = self:DB()
     local inWorld = TK.GameState:InWorld()
-    for _, piece in ipairs(PIECES) do
-        local d = db[piece.key]
-        Screen.Place(self.entries[piece.key], SCREEN_W, SCREEN_H, piece.at[1], piece.at[2], d.scale)
-        self.frames[piece.key]:SetShown(inWorld and d.enabled == true)
+    for _, f in ipairs(self.pieceFrames) do
+        local key = f.piece.setting
+        local d = db[key]
+        Screen.Place(self.entries[key], SCREEN_W, SCREEN_H, f.at[1], f.at[2], d.scale)
+        f:SetShown(inWorld and d.enabled == true)
     end
     TK.EditMode:UpdateMovers()
     Screen.Bars(self.bars, inWorld and TK.Interfaces.active == "7x", SCREEN_W, SCREEN_H)
@@ -120,24 +104,23 @@ function C:ShowDivider(top)
     local f, t = self.frames and self.frames.divider, self.pieces and self.pieces.divider and self.pieces.divider[1]
     if not (f and t) then return end
     t:ClearAllPoints()
-    t:SetPoint("TOPLEFT", f, "TOPLEFT", 0, -(top - 70))
+    t:SetPoint("TOPLEFT", f, "TOPLEFT", 0, -(top - L.DIVIDER.top))
 end
 
---- s6-interface-7x-b: the chat backdrop for the chat log's rows, mode and switch (ChattingBackPane::ResizeForLineCount
---- 0x004806D0: (9, 700 - 13 rows)-(816, 720), so it grows upwards from its piece's bottom; OnPaint 0x00480740: BARAM.PAL's
---- 128 over the scene, which keeps 22 of 32 parts in mode 1 and 10 in mode 2; nothing in mode 0 or with the chat off).
---- Drawing only.
+--- s6-interface-7x-b: the chat backdrop for the chat log's rows, mode and switch (main.xml's CHAT: it grows upwards from
+--- its piece's bottom; nothing in mode 0 or with the chat off). Drawing only.
 function C:ShowChatBackdrop(rows, mode, on)
     local f = self.frames and self.frames.chatBackdrop
     local t = self.pieces and self.pieces.chatBackdrop and self.pieces.chatBackdrop[1]
     if not (f and t) then return end
+    local c = L.CHAT
     t:ClearAllPoints()
     t:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 0, 0)
     t:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", 0, 0)
-    t:SetHeight(720 - (700 - 13 * rows))
-    local ok, r, g, b = H:GetPaletteColour("BARAM.PAL", 128)
+    t:SetHeight(c.bottom - (c.top - c.row * rows))
+    local ok, r, g, b = H:GetPaletteColour(c.palette, c.index)
     if not ok then r, g, b = 0, 0, 0 end
-    t:SetColorTexture(r, g, b, mode == 2 and 22 / 32 or 10 / 32)
+    t:SetColorTexture(r, g, b, mode == 2 and c.mode2 / c.parts or c.mode1 / c.parts)
     t:SetShown(on and (mode == 1 or mode == 2))
 end
 
@@ -149,29 +132,34 @@ function C:PlaceWorldView(s, l, b, h)
     if not TK.WorldView then return end
     local top = h - (b + SCREEN_H * s) + MAP_VIEW[2] * s
     TK.WorldView:PlaceAt({ l + MAP_VIEW[1] * s, top, (MAP_VIEW[3] - MAP_VIEW[1]) * s, (MAP_VIEW[4] - MAP_VIEW[2]) * s },
-        19, 17, self:DB())
+        L.MAP_CELLS[1], L.MAP_CELLS[2], self:DB())
 end
 
 --- The tab header for the side panel's active tab index (-1 none), as SwitchActiveTab rebuilds AboveFrame's header
 --- (RecreateDynamicAboveFrame 0x004615D0: TABS.EPF entry 0 with no tab, 1 for the self look or another player's, the
---- tab's own index for the others), at (808, 79).
+--- tab's own index for the others), at main.xml's TAB_HEADER.
 function C:ShowTabHeader(index)
     local f, textures = self.frames and self.frames.tabHeader, self.pieces and self.pieces.tabHeader
     if not (f and textures) then return end
+    local a = L.TAB_HEADER
     local entry = index < 0 and 0 or (index <= 1 and 1 or index)
-    local key, w, h = TK.Art.Image("TABS.EPF", entry, "TABS.PAL")
+    local key, w, h = TK.Art.Image(a.file, entry, a.palette)
     if not key then return end
     local ox, oy = TK.Art.Origin(key)
-    local at, t
-    for _, piece in ipairs(PIECES) do if piece.key == "tabHeader" then at = piece.at end end
-    t = textures[1]
+    local at = f.at
+    local t = textures[1]
     t:SetTexture(key)
     t:SetSize(w, h)
     t:ClearAllPoints()
-    t:SetPoint("TOPLEFT", f, "TOPLEFT", 808 + ox - at[1], -(79 + oy - at[2]))
+    t:SetPoint("TOPLEFT", f, "TOPLEFT", a.x + ox - at[1], -(a.y + oy - at[2]))
 end
 
 TK.On("TK_SIDE_PANEL_TAB", function(_, index) C:ShowTabHeader(index) end)
+-- Q147 (the owner, 2026-10-15: highlight the open tab after an interface switch): a 7.x screen started by the switch
+-- shows the side panel's open tab in its strip rather than the start's unhighlighted one (only the switch fires
+-- TK_INTERFACE_CHANGED, so the start stays unhighlighted). Drawing only (AboveFrame's header, 4a 0x004615D0); nothing is
+-- sent. Round 115: here, no longer in core/interfaces.lua, which named this component (the separation guard's G2).
+TK.On("TK_INTERFACE_CHANGED", function() C:ShowTabHeader(TK.Game.SidePanel.Active()) end)
 
 function C:ApplySettings() self:Layout() end
 

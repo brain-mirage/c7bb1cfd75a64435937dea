@@ -146,7 +146,17 @@ C.graphicsTabs = {
           values = { { value = "none", text = "None" }, { value = "smooth", text = "Smooth (sharp bilinear)" },
                      { value = "xbr", text = "xBR smoothing" } } },
         { type = "description", name = "Where the picture is enlarged: None keeps the pixels sharp; Smooth is sharp bilinear; xBR is an edge-directed pixel-art scaler (the MIT relative of xBRZ) that draws diagonals and curves smooth. Shrunk, the picture is always averaged. The UI and its text are not smoothed." },
-        -- s6-upscale (the owner, 2026-10-08): the art itself upscaled once by a pixel-art scaler (TK.WorldView.ArtUpscaling)
+    } },
+}
+
+-- s6-upscale (the owner, 2026-10-08): the art itself upscaled once by a pixel-art scaler (TK.WorldView.ArtUpscaling).
+-- s6-reprojection-cloud-1 (run 20; head note 69, the owner, 2026-10-23: "upscaling to 2x 4x etc should be an option in
+-- experimental and upscaling should be off"): moved from the World View graphics page to its own page on the Experimental
+-- tab, the same keys, off (None) by default; a profile saved with it on takes None once (main.lua's UpscalingMoved). Off,
+-- nothing of it runs: no picture is made, no twin painted, nothing kept (ArtUpscaling.Set lets everything go).
+C.upscalingTabs = {
+    { name = "Upscaling", args = {
+        { type = "description", name = "Experimental: what is on this tab may change or go." },
         { type = "select", key = "upscaleMethod", name = "Upscaling",
           values = { { value = "none", text = "None" }, { value = "mmpx", text = "MMPX" }, { value = "scalefx", text = "ScaleFX" },
                      { value = "xbr", text = "xBR" }, { value = "epx", text = "Scale2x/EPX" } } },
@@ -154,20 +164,24 @@ C.graphicsTabs = {
           values = function() return upscaleScales(C:DB()) end, get = function() return C.UpscaleScale(C:DB()) end },
         { type = "toggle", key = "upscaleBlend", name = "Blending", requires = { blendForm } },
         { type = "toggle", key = "upscaleBlendPalette", name = "Blend Palette Animation", indent = 1, requires = { blending } },
-        { type = "description", name = "Upscaling redraws the game's art itself at 2x to 4x as it loads, rounding its edges, in 2D and 3D. MMPX, ScaleFX and Scale2x/EPX keep the art's own colours; xBR can also blend them (Blending). Blend Palette Animation blends animated colours (water, candles) too, one picture per step; off, those are upscaled without blending." },
+        { type = "description", name = "Upscaling redraws the game's art itself at 2x to 4x as it loads, rounding its edges, in 2D and 3D. MMPX, ScaleFX and Scale2x/EPX keep the art's own colours; xBR can also blend them (Blending). Blend Palette Animation blends animated colours (water, candles) too, one picture per step; off, those are upscaled without blending. None draws the original art." },
     } },
 }
 
 --- The component's pages (s6-ui-core round 83): the pane's on the Interface tab ("worldview", the shared panel's page:
 --- interfaces/modern/interface.lua), and the game world's graphics under General's Graphics title ("worldviewgraphics",
 --- core/settings.lua's GENERAL_ORDER), both on the component's settings, so saved profiles, resets and the interfaces'
---- first values stay as they were.
+--- first values stay as they were. Run 20 (head note 69): and the Upscaling rows on the Experimental tab
+--- ("worldviewupscaling"), on the same settings.
 function C:SettingsNodes()
     local db, defaults = function() return self:DB() end, function() return self.defaults end
     return {
         { id = "worldview", title = self.title, order = self.order, tabs = self.tabs, db = db, defaults = defaults },
         { id = "worldviewgraphics", title = "World View", parent = "Graphics", category = "general", order = self.order,
           tabs = self.graphicsTabs, db = db, defaults = defaults },
+        -- after the World Renderer's and Skybox's pages (913, 913.5: components/worldrenderer), with the world's drawing
+        { id = "worldviewupscaling", title = "Upscaling", category = "experimental", order = 913.7,
+          tabs = self.upscalingTabs, db = db, defaults = defaults },
     }
 end
 
@@ -181,7 +195,7 @@ TK.On("PLAYER_LOGIN", function()
     if not styles or not styles.OptionsFor or args.moduleOptions then return end
     args.moduleOptions = true
     for i, a in ipairs(args) do
-        if a.key == "upscaleBlendPalette" then -- s6-upscale: after the Upscaling rows that follow the Smoothing
+        if a.key == "smoothing" then -- after the Smoothing and its description (run 20: the Upscaling rows went to Experimental)
             for j, o in ipairs(styles:OptionsFor("worldview")) do table.insert(args, i + 1 + j, o) end
             break
         end

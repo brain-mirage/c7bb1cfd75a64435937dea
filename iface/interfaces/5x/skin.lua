@@ -8,13 +8,17 @@
 -- indexes and the same 9X11FONT.BIN, byte for byte 7.5.2's. A picture drawn without a palette is BARAM.PAL's, as 5.33
 -- blits one its pane names no palette for (the status pane's bars and digits, the clock).
 -- Drawing only: nothing here is sent.
+-- s6-ui-core (round 85): the XML twin's; the screen, the art's scale, the font and the colours are skin.xml's
+-- (core/xml.md).
 
 local H = __tk
 
 local S = setmetatable({}, { __index = require("interfaces.original.palette") })
+local D = TK.Xml.Data("skin.xml")
+local FONT = D.FONT
 
--- 5.33's game screen (MainMenuPane::InitializeMainUiGraph 0x00457530: the BackPane is (0, 0)-(640, 480)).
-S.WIDTH, S.HEIGHT = 640, 480
+-- 5.33's game screen (MainMenuPane::InitializeMainUiGraph 0x00457530: the BackPane is (0, 0)-(640, 480); skin.xml's SCREEN).
+S.WIDTH, S.HEIGHT = D.SCREEN.width, D.SCREEN.height
 
 -- s6-interface-5x-b (round 5, the owner's "the character image on the 5x pane might be too large"): the scale 5.x draws
 -- the base set's game art at (the figures, the item pictures) in units of its screen. That art is 7.5.2's, drawn twice
@@ -22,17 +26,17 @@ S.WIDTH, S.HEIGHT = 640, 480
 -- ITEM.EPF: 1,798 of 5.33's 2,304 frames exactly half of 7.5.2's, nearly all the rest about half), and 5.33's panes draw
 -- its own at 1:1. So 5.x draws 7.5.2's at half, as the world view's 17 live cells of 48 pixels fill the 408-pixel map
 -- view (interfaces/screen.lua, Screen.PlaceWorldView): a picture in a pane is the size of the same picture on the map.
-S.GAME_ART = 0.5
+S.GAME_ART = D.GAME_ART
 
 -- 5.33's font 0's face, for the texts and the edits (the original-client kit's X.Edit takes it).
-S.FACE = "classic533"
+S.FACE = FONT.face
 
 --- A font string in 5.33's font 0 and a colour index (S.TEXT by default), its lines 12 pixels apart as 5.33's
 --- (GrafPort::DrawTextInRect 0x004381A0 steps a line by the font's 12).
 function S.Text(fs, index)
-    fs:SetFont(S.FACE, 12, "")
+    fs:SetFont(S.FACE, FONT.size, "")
     fs:SetTextColor(S.Colour(index or S.TEXT))
-    fs:SetSpacing(-2)
+    fs:SetSpacing(FONT.spacing)
     return fs
 end
 
@@ -45,8 +49,9 @@ function S.TextWidth(text)
 end
 
 -- More of BARAM.PAL's indexes 5.33's panes use (S.TEXT 0x80 is black, its text colour).
-S.WHITE = 0x8F         -- the chat's background, the status pane's name, the prompt line's background
-S.RED, S.BLUE, S.GREEN = 12, 1, 58
+local COLOURS = D.COLOURS
+S.WHITE = COLOURS.white -- the chat's background, the status pane's name, the prompt line's background
+S.RED, S.BLUE, S.GREEN = COLOURS.red, COLOURS.blue, COLOURS.green
 
 --- Frame n of a 5.33 interface picture (for example "USERSTAT.EPF") in a palette of the same set (BARAM.PAL by
 --- default): its key and size, or nil without the 5.33 set.

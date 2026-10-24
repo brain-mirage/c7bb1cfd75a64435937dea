@@ -10,6 +10,7 @@
 -- round 44: but for the right button, which opens an icon's menu to put its name on a list (a setting).
 -- Filters per kind (creatures, players): all, only the listed ones, or all but the listed ones. Local display only:
 -- nothing is sent.
+-- s6-ui-core (round 85): the XML twin's scripts; the layer the groups are on is main.xml's (core/xml.md).
 
 local C = TK.GetComponent("enemyicons")
 local H = __tk
@@ -169,12 +170,12 @@ function C:Refresh()
     self:Place()
 end
 
-function C:OnEnable()
-    local f = CreateFrame("Frame", "TKEnemyIcons", UIParent)
-    f:SetAllPoints(UIParent)
-    f:SetFrameStrata("LOW")
-    self.frame = f
-    self.all, self.spare = {}, {}
+-- the scripts main.xml names
+local scripts = {}
+
+-- the groups placed and the tooltip shown every frame, the units collected four times a second (the count its frame's own)
+function scripts.Ticker(f)
+    C.all, C.spare = {}, {}
     local elapsed = 1
     f:SetScript("OnUpdate", function(_, dt)
         elapsed = elapsed + (dt or 0)
@@ -185,7 +186,11 @@ function C:OnEnable()
         TK.SafeCall(C.Place, C)
         TK.SafeCall(C.Hover, C)
     end)
-    TK.Visibility:Attach(f, function() return self:DB() end)
+end
+
+function C:OnEnable()
+    self.frame = TK.Xml.Load("main.xml", { scripts = scripts }).frame
+    TK.Visibility:Attach(self.frame, function() return self:DB() end)
 end
 
 function C:ApplySettings()

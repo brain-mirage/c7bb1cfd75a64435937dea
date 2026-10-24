@@ -25,6 +25,9 @@
 -- (core/game/chat.lua, TK.Game.Chat: the say modes and the menu's rows, Back to Talk, the typing area's rule, the offline
 -- line's logic, the chat and scroll keys, the lines as TK_CHAT_LINE); this frame draws Modern's log and bar with it and
 -- provides its line, its log and its prompt host there.
+--
+-- s6-ui-core (round 85): the XML twin's scripts; the frame, its bar, the chat-mode menu and the message pane are
+-- main.xml's (core/xml.md).
 
 local C = TK.GetComponent("chatframe")
 local H = __tk
@@ -38,6 +41,10 @@ local Term = TK.Terminal -- s6-ui-core (round 52): the Terminal's shared part (c
 C.chatTabs, C.tabStrip = T, B -- s6-ui-core (round 52): C.terminal, never read, dropped (s6-optimize's chat review, H10)
 
 local G = TK.Game.Chat -- s6-interface-5x (round 12, step 3): the chat's game layer
+
+-- the scripts main.xml names, and its build (its templates: the menu, the message pane)
+local scripts = {}
+local ui
 
 local function live() return H:IsLiveInput() end
 
@@ -79,17 +86,7 @@ end
 local banner
 local function showBanner(text)
     if C:DB().enabled == false then return end
-    if not banner then
-        banner = C:Own(CreateFrame("Frame", "TKMessagePane", UIParent))
-        banner:SetFrameStrata("MEDIUM")
-        banner:SetSize(700, 30)
-        banner:SetPoint("TOP", UIParent, "TOP", 0, -150)
-        banner:SetBackdrop({ bg = { 0, 0, 0, 0.55 }, edge = false, bgFile = "tk:white" })
-        W.HudPanel(banner, C) -- s6-ui-core (round 53): the UI transparency, or the chat's own
-        banner.text = W.Label(banner, "", 15, { 1, 0.95, 0.7 })
-        banner.text:SetPoint("CENTER", banner, "CENTER", 0, 0)
-        TK.On("PLAYER_LEAVING_WORLD", function() banner:Hide() end)
-    end
+    banner = banner or ui:New("Banner", UIParent)
     banner.text:SetText(text)
     banner:SetShown(text ~= "")
 end
@@ -130,31 +127,7 @@ end
 --- each row carries the game layer's action for it (TK.Game.Chat.MenuAction, 4a's row dispatch 0x004811C0) and runs it on
 --- the click's release (MenuChosen); changing either changes the chat packets that follow.
 function C:BuildMenu()
-    local m = self:Own(CreateFrame("Frame", "TKChatModeMenu", UIParent))
-    m:SetFrameStrata("DIALOG")
-    m:SetBackdrop({ bg = { 0.04, 0.04, 0.05, 1 }, edge = W.panelEdge, bgFile = "tk:white" })
-    m:EnableMouse(true)
-    m:SetSize(84, #G.MENU * 18 + 8)
-    m.rows = {}
-    for i, text in ipairs(G.MENU) do
-        local row = CreateFrame("Button", nil, m)
-        row:SetHeight(18)
-        row:SetPoint("TOPLEFT", m, "TOPLEFT", 4, -4 - (i - 1) * 18)
-        row:SetPoint("TOPRIGHT", m, "TOPRIGHT", -4, -4 - (i - 1) * 18)
-        local hl = row:CreateTexture(nil, "HIGHLIGHT")
-        hl:SetAllPoints(row)
-        hl:SetColorTexture(0.25, 0.4, 0.8, 0.5)
-        local label = W.Label(row, text, 12, W.white)
-        label:SetPoint("CENTER", row, "CENTER", 0, 0)
-        TK.Actions:SetTable(row, G.MenuAction(i))
-        row:SetScript("OnClick", function()
-            m:Hide()
-            G.MenuChosen(i)
-        end)
-        m.rows[i] = row
-    end
-    m:SetPoint("BOTTOMLEFT", self.frame.modeButton, "TOPLEFT", 0, 2)
-    m:Hide()
+    local m = ui:New("ModeMenu", UIParent)
     TK.Escape:AddWindow(m)
     -- A press anywhere else closes it (the press then goes on), as the original's (ChattingPane.cpp:900-906). Wire: 4a's
     -- ChattingVarietySelectPane::HandlePointerOrMouseEvent (0x004811C0) lets a press outside the menu go on (it returns
@@ -196,6 +169,20 @@ function C:DrawLine()
     end
 end
 
+-- s6-ui-core (round 101, T11 step 3): DrawLine is called only on the frames where the line (or live input), the rules'
+-- say mode or a frame's shown state changed (another interface's bar, the offline line's box), at the same point of the
+-- frame as when it ran every frame (main.xml's SetUpdateWhen; LINE_WATCH the same values). WIRE: the typing area's action
+-- it sets (G.UpdateTyping, 4a's UserPane::OpenInputPaneForCurrentSayMode on a press while no line is open) follows the
+-- line's owner alone, which the "line" value watches, so the action a press finds is the same at every frame; changing
+-- what DrawLine watches can change which line a press on the typing area opens, which the server sees. Its other sources
+-- call DrawLineSoon: the tab shown (Terminal's mode text), the offline line's mode (TK_CHAT_SETTINGS), a new game screen.
+local LINE_WATCH = { "line", "saymode", "shown" }
+
+--- DrawLine is called on the next frame (something it draws from changed that the watched values do not show).
+function C:DrawLineSoon()
+    if self.frame then self.frame:SetUpdateWhen(table.unpack(LINE_WATCH)) end
+end
+
 -- ----- offline: the game layer's line, on this bar while it shows -----
 
 -- The offline line is the game layer's (TK.Game.Chat: OpenOffline, CloseOffline), drawn on the bar that shows (this
@@ -228,6 +215,7 @@ function C:TabsChanged()
     B:SettingsFollow()
     self:Layout()
     Term.Follow() -- s6-play-modes: the tab shown may have changed
+    self:DrawLineSoon()
 end
 
 --- The character's tabs, at its entry into the world (its saved layout, or the default); each tab's lines from the
@@ -243,6 +231,7 @@ function C:LoadTabs()
     -- s6-play-modes: the rules start with General shown; on this client's own server the Terminal's character is a GM
     Term.Follow()
     Term.MakeGM()
+    self:DrawLineSoon()
 end
 
 function C:SelectTab(i)
@@ -250,6 +239,7 @@ function C:SelectTab(i)
         B:Refresh()
         self:Layout()
         Term.Follow() -- s6-play-modes
+        self:DrawLineSoon()
     end
 end
 
@@ -310,90 +300,110 @@ end
 
 -- ----- the frame -----
 
-function C:OnEnable()
-    local f = CreateFrame("Frame", "TKChatFrame", UIParent)
-    f:SetBackdrop({ bg = { 0, 0, 0, 0.3 }, edge = false, bgFile = "tk:white" })
-    W.HudPanel(f, C) -- s6-ui-settings (round 4): the shared panel style; s6-ui-core (round 53): or the chat's own
-    -- s6-ui-chat: the tab strip along the top (tabbar.lua); every line of the session stays in frame.history.
+-- ----- main.xml's scripts -----
+
+function scripts.Own(f) C:Own(f) end
+
+function scripts.HudPanel(f) W.HudPanel(f, C) end
+
+-- s6-ui-chat: the tab strip along the top (tabbar.lua); every line of the session stays in frame.history
+function scripts.TabStrip(f)
     B:Build(f)
     f.history, f.lines, f.shown = T.all, {}, 1
-    f:EnableMouseWheel(true)
-    f:SetScript("OnMouseWheel", function(_, delta) C:Scroll(delta > 0 and 1 or -1) end)
-    -- Scrolled back: a button back to the newest line.
-    f.more = W.IconButton(f, "tk:arrow-down", 16, function() C:Scroll(-T:Current().offset) end)
-    f.more:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -4, 4)
-    f.more:Hide()
+end
 
-    -- The chat bar, under the log: Back to Talk, the chat-mode button, the typing area.
-    local bar = CreateFrame("Frame", nil, f)
-    bar:SetHeight(24)
-    bar:SetPoint("TOPLEFT", f, "BOTTOMLEFT", 0, -2)
-    bar:SetPoint("TOPRIGHT", f, "BOTTOMRIGHT", 0, -2)
-    -- s6-modular-g (round 21, the owner's research on presses reaching the wrong place): the gaps between its buttons are
-    -- the bar's, so a click a pixel beside a button no longer walks there (or talks: 43 01). The log above still lets
-    -- presses through to the world, as WoW's chat frame and 4a's chat pane do. WIRE: a press in a gap reaches no map pane
-    -- (MapPane::HandlePointerOrMouseEvent 0x00507150: the click-move walk's 06/32/11, RequestObjectInfo 0x0050F4D0's
-    -- 43 01, the look's 0A); Modern's bar is ours, so 4a has nothing there. Changing this changes what the server sees.
-    bar:EnableMouse(true)
-    f.bar = bar
-    f.talk = W.Button(bar, "", 22, 24, nil, function() G.SetBackToTalk(not backToTalk()) end)
-    f.talk:SetPoint("LEFT", bar, "LEFT", 0, 0)
-    f.talk.label = W.Label(f.talk, "T", 13, W.gold)
-    f.talk.label:SetPoint("CENTER", f.talk, "CENTER", 0, 0)
-    f.talk:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:AddLine("Back to Talk: " .. (backToTalk() and "on" or "off"), 1, 1, 1)
-        GameTooltip:AddLine("On, ' and the typing area open Talk's line after any line; off, the last mode's.", 0.8, 0.8, 0.8)
-        GameTooltip:Show()
-    end)
-    f.talk:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    f.modeButton = W.Button(bar, "Talk", 62, 24, nil, function()
-        local m = C.menu
-        m:SetShown(not m:IsShown())
-    end)
-    f.modeButton:SetPoint("LEFT", f.talk, "RIGHT", 2, 0)
-    f.typing = CreateFrame("Button", nil, bar)
-    f.typing:SetPoint("LEFT", f.modeButton, "RIGHT", 4, 0)
-    f.typing:SetPoint("RIGHT", bar, "RIGHT", 0, 0)
-    f.typing:SetHeight(24)
-    local typingBg = f.typing:CreateTexture(nil, "BACKGROUND")
-    typingBg:SetAllPoints(f.typing)
-    typingBg:SetColorTexture(0, 0, 0, 0.35)
-    TK.Actions:SetTable(f.typing, { kind = "chat:current" })
-    -- The left press opens the line (ChattingPane.cpp:1244-1257), so keys typed before the release are its: live, the
-    -- area's action rides the press's record (the game layer's typing rule; wire).
-    f.typing:SetScript("OnMouseDown", function(_, button)
-        if button == "LeftButton" then G.TypingPress(f.typing) end
-    end)
-    -- The logic's line (live), or the offline line's prompt.
-    f.line = W.Label(f.typing, "", 13, W.white, "LEFT")
-    f.line:SetPoint("LEFT", f.typing, "LEFT", 6, 0)
-    f.line:SetPoint("RIGHT", f.typing, "RIGHT", -6, 0)
-    f.line.version = -1
-    -- Offline: the game layer's line on this bar while it shows (TK.Game.Chat.ProvideLine, which drives the box): its
-    -- prompt, then the box, over the typing area; anchored once, the prompt's width moves it. s6-interface-5x (round 12):
-    -- 7.x's bar draws its own (it borrowed this box before, on a holder put on its typing area).
-    f.prompt = W.Label(f.typing, "", 13, W.white, "LEFT")
-    f.prompt:SetPoint("LEFT", f.typing, "LEFT", 6, 0)
-    f.input = W.EditBox(f.typing, 300, 22)
-    f.input:SetPoint("LEFT", f.prompt, "RIGHT", 2, 0)
-    f.input:SetPoint("RIGHT", f.typing, "RIGHT", -2, 0)
+function scripts.Wheel(_, delta) C:Scroll(delta > 0 and 1 or -1) end
+
+function scripts.Newest() C:Scroll(-T:Current().offset) end
+
+function scripts.BackToTalk() G.SetBackToTalk(not backToTalk()) end
+
+function scripts.TalkTip(self)
+    GameTooltip:SetOwner(self, "ANCHOR_TOP")
+    GameTooltip:AddLine("Back to Talk: " .. (backToTalk() and "on" or "off"), 1, 1, 1)
+    GameTooltip:AddLine("On, ' and the typing area open Talk's line after any line; off, the last mode's.", 0.8, 0.8, 0.8)
+    GameTooltip:Show()
+end
+
+function scripts.Untip() GameTooltip:Hide() end
+
+function scripts.ToggleMenu()
+    local m = C.menu
+    m:SetShown(not m:IsShown())
+end
+
+-- Wire: the typing area's action is the rules' chat:current (the say mode's line, ChattingPane.cpp:1244-1257), which
+-- its press runs; changing it changes what the server sees.
+function scripts.TypingAction(typing) TK.Actions:SetTable(typing, { kind = "chat:current" }) end
+
+-- The left press opens the line, so keys typed before the release are its: live, the area's action rides the press's
+-- record. Wire: the game layer's typing rule (TK.Game.Chat.TypingPress); changing it changes what the server sees.
+function scripts.TypingPress(typing, button)
+    G.TypingPress(typing, button)
+end
+
+function scripts.BarParts(bar)
+    local f, typing = bar:GetParent(), bar.typing
+    f.bar, f.talk, f.modeButton, f.typing = bar, bar.talk, bar.modeButton, typing
+    f.line, f.prompt, f.input = typing.line, typing.prompt, typing.input
+end
+
+function scripts.Provide(f)
+    local bar = f.bar
     G.ProvideLine("chatframe", { shown = function() return bar:IsVisible() end, box = f.input,
                                  prompt = function(text) f.prompt:SetText(text) end })
     -- the log the scroll keys move while this frame shows, and a host of the rules' Text prompt (this bar draws it)
     G.ProvideLog("chatframe", { shown = function() return f:IsVisible() end, scroll = function(n) C:Scroll(n) end,
                                 page = function(dir) C:Page(dir) end })
     TK.Game.Prompts.ProvideHost("chatframe", function() return f:IsVisible() end)
-    f:SetScript("OnUpdate", function() C:DrawLine() end)
-    -- s6-play-modes (Astra's review of round 4): a hidden frame's Terminal tab opens nothing, whatever hid it
-    -- s6-play-modes (round 6): a Terminal tab there makes the character a GM, once the tabs are this character's (Astra's
-    -- review: the frames show at a character's world entry before its tabs load, with the last character's)
-    f:HookScript("OnShow", function()
-        Term.Follow()
-        if C.tabsOf ~= nil and C.tabsOf == TK.Characters.ref then Term.MakeGM() end
-    end)
-    f:HookScript("OnHide", function() Term.Follow() end)
+end
 
+function scripts.Draw() C:DrawLine() end
+
+function scripts.Shown()
+    Term.Follow()
+    if C.tabsOf ~= nil and C.tabsOf == TK.Characters.ref then Term.MakeGM() end
+end
+
+function scripts.Hidden() Term.Follow() end
+
+-- the menu: a row a mode, in the game layer's order (TK.Game.Chat.MENU)
+local making -- the index of the menu row being made (scripts.MenuRows), for its scripts
+
+function scripts.FitMenu(m) m:SetSize(ui.MENU.width, #G.MENU * ui.MENU.row + 8) end
+
+function scripts.MenuRows(m, build)
+    for i = 1, #G.MENU do
+        making = i
+        m.rows[i] = build:New("MenuRow", m)
+    end
+    making = nil
+end
+
+function scripts.MenuRow(row)
+    local m, y = row:GetParent(), -4 - (making - 1) * ui.MENU.row
+    row:SetPoint("TOPLEFT", m, "TOPLEFT", 4, y)
+    row:SetPoint("TOPRIGHT", m, "TOPRIGHT", -4, y)
+    row.index, row.caption = making, G.MENU[making]
+end
+
+-- Wire: the row carries the game layer's action for its mode (TK.Game.Chat.MenuAction, 4a's row dispatch 0x004811C0);
+-- changing it changes the chat packets that follow.
+function scripts.MenuRowAction(row) TK.Actions:SetTable(row, G.MenuAction(row.index)) end
+
+-- Wire: the row's action runs on the click's release (TK.Game.Chat.MenuChosen, 4a's row dispatch 0x004811C0); changing
+-- it changes the chat packets that follow.
+function scripts.MenuRowClick(row)
+    row:GetParent():Hide()
+    G.MenuChosen(row.index)
+end
+
+-- the message pane goes when the player leaves the world
+function scripts.BannerLeaves(b) TK.On("PLAYER_LEAVING_WORLD", function() b:Hide() end) end
+
+function C:OnEnable()
+    ui = TK.Xml.Load("main.xml", { scripts = scripts, elements = require("interfaces.modern.elements") })
+    local f = ui.frame
     self.frame = f
     B:Refresh()
     self:BuildMenu()
@@ -407,7 +417,10 @@ function C:OnEnable()
         C:Layout()
         B:Refresh()
     end)
-    TK.On("TK_CHAT_SETTINGS", function() C:ShowBar() end)
+    TK.On("TK_CHAT_SETTINGS", function()
+        C:ShowBar()
+        C:DrawLineSoon() -- s6-ui-core (round 101, T11 step 3): the offline line's mode
+    end)
     -- s6-ui-font: below UI scale 1 the classic font is drawn one to one, so its lines' height changes with the scale.
     TK.On("UI_SCALE_CHANGED", function() C:Layout() end)
     -- s6-rules-dialogs (round 17): an online game screen starts at the login's accepted 02, as 4a builds its panes there

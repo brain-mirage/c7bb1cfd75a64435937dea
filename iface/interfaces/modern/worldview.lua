@@ -4,20 +4,13 @@
 -- settings while the frames are unlocked). The view builds it the first time Modern is the active interface (Modern's
 -- manifest, worldViewLook), at its start or at a switch to Modern, and shows it only while Modern is (round 52). Drawing
 -- only.
+-- s6-ui-core (round 85): the XML twin's; the edge and the label are worldview.xml's (core/xml.md).
 
-local W = require("interfaces.modern.skin").UI
+local E = require("interfaces.modern.elements")
 
 --- Builds the look on f, the view's frame; returns its label and everything it drew (the view hides them while another
 --- interface is active).
 return function(f)
-    local edge = f:CreateTexture(nil, "OVERLAY")
-    edge:SetPoint("TOPLEFT", f, "TOPLEFT", -2, 2)
-    edge:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", 2, -2)
-    edge:SetTexture("tk:border")
-    edge:SetVertexColor(0.45, 0.45, 0.48, 1)
-    local label = W.Label(f, "", 11, { 0.85, 0.85, 0.85 })
-    label:SetFont(11, "OUTLINE")
-    label:SetPoint("TOPLEFT", f, "TOPLEFT", 6, -5)
-    label:SetJustifyH("LEFT")
-    return label, { edge, label }
+    local ui = TK.Xml.Load("worldview.xml", { parent = f, elements = E })
+    return ui.label, { ui.edge, ui.label }
 end

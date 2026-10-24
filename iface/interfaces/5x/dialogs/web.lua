@@ -7,19 +7,24 @@
 -- D10: the system browser), on 5.33's standard window over the screen. The model's keyboard dismissal stays;
 -- no OK button is drawn, as 5.33 has none. The help key's
 -- page, 900 x 650 in 7.5.2, is the same screen here: 5.x's screen is 640 x 480.
+--
+-- s6-ui-core (round 85): the XML twin's; the window's size and the parts' places are web.xml's (core/xml.md).
+
+local unpack = table.unpack
+local entry = require("interfaces.original.entry")
+local B = TK.Xml.Data("web.xml").Browser
 
 return function(L, X)
-    L.Browser = {
-        width = 640, height = 480, button = 72, openButton = 140, buttonHeight = 24,
+    L.Browser = entry(B, {
         place = function(win)
             local frame = X.DIALOG_FRAME
-            X.Frame(win, 640, 480, frame.file, frame.palette, frame.tile)
-            X.Text(win.text, win, 40, 40, 600, 84)
+            X.Frame(win, B.width, B.height, frame.file, frame.palette, frame.tile)
+            X.Text(win.text, win, unpack(B.text))
             win.text:SetWordWrap(true)
-            X.Text(win.url, win, 40, 90, 600, 102)
+            X.Text(win.url, win, unpack(B.url))
             win.open:ClearAllPoints()
-            win.open:SetPoint("TOPLEFT", win, "TOPLEFT", 40, -112)
+            win.open:SetPoint("TOPLEFT", win, "TOPLEFT", B.open[1], -B.open[2])
             win.ok:Hide() -- 5.33 BrowserDialog 0x00406F90 has no OK button
         end,
-    }
+    })
 end

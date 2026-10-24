@@ -5,12 +5,15 @@
 -- as the percentage its last hit reported (0x13: WorldSnapshot.Hits, __tk:GetUnitHit), full until a hit is seen. While
 -- the original's group bars are on, a group member has those instead (main.lua). A hovered spell's healing or damage, as
 -- the Library learned it, shows on the target's bar where its health is in points. Local display only: nothing is sent.
+-- s6-ui-core (round 85): the XML twin's scripts; a unit's bars are bars.xml's (core/xml.md).
 
 local C = TK.GetComponent("nameplates")
 local H = __tk
 local V = require("interfaces.modern.vitals")
 
-local WIDTH, HP_H, HP_NUMBERS_H, MP_H, GAP = 60, 6, 10, 3, 1
+local ui = TK.Xml.Load("bars.xml", { elements = require("interfaces.modern.elements") }) -- its template only
+local SIZES = ui.SIZES
+local HP_H, HP_NUMBERS_H, MP_H, GAP = SIZES.hp, SIZES.hpNumbers, SIZES.mp, SIZES.gap
 local COLOURS = { player = { 0.15, 0.75, 0.15 }, creature = { 0.8, 0.18, 0.12 } }
 
 C.unitBars = {}   -- the bars shown, by object id
@@ -18,15 +21,7 @@ local spare, made = {}, 0
 
 local function newBar()
     made = made + 1
-    local f = CreateFrame("Frame", "TKNameplateBar" .. made, C.frame)
-    f:SetWidth(WIDTH)
-    f.hp = V.Bar(f, HP_H, 1, 1, 1, 9) -- its fill coloured by kind (COLOURS) on a grey ground
-    f.hp:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 0)
-    f.hp:SetPoint("TOPRIGHT", f, "TOPRIGHT", 0, 0)
-    f.mp = V.Bar(f, MP_H, 0.2, 0.45, 0.95, 9)
-    f.mp:SetPoint("TOPLEFT", f.hp, "BOTTOMLEFT", 0, -GAP)
-    f.mp:SetPoint("TOPRIGHT", f.hp, "BOTTOMRIGHT", 0, -GAP)
-    return f
+    return ui:New("UnitBar", C.frame, "TKNameplateBar" .. made)
 end
 
 --- Draws unit id's bar with its top at (px, py) from the view's centre (kind: "player" or "creature"; prefix: its

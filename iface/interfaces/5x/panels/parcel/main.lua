@@ -18,14 +18,17 @@
 -- then): a parcel's icon is 7.5.2's parcel button (0), a
 -- letter's its letter button (1), so each sends what that button sends (ParcelPane::HandlePointerOrMouseEvent
 -- 0x00546610, ParcelPane.cpp:207). Changing the controls' indexes or this routing changes what the server sees.
+-- s6-ui-core (round 85): the XML twin's scripts; the pane, its icons, pictures, flight and place are main.xml's
+-- (core/xml.md).
 
 local C = TK.GetComponent("5x.parcel")
 local S = require("interfaces.5x.skin")
 local Screen = require("interfaces.screen")
+local E = require("interfaces.5x.elements")
 
-local PLACE = { 45, 371 }
-local MAX = 4
-local STEPS, STEP = 34, 0.01
+local L = TK.Xml.Data("main.xml")
+local PLACE, ICONS, KINDS, FLIGHT = L.PLACE, L.ICONS, L.KINDS, L.FLIGHT
+local MAX = ICONS.count
 
 --- The waiting parcels and letters (the model's pane: 0 the parcels, 1 the letters; TK.Game.Parcels, s6-input round 49).
 function C:Counts()
@@ -42,7 +45,8 @@ function C:Draw(parcels, letters)
         if i <= parcels then kind = 0 elseif i <= n then kind = 1 end
         if kind then
             -- the frame's drawn rectangle at the icon's place (RenderTileFrame into (11 i, 0)-(11 i + 19, 19))
-            local key, w, h = S.Image(kind == 0 and "PARCEL.EPF" or "MAIL.EPF", 1)
+            local art = KINDS[kind + 1]
+            local key, w, h = S.Image(art.file, art.frame)
             if key then
                 local ox, oy = TK.Art.Origin(key)
                 icon.tex:SetTexture(key)
@@ -53,7 +57,7 @@ function C:Draw(parcels, letters)
             else
                 icon.tex:Hide()
             end
-            icon:SetSize(kind == 0 and 19 or 18, kind == 0 and 19 or 18)
+            icon:SetSize(art.size, art.size)
             TK.Game.Parcels.Control(icon, kind) -- wire: its kind is its control (OnEnable wires it)
             icon:Show()
         else
@@ -67,9 +71,10 @@ end
 --- from (441, 4) beyond four, 11 left and 11 down a step (0x0048DB60's places).
 function C:Fly(total, parcel)
     local f = self.frame
-    local key, w, h = S.Image(parcel and "PARCEL.EPF" or "MAIL.EPF", 0)
+    local art = KINDS[parcel and 1 or 2]
+    local key, w, h = S.Image(art.file, art.big)
     if not key then return false end
-    f.flight = { total = total, step = 0, wait = STEP, key = key }
+    f.flight = { total = total, step = 0, wait = FLIGHT.wait, key = key }
     f.flyer:SetTexture(key)
     f.flyer:SetSize(w, h)
     self:PlaceFlyer()
@@ -82,8 +87,9 @@ function C:PlaceFlyer()
     local f = self.frame
     local t = f.flight
     local x, y
-    if t.total <= MAX then x, y = 397 + 11 * (t.total - t.step), 4 + 11 * t.step
-    else x, y = 441 - 11 * t.step, 4 + 11 * t.step end
+    local d = FLIGHT.step
+    if t.total <= MAX then x, y = FLIGHT.x + d * (t.total - t.step), FLIGHT.y + d * t.step
+    else x, y = FLIGHT.far - d * t.step, FLIGHT.y + d * t.step end
     local ox, oy = TK.Art.Origin(t.key)
     f.flyer:ClearAllPoints()
     f.flyer:SetPoint("TOPLEFT", f, "TOPLEFT", x - PLACE[1] + ox, -(y - PLACE[2] + oy))
@@ -97,9 +103,9 @@ function C:Update(elapsed)
     if t then
         t.wait = t.wait - (elapsed or 0)
         while t.wait <= 0 and f.flight do
-            t.wait = t.wait + STEP
+            t.wait = t.wait + FLIGHT.wait
             t.step = t.step + 1
-            if t.step >= STEPS then
+            if t.step >= FLIGHT.steps then
                 f.flight = nil
                 f.flyer:Hide()
                 self:Draw(self:Counts())
@@ -120,14 +126,15 @@ function C:Update(elapsed)
     self:Draw(parcels, letters)
 end
 
-function C:OnEnable()
-    local f = CreateFrame("Frame", "TK5xParcel", UIParent)
-    f:SetFrameStrata("LOW")
-    f:SetSize(55, 18)
+-- the scripts main.xml names
+local scripts = {}
+
+--- The icons, four at most, 11 pixels apart, each over the ones before it.
+function scripts.Icons(f)
     f.icons = {}
     for i = 1, MAX do
         local icon = CreateFrame("Frame", "TK5xParcelIcon" .. i, f)
-        icon:SetPoint("TOPLEFT", f, "TOPLEFT", 11 * (i - 1), 0)
+        icon:SetPoint("TOPLEFT", f, "TOPLEFT", ICONS.step * (i - 1), 0)
         icon:SetFrameLevel(f:GetFrameLevel() + i)
         icon:EnableMouse(true)
         icon.tex = icon:CreateTexture(nil, "ARTWORK")
@@ -139,15 +146,13 @@ function C:OnEnable()
         icon:Hide()
         f.icons[i] = icon
     end
-    -- the flying picture, above the screen's panes and the map view (FlyingParcelPane on a layer of its own)
-    f.flight = nil
-    local layer = CreateFrame("Frame", nil, f)
-    layer:SetFrameStrata("MEDIUM")
-    layer:SetAllPoints(f)
-    f.flyer = layer:CreateTexture(nil, "OVERLAY")
-    f.flyer:Hide()
-    f:SetScript("OnUpdate", function(_, elapsed) self:Update(elapsed) end)
-    f:Hide()
+end
+
+function scripts.Update(_, elapsed) C:Update(elapsed) end
+
+function C:OnEnable()
+    local f = TK.Xml.Load("main.xml", { scripts = scripts, elements = E }).frame
+    f.flyer = f.layer.flyer
     self:Own(f)
     self.frame = f
     self.entry = Screen.Register(f, "5x.parcel", "5.x Parcels", function() return self:DB().enabled == true end)

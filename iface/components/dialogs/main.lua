@@ -96,6 +96,8 @@ local function takeWindow(view)
         for _, c in pairs(win.controls or {}) do
             if c.list then
                 c.list.selected, c.list.anchor = {}, nil
+                -- round 99: and its scroll bar's thumb offset 0, a new ScrollPane's (WIRE: kit.lua's list:NewDialog)
+                if c.list.NewDialog then c.list:NewDialog() end
                 if c.ScrollToTop then c:ScrollToTop() end
             end
         end
@@ -125,9 +127,11 @@ function C:Refresh()
     local seen = {}
     self.views = views
     local raised = false -- s6-sandbox (round 12): the trade window or a window above it in the stack
+    local changed = false -- s6-ui-core (round 101, T11 step 3): a window added or taken away (TK_DIALOGS_CHANGED)
     for i, view in ipairs(views) do
         local win = self.windows[view.serial]
         if not win then
+            changed = true
             win = takeWindow(view)
             TK.Cursor:DialogOpened() -- s6-interface-5x-b (round 7): 4a's DialogPane constructor's normal cursor (core/cursor.lua)
             win.serial = view.serial
@@ -165,6 +169,7 @@ function C:Refresh()
     end
     for serial, win in pairs(self.windows) do
         if not seen[serial] then
+            changed = true
             win:Hide()
             win.serial, win.view = nil, nil
             self.windows[serial] = nil
@@ -178,6 +183,12 @@ function C:Refresh()
         end
     end
     self:ShowCovers(views)
+    -- s6-ui-core (round 101, T11 step 3): for a watcher called only on change (core/mapwindow.lua's, of the minimap
+    -- dialog): the windows TK.Dialogs.Find finds changed. Drawing only. WIRE: this refresh is the dialogs' sync, a
+    -- wire-timed script (the T11 page's section 2, script 7: every frame, it decides which window a press reaches); the
+    -- event is raised at its end and its one listener only marks the map window's watch to be called, so the sync's
+    -- order and what a press sends stay as they are. Do not move the event into the loop above.
+    if changed then TK.FireEvent("TK_DIALOGS_CHANGED") end
 end
 
 --- The dimmer: the rules modal with no dialog in front.

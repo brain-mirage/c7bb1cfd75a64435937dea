@@ -10,11 +10,11 @@
 -- ordinary hit bars out meanwhile, as the original. Local display only: nothing is sent.
 -- s6-ui-core (round 82; the owner, 2026-10-09): the Nameplates pane is what is drawn over others; its health bars over
 -- players and NPCs are bars.lua's.
+-- s6-ui-core (round 85): the XML twin's scripts; the layer and the plates are main.xml's (core/xml.md).
 
 local C = TK.GetComponent("nameplates")
 local H = __tk
 local U = TK.Util
-local W = require("interfaces.modern.skin").UI -- s6-devtools (round 5, the separation's step 5): Modern's skin
 require("interfaces.modern.panels.nameplates.bars") -- s6-ui-core (round 82): C:RefreshBars
 
 C.pool = {}
@@ -22,38 +22,20 @@ C.pool = {}
 -- DrawOutlinedTextAt: the text in the back colour one pixel up, down, left and right, then in the text colour.
 local AROUND = { { 0, 1 }, { 0, -1 }, { -1, 0 }, { 1, 0 } }
 
--- The font's 0x1F (BARAM00.EFT): a down arrow, 5, 3 and 1 pixels wide, three rows each (from its top).
+-- The font's 0x1F (BARAM00.EFT): a down arrow, 5, 3 and 1 pixels wide, three rows each (from its top); a plate has
+-- 5 x 3 rectangles for it (main.xml's Plate).
 local ARROW = { { -2, 5 }, { -1, 3 }, { 0, 1 } }
 
 local function rgb(c)
     return math.floor(c / 65536) % 256 / 255, math.floor(c / 256) % 256 / 255, c % 256 / 255
 end
 
-local function rect(parent, layer)
-    local t = parent:CreateTexture(nil, layer)
-    t:SetColorTexture(1, 1, 1, 1)
-    return t
-end
+local ui -- main.xml's build (C:OnEnable)
 
 local function plate(i)
     local p = C.pool[i]
     if p then return p end
-    p = CreateFrame("Frame", "TKNameplate" .. i, C.frame)
-    p:SetSize(1, 1)
-    p.back = {}
-    for k = 1, 4 do p.back[k] = W.Label(p, "", 12, W.white) end
-    p.name = W.Label(p, "", 12, W.white)
-    -- The carnage box: 12 x 10, its border in the fill colour and its inside in the outline colour.
-    p.box = rect(p, "ARTWORK")
-    p.boxInside = rect(p, "OVERLAY")
-    -- The down arrow, outlined as the text is.
-    p.arrow = {}
-    for k = 1, 5 * #ARROW do p.arrow[k] = rect(p, k > 4 * #ARROW and "OVERLAY" or "ARTWORK") end
-    -- A group member's bars (the active HitBarObjectPane, ObjectPane.cpp:868-960): a 60 x 19 box in the back colour, the
-    -- HP and MP fills inside it, at their own place whatever the name and balloon do.
-    p.bars = rect(p, "BACKGROUND")
-    p.hp = rect(p, "ARTWORK")
-    p.mp = rect(p, "ARTWORK")
+    p = ui:New("Plate", C.frame, "TKNameplate" .. i)
     C.pool[i] = p
     C:Style(p)
     return p
@@ -334,14 +316,15 @@ function C:Refresh()
     for i = used + 1, #self.pool do showPlate(self.pool[i], false) end
 end
 
+-- the scripts main.xml names
+local scripts = {}
+
+function scripts.Refresh() TK.SafeCall(C.Refresh, C) end
+
 function C:OnEnable()
-    local f = CreateFrame("Frame", "TKNameplates", UIParent)
-    f:SetAllPoints(UIParent)
-    f:SetFrameStrata("LOW")
-    self.frame = f
-    -- Every frame: the names follow the figures' steps.
-    f:SetScript("OnUpdate", function() TK.SafeCall(C.Refresh, C) end)
-    TK.Visibility:Attach(f, function() return self:DB() end)
+    ui = TK.Xml.Load("main.xml", { scripts = scripts, elements = require("interfaces.modern.elements") })
+    self.frame = ui.frame
+    TK.Visibility:Attach(self.frame, function() return self:DB() end)
 end
 
 function C:ApplySettings()

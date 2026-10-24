@@ -679,7 +679,14 @@ function K.List(win, index, width, height, multi, own)
     -- 4a's thumb (ScrollPane with EPF art): its bar as tall as 4a's view, the thumb kScrollPanePartExtentBySkin's 38.
     local THUMB = 38
     local thumbDrag -- while the thumb is held: 4a's thumb top at the press, the scale, the pointer then, the next tick
+    local thumbGrab = 0 -- the last thumb press's 4a pixels into 4a's thumb (m_thumbDragOffset): a track press uses it
     local ticker = CreateFrame("Frame", nil, sf)
+
+    --- 4a's track over a drawn bar's thumb travel (a look's own, else the kit's thumb's): 4a pixels per drawn pixel.
+    local function scale(travel)
+        travel = travel or sf:GetHeight() - sf.thumb:GetHeight()
+        return travel > 0 and (geometry() - THUMB) / travel or 1
+    end
 
     --- ScrollPane::UpdatePositionFromCursor (0x0055E210), vertical, EPF: 4a's thumb top moved by the pointer's 4a pixels
     --- since the press (the press's offset into the thumb cancels out), plus one, kept on 4a's track (view - 38); the
@@ -699,17 +706,18 @@ function K.List(win, index, width, height, multi, own)
     --- then on the timer, 200 ms, then every 30 ms (OnTimer 0x0055C610). The drawn thumb's movement counts on 4a's bar by
     --- the bars' travels (4a's track over the drawn bar's), so the drawn thumb's whole way is 4a's. With a range of 0,
     --- 4a's bar takes neither the press nor the moves and release after it: the press goes as K.ROW_MISS (returned), so
-    --- the list takes none of them and asks for nothing.
-    function list:ThumbPress()
+    --- the list takes none of them and asks for nothing. travel: a look's own drawn thumb's way (list:BarPress), else the
+    --- kit's thumb's; arrow: where that way starts below the bar's top (its top arrow), for the offset a later track
+    --- press uses (list:TrackPress).
+    function list:ThumbPress(travel, arrow)
         thumbDrag = nil
         if not self.logical then return nil end
         local range = logicalRange()
         if range <= 0 then return K.ROW_MISS end
-        local h = geometry()
-        local travel = sf:GetHeight() - sf.thumb:GetHeight()
-        local k = travel > 0 and (h - THUMB) / travel or 1
+        local h, k = geometry(), scale(travel)
         thumbDrag = { top = math.floor(self.logicalRow * (h - THUMB) / range), k = k, y = math.floor(pointer() * k),
                       due = GetTime() + 0.2 }
+        thumbGrab = math.max(0, math.min(THUMB - 1, math.floor((pointer() - (arrow or 0)) * k) - thumbDrag.top))
         thumbFollow()
         ticker:SetScript("OnUpdate", function()
             local now = GetTime()
@@ -717,6 +725,30 @@ function K.List(win, index, width, height, multi, own)
             thumbFollow()
             thumbDrag.due = now + 0.03
         end)
+        return nil
+    end
+
+    --- s6-ui-core (round 98, Astra's self-review): a left press on 4a's track above (part 1) or below (3) its thumb, for
+    --- a list that pages (BeginPartPress 0x0055DF10, ProcessActivePart 0x0055DFD0, EPF). The pointer is on 4a's bar by
+    --- the bars' travels from where the drawn thumb's way starts (arrow); 4a's EPF bar has no arrows (GetScrollPartRect's
+    --- are empty), so a look's own arrows are its track. If the pointer is on that side of 4a's thumb (HitTestPart; the
+    --- thumb's top the position x the track / the range), the thumb jumps to it less the last thumb press's offset
+    --- (UpdatePositionFromCursor 0x0055E210: plus one, kept on the track, the position (range + 1) x that top / the
+    --- track, at most the range). Only at the press: once the bar is held, 4a's thumb is under the pointer
+    --- (m_thumbDragActive, GetScrollPartRect 0x0055D9E0), so the timer's steps find no track. With a range of 0,
+    --- K.ROW_MISS, as the thumb's. WIRE: the position it leaves is the one the list's end is read from after the press
+    --- (3B 02); moving it again while the press is held, or otherwise, changes when the server gets 3B 02.
+    function list:TrackPress(part, travel, arrow)
+        thumbDrag = nil
+        if not self.logical then return nil end
+        local range, track = logicalRange(), geometry() - THUMB
+        if range <= 0 then return K.ROW_MISS end
+        if track <= 0 then return nil end
+        local y = math.floor((pointer() - (arrow or 0)) * scale(travel))
+        local top = math.floor(self.logicalRow * track / range)
+        if (y < top and 1 or y >= top + THUMB and 3 or 2) == part then
+            setLogical(math.min(range, math.floor((range + 1) * math.max(0, math.min(track, y - thumbGrab + 1)) / track)))
+        end
         return nil
     end
 
@@ -734,6 +766,35 @@ function K.List(win, index, width, height, multi, own)
         ticker:SetScript("OnUpdate", nil)
         self:ThumbDragged()
     end
+
+    --- s6-ui-core (round 98): a look's own scroll bar that takes the bar's presses in place of the kit's (5.x's 5.33 bar:
+    --- interfaces/5x/scrollbar.lua, Bar.ForList; its parts 0 to 4, the top arrow to the bottom one, 2 the thumb). Its
+    --- thumb is 4a's thumb and the rest 4a's track on that side (list:ThumbPress, list:TrackPress, from that bar's thumb
+    --- travel and top arrow), moving 4a's position first; its press, the moves while it is held and its release then go
+    --- to the model as the kit's thumb's do (above). WIRE: these are the scroll bar's events after which
+    --- ArticleListPane::HandlePointerOrMouseEvent (0x00474EC0) and MailListPane's (0x0047AD80) read the list's end and ask
+    --- for older rows (3B 02); posting them otherwise, or before the position moved, changes when the server gets 3B 02.
+    function list:BarPress(part, travel, arrow)
+        local miss
+        if part == 2 then miss = self:ThumbPress(travel, arrow)
+        else miss = self:TrackPress(part < 2 and 1 or 3, travel, arrow) end
+        K.Pointer(win, index, "LeftButton", true, miss)
+    end
+
+    function list:BarMove() K.Move(win, index) end
+
+    function list:BarRelease()
+        self:ThumbRelease()
+        local over, overPart = controlUnderPointer(win)
+        K.Pointer(win, over, "LeftButton", false, overPart)
+    end
+
+    --- s6-ui-core (round 99, round 98's final review P1): a reused window's list is a new dialog's (main.lua's
+    --- takeWindow). WIRE: 4a builds a new ScrollPane for each dialog (ScrollPane::ScrollPane 0x0055C200), its thumb offset
+    --- (m_thumbDragOffset) 0, so the last dialog's grab no longer places a track press (list:TrackPress): with it, a
+    --- press 106 pixels down a 20-letter list stayed at position 0 and the 3B 02 the original asks there was not sent.
+    --- Within one dialog the grab stays, as 4a's.
+    function list:NewDialog() thumbGrab = 0 end
 
     -- a reused window's list starts at the top in both (main.lua's takeWindow)
     local scrollToTop = sf.ScrollToTop

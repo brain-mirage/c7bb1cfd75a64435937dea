@@ -65,8 +65,8 @@ return {
     -- s6-ui-login: the login's presentation (core/entering.lua): the original's title music, and the login screen until
     -- the world, with no loading screen (4a draws no loading text: MapPane::RenderMapView only skips the map's objects
     -- while it waits for the player's status, MapPane.cpp:2062).
-    -- s6-ui-core (round 86): screens, its own login screen (7.5.2's title and login dialog), the XML twin's only
-    -- (interfaces/xml/7x/screens/title.lua), with Experimental's Original Login Screens (core/login.lua)
+    -- s6-ui-core (round 86): screens, its own login screen (7.5.2's title and login dialog)
+    -- (interfaces/7x/screens/title.lua), with Experimental's Original Login Screens (core/login.lua)
     login = { titleMusic = true, loadingScreen = false, screens = "interfaces.7x.screens.title" },
     enable = ENABLE,
     migrate = MIGRATE,

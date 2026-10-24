@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 5.x's chat (its XML twin's layout; main.lua keeps and draws the messages and the line): 5.33's ChattingPane
+     (constructor 0x00412000) at (14, 390)-(434, 455) on the 640 x 480 screen and, under it, where every LineInputPane is
+     drawn, the line being typed at (14, 456)-(422, 468) (LineInputPane's constructor 0x00452890). Format: core/xml.md.
+     It draws only: nothing here is sent, and only its bar takes a press (the keys that open, edit and send the line are
+     the chat rules'). -->
+<ui>
+  <!-- its top left on the 5.x screen (Screen.PlacePanel follows the scaled screen until the player moves it) -->
+  <data key="PLACE" value="14, 390"/>
+  <!-- the log: 420 x 65, its messages laid out 408 pixels wide in 13-pixel lines (ColorStringChattingMessage::
+       MeasureLines 0x00412DF0); five empty messages at the start, 100 kept (AddIncomingMessage 0x00412380) -->
+  <data key="LOG" width="420" height="65" text="408" line="13" start="5" keep="100"/>
+  <!-- a message's lines on CHATBACK.EPF in NPAL7.PAL by its background colour: frame 0 for white, 1 for red, 2 for blue,
+       none for any other (ColorStringChattingMessage's Draw 0x00412E50) -->
+  <data key="BANDS" file="CHATBACK.EPF" palette="NPAL7.PAL" WHITE="0" RED="1" BLUE="2"/>
+
+  <frame name="TK5xChat" key="frame" parent="UIParent" FrameStrata="LOW" Size="420, 78">
+    <!-- the log filled white (0x8F) -->
+    <fill key="white" index="WHITE" layer="BACKGROUND" Point="TOPLEFT, @parent, TOPLEFT, 0, 0" Size="420, 65"/>
+    <!-- the messages, clipped to the log (a ScrollFrame clips what is in it) -->
+    <frame key="clip" type="ScrollFrame" Point="TOPLEFT, @parent, TOPLEFT, 0, 0" Size="408, 65">
+      <frame key="content" Size="408, 65">
+        <!-- the messages' lines are measured in a row's layout, once each (main.lua's Lines) -->
+        <skintext key="measure" colour="TEXT" layer="ARTWORK" Spacing="-1" WordWrap="true" Width="408">
+          <do Hide=""/>
+        </skintext>
+      </frame>
+      <do ScrollChild="@content"/>
+    </frame>
+    <do EnableMouseWheel="true"/>
+    <on script="OnMouseWheel" call="Wheel"/>
+    <!-- s6-interface-5x-b: the log's bar, ScrollablePane's skin 1 at its right 12 pixels (SetSkinIndex(1) in the
+         constructor), its arrows a line, its track 4 lines (the pane's page, sub_412570); 5.33's position counts lines
+         from the oldest -->
+    <scrollbar key="bar" skin="1" right="420" t="0" b="65" range="BarRange" set="BarSet"/>
+    <!-- the line being typed, under the log: its prompt and text in 0x80 on 0x8F, with the caret -->
+    <frame key="line" Point="TOPLEFT, @parent, TOPLEFT, 0, -66" Size="408, 12">
+      <fill index="WHITE" layer="BACKGROUND" AllPoints="@parent"/>
+      <skintext key="lineText" colour="TEXT" layer="ARTWORK" WordWrap="false" JustifyH="LEFT"
+                Point="TOPLEFT, @parent, TOPLEFT, 0, -1"/>
+      <do Hide=""/>
+      <!-- offline: the game layer's line (TK.Game.Chat, which drives the box), its prompt in lineText, the box after it in
+           5.33's font, black, with no frame (on the line's white; main.lua's Box) -->
+      <frame name="TK5xChatLine" key="box" type="EditBox">
+        <run call="Box"/>
+      </frame>
+    </frame>
+    <on script="OnUpdate" call="DrawLine"/>
+    <!-- s6-ui-core (round 101, T11 step 3): drawn only when the line changed, and after TK_CHAT_SETTINGS (main.lua) -->
+    <do SetUpdateWhen="line"/>
+    <do Hide=""/>
+  </frame>
+</ui>

@@ -20,8 +20,13 @@
 -- from (20, 134) and the outline colours' from (20, 253) (ChattingColorListPane: 18 x 18 cells, sixteen to a row): each
 -- swatch's colour three pixels in, the chosen one framed as the chosen category, colour 0 ringed in 0x88 (DrawListEntry
 -- 0x004832C0).
+-- s6-ui-core (round 85): the XML twin's; the windows' pictures, cards, cells and the parts' places are album.xml's
+-- (core/xml.md).
 
 local S = require("interfaces.7x.skin")
+local unpack = table.unpack
+local entry = require("interfaces.original.entry")
+local D = TK.Xml.Data("album.xml")
 
 return function(L, X)
     --- Lines framing a rectangle of a frame: depth pixels deep from inset pixels in, in colour; hidden without one.
@@ -50,27 +55,38 @@ return function(L, X)
 
     -- ----- the album -----
 
-    --- Card i's place (CollectionDialogPane's constructor): column (i - 1) / 3, row (i - 1) % 3.
-    local function cardAt(i) return 74 + 266 * math.floor((i - 1) / 3), 102 + 100 * ((i - 1) % 3) end
+    local A = D.Album
+    local CARDS = A.cards
 
-    L.Album = {
-        width = 668, height = 468, button = 63, picture = 95, slide = true,
+    --- Card i's place (CollectionDialogPane's constructor): column (i - 1) / 3, row (i - 1) % 3.
+    local function cardAt(i)
+        return CARDS.x + CARDS.across * math.floor((i - 1) / CARDS.rows), CARDS.y + CARDS.down * ((i - 1) % CARDS.rows)
+    end
+
+    --- One of a card's texts in its rectangle (album.xml's cards) and colour.
+    local function cardText(card, rect, colour)
+        local fs = card:CreateFontString(nil, "OVERLAY")
+        X.Text(fs, card, rect[1], rect[2], rect[3], rect[4], colour)
+        return fs
+    end
+
+    L.Album = entry(A, {
         place = function(win)
-            X.Art(win, "DLGCLT.EPF", "DLGCLT.PAL")
-            X.Image(win, win.previous, 18, 229, 409, 292, 433)
-            X.Image(win, win.close, 14, 304, 409, 367, 433)
-            X.Image(win, win.nextButton, 19, 379, 409, 442, 433)
+            X.Art(win, unpack(A.art))
+            X.Image(win, win.previous, unpack(A.previous))
+            X.Image(win, win.close, unpack(A.close))
+            X.Image(win, win.nextButton, unpack(A.nextButton))
             win.progress:Hide()
             win.x7bar = win.x7bar or {}
         end,
         --- Card i: its CLTENTRY picture, its picture box and its texts (the renderer fills them).
         card = function(win, i)
             local card = CreateFrame("Frame", nil, win)
-            card:SetSize(255, 95)
+            card:SetSize(CARDS.width, CARDS.height)
             local x, y = cardAt(i)
-            X.Rect(card, win, x, y, x + 255, y + 95)
+            X.Rect(card, win, x, y, x + CARDS.width, y + CARDS.height)
             card.bg = card:CreateTexture(nil, "BACKGROUND")
-            local key, w, h = TK.Art.Image("CLTENTRY.EPF", 0, "CLTENTRY.PAL")
+            local key, w, h = TK.Art.Image(CARDS.file, 0, CARDS.palette)
             if key then
                 local ox, oy = TK.Art.Origin(key)
                 card.bg:SetTexture(key)
@@ -79,18 +95,13 @@ return function(L, X)
             end
             card.pic = card:CreateTexture(nil, "ARTWORK")
             card.pic:SetPoint("TOPLEFT", card, "TOPLEFT", 0, 0)
-            card.name = card:CreateFontString(nil, "OVERLAY")
-            X.Text(card.name, card, 102, 6, 235, 18, 0x8F)
+            card.name = cardText(card, CARDS.name, CARDS.colour)
             card.name:SetWordWrap(false)
-            card.number = card:CreateFontString(nil, "OVERLAY")
-            X.Text(card.number, card, 235, 6, 248, 18, 0x8F)
-            card.number2 = card:CreateFontString(nil, "OVERLAY")
-            X.Text(card.number2, card, 236, 6, 249, 18, 0x8F)
-            card.label = card:CreateFontString(nil, "OVERLAY")
-            X.Text(card.label, card, 102, 30, 246, 42, 0x8F) -- right-aligned: left = right - 6 x length - 2
+            card.number = cardText(card, CARDS.number, CARDS.colour)
+            card.number2 = cardText(card, CARDS.number2, CARDS.colour)
+            card.label = cardText(card, CARDS.label, CARDS.colour) -- right-aligned: left = right - 6 x length - 2
             card.label:SetJustifyH("RIGHT")
-            card.desc = card:CreateFontString(nil, "OVERLAY")
-            X.Text(card.desc, card, 102, 55, 248, 79, S.TEXT)
+            card.desc = cardText(card, CARDS.desc, S.TEXT)
             card.desc:SetWordWrap(true)
             return card
         end,
@@ -100,7 +111,7 @@ return function(L, X)
             if key and key ~= "" then
                 local ox, oy = TK.Art.Origin(key)
                 win.volume:ClearAllPoints()
-                win.volume:SetPoint("TOPLEFT", win, "TOPLEFT", 75 + (ox or 0), -(42 + (oy or 0)))
+                win.volume:SetPoint("TOPLEFT", win, "TOPLEFT", A.volume[1] + (ox or 0), -(A.volume[2] + (oy or 0)))
             end
             local p = c.progress or {}
             local collected, total = p[1] or 0, p[2] or 0
@@ -112,11 +123,12 @@ return function(L, X)
         bar = function(win, collected, total)
             local parts = win.x7bar
             for i = 1, 3 do parts[i] = parts[i] or win:CreateTexture(nil, "ARTWORK") end
-            local l, t, width = 396, 72, 194
+            local b = A.bar
+            local l, t, width, cap = b.left, b.top, b.width, b.cap
             local fillW = total > 0 and math.floor(width * collected / total) or 0
-            local pieces = { { 1, l - 3, 3 }, { 0, l, fillW }, { 2, l + fillW, 3 } }
+            local pieces = { { 1, l - cap, cap }, { 0, l, fillW }, { 2, l + fillW, cap } }
             for i, piece in ipairs(pieces) do
-                local tex, key, w, h = parts[i], TK.Art.Image("CLTBAR.EPF", piece[1], "CLTBAR.PAL")
+                local tex, key, w, h = parts[i], TK.Art.Image(b.file, piece[1], b.palette)
                 tex:SetShown(key ~= nil and piece[3] > 0)
                 if key then
                     tex:SetTexture(key)
@@ -127,63 +139,67 @@ return function(L, X)
             end
             if not win.x7label then win.x7label = win:CreateFontString(nil, "OVERLAY") end
             local text = string.format("%d/%d (%d%%)", collected, total, total > 0 and math.floor(100 * collected / total) or 0)
-            X.Text(win.x7label, win, l + math.floor((width - 6 * #text) / 2), t + 5, l + width, t + 17, S.TEXT)
+            X.Text(win.x7label, win, l + math.floor((width - 6 * #text) / 2), t + b.label, l + width, t + b.label + 12, S.TEXT)
             win.x7label:SetText(text)
         end,
-    }
+    })
 
     -- ----- the chat colour dialog -----
 
-    L.ChatColor = {
-        width = 330, height = 397, button = 63,
+    local C = D.ChatColor
+    local CAT, GRIDS = C.categories, C.grids
+
+    L.ChatColor = entry(C, {
         -- its own rectangle, ((screen - 330) / 2, (screen - 397) / 2) (no placement slot): its top 185, not the centre's
         -- 186 for its odd height; unclamped
-        centre = function(win) return 512, 185 + 198, false end,
+        centre = function(win) return C.centre[1], C.centre[2], false end,
         --- A category's cell, 60 x 20: its frames (painted by paint), its name in the cell inset (6, 4) (DrawListEntry's
         --- text rectangle; the round 13 capture puts the glyphs there), drawn outlined in the category's outline colour
         --- (paint).
         category = function(win, name)
             local b = CreateFrame("Button", nil, win)
-            b:SetSize(60, 20)
+            b:SetSize(CAT.width, CAT.height)
             b.bg = b:CreateTexture(nil, "BACKGROUND")
             b.bg:SetAllPoints(b)
             b.bg:Hide() -- the renderer's highlight: 7.x draws 4a's frames instead (paint)
+            local r = CAT.text
             b.x7outline = {}
             for i, d in ipairs({ { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } }) do
                 local o = b:CreateFontString(nil, "ARTWORK")
-                X.Text(o, b, 6 + d[1], 4 + d[2], 56 + d[1], 16 + d[2])
+                X.Text(o, b, r[1] + d[1], r[2] + d[2], r[3] + d[1], r[4] + d[2])
                 o:SetText(name)
                 b.x7outline[i] = o
             end
             b.label = b:CreateFontString(nil, "OVERLAY")
-            X.Text(b.label, b, 6, 4, 56, 16)
+            X.Text(b.label, b, unpack(r))
             b.label:SetText(name)
             return b
         end,
         --- A swatch, 18 x 18: its colour three pixels in (s.fill); its frames painted by paint (s.edge, the renderer's, unseen).
         swatch = function(win)
             local s = CreateFrame("Button", nil, win)
-            s:SetSize(18, 18)
+            s:SetSize(GRIDS.size, GRIDS.size)
             s.edge = s:CreateTexture(nil, "BACKGROUND")
             s.edge:SetAllPoints(s)
             s.edge:Hide() -- the renderer's frame: 7.x draws 4a's (paint)
             s.fill = s:CreateTexture(nil, "ARTWORK")
-            s.fill:SetPoint("TOPLEFT", s, "TOPLEFT", 3, -3)
-            s.fill:SetSize(12, 12)
+            s.fill:SetPoint("TOPLEFT", s, "TOPLEFT", GRIDS.inset, -GRIDS.inset)
+            s.fill:SetSize(GRIDS.size - 2 * GRIDS.inset, GRIDS.size - 2 * GRIDS.inset)
             return s
         end,
         place = function(win)
-            X.Art(win, "TXTCOLOR.EPF", "TXTCOLOR.PAL")
-            X.Image(win, win.ok, 14, 100, 363, 163, 387)
-            X.Image(win, win.cancel, 22, 175, 363, 238, 387)
+            X.Art(win, unpack(C.art))
+            X.Image(win, win.ok, unpack(C.ok))
+            X.Image(win, win.cancel, unpack(C.cancel))
             for i, b in ipairs(win.categories) do
-                local x, y = 77 + (i - 1) % 3 * 60, 57 + math.floor((i - 1) / 3) * 20
-                X.Rect(b, win, x, y, x + 60, y + 20)
+                local x, y = CAT.x + (i - 1) % CAT.across * CAT.width, CAT.y + math.floor((i - 1) / CAT.across) * CAT.height
+                X.Rect(b, win, x, y, x + CAT.width, y + CAT.height)
             end
-            for _, g in ipairs({ { win.text, 134 }, { win.outline, 253 } }) do
+            local size = GRIDS.size
+            for _, g in ipairs({ { win.text, GRIDS.text }, { win.outline, GRIDS.outline } }) do
                 for i, s in ipairs(g[1]) do
-                    local x, y = 20 + (i - 1) % 16 * 18, g[2] + math.floor((i - 1) / 16) * 18
-                    X.Rect(s, win, x, y, x + 18, y + 18)
+                    local x, y = GRIDS.x + (i - 1) % GRIDS.across * size, g[2] + math.floor((i - 1) / GRIDS.across) * size
+                    X.Rect(s, win, x, y, x + size, y + size)
                 end
             end
         end,
@@ -192,8 +208,8 @@ return function(L, X)
             local c = win.colors or {}
             for i, b in ipairs(win.categories) do
                 local chosen = i == win.category
-                ring(b, "x7outer", 60, 20, 0, 2, chosen and S.TEXT or nil)
-                ring(b, "x7inner", 60, 20, 2, 1, chosen and 0x8F or 0x88)
+                ring(b, "x7outer", CAT.width, CAT.height, 0, 2, chosen and S.TEXT or nil)
+                ring(b, "x7inner", CAT.width, CAT.height, 2, 1, chosen and 0x8F or 0x88)
                 -- the name outlined in its outline colour (none for colour 0: DrawOutlinedTextAt)
                 local outline = c[i * 2] or 0
                 local rgb = outline ~= 0 and TK.Chat:PaletteRGB(outline)
@@ -203,13 +219,14 @@ return function(L, X)
                 end
             end
             local fg, outline = c[win.category * 2 - 1], c[win.category * 2]
+            local size = GRIDS.size
             for _, pair in ipairs({ { win.text, fg }, { win.outline, outline } }) do
                 for _, s in ipairs(pair[1]) do
                     local chosen = s.index == pair[2]
-                    ring(s, "x7outer", 18, 18, 0, 2, chosen and S.TEXT or nil)
-                    ring(s, "x7inner", 18, 18, 2, 1, chosen and 0x8F or (s.index == 0 and 0x88 or nil))
+                    ring(s, "x7outer", size, size, 0, 2, chosen and S.TEXT or nil)
+                    ring(s, "x7inner", size, size, 2, 1, chosen and 0x8F or (s.index == 0 and 0x88 or nil))
                 end
             end
         end,
-    }
+    })
 end

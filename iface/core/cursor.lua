@@ -162,22 +162,45 @@ end
 --- Head note 44: what shows spell icons, a function each, called each frame while spell icons animate; each draws
 --- only its visible rows or slots. s6-spell-icons: also while a spell's own choice animates whatever the option says.
 TK.SpellIconAnimators = {}
+
+local animator = CreateFrame("Frame", "TKSpellIconAnimator", UIParent)
+animator:SetSize(1, 1)
+animator:Hide()
+animator:SetScript("OnUpdate", function()
+    for _, f in pairs(TK.SpellIconAnimators) do f() end
+end)
+
+--- s6-ui-core (round 101, the graphics plan's T11 step 1): the animators run (their frame shows, so the host calls it)
+--- only while an icon animates and one is registered. An icon animates with the Interface page's option, or when a
+--- spell's own choice in the scopes says so (the store's answer, H:SpellIconsAnimateAny): asked again (ask) when the
+--- icons change (the editor, a learned effect), when the character's bars change (entering the world) and every half
+--- second for an edit by hand (the store looks at its files every 2 s), not every frame as before. Drawing only.
+local anyChosen = false
+function TK.RefreshSpellIconAnimator(ask)
+    if ask then anyChosen = H:SpellIconsAnimateAny(TK.Characters.ref or "") == true end
+    animator:SetShown(next(TK.SpellIconAnimators) ~= nil and (TK.SpellIconsAnimated() or anyChosen))
+end
+TK.On("TK_SPELL_ICONS_CHANGED", function() TK.RefreshSpellIconAnimator(true) end)
+TK.On("ACTIONBAR_SLOT_CHANGED", function() TK.RefreshSpellIconAnimator(true) end)
+local animatorWatch = CreateFrame("Frame", "TKSpellIconWatch", UIParent)
+animatorWatch:SetSize(1, 1)
+animatorWatch:SetScript("OnUpdate", TK.Util.Throttled(0.5, function() TK.RefreshSpellIconAnimator(true) end))
+
 -- s6-interface-5x (round 13's hotfix; the separation's step 11): a component's is keyed by its name, and goes when the
 -- component is unloaded (TK.Components:Unload), as its main.lua sets it again when it loads
 TK.OnWithdraw(function(name, panel)
-    if name and panel == nil then TK.SpellIconAnimators[name] = nil end
+    if name and panel == nil and TK.SpellIconAnimators[name] then
+        TK.SpellIconAnimators[name] = nil
+        TK.RefreshSpellIconAnimator()
+    end
 end)
 
 --- s6-modular-g (round 16, separation step 7): an interface's animator, by name (fn, or nil to remove it): an interface
 --- registers here rather than writing into the global table (interface-separation.md, rule R3).
-function TK.SetSpellIconAnimator(name, fn) TK.SpellIconAnimators[name] = fn end
-
-local animator = CreateFrame("Frame", "TKSpellIconAnimator", UIParent)
-animator:SetSize(1, 1)
-animator:SetScript("OnUpdate", function()
-    if not TK.SpellIconsAnimated() and not H:SpellIconsAnimateAny(TK.Characters.ref or "") then return end
-    for _, f in pairs(TK.SpellIconAnimators) do f() end
-end)
+function TK.SetSpellIconAnimator(name, fn)
+    TK.SpellIconAnimators[name] = fn
+    TK.RefreshSpellIconAnimator()
+end
 
 --- Resolve an icon's picture and glyph, including animated spell icons and missing-book state.
 --- Shared widgets use this lookup so interfaces can draw the same action with their own skin.

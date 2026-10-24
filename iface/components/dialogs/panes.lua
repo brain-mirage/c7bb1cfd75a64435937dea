@@ -188,16 +188,14 @@ function Parcel.build()
         end)
         win.buttons[i] = b
     end
-    local elapsedTotal = 0
-    win:SetScript("OnUpdate", function(_, elapsed)
-        elapsedTotal = elapsedTotal + (elapsed or 0)
-        if elapsedTotal < 0.2 then return end
-        elapsedTotal = 0
+    -- the icons' frames every 0.2 s, the first 0.2 s after the window shows (s6-ui-core round 101, T11 step 2: the host
+    -- keeps the countdown, TK.Util.Throttled); drawing only
+    win:SetScript("OnUpdate", TK.Util.Throttled(0.2, function()
         local c = win.view and win.view.contents or {}
         if (c.left or 0) > 0 and not c.leftAcknowledged then advance(win.buttons[0], 6) end
         if (c.right or 0) > 0 and not c.rightAcknowledged then advance(win.buttons[1], 20) end
         paint(win)
-    end)
+    end, 0.2))
     win:Hide()
     return win
 end

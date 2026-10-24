@@ -182,9 +182,10 @@ local function buildGeneral(parent)
     exportNote:SetWidth(VIEW_W - 190)
     exportNote:SetPoint("LEFT", g.export, "RIGHT", 10, 0)
     -- While shown, the previews follow the icon's animation (as the bars' and the book's, TK.SpellIconAnimators).
-    TK.SpellIconAnimators.spelliconeditor = function()
+    -- Registered through TK.SetSpellIconAnimator, which shows the animator frame when needed (T11 step 1).
+    TK.SetSpellIconAnimator("spelliconeditor", function()
         if g:IsVisible() then E:DrawGeneral() end
-    end
+    end)
     return g
 end
 

@@ -4,95 +4,83 @@
 -- UNIT_HEALTH and UNIT_POWER for party1..n. s6-ui-core (round 82; the owner, 2026-10-09): the health bars are Modern's
 -- vital bars (vitals.lua): the numbers in the player frame's forms, in two rows when one line does not fit; and a
 -- hovered spell's healing or damage, as the Library learned it, previewed on the targeted member's bar.
+-- s6-ui-core (round 85): the XML twin's scripts; the container and the plates are main.xml's (core/xml.md).
 
 local C = TK.GetComponent("partyframes")
 local H = __tk
 local U = TK.Util
-local W = require("interfaces.modern.skin").UI -- s6-devtools (round 5, the separation's step 5): Modern's skin
+local E = require("interfaces.modern.elements")
 local V = require("interfaces.modern.vitals") -- s6-ui-core (round 82)
 
-local HEIGHT = 44
-local PORTRAIT = 36
-local NAME_TOP, BARS_TOP = 5, 21   -- s6-ui-font: below the plate's top
-local HP_HEIGHT = 12
+-- a plate's sizes (main.xml's)
+local SIZES = TK.Xml.Data("main.xml").SIZES
+local HEIGHT = SIZES.height
+local PORTRAIT = SIZES.portrait
+local NAME_TOP, BARS_TOP = SIZES.nameTop, SIZES.barsTop   -- s6-ui-font: below the plate's top
+local HP_HEIGHT = SIZES.hp
 
-local function bar(parent, height, r, g, b) return V.Bar(parent, height, r, g, b, 10) end
+-- the scripts main.xml names
+local scripts = {}
 
-local function makePlate(parent, i)
-    local p = CreateFrame("Frame", "TKPartyMember" .. i, parent)
-    p:SetBackdrop({ bg = { 0.04, 0.04, 0.05, 0.85 }, edge = { 0.45, 0.45, 0.5, 1 } })
-    TK.UI.HudPanel(p, C) -- s6-ui-settings (round 4): the shared panel style; s6-ui-core (round 53): or its own
-    -- The member's head, as the original's group tab draws it (s6-characters' "member" portrait from 0x63).
-    p.portraitBox = CreateFrame("Frame", nil, p)
-    p.portraitBox:SetSize(PORTRAIT, PORTRAIT)
-    p.portraitBox:SetPoint("LEFT", p, "LEFT", 4, 0)
-    p.portraitBox:SetBackdrop({ bg = { 0, 0, 0, 0.6 }, edge = false, bgFile = "tk:white" })
-    p.portrait = p.portraitBox:CreateTexture(nil, "ARTWORK")
-    p.portrait:SetPoint("BOTTOM", p.portraitBox, "BOTTOM", 0, 1)
-    p.name = W.Label(p, "", 12, W.white, "LEFT")
-    p.name:SetFont("classic", 12, "")   -- names in the original's own font
-    p.name:SetPoint("TOPLEFT", p, "TOPLEFT", PORTRAIT + 9, -NAME_TOP)   -- s6-ui-font: NAME_TOP
-    p.info = W.Label(p, "", 10, { 0.75, 0.75, 0.8 }, "RIGHT")
-    p.info:SetPoint("TOPRIGHT", p, "TOPRIGHT", -7, -6)
-    p.hp = bar(p, HP_HEIGHT, 0.15, 0.75, 0.15)   -- placed by C:Layout, under the name (s6-ui-font)
-    p.mp = bar(p, 7, 0.2, 0.45, 0.95)
-    p.mp.text:Hide()
-    p.mp:SetPoint("TOPLEFT", p.hp, "BOTTOMLEFT", 0, -2)
-    p.mp:SetPoint("TOPRIGHT", p.hp, "BOTTOMRIGHT", 0, -2)
-    -- The member's tooltip (head note 40): what the group list sends, nothing more.
-    p:EnableMouse(true)
-    p:SetScript("OnEnter", function(self)
-        if not self.unit then return end
-        local ok, name, level, path = H:GetUnitInfo(self.unit)
-        if not ok then return end
-        local _, hp, hpMax, mp, mpMax = H:GetUnitVitals(self.unit)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine(name, 1, 1, 1)
-        if (level or 0) > 0 or (path or "") ~= "" then GameTooltip:AddLine(("Level " .. level .. " " .. path):gsub("%s+$", ""), 1, 0.82, 0) end
-        GameTooltip:AddLine("Vita " .. U.FormatNumber(hp) .. " / " .. U.FormatNumber(hpMax), 0.4, 1, 0.4)
-        GameTooltip:AddLine("Mana " .. U.FormatNumber(mp) .. " / " .. U.FormatNumber(mpMax), 0.5, 0.65, 1)
-        GameTooltip:Show()
-    end)
-    p:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    -- s6-rules-dialogs: a right-click on a member opens the player menu (D-56; the model decides).
-    p:SetScript("OnMouseDown", function(_, button)
-        if button ~= "RightButton" or not p.unit or p.unit == "player" or not TK.Dialogs then return end
-        local _, name = H:GetUnitInfo(p.unit)
-        TK.Dialogs.PlayerMenu(H:GetUnitId(p.unit), name)
-    end)
-    p:Hide()
-    return p
+function scripts.HudPanel(p) TK.UI.HudPanel(p, C) end
+
+-- the mana bar's numbers are not shown
+function scripts.NoText(mp) mp.text:Hide() end
+
+function scripts.Tip(self)
+    if not self.unit then return end
+    local ok, name, level, path = H:GetUnitInfo(self.unit)
+    if not ok then return end
+    local _, hp, hpMax, mp, mpMax = H:GetUnitVitals(self.unit)
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:AddLine(name, 1, 1, 1)
+    if (level or 0) > 0 or (path or "") ~= "" then GameTooltip:AddLine(("Level " .. level .. " " .. path):gsub("%s+$", ""), 1, 0.82, 0) end
+    GameTooltip:AddLine("Vita " .. U.FormatNumber(hp) .. " / " .. U.FormatNumber(hpMax), 0.4, 1, 0.4)
+    GameTooltip:AddLine("Mana " .. U.FormatNumber(mp) .. " / " .. U.FormatNumber(mpMax), 0.5, 0.65, 1)
+    GameTooltip:Show()
+end
+
+function scripts.Untip() GameTooltip:Hide() end
+
+function scripts.PlayerMenu(p, button)
+    if button ~= "RightButton" or not p.unit or p.unit == "player" or not TK.Dialogs then return end
+    local _, name = H:GetUnitInfo(p.unit)
+    TK.Dialogs.PlayerMenu(H:GetUnitId(p.unit), name)
+end
+
+-- the plates, one per member the party can have
+function scripts.Plates(f, build)
+    C.plates = {}
+    for i = 1, C.MAX do
+        local p = build:New("Plate", f, "TKPartyMember" .. i)
+        p.portrait = p.portraitBox.portrait
+        C.plates[i] = p
+    end
+end
+
+function scripts.PortraitTicker(f)
+    f:SetScript("OnUpdate", U.Throttled(0.5, function()
+        for unit, p in pairs(C.byUnit or {}) do C:ShowPortrait(p, unit) end
+    end))
+end
+
+function scripts.Changed(_, event, unit)
+    if event == "UNIT_HEALTH" or event == "UNIT_POWER" or event == "UNIT_NAME_UPDATE" then
+        local p = C.byUnit and C.byUnit[unit]
+        if p then
+            C:UpdatePlate(p, unit)
+            C:FitRows() -- s6-ui-core (round 82)
+        end
+    elseif event == "PLAYER_TARGET_CHANGED" then
+        C:ShowPreviews()
+    else
+        C:Layout()
+    end
 end
 
 function C:OnEnable()
-    local f = CreateFrame("Frame", "TKPartyFrame", UIParent)
+    local f = TK.Xml.Load("main.xml", { scripts = scripts, elements = E }).frame
     self.frame = f
-    self.plates = {}
-    for i = 1, C.MAX do self.plates[i] = makePlate(f, i) end
-
-    -- s6-ui-font: UI_SCALE_CHANGED lays the plates out again (the name's height can change with the scale).
-    for _, e in ipairs({ "GROUP_ROSTER_UPDATE", "UNIT_HEALTH", "UNIT_POWER", "UNIT_NAME_UPDATE",
-                         "PLAYER_ENTERING_WORLD", "TK_EDIT_MODE", "UI_SCALE_CHANGED",
-                         "PLAYER_TARGET_CHANGED" }) do -- s6-ui-core (round 82): the preview follows the target
-        f:RegisterEvent(e)
-    end
-    -- The portraits' pictures come a moment after the group list: they are looked at a few times a second.
-    f:SetScript("OnUpdate", U.Throttled(0.5, function()
-        for unit, p in pairs(self.byUnit or {}) do self:ShowPortrait(p, unit) end
-    end))
-    f:SetScript("OnEvent", function(_, event, unit)
-        if event == "UNIT_HEALTH" or event == "UNIT_POWER" or event == "UNIT_NAME_UPDATE" then
-            local p = self.byUnit and self.byUnit[unit]
-            if p then
-                self:UpdatePlate(p, unit)
-                self:FitRows() -- s6-ui-core (round 82)
-            end
-        elseif event == "PLAYER_TARGET_CHANGED" then
-            self:ShowPreviews()
-        else
-            self:Layout()
-        end
-    end)
     TK.Visibility:Attach(f, function() return self:DB() end)
     TK.EditMode:Register(f, "partyframes", "Party Frames", C.defaultPosition, "partyframes")
 end

@@ -24,6 +24,8 @@
 -- Ctrl and Alt) are the game layer's (TK.Game.Hotkeys: their carriers, the slots' attach and press, what goes onto the
 -- slots by itself). Bars 1-3's buttons 1-10 draw those slots and bind through the carriers' commands (C.ButtonCommand,
 -- settings.lua, with the default keys); the bars can be turned off with their component and the hotkeys still act.
+-- s6-ui-core (round 85): the XML twin's scripts; a bar and its buttons are bars.xml's, the events frame main.xml's
+-- (core/xml.md).
 
 local C = TK.GetComponent("actionbars")
 local H = __tk
@@ -84,114 +86,87 @@ local function showTooltip(b)
     GameTooltip:Show()
 end
 
-local function makeButton(bar, index)
+-- the scripts bars.xml and main.xml name
+local scripts = {}
+local buttons -- bars.xml's build (C:OnEnable)
+local making -- the bar and the index of the button being made (makeButton), for its Button script
+
+-- A button's slot, its binding and the hotkey path a click goes on.
+function scripts.Button(b)
+    local bar, index = making.bar, making.index
     local name = "TKActionBar" .. bar.id .. "Button" .. index
-    local b = CreateFrame("Button", name, bar.frame)
     b.bar, b.index = bar, index
     b.action = C.Slot(bar.id, index)
     -- s6-modular-g (round 19, step 8): the binding it binds through, a carrier's for the original's hotkeys
     b.command = C.ButtonCommand(bar.id, index)
     b.label = "Bar " .. bar.id .. " Button " .. index
-    -- A click goes on the hotkey path; a bar that is off keeps its keys (the owner, 2026-10-03). Wire: TK.Game.Hotkeys.
+    -- A click goes on the hotkey path; a bar that is off keeps its keys (the owner, 2026-10-03). Wire: TK.Game.Hotkeys
+    -- (its press is 4a's UserPane::ExecuteHotkeyAction 0x005A3AE0); changing this changes what the server sees.
     K.MakeHotkey(b)
     if b.command ~= "CLICK " .. name then K.SetFace(b.action, b) end -- the carrier's key shows pushed here
     b:SetSize(C.BUTTON_SIZE, C.BUTTON_SIZE)
+end
 
-    -- s6-ui-core (round 62): the shared slot's picture, an action button's edge, the light; its box's colour the bar's
-    -- (ColourSlot). The icon: the original's item picture at its own size, or a placeholder square with the letter
-    -- (spells have no pictures in the original). The gloss, the pushed look and the cooldown cover the same inset square.
-    b.bg, b.icon, b.border = W.SlotArt(b, { edge = W.slotActionEdge })
-    C:ColourSlot(b)
+function scripts.ColourSlot(b) C:ColourSlot(b) end
 
-    b.gloss = b:CreateTexture(nil, "ARTWORK", nil, 2)
-    b.gloss:SetPoint("TOPLEFT", b, "TOPLEFT", 3, -3)
-    b.gloss:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", -3, 3)
-    b.gloss:SetTexture("tk:gloss")
+-- the cooldown over the icon, the texts over the cooldown
+function scripts.OverIcon(cooldown) cooldown:SetFrameLevel(cooldown:GetParent():GetFrameLevel() + 1) end
 
-    b.glyph = b:CreateFontString(nil, "ARTWORK", nil, 3)
-    b.glyph:SetFont(22, "OUTLINE")
-    b.glyph:SetTextColor(1, 1, 1, 0.95)
-    b.glyph:SetPoint("CENTER", b, "CENTER", 0, 1)
+function scripts.OverCooldown(texts) texts:SetFrameLevel(texts:GetParent():GetFrameLevel() + 2) end
 
-    local pushed = b:CreateTexture(nil, "OVERLAY", nil, 1)
-    pushed:SetAllPoints(b.gloss)
-    pushed:SetColorTexture(0, 0, 0, 0.4)
-    b:SetPushedTexture(pushed)
+function scripts.CooldownDone(cooldown)
+    local b = cooldown:GetParent()
+    b.glyph:SetAlpha(0.95)
+    local kind, slot = C:ShownAction(b)
+    C:UpdateMark(b, kind, slot, false)
+end
 
-    -- The cooldown above the icon, then the texts above the cooldown so they stay readable.
-    b.cooldown = CreateFrame("Cooldown", name .. "Cooldown", b)
-    b.cooldown:SetAllPoints(b.gloss)
-    b.cooldown:SetFrameLevel(b:GetFrameLevel() + 1)
-    b.cooldown:SetCountdownFontSize(24)
-    -- The icon's letter steps back while the aether number is shown over it; s6-ui-core (round 82): the aether's red edge
-    -- goes with it.
-    b.cooldown:SetScript("OnCooldownDone", function()
-        b.glyph:SetAlpha(0.95)
-        local kind, slot = C:ShownAction(b)
-        C:UpdateMark(b, kind, slot, false)
-    end)
+function scripts.Texts(texts)
+    local b = texts:GetParent()
+    b.hotkey, b.count, b.name, b.bindOverlay = texts.hotkey, texts.count, texts.name, texts.bindOverlay
+end
 
-    b.texts = CreateFrame("Frame", nil, b)
-    b.texts:SetAllPoints(b)
-    b.texts:SetFrameLevel(b:GetFrameLevel() + 2)
-
-    b.hotkey = b.texts:CreateFontString(nil, "OVERLAY")
-    b.hotkey:SetFont(12, "OUTLINE")
-    b.hotkey:SetTextColor(0.85, 0.85, 0.85, 1)
-    b.hotkey:SetJustifyH("RIGHT")
-    b.hotkey:SetPoint("TOPRIGHT", b, "TOPRIGHT", -3, -3)
-
-    b.count = b.texts:CreateFontString(nil, "OVERLAY")
-    b.count:SetFont(13, "OUTLINE")
-    b.count:SetTextColor(1, 1, 1, 1)
-    b.count:SetJustifyH("RIGHT")
-    b.count:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", -3, 3)
-
-    b.name = b.texts:CreateFontString(nil, "OVERLAY")
-    b.name:SetFont(10, "OUTLINE")
-    b.name:SetTextColor(1, 1, 1, 0.9)
-    b.name:SetPoint("BOTTOMLEFT", b, "BOTTOMLEFT", 3, 3)
-    b.name:SetJustifyH("LEFT")
-
-    b.bindOverlay = b.texts:CreateTexture(nil, "OVERLAY", nil, -1)
-    b.bindOverlay:SetAllPoints(b)
-    b.bindOverlay:SetColorTexture(0.2, 0.9, 0.3, 0.35)
-    b.bindOverlay:Hide()
-
-    b:RegisterForDrag("LeftButton")
-    b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-
-    -- A click (or Modern's own key) presses the slot as the game layer does (wire: TK.Game.Hotkeys.Press).
-    b:SetScript("OnClick", function(self, button)
-        if K.Press(self, button) == "placed" then
-            C:UpdateAllButtons()
-            showTooltip(self) -- s6-macros: the placed action's tooltip, not the one from before the drop
-        end
-    end)
-    b:SetScript("OnDragStart", function(self)
-        if TK.KeyBindMode.active then return end
-        if TK.DB:Global().buttonLock and not IsShiftKeyDown() then return end
-        if not HasAction(self.action) then return end
-        PickupAction(self.action)
+-- A click (or Modern's own key) presses the slot as the game layer does. Wire: TK.Game.Hotkeys.Press (4a's
+-- UserPane::ExecuteHotkeyAction 0x005A3AE0); changing this changes what the server sees.
+function scripts.Press(self, button)
+    if K.Press(self, button) == "placed" then
         C:UpdateAllButtons()
-    end)
-    b:SetScript("OnReceiveDrag", function(self)
-        if not GetCursorInfo() then return end
-        PlaceAction(self.action)
-        C:UpdateAllButtons()
-        showTooltip(self) -- s6-macros: the dropped action's tooltip, not the empty button's
-    end)
-    b:SetScript("OnEnter", function(self)
-        if TK.KeyBindMode.active then self.bindOverlay:Show() end
-        showTooltip(self)
-    end)
-    b:SetScript("OnLeave", function(self)
-        self.bindOverlay:Hide()
-        GameTooltip:Hide()
-        TK.ManaPreview.Hide()
-    end)
+        showTooltip(self) -- s6-macros: the placed action's tooltip, not the one from before the drop
+    end
+end
 
-    TK.Bindings:RegisterBindable(b, b.command, b.label)
+function scripts.DragStart(self)
+    if TK.KeyBindMode.active then return end
+    if TK.DB:Global().buttonLock and not IsShiftKeyDown() then return end
+    if not HasAction(self.action) then return end
+    PickupAction(self.action)
+    C:UpdateAllButtons()
+end
+
+function scripts.ReceiveDrag(self)
+    if not GetCursorInfo() then return end
+    PlaceAction(self.action)
+    C:UpdateAllButtons()
+    showTooltip(self) -- s6-macros: the dropped action's tooltip, not the empty button's
+end
+
+function scripts.Enter(self)
+    if TK.KeyBindMode.active then self.bindOverlay:Show() end
+    showTooltip(self)
+end
+
+function scripts.Leave(self)
+    self.bindOverlay:Hide()
+    GameTooltip:Hide()
+    TK.ManaPreview.Hide()
+end
+
+function scripts.Bindable(b) TK.Bindings:RegisterBindable(b, b.command, b.label) end
+
+local function makeButton(bar, index)
+    making = { bar = bar, index = index }
+    local b = buttons:New("ActionButton", bar.frame, "TKActionBar" .. bar.id .. "Button" .. index)
+    making = nil
     return b
 end
 
@@ -381,8 +356,9 @@ function C:ApplyBar(bar)
 end
 
 function C:OnEnable()
+    buttons = TK.Xml.Load("bars.xml", { scripts = scripts, elements = require("interfaces.modern.elements") })
     for i = 1, C.MAX_BARS do
-        local frame = CreateFrame("Frame", "TKActionBar" .. i, UIParent)
+        local frame = buttons:New("ActionBar", nil, "TKActionBar" .. i)
         local bar = { id = i, frame = frame, buttons = {} }
         frame.bar = bar
         for j = 1, C.BUTTONS do bar.buttons[j] = makeButton(bar, j) end
@@ -394,40 +370,30 @@ function C:OnEnable()
 
     K.SetPlacer(function() return self:FirstEmptyButton() end)
 
-    -- This runs for the bars that are off too, as a bar that is off keeps its keys while another is on (the owner,
-    -- 2026-10-03): the buttons carry what their clicks and Modern's own keys run (UpdateButton: the action frozen at the
-    -- press). Wire: a carried action left stale would use another slot or cast another spell than the press's (UserPane::
-    -- UseCommandSlot 0x005A4530); changing this changes what the server sees. The original's hotkeys are the game layer's
-    -- carriers since step 8 (s6-modular-g round 19), which it refreshes on the same events before this runs; so with
-    -- every bar off this component is not loaded at all (step 11; s6-modular-g round 20). What is drawing alone skips the
-    -- bars that are off (UpdateButton's look, UpdateCooldowns, the animator).
-    local events = CreateFrame("Frame")
-    for _, e in ipairs({ "ACTIONBAR_UPDATE_COOLDOWN", "BAG_UPDATE", "SPELLS_CHANGED", "UPDATE_BINDINGS",
-                         "ACTIONBAR_SLOT_CHANGED", "TK_EDIT_MODE", "TK_KEYBIND_MODE", "PLAYER_ENTERING_WORLD",
-                         "TK_PANEL_STYLE_CHANGED", "TK_DRAWING_STYLE_CHANGED",
-                         "TK_SPELL_ICONS_CHANGED", -- s6-spell-icons: a spell's icon chosen in its editor
-                         "UNIT_POWER" }) do -- s6-ui-core (round 82): the red edges as the mana changes
-        events:RegisterEvent(e)
+    -- the events, after the bars (main.xml's note: wire)
+    TK.Xml.Load("main.xml", { scripts = scripts })
+end
+
+-- What the events frame does (main.xml). Wire: the buttons' carried actions refreshed (UpdateAllButtons, main.xml's
+-- note: UserPane::UseCommandSlot 0x005A4530); changing this changes what the server sees.
+function scripts.Changed(_, event, unit)
+    if event == "ACTIONBAR_UPDATE_COOLDOWN" then
+        C:UpdateCooldowns()
+        return
     end
-    events:SetScript("OnEvent", function(_, event, unit)
-        if event == "ACTIONBAR_UPDATE_COOLDOWN" then
-            self:UpdateCooldowns()
-            return
-        end
-        if event == "UNIT_POWER" then
-            if unit == "player" then self:UpdateMarks() end
-            return
-        end
-        if event == "TK_PANEL_STYLE_CHANGED" then
-            for _, bar in ipairs(self.bars) do
-                if self:BarDB(bar.id).enabled then
-                    for _, b in ipairs(bar.buttons) do self:ColourSlot(b) end
-                end
+    if event == "UNIT_POWER" then
+        if unit == "player" then C:UpdateMarks() end
+        return
+    end
+    if event == "TK_PANEL_STYLE_CHANGED" then
+        for _, bar in ipairs(C.bars) do
+            if C:BarDB(bar.id).enabled then
+                for _, b in ipairs(bar.buttons) do C:ColourSlot(b) end
             end
-            return
         end
-        self:UpdateAllButtons()
-    end)
+        return
+    end
+    C:UpdateAllButtons()
 end
 
 function C:ApplySettings()

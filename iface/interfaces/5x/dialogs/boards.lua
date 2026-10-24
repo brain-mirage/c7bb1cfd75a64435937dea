@@ -41,96 +41,112 @@
 -- 7.5.2's position apart from 5.33's drawn one and they ask where 7.5.2's would however the drawn list scrolls. Nothing
 -- here changes that. Drawing only: the indexes, the keys, the 3B requests and the replies are the renderer's and the
 -- model's.
+--
+-- s6-ui-core (round 85): the XML twin's; the windows' sizes, pictures, buttons and the parts' places are boards.xml's
+-- (core/xml.md).
 
 local S = require("interfaces.5x.skin")
+local unpack = table.unpack
+local entry = require("interfaces.original.entry")
+local D = TK.Xml.Data("boards.xml")
 
 return function(L, X)
     local P = "NPAL8.PAL"
     -- what 7.x's look draws alike: interfaces/original/boards.lua
     local B = require("interfaces.original.boards")(X)
     local first = B.First
+    local BUTTON = D.BUTTON
 
-    --- The window's picture and its image buttons: { index, image, left, top } each (72 x 16); default: the index of
-    --- the default button (DialogPane__SetFocusedControl), nil for none.
-    local function frame(win, file, buttons, default)
-        X.Art(win, file, P)
-        for _, b in ipairs(buttons) do
-            X.Image(win, win.controls[b[1]], b[2], b[3], b[4], b[3] + 72, b[4] + 16)
+    --- The window's frame (boards.xml's): its picture and its image buttons ({ index, image, left, top } each, BUTTON's
+    --- size); its default: the index of the default button (DialogPane__SetFocusedControl), nil for none.
+    local function frame(win, f)
+        X.Art(win, f.file, P)
+        for _, b in ipairs(f) do
+            X.Image(win, win.controls[b[1]], b[2], b[3], b[4], b[3] + BUTTON.width, b[4] + BUTTON.height)
         end
-        X.Default(win, default and win.controls[default] or nil)
+        X.Default(win, f.default and win.controls[f.default] or nil)
     end
 
-    --- The lists' place: (36, 71)-(410, 295), 360 x 14 cells, with the boards' row colours.
+    --- The lists' place (boards.xml's LIST), with the boards' row colours.
     local function list(win)
-        X.List(win, win.list, 36, 71, 410, 295, 360, 14)
+        X.List(win, win.list, unpack(D.LIST))
         B.Colours(win.list)
     end
 
-    L.Boards = {
-        width = 446, height = 366, button = 72, listWidth = 361, listHeight = 224, slide = first,
+    local BD = D.Boards
+    L.Boards = entry(BD, {
+        slide = first,
         place = function(win)
-            frame(win, "DLGBBS01.EPF", { { 1, 17, 149, 316 }, { 2, 15, 226, 316 } }, 1)
+            frame(win, BD.frame)
             list(win)
         end,
-    }
+    })
 
-    L.BoardList = {
-        width = 446, height = 366, button = 72, listWidth = 361, listHeight = 224, slide = first,
+    local BL = D.BoardList
+    local COLUMNS = BL.columns
+    L.BoardList = entry(BL, {
+        slide = first,
         place = function(win)
             local mail = win.className == "MailListDialog"
             if mail then
-                frame(win, "DLGBBS05.EPF", { { 1, 17, 37, 316 }, { 2, 32, 112, 316 }, { 3, 33, 187, 316 },
-                    { 4, 21, 262, 316 }, { 5, 31, 337, 316 }, { 6, 15, 187, 333 } }, 1)
+                frame(win, BL.mail)
             else
-                frame(win, "DLGBBS02.EPF", { { 1, 17, 37, 316 }, { 2, 32, 112, 316 }, { 3, 31, 187, 316 },
-                    { 4, 21, 262, 316 }, { 5, 15, 337, 316 }, { 8, 31, 34, 53 } }, 1)
-                B.Heading(win, 131, 54, 409, 66)
+                frame(win, BL.articles)
+                B.Heading(win, unpack(BL.heading))
             end
             list(win)
             -- win.x5mail chooses the rows' subject width (7.5.2's view for the paging is the component's: above)
             win.x5mail = mail
         end,
         -- a row (the model's { status, id, author or sender, month, day, subject }): the columns above
-        row = function(win, row, r) B.Row(row, r, 60, 150, 200, win.x5mail and 110 or 160) end,
-    }
+        row = function(win, row, r)
+            B.Row(row, r, COLUMNS.author, COLUMNS.date, COLUMNS.subject,
+                  win.x5mail and COLUMNS.mailSubjectWidth or COLUMNS.subjectWidth)
+        end,
+    })
 
-    L.Reader = {
-        width = 446, height = 366, button = 72, bodyWidth = 361, bodyHeight = 180, slide = first,
+    local RD = D.Reader
+    L.Reader = entry(RD, {
+        slide = first,
         place = function(win)
-            frame(win, "DLGBBS03.EPF", { { 1, 19, 37, 316 }, { 2, 32, 112, 316 }, { 3, 31, 187, 316 },
-                { 4, 21, 262, 316 }, { 5, 18, 337, 316 }, { 6, 15, 187, 333 } }, 5)
-            B.Heading(win, 142, 54, 410, 66)
-            X.StaticText(win, "x7author", 111, 74, 231, 86, S.LIST)
-            X.StaticText(win, "x7date", 290, 74, 410, 86, S.LIST)
-            X.StaticText(win, "x7subject", 111, 93, 410, 106, S.LIST)
+            frame(win, RD.frame)
+            B.Heading(win, unpack(RD.heading))
+            local a, d, s = RD.author, RD.date, RD.subject
+            X.StaticText(win, "x7author", a[1], a[2], a[3], a[4], S.LIST)
+            X.StaticText(win, "x7date", d[1], d[2], d[3], d[4], S.LIST)
+            X.StaticText(win, "x7subject", s[1], s[2], s[3], s[4], S.LIST)
             win.head:Hide()
-            B.Body(win, 36, 115, 410, 295, 362)
+            B.Body(win, unpack(RD.body))
         end,
         fill = B.Fill("author"),
-    }
+    })
 
-    L.Letter = {
-        width = 446, height = 366, button = 72, bodyWidth = 361, bodyHeight = 168, slide = first,
+    local LT = D.Letter
+    L.Letter = entry(LT, {
+        slide = first,
         place = function(win)
-            frame(win, "DLGBBS06.EPF", { { 1, 32, 74, 316 }, { 2, 33, 149, 316 }, { 3, 21, 224, 316 },
-                { 4, 31, 299, 316 }, { 5, 19, 112, 333 }, { 6, 15, 187, 333 }, { 7, 18, 262, 333 } }, 7)
-            X.StaticText(win, "x7author", 111, 84, 231, 96, S.LIST)
-            X.StaticText(win, "x7date", 290, 84, 410, 96, S.LIST)
-            X.StaticText(win, "x7subject", 111, 103, 410, 116, S.LIST)
+            frame(win, LT.frame)
+            local a, d, s = LT.author, LT.date, LT.subject
+            X.StaticText(win, "x7author", a[1], a[2], a[3], a[4], S.LIST)
+            X.StaticText(win, "x7date", d[1], d[2], d[3], d[4], S.LIST)
+            X.StaticText(win, "x7subject", s[1], s[2], s[3], s[4], S.LIST)
             win.head:Hide()
-            B.Body(win, 36, 127, 410, 295, 362)
+            B.Body(win, unpack(LT.body))
         end,
         fill = B.Fill("sender"),
-    }
+    })
+
+    local F = D.Form
+    local TILES, ENTRIES, BORDER = F.tiles, F.entries, F.border
 
     --- A value edit of the form with 5.33's border (SharedTextControlPaneOnPaint 0x0041BF00): its text 2 pixels in, a
-    --- frame in 0x80 one pixel in, the outer edge's top and left in 0x88 and its bottom and right in 0x8C; the lines are
-    --- the edit's, so they hide with it. Drawing only.
+    --- frame in 0x80 (S.TEXT) one pixel in, the outer edge's top and left in BORDER's light and its bottom and right in its
+    --- dark; the lines are the edit's, so they hide with it. Drawing only.
     local function bordered(win, edit, l, t, r, b, bar)
         local place = bar and X.EditBar or X.Edit -- (a block value: its scroll bar at its right edge)
-        place(edit, win, l + 2, t + 2, r - 2, b - 2, 0x8F)
+        place(edit, win, l + 2, t + 2, r - 2, b - 2, ENTRIES.ink)
         if not edit.x5border then
-            local colours = { top = 0x88, left = 0x88, bottom = 0x8C, right = 0x8C }
+            local colours = { top = BORDER.light, left = BORDER.light, bottom = BORDER.dark, right = BORDER.dark }
             for side, outer in pairs(colours) do
                 X.Line(edit, X.Solid(edit, "ARTWORK", outer), side, 2, true)
                 X.Line(edit, X.Solid(edit, "ARTWORK", S.TEXT), side, 1, true)
@@ -139,73 +155,76 @@ return function(L, X)
         end
     end
 
-    --- One of the form's pictures (DLGBBS08.EPF frame index at (x, y), masked, in NPAL8.PAL), kept by key for its next
+    --- One of the form's pictures (TILES' file, frame index at (x, y), masked, in NPAL8.PAL), kept by key for its next
     --- size.
     local function tile(win, key, index, x, y)
         win.x5tiles = win.x5tiles or {}
-        win.x5tiles[key] = S.Picture(win, win.x5tiles[key], "DLGBBS08.EPF", index, P, x, y, "BACKGROUND")
+        win.x5tiles[key] = S.Picture(win, win.x5tiles[key], TILES.file, index, P, x, y, "BACKGROUND")
     end
 
     -- the predefined form: its entries laid out by 5.33's cursor (entryAt), its size and tiles by the rows they took (fit)
-    L.Form = {
-        width = 446, height = 263, button = 72, subjectWidth = 279, editHeight = 12, freeWidth = 374, freeHeight = 105,
-        entryWidth = 120, firstEntry = 0,
+    L.Form = entry(F, {
         place = function(win)
-            B.Heading(win, 131, 51, 410, 63)
-            X.Edit(win.subject, win, 131, 71, 410, 83, 0x8F)
-            X.EditBar(win.free, win, 36, 88, 410, 193, 0x8F)
+            B.Heading(win, unpack(F.heading))
+            local s, fr = F.subject, F.free
+            X.Edit(win.subject, win, s[1], s[2], s[3], s[4], ENTRIES.ink)
+            X.EditBar(win.free, win, fr[1], fr[2], fr[3], fr[4], ENTRIES.ink)
             win.x5fill = win.x5fill or X.Solid(win, "BACKGROUND", 0)
             win.x5fill:SetAllPoints(win)
         end,
         entrySize = B.EntrySize,
-        -- the entries at 5.33's cursor from (36, 88) (B.EntryAt, 7.5.2's the same), their values edits with 5.33's
-        -- border (a block value with its bar)
-        entryAt = B.EntryAt(88, bordered,
+        -- the entries at 5.33's cursor from (36, ENTRIES.top) (B.EntryAt, 7.5.2's the same), their values edits with
+        -- 5.33's border (a block value with its bar)
+        entryAt = B.EntryAt(ENTRIES.top, bordered,
             function(w, edit, l, t, r, b) bordered(w, edit, l, t, r, b, true) end),
         nextEntry = B.NextEntry,
         -- the window by its rows: its tiles, SEND and CANCEL under them; it slides open when it is the session's first
         fit = function(win, free, count)
             local rows = B.FormRows(win, free, count)
-            local h = 21 * rows + 158
+            local h = TILES.row * rows + TILES.base
             local opened = win.opened
-            X.Size(win, 446, h)
+            X.Size(win, F.width, h)
             -- the header (frame 0) at the top, a row tile (frame 1) for each row, the footer (frame 2) under them
             for _, t in pairs(win.x5tiles or {}) do t:Hide() end
             tile(win, "header", 0, 0, 0)
             -- (the row tile at its frame's own left, (16, 0)-(430, 21): RenderTileFrame puts a frame at its rectangle)
-            for k = 0, rows - 1 do tile(win, "row" .. k, 1, 16, 88 + 21 * k) end
-            tile(win, "footer", 2, 0, 88 + 21 * rows)
-            local top = 21 * rows + 108
-            X.Image(win, win.controls[0], 23, 149, top, 221, top + 16)
-            X.Image(win, win.controls[1], 22, 226, top, 298, top + 16)
-            if free then X.EditBar(win.free, win, 36, 88, 410, 21 * rows + 88, 0x8F) end
+            for k = 0, rows - 1 do tile(win, "row" .. k, 1, TILES.rowX, TILES.header + TILES.row * k) end
+            tile(win, "footer", 2, 0, TILES.header + TILES.row * rows)
+            local top = TILES.row * rows + TILES.buttons
+            local send, cancel = F.send, F.cancel
+            X.Image(win, win.controls[send[1]], send[2], send[3], top, send[3] + BUTTON.width, top + BUTTON.height)
+            X.Image(win, win.controls[cancel[1]], cancel[2], cancel[3], top, cancel[3] + BUTTON.width, top + BUTTON.height)
+            local fr = F.free
+            if free then X.EditBar(win.free, win, fr[1], fr[2], fr[3], TILES.row * rows + TILES.header, ENTRIES.ink) end
             if opened and win.view and first(win, win.view) then X.SlideOpen(win) end
         end,
-    }
+    })
 
-    L.Editor = {
-        width = 446, height = 366, button = 72, subjectWidth = 279, editHeight = 13, bodyWidth = 374, bodyHeight = 204,
+    local E = D.Editor
+    L.Editor = entry(E, {
         slide = first,
         place = function(win)
-            frame(win, "DLGBBS04.EPF", { { 1, 23, 149, 316 }, { 2, 22, 226, 316 } })
-            B.Heading(win, 131, 54, 410, 66)
-            X.Edit(win.subject, win, 131, 72, 410, 85, 0x8F)
-            X.EditBar(win.body, win, 36, 91, 410, 295, 0x8F)
+            frame(win, E.frame)
+            B.Heading(win, unpack(E.heading))
+            local s, b = E.subject, E.body
+            X.Edit(win.subject, win, s[1], s[2], s[3], s[4], ENTRIES.ink)
+            X.EditBar(win.body, win, b[1], b[2], b[3], b[4], ENTRIES.ink)
         end,
-    }
+    })
 
-    L.NewMail = {
-        width = 446, height = 366, button = 72, recipientWidth = 299, subjectWidth = 299, editHeight = 12,
-        bodyWidth = 374, bodyHeight = 180, slide = first,
+    local N = D.NewMail
+    L.NewMail = entry(N, {
+        slide = first,
         place = function(win)
-            frame(win, "DLGBBS07.EPF", { { 1, 23, 149, 316 }, { 2, 22, 226, 316 } })
-            X.Edit(win.recipient, win, 111, 73, 410, 85, 0x8F)
-            X.Text(win.fixed, win, 111, 73, 410, 85, S.LIST)
-            X.Edit(win.subject, win, 111, 93, 410, 105, 0x8F)
-            X.EditBar(win.body, win, 36, 115, 410, 295, 0x8F)
+            frame(win, N.frame)
+            local r, s, b = N.recipient, N.subject, N.body
+            X.Edit(win.recipient, win, r[1], r[2], r[3], r[4], ENTRIES.ink)
+            X.Text(win.fixed, win, r[1], r[2], r[3], r[4], S.LIST)
+            X.Edit(win.subject, win, s[1], s[2], s[3], s[4], ENTRIES.ink)
+            X.EditBar(win.body, win, b[1], b[2], b[3], b[4], ENTRIES.ink)
             -- keep a copy: 7.5.2's CheckBoxControlPane (the base set's picture: 5.33 has none) on the picture's free
             -- parchment left of SEND, its caption in 0x25 (the decision above)
-            B.KeepCopy(win, { 36, 316, 52, 332 }, { 56, 318, 146, 330 }, S.LIST)
+            B.KeepCopy(win, N.keepCopy, N.keepCopyCaption, S.LIST)
         end,
-    }
+    })
 end

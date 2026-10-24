@@ -1,0 +1,8 @@
+# Map 3929. s6-reprojection-cloud-1 (run 24): its waterfall (7626-7628 at 10-30,61) stands before cells with no ground
+# (x 0 to 20, rows 0 to 52) that its picture covered. The module hints' wall of falls, three rows high, showed them
+# black behind it, so the rule's prop stays.
+[check]
+size = "39x69"
+
+[sobj.7626-7628]
+kind = "prop"

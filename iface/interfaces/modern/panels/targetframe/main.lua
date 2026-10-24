@@ -6,12 +6,13 @@
 -- itself after 500 ms", AttachedObjectPane::OnTimer). Its colour follows HitBarObjectPane::RenderFrame (0x00539030):
 -- a 46-pixel gauge filled 46 * percent / 100 pixels (whole pixels), red below 12, yellow below 23, green above; at 0
 -- the dead sign (DEADSIGN.EPF) instead. Between hits the frame shows the name and level only.
+-- s6-ui-core (round 85): the XML twin's scripts; the frame, its portrait, hit bar and effect row are main.xml's
+-- (core/xml.md).
 
 local C = TK.GetComponent("targetframe")
 local H = __tk
-local W = require("interfaces.modern.skin").UI -- s6-devtools (round 5, the separation's step 5): Modern's skin
+local E = require("interfaces.modern.elements")
 local Icons = require("interfaces.modern.effecticons") -- Modern's effect icon group (s6-modular-g round 16)
-local Portrait = require("interfaces.modern.portrait") -- the portrait the player frame has too (s6-optimize round 52)
 
 C.HIT_SECONDS = 0.5
 
@@ -24,99 +25,63 @@ function C.HitColor(percent)
 end
 
 local colours = { red = { 1, 0, 0 }, yellow = { 1, 1, 0 }, green = { 0.34, 1, 0.34 } }
-local PORTRAIT = 56
+local PORTRAIT = TK.Xml.Data("main.xml").SIZES.portrait -- main.xml's
+
+-- the scripts main.xml names
+local scripts = {}
+
+function scripts.HudPanel(f) TK.UI.HudPanel(f, C) end
+
+function scripts.ListMenu(group) Icons.SetListMenu(group, true) end
+
+function scripts.Tip(frame)
+    local exists, name, level = H:GetUnitInfo("target")
+    if not exists then return end
+    local _, percent = H:GetTargetHit()
+    GameTooltip:SetOwner(frame, "ANCHOR_BOTTOM")
+    if name ~= "" then GameTooltip:AddLine(name, 1, 0.45, 0.35) end
+    if level > 0 then GameTooltip:AddLine("Level " .. level, 1, 0.82, 0) end
+    GameTooltip:AddLine(percent >= 0 and ("Last hit: " .. C.HitText(percent)) or "Not hit yet", 0.8, 0.8, 0.8)
+    GameTooltip:Show()
+end
+
+function scripts.Untip() GameTooltip:Hide() end
+
+-- The original's dead sign, drawn through the map's palette (BARAM.PAL), else a skull.
+function scripts.DeadSign(dead) dead:SetTexture(TK.Art.Image("DEADSIGN.EPF", 0, "BARAM.PAL") or "emoji:2620") end
+
+-- s6-ui-core (round 101, T11 step 4): its own frame's script, called only while a hit shows (ShowHit)
+function scripts.HitTimer(timer)
+    if not C.hitShown then return TK.Util.Updating(timer, false) end
+    if GetTime() - C.hitAt >= C.HIT_SECONDS then C:ShowHit(false) end
+end
+
+-- the effects' quarter-second refresh. s6-ui-core (round 101, T11 steps 2 and 4): the frame's own script, counted by the
+-- host (the first after 0.25 s, then each 0.25 s or more after the last)
+function scripts.EffectsTicker(f)
+    f:SetScript("OnUpdate", TK.Util.Throttled(0.25, function() C:UpdateBuffs() end, 0.25))
+end
+
+function scripts.Changed(_, event, unit)
+    if (event == "UNIT_HEALTH" or event == "UNIT_MODEL_CHANGED") and unit ~= "target" then return end
+    -- s6-ui-core (round 33, the owner): the portrait is held until the target, or its look, changes; it was asked for
+    -- four times a second. A hit (UNIT_HEALTH) asks for nothing.
+    if event ~= "UNIT_MODEL_CHANGED" then C:Update() end
+    if event ~= "UNIT_HEALTH" then C:ShowPortrait() end
+end
+
+function scripts.PlayerMenu(_, button)
+    if button ~= "RightButton" or not TK.Dialogs then return end
+    local _, name = H:GetUnitInfo("target")
+    TK.Dialogs.PlayerMenu(H:GetTargetId(), name)
+end
 
 function C:OnEnable()
-    local f = CreateFrame("Frame", "TKTargetFrame", UIParent)
-    f:SetBackdrop({ bg = { 0.05, 0.03, 0.03, 0.85 }, edge = { 0.6, 0.5, 0.45, 1 } })
-    TK.UI.HudPanel(f, C) -- s6-ui-settings (round 4): the shared panel style; s6-ui-core (round 53): or its own
-    self.frame = f
-
-    -- s6-ui-core (round 32): the target's portrait on the right, as the player frame's on the left: s6-characters'
-    -- GetPortrait("object", id), the figure's upper body as the map draws it; the name's letter while there is none
-    -- (out of view, offline).
-    f.portrait = Portrait.New(f, PORTRAIT, "TOPRIGHT", -8, -8, 0.55, 0.2, 0.15)
-
-    f.name = W.Label(f, "", 14, W.white, "LEFT")
-    f.name:SetFont("classic", 12, "")   -- names in the original's own font
-    f.name:SetPoint("TOPLEFT", f, "TOPLEFT", 10, -9)
-    local badge = CreateFrame("Frame", nil, f)
-    badge:SetSize(30, 18)
-    badge:SetBackdrop({ bg = { 0.1, 0.08, 0.02, 0.95 }, edge = { 0.85, 0.75, 0.45, 1 } })
-    f.level = W.Label(badge, "", 11, W.gold)
-    f.level:SetPoint("CENTER", badge, "CENTER", 0, 0)
-    f.badge = badge
-
-    local hit = W.VitalBar(f, 16, 0.75, 0.2, 0.15, 11, "TKTargetFrameHit")
-    hit:SetMinMaxValues(0, 100)
-    f.hit = hit
-    -- s6-library round 2 (head note 4): what is known of the target's buffs under the frame, the Library's estimates
-    -- marked as such ("~" and "est."), a peer's word as shared; read again four times a second for the countdowns.
-    -- s6-ui-core (round 43, effects on others): as a row of icons (Modern's effecticons.lua, the group the icons on units
-    -- share, each with its tooltip on mouse-over and its time under it), debuffs first; the line of text stays, shown when
-    -- the Effects tab's "also as text" is on.
-    f.effects = Icons.NewGroup(f, "TKTargetEffects", true)
-    Icons.SetListMenu(f.effects, true) -- round 44: a right-click on an icon puts its name on a list
-    f.effects:SetPoint("TOPLEFT", f, "BOTTOMLEFT", 2, -3)
-    f.effects:Hide()
-    f.buffs = W.Label(f, "", 11, { 0.72, 0.84, 1 }, "LEFT")
-    f.buffs:SetPoint("TOPLEFT", f, "BOTTOMLEFT", 4, -3)
-    -- The target's tooltip (head note 40): its name, level and the last hit, all the client knows of it.
-    f:EnableMouse(true)
-    f:SetScript("OnEnter", function(frame)
-        local exists, name, level = H:GetUnitInfo("target")
-        if not exists then return end
-        local _, percent = H:GetTargetHit()
-        GameTooltip:SetOwner(frame, "ANCHOR_BOTTOM")
-        if name ~= "" then GameTooltip:AddLine(name, 1, 0.45, 0.35) end
-        if level > 0 then GameTooltip:AddLine("Level " .. level, 1, 0.82, 0) end
-        GameTooltip:AddLine(percent >= 0 and ("Last hit: " .. C.HitText(percent)) or "Not hit yet", 0.8, 0.8, 0.8)
-        GameTooltip:Show()
-    end)
-    f:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    f.hitText = W.Label(f, "", 12, W.white, "LEFT")
-    f.dead = f:CreateTexture(nil, "OVERLAY")
-    f.dead:SetSize(24, 24)
-    f.dead:SetPoint("LEFT", hit, "LEFT", 4, 0)
-    -- The original's dead sign, drawn through the map's palette (BARAM.PAL), else a skull.
-    f.dead:SetTexture(TK.Art.Image("DEADSIGN.EPF", 0, "BARAM.PAL") or "emoji:2620")
-    f.dead:Hide()
-    -- The bar goes away 500 ms after the hit that showed it.
-    f:SetScript("OnUpdate", function()
-        if self.hitShown and GetTime() - self.hitAt >= C.HIT_SECONDS then self:ShowHit(false) end
-    end)
-    -- s6-library (round 4: hooked after the hit bar's script, which replaced it when it came first)
-    local since = 0
-    f:HookScript("OnUpdate", function(_, elapsed)
-        since = since + (elapsed or 0)
-        if since < 0.25 then return end
-        since = 0
-        C:UpdateBuffs()
-    end)
-
-    f:RegisterEvent("PLAYER_TARGET_CHANGED")
-    f:RegisterEvent("UNIT_HEALTH")
-    f:RegisterEvent("PLAYER_ENTERING_WORLD")
-    f:RegisterEvent("UNIT_MODEL_CHANGED")
-    f:SetScript("OnEvent", function(_, event, unit)
-        if (event == "UNIT_HEALTH" or event == "UNIT_MODEL_CHANGED") and unit ~= "target" then return end
-        -- s6-ui-core (round 33, the owner): the portrait is held until the target, or its look, changes; it was asked for
-        -- four times a second. A hit (UNIT_HEALTH) asks for nothing.
-        if event ~= "UNIT_MODEL_CHANGED" then self:Update() end
-        if event ~= "UNIT_HEALTH" then self:ShowPortrait() end
-    end)
-
-    -- s6-rules-dialogs: a right-click opens the player menu on another player (D-56; the model decides).
-    f:EnableMouse(true)
-    f:SetScript("OnMouseDown", function(_, button)
-        if button ~= "RightButton" or not TK.Dialogs then return end
-        local _, name = H:GetUnitInfo("target")
-        TK.Dialogs.PlayerMenu(H:GetTargetId(), name)
-    end)
-
+    self.frame = TK.Xml.Load("main.xml", { scripts = scripts, elements = E }).frame
+    self.frame.level = self.frame.badge.level
     self.hasTarget = H:UnitExists("target")
-    TK.Visibility:Attach(f, function() return self:DB() end, function() return self.hasTarget end)
-    TK.EditMode:Register(f, "targetframe", "Target Frame", C.defaultPosition, "targetframe")
+    TK.Visibility:Attach(self.frame, function() return self:DB() end, function() return self.hasTarget end)
+    TK.EditMode:Register(self.frame, "targetframe", "Target Frame", C.defaultPosition, "targetframe")
 end
 
 --- The last hit as text: "72%", or that there has been none yet.
@@ -133,6 +98,7 @@ function C:ShowHit(on)
     f.hit:SetShown(on and db.showHitBar)
     f.hitText:SetShown(on and not db.showHitBar)
     f.dead:SetShown(on and self.hitDead == true)
+    TK.Util.Updating(f.hitTimer, on)
 end
 
 function C:Update()

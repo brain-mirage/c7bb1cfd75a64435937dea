@@ -20,6 +20,8 @@
 -- player moves it (edit mode, its Layout tab). In a window under 1024 x 768 the rows are spaced by the drawn line, so
 -- fewer show (Hud.Lines, round 7).
 --
+-- s6-ui-core (round 85): the XML twin's scripts; its frames and the page's places are main.xml's (core/xml.md).
+--
 -- What goes in: the session's 0x0A kinds 2 and 3 (TK_CHAT_MESSAGE "notice", already split at tabs) and the rules' own
 -- system lines (TK_RULES_MESSAGE: the item notices, the arrows' warning...); the effects and aethers as the logic keeps
 -- them (__tk:GetEffect, GetAether). Drawing only: none of these panes sends anything (Source-5: the four panes' handlers
@@ -32,11 +34,11 @@ local Hud = require("interfaces.7x.hud")
 local Screen = require("interfaces.screen")
 local Wrap = require("interfaces.original.wrap")
 
-local RECT = { 832, 376, 1021, 641 }
-local LOW, HIGH = 70, 175     -- the divider's range (HandlePointerOrMouseEvent's clamp)
-local KEEP = 200              -- messages kept (AppendMessage)
-local WRAP = 160              -- a message's width (AddWrappedText)
-local ROW = 12                -- font 0's line
+local L = TK.Xml.Data("main.xml")
+local LOW, HIGH = L.DIVIDER.low, L.DIVIDER.high -- the divider's range
+local KEEP = L.MESSAGES.keep                    -- messages kept
+local WRAP = L.MESSAGES.wrap                    -- a message's width
+local ROW = L.ROW                               -- font 0's line
 
 -- ----- the system messages -----
 
@@ -110,7 +112,7 @@ function C.SpellLines(now)
         if name and math.ceil(start + duration - now) > 0 then aethers[#aethers + 1] = { name, math.ceil(start + duration - now) } end
     end
     if #aethers > 0 then
-        lines[#lines + 1] = string.rep("-", 24)
+        lines[#lines + 1] = string.rep("-", L.SPELLS.dashes)
         for _, a in ipairs(aethers) do entry(a[1], a[2]) end
     end
     return lines
@@ -126,7 +128,7 @@ end
 
 --- The message rows for the divider's top: n = (229 - H) / 12 whole lines.
 function C:Rows(top)
-    return math.floor((229 - (top or self:Top())) / ROW)
+    return math.floor((L.MESSAGES.rowsFrom - (top or self:Top())) / ROW)
 end
 
 --- A row's font string on a list's text, row k (0-based) with its top at top (Hud.Lines' spacing; its pen at the row's
@@ -144,85 +146,88 @@ local function rowString(rows, list, k, top, colour)
     return fs
 end
 
-function C:OnEnable()
-    local f = CreateFrame("Frame", "TK7xMessages", UIParent)
-    f:SetFrameStrata("LOW")
-    f:SetFrameLevel(4) -- the base layer, under the frame layer's pieces
-    f:SetSize(RECT[3] - RECT[1], RECT[4] - RECT[2])
-    f:Hide()
-    self.frame = f
-    self:Own(f)
-    -- the divider's press area (its picture is the screen's piece), then the messages, then the spell list (4a's order of
-    -- adding them)
-    local div = CreateFrame("Frame", "TK7xMessagesDivider", f)
-    div:SetFrameLevel(f:GetFrameLevel() + 1)
-    div:SetSize(166 - 3, 16)
-    div:EnableMouse(true)
-    -- the drag: from a left press on it, its top follows the pointer's moves (the grab kept), 70 to 175; the release saves
-    -- it and lays the page out again
-    div:SetScript("OnMouseDown", function(_, button)
-        if button ~= "LeftButton" then return end
-        local _, y = Hud.HelpLine.PointIn(f)
-        self.grab = y - self:Top()
-        self.dragTop = self:Top()
-    end)
-    div:SetScript("OnMouseUp", function(_, button)
-        if button ~= "LeftButton" or not self.dragTop then return end
-        local top = self:Top()
-        self.dragTop, self.grab = nil, nil
-        H:ClientSettingSetInt("chat", "system_message_height", top)
-        H:ClientSettingsSave()
-        self:Pad(self:Rows(top)) -- OnActivate's new pane
-        self:Arrange()
-    end)
-    -- s6-modular-g r26: discard only the temporary visual drag when the host lets go without OnMouseUp.
-    -- WIRE: ItemHelpPane::HandlePointerOrMouseEvent 0x004CCC40 owns a swallowed release. Do not run the
-    -- NewSystemMessageModifyHeightPane release/commit (0x005882F0), pad/scroll the lists, or save here;
-    -- turning this cancellation into an underlying input changes what the server sees.
-    div:SetScript("OnPressCancelled", function(_, button)
-        if button ~= "LeftButton" or not self.dragTop then return end
-        self.dragTop, self.grab = nil, nil
-        self:PlaceDivider(self:Top())
-    end)
-    div:SetScript("OnUpdate", function()
-        if not self.dragTop then return end
-        local _, y = Hud.HelpLine.PointIn(f)
-        local top = math.max(LOW, math.min(HIGH, math.floor(y - self.grab + 0.5)))
-        if top ~= self.dragTop then
-            self.dragTop = top
-            self:PlaceDivider(top)
-        end
-    end)
-    self.divider = div
+-- the scripts main.xml names
+local scripts = {}
 
-    local listFrame = CreateFrame("Frame", nil, f)
-    listFrame:SetAllPoints(f)
-    listFrame:SetFrameLevel(f:GetFrameLevel() + 2)
+function scripts.Own(f)
+    C.frame = f
+    C:Own(f)
+end
+
+-- the divider's drag: from a left press on it, its top follows the pointer's moves (the grab kept), 70 to 175; the
+-- release saves it and lays the page out again
+function scripts.DividerDown(_, button)
+    if button ~= "LeftButton" then return end
+    local _, y = Hud.HelpLine.PointIn(C.frame)
+    C.grab = y - C:Top()
+    C.dragTop = C:Top()
+end
+
+function scripts.DividerUp(_, button)
+    if button ~= "LeftButton" or not C.dragTop then return end
+    local top = C:Top()
+    C.dragTop, C.grab = nil, nil
+    H:ClientSettingSetInt("chat", "system_message_height", top)
+    H:ClientSettingsSave()
+    C:Pad(C:Rows(top)) -- OnActivate's new pane
+    C:Arrange()
+end
+
+-- s6-modular-g r26: discard only the temporary visual drag when the host lets go without OnMouseUp.
+-- WIRE: ItemHelpPane::HandlePointerOrMouseEvent 0x004CCC40 owns a swallowed release. Do not run the
+-- NewSystemMessageModifyHeightPane release/commit (0x005882F0), pad/scroll the lists, or save here;
+-- turning this cancellation into an underlying input changes what the server sees.
+function scripts.DividerCancelled(_, button)
+    if button ~= "LeftButton" or not C.dragTop then return end
+    C.dragTop, C.grab = nil, nil
+    C:PlaceDivider(C:Top())
+end
+
+function scripts.DividerUpdate()
+    if not C.dragTop then return end
+    local _, y = Hud.HelpLine.PointIn(C.frame)
+    local top = math.max(LOW, math.min(HIGH, math.floor(y - C.grab + 0.5)))
+    if top ~= C.dragTop then
+        C.dragTop = top
+        C:PlaceDivider(top)
+    end
+end
+
+function scripts.MessageList(listFrame)
     local messageRows = {}
-    self.list = Hud.Lines(listFrame, ROW, function(k, i, top)
-        local fs = rowString(messageRows, self.list, k, top, 0x84)
+    C.list = Hud.Lines(listFrame, ROW, function(k, i, top)
+        local fs = rowString(messageRows, C.list, k, top, L.MESSAGES.colour)
         fs:SetText(i and C.messages[i] or "")
     end)
+end
 
-    local spellFrame = CreateFrame("Frame", nil, f)
-    spellFrame:SetAllPoints(f)
-    spellFrame:SetFrameLevel(f:GetFrameLevel() + 3)
+function scripts.SpellList(spellFrame)
     local spellRows = {}
-    self.spellText = {}
-    self.spells = Hud.Lines(spellFrame, ROW, function(k, i, top)
-        local fs = rowString(spellRows, self.spells, k, top, S.TEXT)
-        fs:SetText(i and self.spellText[i] or "")
+    C.spellText = {}
+    C.spells = Hud.Lines(spellFrame, ROW, function(k, i, top)
+        local fs = rowString(spellRows, C.spells, k, top, S.TEXT)
+        fs:SetText(i and C.spellText[i] or "")
     end)
-    -- the countdown: the lines again each second (and at once when the effects or aethers change); a removal scrolls the
-    -- list to its top (RemoveEntry 0x0056BE20), a new line keeps its place (AddOrUpdateEntry 0x0056BCA0)
-    local wait = 0
-    f:SetScript("OnUpdate", function(_, elapsed)
-        wait = wait - (elapsed or 0)
-        if wait > 0 and not self.spellsChanged then return end
-        wait, self.spellsChanged = 1, false
-        self:RefreshSpells()
-    end)
-    self.entry = Screen.Register(f, "7x.messages", "7.x Messages", function() return self:DB().enabled == true end)
+end
+
+-- the countdown: the lines again each second (and at once when the effects or aethers change); a removal scrolls the
+-- list to its top (RemoveEntry 0x0056BE20), a new line keeps its place (AddOrUpdateEntry 0x0056BCA0)
+local wait
+function scripts.Tick(_, elapsed)
+    wait = wait - (elapsed or 0)
+    if wait > 0 and not C.spellsChanged then return end
+    wait, C.spellsChanged = 1, false
+    C:RefreshSpells()
+end
+
+function scripts.Register(f)
+    C.entry = Screen.Register(f, "7x.messages", "7.x Messages", function() return C:DB().enabled == true end)
+end
+
+function C:OnEnable()
+    wait = 0
+    TK.Xml.Load("main.xml", { scripts = scripts })
+    self.divider = self.frame.divider
     self:Reset()
     self:Arrange()
 end
@@ -244,7 +249,7 @@ end
 --- s6-optimize R62: the drag, its cancel and the layout each placed both themselves before.
 function C:PlaceDivider(top)
     self.divider:ClearAllPoints()
-    self.divider:SetPoint("TOPLEFT", self.frame, "TOPLEFT", 3, -top)
+    self.divider:SetPoint("TOPLEFT", self.frame, "TOPLEFT", L.DIVIDER.x, -top)
     local screen = TK.GetComponent("7x.screen")
     if screen and screen.ShowDivider then screen:ShowDivider(top) end
 end
@@ -257,17 +262,18 @@ function C:Arrange()
     local top = self:Top()
     self:PlaceDivider(top)
     local n = self:Rows(top)
-    local listTop = 244 - ROW * n
-    self.list:SetArea(3, listTop, 170, 244)
+    local m, sp = L.MESSAGES, L.SPELLS
+    local listTop = m.bottom - ROW * n
+    self.list:SetArea(m.left, listTop, m.right, m.bottom)
     self.list:End()
-    self.spells:SetArea(3, 22, 170, top + 7)
+    self.spells:SetArea(sp.left, sp.top, sp.right, top + sp.below)
     self.spells:SetPos(0)
 end
 
 function C:Layout()
     local f = self.frame
     if not f then return end
-    Screen.Place(self.entry, 1024, 768, RECT[1], RECT[2], self:DB().scale)
+    Screen.Place(self.entry, 1024, 768, L.PLACE[1], L.PLACE[2], self:DB().scale)
     self:Arrange() -- the rows' spacing follows the scale (Hud.Lines)
     TK.EditMode:UpdateMovers()
     f:SetShown(TK.GameState:InWorld() and self:DB().enabled == true)

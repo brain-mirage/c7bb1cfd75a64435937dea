@@ -41,6 +41,14 @@ surface_flow = "n"
 [cells."122,131-152,132"] # and the feeder's own, east
 surface_flow = "e"
 
+# s6-reprojection-cloud-3 (run 21, the sweep): the purple-topped mound's top (144-151,12-17). Its rims and its front
+# are the base hints' (a terrace and tops a cell and five eighths up), but its middle is the purple ground tile 1128
+# with no object, which the rules raise as free blocked cells, one cell. 1128 is the plain floor of 52 other maps, so no
+# tile hint can raise it: here alone, the middle stands at the rims' height.
+[cells."145,12-150,16"]
+ground = "block"
+level = 1.625
+
 # The two posts of the stake fence round the shrine's yard, north of the east gate: each is three pieces stacked (the
 # west one 507, 507 and 499 on top; the east one 508, a gap, 504), which the rules took as separate pieces (the top ones
 # lying as tops). Each post's group joins its pieces into one statue, revolved: one round column.

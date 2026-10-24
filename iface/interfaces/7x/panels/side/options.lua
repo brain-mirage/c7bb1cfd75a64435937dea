@@ -39,10 +39,13 @@
 -- steps, NewOptionPane::ApplyVolumeChange 0x00540490). None of these send anything. A press on a slider takes the input's
 -- capture until its release, as its ScrollPane kind captures the mouse (ScrollPane.cpp:125): WIRE, a game key pressed
 -- while the slider is held reaches nothing (m sends no 7C); changing it changes what the server sees.
+-- s6-ui-core (round 85): the XML twin's scripts; the page, its rows (their numbers, labels, places, kinds and which send),
+-- headings, sliders' and arrows' places are options.xml's (core/xml.md).
 
 local H = __tk
 local S = require("interfaces.7x.skin")
 local K = require("interfaces.7x.panels.side.kit")
+local Elements = require("interfaces.7x.panels.side.elements") -- the kit as layout elements (the twin's own)
 
 local O = {}
 
@@ -62,49 +65,52 @@ local function db(component, key)
 end
 local function setDb(page, key, on) TK.Settings:SetOption(page, key, on) end
 
--- The rows (BuildOptionRows: row, label, the rectangle's corner, kind 3 box / 4 radio, page), each with what it shows
--- (OnPaint's switch, OptionPane.cpp:879-953) and, for the rows the rules leave alone, its local switch. A row with
--- send = true runs the optionrow action (above).
-local ROWS = {
-    { 14, "Simple Click", 8, 16, 3, 0, on = function() return not GameOptions.Get("double_click") end, send = true },
-    { 9, "Use enter to talk", 8, 34, 3, 0, on = function() return GameOptions.Get("say_with_enter") end,
-      set = function(on) GameOptions.Set("say_with_enter", on) H:ApplyChat() end },
-    { 2, "Map", 8, 70, 3, 0, on = function() return GameOptions.MapEffects() end, send = true },
-    { 3, "Magic", 88, 70, 3, 0, on = function() return server("magic") end, send = true },
-    { 4, "Weather", 8, 88, 3, 0, on = function() return server("weather") end, send = true },
-    { 18, "Shadow", 88, 88, 3, 0, on = function() return GameOptions.Shadows() end, send = true },
+local X = TK.Xml.Data("options.xml")
+
+-- The rows (options.xml's ROWS: BuildOptionRows' row, label, the rectangle's corner, kind 3 box / 4 radio, page, and
+-- send: the optionrow action, above), each with what it shows (OnPaint's switch, OptionPane.cpp:879-953: STATE[row].on)
+-- and, for the rows the rules leave alone, its local switch (STATE[row].set).
+local ROWS = X.ROWS
+local STATE = {
+    [14] = { on = function() return not GameOptions.Get("double_click") end },
+    [9] = { on = function() return GameOptions.Get("say_with_enter") end,
+            set = function(on) GameOptions.Set("say_with_enter", on) H:ApplyChat() end },
+    [2] = { on = function() return GameOptions.MapEffects() end },
+    [3] = { on = function() return server("magic") end },
+    [4] = { on = function() return server("weather") end },
+    [18] = { on = function() return GameOptions.Shadows() end },
     -- s6-play-modes (round 8, W6): Config's m_showUserName, the one global Display names the drawing follows
-    { 5, "Display names", 8, 106, 3, 0, on = function() return GameOptions.ShowNames() end,
-      set = function(on) GameOptions.SetShowNames(on) end },
-    { 7, "Fixed movement", 8, 124, 3, 0, on = function() return server("fixed") end, send = true },
-    { 10, "Advice", 8, 160, 3, 0, on = function() return server("advice") end, send = true },
-    { 12, "Whisper", 88, 160, 3, 0, on = function() return server("whispers") end, send = true },
-    { 11, "Shout", 8, 178, 3, 0, on = function() return server("shouts") end, send = true },
-    { 13, "Snore", 88, 178, 3, 0, on = function() return H:ClientSettingInt("options", "hear_snore") ~= 0 end, send = true },
-    { 8, "BLDG", 71, 196, 3, 0, on = function() return db("worldview", "objectTransparency") end,
-      set = function(on) setDb("worldviewgraphics", "objectTransparency", on) end }, -- s6-ui-core (round 83): Graphics' World View
-    { 19, "Chat", 131, 196, 3, 0, on = function() return GameOptions.Get("balloon") end, send = true },
-    { 20, "Low", 42, 214, 4, 0, on = function() return GameOptions.System() == 0 end, send = true },
-    { 21, "High", 84, 214, 4, 0, on = function() return GameOptions.System() == 1 end, send = true },
-    { 22, "Manual", 130, 214, 4, 0, on = function() return GameOptions.System() == 2 end, send = true },
-    { 16, "Music", 8, 232, 3, 0, on = function() return Sound.MusicOn() == true end,
-      set = function(on) Sound.SetMusicOn(on) end },
-    { 17, "Sound", 8, 250, 3, 0, on = function() return server("sound") end, send = true },
-    { 23, "Orb/Spell target share", 8, 16, 3, 1, on = function() return GameOptions.Get("orb_target_share") end, send = true },
-    { 24, "F1/Shift+F1 swap", 8, 34, 3, 1, on = function() return GameOptions.Get("f1_swap") end, send = true },
-    { 25, "Show group HP/MP bars", 8, 52, 3, 1, on = function() return GameOptions.Get("group_bar") end,
-      set = function(on) GameOptions.Set("group_bar", on) end },
-    { 26, "Show names in carnage dye", 8, 70, 3, 1, on = function() return GameOptions.Get("carnage_color") end,
-      set = function(on) GameOptions.Set("carnage_color", on) end },
+    [5] = { on = function() return GameOptions.ShowNames() end, set = function(on) GameOptions.SetShowNames(on) end },
+    [7] = { on = function() return server("fixed") end },
+    [10] = { on = function() return server("advice") end },
+    [12] = { on = function() return server("whispers") end },
+    [11] = { on = function() return server("shouts") end },
+    [13] = { on = function() return H:ClientSettingInt("options", "hear_snore") ~= 0 end },
+    [8] = { on = function() return db("worldview", "objectTransparency") end,
+            set = function(on) setDb("worldviewgraphics", "objectTransparency", on) end }, -- s6-ui-core (round 83): Graphics' World View
+    [19] = { on = function() return GameOptions.Get("balloon") end },
+    [20] = { on = function() return GameOptions.System() == 0 end },
+    [21] = { on = function() return GameOptions.System() == 1 end },
+    [22] = { on = function() return GameOptions.System() == 2 end },
+    [16] = { on = function() return Sound.MusicOn() == true end, set = function(on) Sound.SetMusicOn(on) end },
+    [17] = { on = function() return server("sound") end },
+    [23] = { on = function() return GameOptions.Get("orb_target_share") end },
+    [24] = { on = function() return GameOptions.Get("f1_swap") end },
+    [25] = { on = function() return GameOptions.Get("group_bar") end,
+             set = function(on) GameOptions.Set("group_bar", on) end },
+    [26] = { on = function() return GameOptions.Get("carnage_color") end,
+             set = function(on) GameOptions.Set("carnage_color", on) end },
 }
+for _, def in ipairs(ROWS) do def.on, def.set = STATE[def.row].on, STATE[def.row].set end
 
-local HEADINGS = { { "Show Effects", 64 }, { "Listen to", 154 }, { "Semi-trans", 208 }, { "System", 226 } }
+local HEADINGS = X.HEADINGS
 
-local PAGES = 2
+local PAGES = X.PAGES
 
 -- ----- the volume sliders (ScrollVolumePane, ui/ScrollPane.cpp) -----
 
-local TRAVEL = 82 - 38 -- the thumb's left ranges over the slider's width less its 38 pixels (GetPartRect)
+local SLIDER = X.SLIDER
+local TRAVEL = SLIDER.width - SLIDER.thumb -- the thumb's left ranges over the slider's width less its thumb (GetPartRect)
 
 local function audio() return TK.GetComponent("audio") end
 
@@ -134,20 +140,19 @@ end
 
 --- A slider for key ("music" row 16, "effects" row 17) right of the row's rectangle r.
 local function slider(p, key, r)
-    local l, t = r[3] + 20, r[2] + 1
-    local s = K.Hit(p, l, t, l + 82, t + 13)
+    local l, t = r[3] + SLIDER.dx, r[2] + SLIDER.dy
+    local s = K.Hit(p, l, t, l + SLIDER.width, t + SLIDER.height)
     -- WIRE: a press here captures the input until its release (ScrollPane's kind: ScrollPane.cpp:125); see the header
     s:SetCapturesPress(true)
     s:SetPassesDoubles(true)
     s.key = key
-    -- the groove (CScrollBarBackPane::OnPaint 0x0053FF00): three lines x 7-94 at y 1-3, a stub each side at y 2 (x 0-4,
-    -- x 98-102) and the right one's stroke x 100 at y 0-4, in the draw colour, at (row's right + 10, row's top + 5)
-    local gl, gt = r[3] + 10, r[2] + 5
+    -- the groove (CScrollBarBackPane::OnPaint 0x0053FF00: options.xml's GROOVE), in the draw colour
+    local gl, gt = r[3] + SLIDER.grooveX, r[2] + SLIDER.grooveY
     s.groove = {}
-    for i, g in ipairs({ { 7, 1, 88, 3 }, { 0, 2, 5, 1 }, { 98, 2, 5, 1 }, { 100, 0, 1, 5 } }) do
+    for i, g in ipairs(X.GROOVE) do
         local tex = S.Fill(p:CreateTexture(nil, "BORDER"), S.TEXT)
-        tex:SetPoint("TOPLEFT", p, "TOPLEFT", gl + g[1], -(gt + g[2]))
-        tex:SetSize(g[3], g[4])
+        tex:SetPoint("TOPLEFT", p, "TOPLEFT", gl + g.x, -(gt + g.y))
+        tex:SetSize(g.w, g.h)
         s.groove[i] = tex
     end
     function s:Draw()
@@ -167,7 +172,7 @@ local function slider(p, key, r)
         if button ~= "LeftButton" then return end
         local x = K.PointIn(s)
         local left = math.floor(TRAVEL * volume(s.key) / 20)
-        s.grab = (x >= left and x < left + 38) and math.floor(x - left) or 19
+        s.grab = (x >= left and x < left + SLIDER.thumb) and math.floor(x - left) or SLIDER.grab
         s.dragging = true
         follow()
         s:SetScript("OnUpdate", follow)
@@ -187,59 +192,63 @@ end
 
 -- ----- the page -----
 
-function O.Build(parent)
-    local p = CreateFrame("Frame", "TK7xSideOptions", parent)
-    p:SetAllPoints(parent)
-    p.page = 0
-    p.back = S.Picture(p, nil, "OPTION.EPF", 0, "OPTION.PAL", 0, 0, "BACKGROUND")
-    p.headings = {}
-    for i = 1, #HEADINGS do p.headings[i] = { K.Text(p), K.Text(p) } end
+-- the scripts options.xml names
+local scripts = {}
+
+--- The rows: each a control over its rectangle (from its corner, its label's width + 18 wide), its box and its two
+--- texts; a slider beside the Music and Sound rows.
+function scripts.Rows(p)
     p.rows = {}
     for _, def in ipairs(ROWS) do
-        local label = def[2]
-        local x, y = def[3], def[4]
+        local label = def.label
+        local x, y = def.x, def.y
         local w = S.TextWidth(label) or 0
         local r = { x, y, x + w + 18, y + 18 }
-        local b = K.Hit(p, r[1], r[2], r[3], r[4], "TK7xOption" .. def[1])
+        local b = K.Hit(p, r[1], r[2], r[3], r[4], "TK7xOption" .. def.row)
         b.def, b.rect = def, r
         b.box = b:CreateTexture(nil, "ARTWORK")
         b.shadow, b.label = K.Text(p), K.Text(p)
+        -- WIRE: which press acts on a row is the game layer's row rule (GameOptions.RowPress, core/game/options.lua:
+        -- NewOptionPane 0x00540910's single left press; s6-gateway-research round 38 moved it there)
         if def.send then
             -- WIRE: Modern's window's row action, run by the rules (the header); the press, not the release
-            TK.Actions:Set(b, "optionrow", nil, def[1])
+            TK.Actions:Set(b, "optionrow", nil, def.row)
             b:SetScript("OnMouseDown", function(_, button, double)
-                if button ~= "LeftButton" or double then return end
-                GameOptions.Press(def[1])
+                if not GameOptions.RowPress(button, double) then return end
+                GameOptions.Press(def.row)
                 O.Show(p)
             end)
         else
             b:SetScript("OnMouseDown", function(_, button, double)
-                if button ~= "LeftButton" or double then return end
+                if not GameOptions.RowPress(button, double) then return end
                 def.set(not def.on())
                 O.Show(p)
             end)
         end
         p.rows[#p.rows + 1] = b
-        if def[1] == 16 then p.music = slider(p, "music", r) end
-        if def[1] == 17 then p.effects = slider(p, "effects", r) end
+        if def.slider then p[def.slider] = slider(p, def.slider, r) end
     end
-    -- the arrows: rows 0 and 1 (InitOptionRow with an empty label: 18 x 18), their press MoveSelection
-    p.back1 = K.Hit(p, 147, 269, 165, 287, "TK7xOptionBack")
-    p.on1 = K.Hit(p, 166, 269, 184, 287, "TK7xOptionOn")
-    p.back1:SetScript("OnMouseDown", function(_, button, double)
-        if button == "LeftButton" and not double then O.Page(p, -1) end
-    end)
-    p.on1:SetScript("OnMouseDown", function(_, button, double)
-        if button == "LeftButton" and not double then O.Page(p, 1) end
-    end)
-    -- the server's answers (0x23, 0x08) change its rows: the page looks a few times a second while it shows
-    -- (s6-reprojection round 56, s6-optimize's A66.1: TK.Util.Throttled's countdown, as it was written out here)
+end
+
+function scripts.PageBack(b, button, double)
+    if button == "LeftButton" and not double then O.Page(b:GetParent(), -1) end
+end
+
+function scripts.PageOn(b, button, double)
+    if button == "LeftButton" and not double then O.Page(b:GetParent(), 1) end
+end
+
+function scripts.Watch(p)
+    -- s6-reprojection round 56 (s6-optimize's A66.1): TK.Util.Throttled's countdown, as it was written out here
     p:SetScript("OnUpdate", TK.Util.Throttled(0.2, function() O.Show(p) end))
-    -- s6-rules-dialogs' hook, as Modern's window: while the options show, the server's "saved" (S 0x21) is the tab's alert
-    -- (NewOptionPane::HandlePacketEvent 0x00540DB0)
-    p:HookScript("OnShow", function() H:DialogOptionPageShown(true) end)
-    p:HookScript("OnHide", function() H:DialogOptionPageShown(false) end)
-    return p
+end
+
+function scripts.Shown() H:DialogOptionPageShown(true) end
+
+function scripts.Hidden() H:DialogOptionPageShown(false) end
+
+function O.Build(parent)
+    return TK.Xml.Load("options.xml", { scripts = scripts, elements = Elements, parent = parent }).frame
 end
 
 --- AddToLayer (0x005404D0), each accepted switch to the tab: page 0; OnActivate reads the volumes again.
@@ -261,37 +270,39 @@ end
 
 --- One arrow's picture: field_11C8 / field_1240's [state] (0 normal, 1 pressed, 2 greyed).
 local function arrow(p, key, tex, frame, state, x)
-    p[key] = S.Picture(p, tex, "INVENBUT.EPF", frame + 7 * state, "INVENBUT.PAL", x, 269, "ARTWORK")
+    p[key] = S.Picture(p, tex, "INVENBUT.EPF", frame + 7 * state, "INVENBUT.PAL", x, X.ARROWS.y, "ARTWORK")
 end
 
 --- OnPaint: the page, its rows' states and the sliders on page 0 (UpdateVolumeSliderEnable 0x00541A90).
 function O.Show(p)
     if not p:IsShown() then return end
     for i, hd in ipairs(HEADINGS) do
-        for k, fs in ipairs(p.headings[i]) do
-            if p.page == 0 then S.PenText(fs, p, hd[1], 1 + k, hd[2], S.TEXT) else fs:Hide() end
+        for k = 1, 2 do
+            local fs = p.headings[2 * (i - 1) + k]
+            if p.page == 0 then S.PenText(fs, p, hd.text, 1 + k, hd.y, S.TEXT) else fs:Hide() end
         end
     end
     for _, b in ipairs(p.rows) do
         local def, r = b.def, b.rect
-        local here = def[6] == p.page
+        local here = def.page == p.page
         b:SetShown(here)
         b.box:SetShown(here)
         b.shadow:SetShown(here)
         b.label:SetShown(here)
         if here then
             local on = def.on() and true or false
-            if def[5] == 3 then
+            if def.kind == 3 then
                 S.Picture(p, b.box, "ONOFFBUT.EPF", on and 1 or 0, "BUTTON.PAL", r[1], r[2], "ARTWORK")
             else
                 S.Picture(p, b.box, "RBUTTON.EPF", on and 0 or 1, "RBUTTON.PAL", r[1], r[2], "ARTWORK")
             end
-            S.PenText(b.shadow, p, def[2], r[1] + 19, r[2] + 13, 6)
-            S.PenText(b.label, p, def[2], r[1] + 18, r[2] + 13, S.TEXT)
+            S.PenText(b.shadow, p, def.label, r[1] + 19, r[2] + 13, 6)
+            S.PenText(b.label, p, def.label, r[1] + 18, r[2] + 13, S.TEXT)
         end
     end
-    arrow(p, "backTex", p.backTex, 5, p.pressed == "back" and 1 or (p.page == 0 and 2 or 0), 147)
-    arrow(p, "onTex", p.onTex, 6, p.pressed == "on" and 1 or (p.page == PAGES - 1 and 2 or 0), 166)
+    local a = X.ARROWS
+    arrow(p, "backTex", p.backTex, a.back, p.pressed == "back" and 1 or (p.page == 0 and 2 or 0), a.backX)
+    arrow(p, "onTex", p.onTex, a.on, p.pressed == "on" and 1 or (p.page == PAGES - 1 and 2 or 0), a.onX)
     p.pressed = nil
     for _, s in ipairs({ p.music, p.effects }) do
         s:SetShownAll(p.page == 0)

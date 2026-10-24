@@ -250,7 +250,9 @@ end
 
 -- Each frame: the session's minimap requests (each one toggles the window; in a live session the rules take m
 -- themselves, so the binding's own script does not run), then the model's dialog (the window opens with it, the
--- server's 70, and closes with it). A new session counts from 0 again.
+-- server's 70, and closes with it). A new session counts from 0 again. s6-ui-core (round 101, T11 step 3): called only
+-- on the frames the requests changed, and on the next frame after the dialogs' windows changed (TK_DIALOGS_CHANGED, raised
+-- by the dialogs' own OnUpdate, later in the frame: the next frame, as this watch saw them before).
 local watch = CreateFrame("Frame", "TKMapWindowWatch", UIParent)
 watch:SetSize(1, 1)
 local modelOpen, asked = false, 0
@@ -264,5 +266,7 @@ watch:SetScript("OnUpdate", function()
         if open then Map:Open() else Map:CloseQuietly() end
     end
 end)
+watch:SetUpdateWhen("minimap")
+TK.On("TK_DIALOGS_CHANGED", function() watch:SetUpdateWhen("minimap") end)
 
 return Map

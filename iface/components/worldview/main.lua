@@ -151,6 +151,15 @@ function C:CarryOver(db)
     TK.DB:MarkDirty()
 end
 
+--- s6-reprojection-cloud-1 (run 20; head note 69, the owner, 2026-10-23: "upscaling should be off"): Upscaling moved to
+--- the Experimental tab, off by default. A profile saved before the move takes the new default once (its method None,
+--- its other rows kept for when it is turned on), as a setting moved to Experimental does; the flag records it.
+function C:UpscalingMoved(db)
+    if db.upscalingMoved then return end
+    db.upscaleMethod, db.upscalingMoved = "none", true
+    TK.DB:MarkDirty()
+end
+
 --- s6-modular-d (Retro rule 16): the presentation the Tiles' drawing style asks for, { cols, rows, factor }, or nil for
 --- the world view's own (the default style). Retro's old version view: at least 21 x 19 (or 29 x 19) cells, smaller by
 --- the factor, filtered linear. The live area and the clicks are unchanged: one scale maps the picture and the input.
@@ -235,6 +244,7 @@ end
 function C:ApplySettings()
     local db, f = self:DB(), self.frame
     self:CarryOver(db) -- s6-world-view (round 29)
+    self:UpscalingMoved(db) -- run 20 (head note 69)
     -- [View] OriginalColour16 and the original's graphics options are read by the map picture at each configure, so
     -- they are set first.
     f:SetOriginalColour16(db.originalColour16 ~= false)

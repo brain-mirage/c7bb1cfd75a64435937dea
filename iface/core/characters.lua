@@ -116,7 +116,11 @@ function C:Enter(name)
 
     self.layout = C.ReadLayout(H:CharacterLoad(self.ref, "layout"))
     local profile = self:ProfileFor(TK.Interfaces.active)
-    if profile and profile ~= TK.DB.name and H:ProfileExists(profile) and TK.Interfaces:IsActiveProfile(profile) then
+    -- Local settings only: entries in the preset interface keep this launch's chosen profile, including a relog.
+    -- Explicit menu profile/interface switches still take their ordinary paths.
+    local startup = TK.Startup
+    local keepStartup = startup and startup.active and startup.preset == TK.Interfaces.active
+    if not keepStartup and profile and profile ~= TK.DB.name and H:ProfileExists(profile) and TK.Interfaces:IsActiveProfile(profile) then
         TK.DB:Switch(profile)
     end
     saveLayout()

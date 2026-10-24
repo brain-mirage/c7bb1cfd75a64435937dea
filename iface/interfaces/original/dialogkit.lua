@@ -206,7 +206,7 @@ return function(ctx)
     --- one-line width (its glyphs' advances: GrafPort::GetTextWidthNullTerminated) clamped to 160-240 with two buttons,
     --- 74-240 with one, at most 240 with none; the window that + 48 wide and its 12-pixel lines + 80 high (+ 48 without
     --- buttons), at most 800 x 600. Sets the text's look and wrap width; returns w, h. s6-ui-core (round 86): moved from
-    --- interfaces/original/alerts.lua for the interfaces' own login screens' alerts (interfaces/xml/title.lua) too.
+    --- interfaces/original/alerts.lua for the interfaces' own login screens' alerts (interfaces/original/title.lua) too.
     function X.AlertSize(text, buttons)
         S.Text(text, S.TEXT)
         local message = text:GetText()

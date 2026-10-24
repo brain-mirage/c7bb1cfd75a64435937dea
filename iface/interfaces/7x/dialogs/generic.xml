@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 7.x's look of the window of a dialog without one of its own (its XML twin's layout; generic.lua draws with it): 4a's
+     standard dialog, as the alerts draw it. Format: core/xml.md; the dialog's attributes are its look entry's values
+     (interfaces/original/entry.lua), its children where generic.lua draws its parts.
+     WIRE: each button's rectangle is where its press lands (the buttons, their indexes and what is sent are the
+     renderer's and the model's); changing one changes which button a press reaches. -->
+<ui>
+  <!-- 380 wide, as tall as its texts (12-pixel lines) and the buttons' row, at least 140 (its texts' height + 80): the
+       standard window (X.DIALOG_FRAME); its texts in font 0, colour 0x80, from (24, 24); its buttons 4a's 74 x 20 text
+       buttons along the bottom, the last control rightmost, ending 24 in from the right, 86 apart, from 44 to 24 above
+       the bottom -->
+  <data key="Generic" width="380" height="140" button="74">
+    <data key="text" left="24" top="24" right="24"/>
+    <data key="below" value="80"/>
+    <data key="buttons" right="24" step="86" top="44" bottom="24"/>
+  </data>
+</ui>

@@ -17,6 +17,8 @@
 -- worked out as 4a's: Config::m_chatColorPairs, the packets' own colours) but the system lines 4a puts in the messages
 -- pane (0x0A kinds 2 and 3, the rules' notices: panels/messages) and the server's message pane (0x58). Its place follows the scaled screen until the player moves it (edit
 -- mode, its Layout tab); the area is the backdrop's at 8 rows, and the log grows upwards from its bottom.
+-- s6-ui-core (round 85): the XML twin's scripts; its frames, their places and the log's sizes are main.xml's
+-- (core/xml.md).
 --
 -- Wire: nothing is sent. A press on the log's text, or on the backdrop, goes on to the map view under it (ChattingPane
 -- keeps ScrollablePane::OnMouseEvent, which declines it; ChattingBackPane has no handler): a step, a target, a look, as
@@ -33,15 +35,13 @@ local H = __tk
 local S = require("interfaces.7x.skin")
 local Hud = require("interfaces.7x.hud")
 local Screen = require("interfaces.screen")
+local E = require("interfaces.7x.elements")
 
--- the panel's area: the backdrop's at 8 rows, (9, 596)-(816, 720); everything placed from its bottom (720 on the screen)
-local RECT = { 9, 596, 816, 720 }
-local ROW = 13
-local KEEP, BLANKS = 1000, 50
-local MIN_ROWS, MAX_ROWS = 4, 50
-
--- GrafPort::DrawOutlinedText (0x004BAFA0): the text in the outline colour a pixel left, right, up and down, then the text
-local OUTLINE = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } }
+local D = TK.Xml.Data("main.xml")
+local PLACE, ROW, LOG, HANDLE = D.PLACE, D.ROW, D.LOG, D.HANDLE
+local KEEP, BLANKS = LOG.keep, LOG.blanks
+local MIN_ROWS, MAX_ROWS = LOG.min, LOG.max
+local OUTLINE = D.OUTLINE -- the outline's copies, each { x, y } from the text
 
 -- one of 4a's 50 blank lines (" ")
 local BLANK = { text = " " }
@@ -57,7 +57,7 @@ function C.Settings()
 end
 
 --- A y on the 7.x screen as the panel's own y (from its top).
-local function own(y) return y - RECT[2] end
+local function own(y) return y - PLACE[2] end
 
 --- A new game screen's log: its 50 blank lines.
 function C:Reset()
@@ -102,27 +102,24 @@ local function row(rows, text, k, top)
     end
     if r.top ~= top then
         r.top = top
-        for i, o in ipairs(OUTLINE) do S.PenText(r.outline[i], text, "", o[1], top + 12 + o[2]) end
+        for i, o in ipairs(OUTLINE) do S.PenText(r.outline[i], text, "", o.x, top + 12 + o.y) end
         S.PenText(r.text, text, "", 0, top + 12)
     end
     return r
 end
 
-function C:OnEnable()
-    local f = CreateFrame("Frame", "TK7xChatLog", UIParent)
-    f:SetFrameStrata("LOW")
-    f:SetFrameLevel(6) -- the frame layer: over the map view, under the chat bar and the strip's buttons
-    f:SetSize(RECT[3] - RECT[1], RECT[4] - RECT[2])
-    f:Hide()
-    self.frame = f
-    self:Own(f)
-    -- the log
-    local logFrame = CreateFrame("Frame", nil, f)
-    logFrame:SetAllPoints(f)
-    logFrame:SetFrameLevel(f:GetFrameLevel() + 1)
+-- the scripts main.xml names
+local scripts = {}
+
+function scripts.Own(f)
+    C.frame = f
+    C:Own(f)
+end
+
+function scripts.LogList(logFrame)
     local rows = {}
-    self.list = Hud.Lines(logFrame, ROW, function(k, i, top)
-        local r = row(rows, self.list.text, k, top)
+    C.list = Hud.Lines(logFrame, ROW, function(k, i, top)
+        local r = row(rows, C.list.text, k, top)
         local entry = i and C.lines[i]
         local text = entry and entry.text or ""
         r.text:SetText(text)
@@ -133,54 +130,68 @@ function C:OnEnable()
             if outline then o:SetTextColor(outline[1], outline[2], outline[3], 1) end
         end
     end)
-    self.logFrame = logFrame
-    -- the height handle: dragged with the left button while the chat is on
-    local handle = CreateFrame("Frame", "TK7xChatHandle", f)
-    handle:SetFrameLevel(f:GetFrameLevel() + 2)
-    handle:SetSize(807 - 792, 15)
-    handle.art = S.Picture(handle, nil, "CHATSC.EPF", 0, "INVENBUT.PAL", 0, 0, "ARTWORK")
-    handle:SetPassesDoubles(true)
-    handle:SetScript("OnMouseDown", function(_, button, double)
-        if button ~= "LeftButton" or double then return end
-        local _, y = Hud.HelpLine.PointIn(handle)
-        self.grab = y
-    end)
-    handle:SetScript("OnMouseUp", function(_, button)
-        if button ~= "LeftButton" or not self.grab then return end
-        self.grab = nil
-        local _, y = Hud.HelpLine.PointIn(f)
-        y = math.max(50, math.min(650, y + RECT[2]))
-        local rowsNow = math.min(MAX_ROWS, math.max(MIN_ROWS, math.floor((710 - y) / ROW)))
-        H:ClientSettingSetInt("chat", "lines", rowsNow)
-        H:ClientSettingsSave()
-        self:Arrange(true)
-    end)
-    -- s6-modular-g r26: discard only the temporary visual drag when no OnMouseUp is delivered.
-    -- WIRE: ItemHelpPane::HandlePointerOrMouseEvent 0x004CCC40 owns a swallowed release. Do not invoke
-    -- ChattingModifyHeightPane's release/commit (0x00480890), resize/scroll the log, or save here;
-    -- turning this cancellation into an underlying input changes what the server sees.
-    handle:SetScript("OnPressCancelled", function(_, button)
-        if button ~= "LeftButton" or not self.grab then return end
-        self.grab = nil
-        local rows = C.Settings()
-        handle:ClearAllPoints()
-        handle:SetPoint("TOPLEFT", f, "TOPLEFT", 792 - RECT[1], -own(693 - ROW * rows))
-    end)
-    -- while held, the handle alone follows the pointer (its top at the pointer's y less the grab, y 50 to 650)
-    handle:SetScript("OnUpdate", function()
-        if not self.grab then return end
-        local _, y = Hud.HelpLine.PointIn(f)
-        y = math.max(50, math.min(650, y + RECT[2]))
-        handle:ClearAllPoints()
-        handle:SetPoint("TOPLEFT", f, "TOPLEFT", 792 - RECT[1], -(own(y) - self.grab))
-    end)
-    self.handle = handle
-    -- the chat bar's buttons change the mode and the switch (settings.toml): followed as they change
-    f:SetScript("OnUpdate", function()
-        local rowsNow, mode, on = C.Settings()
-        if rowsNow ~= self.rows or mode ~= self.mode or on ~= self.on then self:Arrange(rowsNow ~= self.rows) end
-    end)
-    self.entry = Screen.Register(f, "7x.chatlog", "7.x Chat Log", function() return self:DB().enabled == true end)
+end
+
+--- The handle's place for rows (its top at 693 - 13 rows on the screen).
+local function placeHandle(handle, rows)
+    handle:ClearAllPoints()
+    handle:SetPoint("TOPLEFT", C.frame, "TOPLEFT", HANDLE.x - PLACE[1], -own(HANDLE.top - ROW * rows))
+end
+
+--- The pointer's y on the screen, kept to the handle's range.
+local function dragY()
+    local _, y = Hud.HelpLine.PointIn(C.frame)
+    return math.max(HANDLE.low, math.min(HANDLE.high, y + PLACE[2]))
+end
+
+function scripts.HandleDown(handle, button, double)
+    if button ~= "LeftButton" or double then return end
+    local _, y = Hud.HelpLine.PointIn(handle)
+    C.grab = y
+    TK.Util.Updating(handle, true)
+end
+
+-- on its release the log takes max(4, (710 - y) / 13) rows, saved
+function scripts.HandleUp(_, button)
+    if button ~= "LeftButton" or not C.grab then return end
+    C.grab = nil
+    local rowsNow = math.min(MAX_ROWS, math.max(MIN_ROWS, math.floor((LOG.bottom - dragY()) / ROW)))
+    H:ClientSettingSetInt("chat", "lines", rowsNow)
+    H:ClientSettingsSave()
+    C:Arrange(true)
+end
+
+-- s6-modular-g r26: discard only the temporary visual drag when no OnMouseUp is delivered.
+-- WIRE: ItemHelpPane::HandlePointerOrMouseEvent 0x004CCC40 owns a swallowed release. Do not invoke
+-- ChattingModifyHeightPane's release/commit (0x00480890), resize/scroll the log, or save here;
+-- turning this cancellation into an underlying input changes what the server sees.
+function scripts.HandleCancelled(handle, button)
+    if button ~= "LeftButton" or not C.grab then return end
+    C.grab = nil
+    placeHandle(handle, (C.Settings()))
+end
+
+-- while held, the handle alone follows the pointer (its top at the pointer's y less the grab, y 50 to 650).
+-- s6-ui-core (round 101, T11 step 4): called only while held (HandleDown puts it back). Drawing only.
+function scripts.HandleUpdate(handle)
+    if not C.grab then return TK.Util.Updating(handle, false) end
+    handle:ClearAllPoints()
+    handle:SetPoint("TOPLEFT", C.frame, "TOPLEFT", HANDLE.x - PLACE[1], -(own(dragY()) - C.grab))
+end
+
+-- the chat bar's buttons change the mode and the switch (settings.toml): followed as they change
+function scripts.Follow()
+    local rowsNow, mode, on = C.Settings()
+    if rowsNow ~= C.rows or mode ~= C.mode or on ~= C.on then C:Arrange(rowsNow ~= C.rows) end
+end
+
+function scripts.Register(f)
+    C.entry = Screen.Register(f, "7x.chatlog", "7.x Chat Log", function() return C:DB().enabled == true end)
+end
+
+function C:OnEnable()
+    local f = TK.Xml.Load("main.xml", { scripts = scripts, elements = E }).frame
+    self.logFrame, self.handle = f.logFrame, f.handle
     -- the chat's lines, and its scroll keys while this log shows (the game layer's; s6-interface-5x round 12: they were
     -- Modern's chat frame's hooks before)
     TK.On("TK_CHAT_LINE", function(_, entry, show) self:Add(entry, show) end)
@@ -204,12 +215,11 @@ function C:Arrange(newRows)
     self.rows, self.mode, self.on = rows, mode, on
     local screen = TK.GetComponent("7x.screen")
     if screen and screen.ShowChatBackdrop then screen:ShowChatBackdrop(rows, mode, on) end
-    self.list:SetArea(23 - RECT[1], own(710 - ROW * rows), 793 - RECT[1], own(710))
+    self.list:SetArea(LOG.left - PLACE[1], own(LOG.bottom - ROW * rows), LOG.right - PLACE[1], own(LOG.bottom))
     if newRows then self.list:End() end
     self.logFrame:SetShown(on)
     local handle = self.handle
-    handle:ClearAllPoints()
-    handle:SetPoint("TOPLEFT", f, "TOPLEFT", 792 - RECT[1], -own(693 - ROW * rows))
+    placeHandle(handle, rows)
     handle:SetShown(on)
     if on then handle:SetClaimButtons("LeftButton") else handle:SetClaimButtons() end
 end
@@ -217,7 +227,7 @@ end
 function C:Layout()
     local f = self.frame
     if not f then return end
-    Screen.Place(self.entry, 1024, 768, RECT[1], RECT[2], self:DB().scale)
+    Screen.Place(self.entry, 1024, 768, PLACE[1], PLACE[2], self:DB().scale)
     self:Arrange(false) -- the rows' spacing follows the scale (Hud.Lines)
     TK.EditMode:UpdateMovers()
     f:SetShown(TK.GameState:InWorld() and self:DB().enabled == true)

@@ -1,0 +1,9 @@
+{
+  "name": "aids",
+  "title": "Map",
+  "version": "0.1.0",
+  "order": 990,
+  "description": "s6-reprojection-cloud-3 (run 21; the owner, head note 67): the Aids tab's Map page: Show Unwalkable Edges and Show Warp Points, drawn on the world in every mode. Drawing only.",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

@@ -76,32 +76,6 @@ function V.CloseWindows()
     end
 end
 
---- s6-ui-core (round 85): the views whose windows are open, each window once (its first open view), for the interfaces'
---- form switch (TK.Interfaces:SwitchFormNow), which closes them (CloseWindows) and opens them again afterwards (Reopen).
-function V.OpenWindows()
-    local open, seen = {}, {}
-    for view, w in pairs(V.windows) do
-        if not seen[w] and on(w) and w.IsOpen(view) then
-            seen[w] = true
-            open[#open + 1] = view
-        end
-    end
-    table.sort(open) -- one order every time (the windows' own order is pairs')
-    return open
-end
-
---- s6-ui-core (round 85): the windows OpenWindows noted, opened again on their views by the windows the form now in use
---- registered, as the server opens a window (how "server"): no tab is switched and no page's request runs. Wire: so the
---- form's switch sends nothing and leaves the active tab (which decides what later keys send) as it was; changing this
---- changes what the server sees.
-function V.Reopen(views)
-    if not TK.GameState:InWorld() then return end
-    for _, view in ipairs(views) do
-        local w = windowOf(view)
-        if w and not w.IsOpen(view) then TK.SafeCall(w.Open, view, "server") end
-    end
-end
-
 --- Closes every open window that is off (a window's switch turned off on its page). Nothing is sent.
 function V.CloseOff()
     for _, w in pairs(V.windows) do
@@ -372,12 +346,20 @@ local function newLook()
 end
 
 -- The remaining drivers watch map self-look presses (0.1 s) and new look data (0.2 s); server self-view requests
--- are handled once per ordered notice below, without polling.
+-- are handled once per ordered notice below, without polling. s6-ui-core (round 101, T11 step 3): each is called on its
+-- due frames only when the presses or the look changed, and once more when the game state changes (both wait for the
+-- world).
 TK.On("PLAYER_LOGIN", function()
     local driver = CreateFrame("Frame", "TKCharacterDriver", UIParent)
     driver:SetScript("OnUpdate", TK.Util.Throttled(0.1, selfLookAsked))
+    driver:SetUpdateWhen("look")
     local lookDriver = CreateFrame("Frame", "TKLookDriver", UIParent)
     lookDriver:SetScript("OnUpdate", TK.Util.Throttled(0.2, newLook))
+    lookDriver:SetUpdateWhen("look")
+    TK.On("TK_GAME_STATE", function()
+        driver:SetUpdateWhen("look")
+        lookDriver:SetUpdateWhen("look")
+    end)
 end)
 
 -- s6-interface-5x (rounds 11 and 12): the packets' tab switches show their view at the notice itself (the logic's order,

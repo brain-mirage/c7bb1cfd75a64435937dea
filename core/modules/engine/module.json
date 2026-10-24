@@ -1,0 +1,11 @@
+{
+  "id": "engine",
+  "name": "New Graphics Engine",
+  "kind": "render",
+  "version": "0.1.0",
+  "contract": 4,
+  "assembly": "engine.dll",
+  "entry": "TK.Modules.Engine.Engine",
+  "bundle": "engine.bundle",
+  "modes": "3d=3D;3d-sphere=3D-Sphere"
+}

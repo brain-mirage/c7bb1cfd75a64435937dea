@@ -28,12 +28,17 @@ function C:OnEnable()
     -- Show Frame Time, as Interface had it: the average over half a second, at the top right.
     local ft = CreateFrame("Frame", "TKFrameTime", UIParent)
     ft:SetFrameStrata("TOOLTIP")
-    ft:SetSize(140, 16)
+    ft:SetSize(220, 16)
     ft:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -8, -4)
     ft.text = W.Label(ft, "", 11, { 0.7, 1, 0.7 }, "RIGHT")
     ft.text:SetFont(11, "OUTLINE")
     ft.text:SetPoint("RIGHT", ft, "RIGHT", 0, 0)
     self.frame = self:Own(ft)
+
+    -- The active backend is fixed for this client start, so cache it once for the HUD.
+    local running = H:GetGraphicsSystemRunning()
+    local graphicsNames = { d3d11 = "D3D11", d3d12 = "D3D12", vulkan = "Vulkan" }
+    local graphicsName = graphicsNames[running] or running
 
     -- The panel under it: the graph, the counters, the map's line, each shown by its switch.
     local panel = CreateFrame("Frame", "TKDebugPanel", UIParent)
@@ -87,7 +92,7 @@ function C:OnEnable()
         acc, frames, worst = acc + elapsed, frames + 1, math.max(worst, ms)
         if acc >= 0.5 then
             if db.showFrameTime then
-                ft.text:SetText(string.format("%.1f ms  (%d fps)", acc / frames * 1000, math.floor(frames / acc + 0.5)))
+                ft.text:SetText(string.format("%s  %.1f ms  (%d fps)", graphicsName, acc / frames * 1000, math.floor(frames / acc + 0.5)))
             end
             graph.label:SetText(string.format("max %.1f ms", worst))
             acc, frames, worst = 0, 0, 0
@@ -166,6 +171,15 @@ function C:ApplySettings()
     if not db.inspector then self.inspector:Hide() end
     self:Layout()
     self:ApplyWeather(db)
+    self:Watch()
+end
+
+--- s6-ui-core (round 101, the graphics plan's T11 step 4): the watcher runs only while a readout, the inspector or the
+--- Detached Camera is on (its frame-time ring then fills from that moment). Debug drawing only.
+function C:Watch()
+    local db = self:DB()
+    TK.Util.Updating(self.watcher, db.showFrameTime or db.showFrameGraph or db.showCounters or db.showMapInfo
+        or db.inspector or H:IsDetachedCamera())
 end
 
 -- ----- s6-effects (round 40): the Weather & Lighting tab (settings.lua) -----
@@ -257,6 +271,7 @@ function C:SetDetached(on)
     if on then self:HookView() end
     H:SetDetachedCamera(on == true)
     held, drag = {}, nil
+    if self.watcher then self:Watch() end
     if TK.Settings:IsOpen() then TK.Settings:RefreshPage() end
 end
 

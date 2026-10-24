@@ -1,39 +1,22 @@
 -- The XP bar, as Bartender's: a long experience bar, with its numbers shown never, on mouse-over or always.
+-- s6-ui-core (round 85): the XML twin's scripts; the bar, its edge, ticks and text are main.xml's (core/xml.md).
 
 local C = TK.GetComponent("xpbar")
 local H = __tk
 local U = TK.Util
-local W = require("interfaces.modern.skin").UI -- s6-devtools (round 5, the separation's step 5): Modern's skin
+local E = require("interfaces.modern.elements")
+
+-- the scripts main.xml names
+local scripts = {}
+
+function scripts.Enter(f) f.hover = true; C:Update() end
+
+function scripts.Leave(f) f.hover = false; C:Update() end
+
+function scripts.Changed() C:Update() end
 
 function C:OnEnable()
-    local f = CreateFrame("StatusBar", "TKXPBar", UIParent)
-    f:SetStatusBarTexture("tk:bar")
-    f:SetStatusBarColor(0.58, 0.25, 0.85, 1)
-    local bg = f:CreateTexture(nil, "BACKGROUND")
-    bg:SetAllPoints(f)
-    bg:SetColorTexture(0.08, 0.04, 0.12, 0.85)
-    local edge = f:CreateTexture(nil, "OVERLAY")
-    edge:SetPoint("TOPLEFT", f, "TOPLEFT", -1, 1)
-    edge:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", 1, -1)
-    edge:SetTexture("tk:edge")
-    edge:SetVertexColor(0.1, 0.1, 0.1, 1)
-    -- Tick marks every tenth, as in WoW.
-    f.ticks = {}
-    for i = 1, 9 do
-        local t = f:CreateTexture(nil, "OVERLAY")
-        t:SetWidth(1)
-        t:SetColorTexture(0, 0, 0, 0.5)
-        f.ticks[i] = t
-    end
-    f.text = W.Label(f, "", 10, W.white)
-    f.text:SetFont(10, "OUTLINE")
-    f.text:SetPoint("CENTER", f, "CENTER", 0, 0)
-    f:EnableMouse(true)
-    f:SetScript("OnEnter", function() f.hover = true; self:Update() end)
-    f:SetScript("OnLeave", function() f.hover = false; self:Update() end)
-    f:RegisterEvent("PLAYER_XP_UPDATE")
-    f:RegisterEvent("PLAYER_ENTERING_WORLD")
-    f:SetScript("OnEvent", function() self:Update() end)
+    local f = TK.Xml.Load("main.xml", { scripts = scripts, elements = E }).frame
     self.frame = f
     TK.Visibility:Attach(f, function() return self:DB() end)
     TK.EditMode:Register(f, "xpbar", "XP Bar", C.defaultPosition, "xpbar")

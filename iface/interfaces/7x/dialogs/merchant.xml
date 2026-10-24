@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 7.x's look of the merchant menus (its XML twin's layout; merchant.lua draws with it), from Source-5's class pages
+     (each class's EPF layout). Format: core/xml.md; each dialog's attributes are its look entry's values
+     (interfaces/original/entry.lua), its children where merchant.lua draws its parts: rectangles (left, top, right, bottom), points
+     (x, y), pictures (file, palette) and image buttons (BUTT001.EPF's image id first).
+     WIRE: a control's rectangle is where a press on it lands (DialogPane::HitTestControls 0x0049FB10); changing one
+     changes which control a press reaches, so what the client sends. -->
+<ui>
+  <!-- The menus on DLGMERC1 (TextMenuDialog 0x00519210, ServerSpellMenuDialog, ClientSpellMenuDialog, the sell menu
+       ClientItemMenuDialog 0x0051B880): 315 x 353 in PAL01.PAL; OK (image 14), UP (16) and CLOSE (15) along y 310-334;
+       the NPC's portrait; the prompt; the list (36, 144)-(294, 288) of 228-pixel cells, 12 high (24 for the sell
+       menu's items). -->
+  <data key="MERC1">
+    <data key="portrait" value="20, 20"/>
+    <data key="art" value="DLGMERC1.EPF, PAL01.PAL"/>
+    <data key="ok" value="14, 44, 310, 107, 334"/>
+    <data key="up" value="16, 121, 310, 184, 334"/>
+    <data key="close" value="15, 198, 310, 261, 334"/>
+    <data key="prompt" value="105, 40, 276, 128"/>
+  </data>
+  <!-- The menus on DLGMERC3 (ServerItemMenuDialog 0x0051A520, ArgumentedMenuMenuDialog 0x0051E9A0): 410 x 368 in
+       PAL01.PAL; OK, UP, CLOSE along y 332-356; the portrait; the prompt; the selected item's description. -->
+  <data key="MERC3">
+    <data key="portrait" value="26, 13"/>
+    <data key="art" value="DLGMERC3.EPF, PAL01.PAL"/>
+    <data key="ok" value="14, 104, 332, 167, 356"/>
+    <data key="up" value="16, 181, 332, 244, 356"/>
+    <data key="close" value="15, 258, 332, 321, 356"/>
+    <data key="prompt" value="109, 33, 373, 121"/>
+    <data key="description" value="25, 291, 363, 303"/>
+  </data>
+
+  <data key="TextMenu" width="315" height="353" button="63" listWidth="228" listHeight="144">
+    <data key="list" value="36, 144, 294, 288, 228"/>
+  </data>
+  <!-- the sell menu (ClientItemMenuItemList: 228 x 24 cells, the name to the cell's right; the bar the whole cell) -->
+  <data key="SellMenu" width="315" height="353" button="63" listWidth="228" listHeight="144">
+    <data key="list" value="36, 144, 294, 288, 228, 24"/>
+    <data key="cut" value="0"/>
+    <!-- a row: the picture centred on x 12, the name from x 50, as wide as the rest of the cell -->
+    <data key="row" icon="12" name="50" width="178"/>
+  </data>
+  <!-- the server's items (ServerItemMenuItemList: 348 x 24 cells; the bar 28 short of the cell's right; the price
+       "%10u" from the cell's right - 90) -->
+  <data key="ItemMenu" width="410" height="368" button="63" listWidth="348" listHeight="144">
+    <data key="list" value="36, 129, 391, 273, 348, 24"/>
+    <data key="cut" value="28"/>
+    <data key="row" icon="12" name="50" width="220" price="258"/>
+  </data>
+  <!-- the goods (ArgumentedMenuMenuItemList: 362 x 24 cells; the name in 30-186, the count ending at 217 (from 211 back 6
+       pixels a character), the price grouped by commas from the cell's right - 25 back 6 pixels a character and two
+       more, 36 more with "1gold ") -->
+  <data key="GoodsMenu" width="410" height="368" button="63" listWidth="362" listHeight="144">
+    <data key="list" value="26, 129, 391, 273, 362, 24"/>
+    <data key="cut" value="28"/>
+    <data key="row" icon="12" name="30" width="156" count="211" price="337" gold="36"/>
+  </data>
+
+  <!-- The text input (TextInputMenuDialog 0x0051A280): 336 x 205 on DLGMERC2.EPF in PAL01.PAL; OK, UP, CLOSE along y
+       169-193; the portrait; the prompt; the edit. -->
+  <data key="MerchantInput" width="336" height="205" button="63" editWidth="247" editHeight="12">
+    <data key="portrait" value="22, 8"/>
+    <data key="art" value="DLGMERC2.EPF, PAL01.PAL"/>
+    <data key="ok" value="14, 60, 169, 123, 193"/>
+    <data key="up" value="16, 137, 169, 200, 193"/>
+    <data key="close" value="15, 214, 169, 277, 193"/>
+    <data key="prompt" value="105, 28, 301, 112"/>
+    <data key="edit" value="44, 128, 291, 140"/>
+  </data>
+
+  <!-- The windows on DLGEXC3 (the purchase's inputs ArgumentedItemConfirmInputDialogPane 0x005200D0 and
+       ArgumentedItemQuantityInputDialogPane 0x0051FC90, the hired merchant's quantity EmployeeQuantityInputDialogPane
+       0x004A4770, the trade's count AddItemWithCountDialog 0x004AF040, the stack's number NumberInputDialog 0x00530640):
+       239 x 283 (the picture 238 x 183, nothing below it: pane mode 1); OK (or the count's ADD) and CANCEL; the text; the
+       edit. By class: the first button's picture, the text's rectangle and the edit's colour. s6-interface-7x-b (round
+       5): the hired merchant's quantity is the purchase quantity's layout in 4a (ui/EmployeeDialogPane.cpp:871-901). -->
+  <data key="Input" width="239" height="283" button="63" editWidth="183" editHeight="12">
+    <data key="art" value="DLGEXC3.EPF, PAL01.PAL"/>
+    <data key="cancel" value="22, 129, 149, 192, 173"/>
+    <data key="ok" value="50, 149, 113, 173"/>
+    <data key="edit" value="28, 111, 211, 123"/>
+    <data key="kinds">
+      <data key="ArgumentedItemConfirmInputDialogPane" image="14" text="30, 45, 210, 81" edit="0x8F"/>
+      <data key="ArgumentedItemQuantityInputDialogPane" image="14" text="30, 60, 197, 72" edit="0x8F"/>
+      <data key="EmployeeQuantityInputDialogPane" image="14" text="30, 60, 197, 72" edit="0x8F"/>
+      <data key="AddItemWithCountDialog" image="36" text="28, 35, 211, 107" edit="0x80"/>
+      <data key="NumberInputDialog" image="14" text="28, 35, 211, 107" edit="0x80"/>
+    </data>
+  </data>
+</ui>

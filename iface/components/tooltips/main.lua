@@ -12,17 +12,11 @@ local H = __tk
 local KIND = { player = "Player", npc = "NPC", creature = "Creature", item = "Item on the ground" }
 
 --- The object to name at a map cell: a player or creature standing on the cell below or on it, else an item on it.
+--- s6-ui-core (round 105, T11 step 9): looked up in C# in one call (LuaApi.GetObjectAt, the same rule), not a call for
+--- every object.
 local function objectAt(x, y)
-    local below, here, item
-    for i = 1, H:GetNumObjects() do
-        local _, id, kind, ox, oy = H:GetObjectInfo(i)
-        if ox == x then
-            if kind ~= "item" and oy == y + 1 then below = below or id
-            elseif kind ~= "item" and oy == y then here = here or id
-            elseif kind == "item" and oy == y then item = id end
-        end
-    end
-    return below or here or item
+    local found, id = H:GetObjectAt(x, y)
+    if found then return id end
 end
 
 --- The ground items on the cell under the mouse, the top one first: { id, name, key, w, h }.

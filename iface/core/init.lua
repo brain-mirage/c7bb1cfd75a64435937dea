@@ -36,7 +36,7 @@ end
 
 require("core.util")
 require("core.frame")
-require("core.xml") -- s6-ui-core (round 85): TK.Xml, the UI's XML layout files (core/xml.md); the interfaces' XML twins
+require("core.xml") -- s6-ui-core (round 85): TK.Xml, the UI's XML layout files (core/xml.md); the XML interfaces
 require("core.gamestate")
 require("core.escape")
 require("core.widgets")
@@ -78,6 +78,7 @@ require("core.game.sidepanel") -- s6-interface-5x (round 12, step 1): 4a's one s
 require("core.game.views") -- s6-interface-5x (round 12, step 1): the pages' providers (interface-separation.md, 5.1)
 require("core.game.itemhelp") -- the local item help's catcher and close rules (4a 0x004CCC40/80)
 require("core.game.selflook") -- s6-interface-5x (round 11, W1): the game layer's self look (interface-separation.md, 5.5)
+require("core.game.tips") -- s6-gateway-research (round 37, P3): the panes' help tip on a right press (WIRE there)
 -- s6-interface-5x (round 12, step 2): the game layer's inventory, spells, look, social and emotes (5.3, 5.4, 5.6)
 require("core.game.inventory")
 require("core.game.spells")
@@ -105,6 +106,7 @@ require("core.login")
 require("core.entering") -- s6-ui-login: the login's presentation per interface (title music, the loading screen)
 require("core.preview")
 require("core.gatecontrols") -- UI head note 51: the gate's named controls (gate mode only)
+require("core.startup") -- launch-only interface presets and existing settings, before the login screen
 
 -- ----- C# entry points -----
 

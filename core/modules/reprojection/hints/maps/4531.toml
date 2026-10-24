@@ -1,0 +1,10 @@
+# Map 4531: repeated full-front rows would stack to height 26. Clear the global front fields so native wall/prop
+# flags and default heights choose the original forms; pass-cleared front placements that were props remain props.
+[check]
+size = "80x80"
+
+[sobj.1160-1164]
+clear = ["kind", "roof", "height", "terrace"]
+
+[sobj.1166]
+clear = ["kind", "roof", "height", "terrace"]

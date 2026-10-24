@@ -8,17 +8,17 @@
 -- (none when unbound): a key belongs to the action on the Key Bindings page, never to the button. The page's list sets
 -- which buttons show and their order (C:Buttons()); the others close up. Mail and Parcel, off by default, are the
 -- minimap's mail and parcel icons: the bottom icons' pane's two controls (ParcelPane), pressed and released the same way.
+-- s6-ui-core (round 85): the XML twin's scripts; the bar and its buttons are main.xml's (core/xml.md).
 
 local C = TK.GetComponent("micromenu")
 local H = __tk
 
-local BW, BH = 30, 38
-local ICON = 24
+local B = TK.Xml.Data("main.xml").BUTTON
 
 --- The player's bare head (s6-characters' GetBareHead: made once from the first look of a login and held until logout;
 --- "" before it and after).
 function C:Head()
-    return (H:GetBareHead(ICON))
+    return (H:GetBareHead(B.icon))
 end
 
 --- A button's icon and its texture coordinates.
@@ -39,41 +39,33 @@ local function boundKey(def)
     end
 end
 
-local function microButton(parent, def, onClick)
+-- the scripts main.xml names
+local scripts = {}
+
+function scripts.Tip(self)
+    local def = self.def
+    GameTooltip:SetOwner(self, "ANCHOR_TOP")
+    GameTooltip:AddLine(def.name, 1, 1, 1)
+    GameTooltip:AddLine(def.tip, 0.8, 0.8, 0.8)
+    local key = boundKey(def)   -- read now: a rebound key shows as rebound
+    if key then GameTooltip:AddLine("Key: " .. key, 1, 0.82, 0) end
+    GameTooltip:Show()
+end
+
+function scripts.Untip() GameTooltip:Hide() end
+
+--- A button of the bar (ui: the build), its face in its hue.
+local function microButton(ui, parent, def, onClick)
     -- Named by its title (TKMicroButtonMenu, TKMicroButtonCharacter...): the gate's driver clicks our controls by name
     -- (head note 51). TKMicroMenu is the bar itself.
-    local b = CreateFrame("Button", "TKMicroButton" .. def.name:gsub("%s", ""), parent)
-    b:SetSize(BW, BH)
+    local b = ui:New("MicroButton", parent, "TKMicroButton" .. def.name:gsub("%s", ""))
+    b:SetSize(B.width, B.height)
     local hue = def.hue
-    local bg = b:CreateTexture(nil, "BACKGROUND")
-    bg:SetAllPoints(b)
-    bg:SetTexture("tk:button")
-    bg:SetVertexColor(hue[1], hue[2], hue[3], 1)
-    local pushed = b:CreateTexture(nil, "BACKGROUND")
-    pushed:SetAllPoints(b)
-    pushed:SetTexture("tk:button")
-    pushed:SetVertexColor(hue[1] * 0.6, hue[2] * 0.6, hue[3] * 0.6, 1)
-    b:SetNormalTexture(bg)
-    b:SetPushedTexture(pushed)
-    local hl = b:CreateTexture(nil, "HIGHLIGHT")
-    hl:SetAllPoints(b)
-    hl:SetTexture("tk:button-hl")
-    hl:SetVertexColor(1, 0.9, 0.5, 0.5)
-    b:SetHighlightTexture(hl)
-    b.icon = b:CreateTexture(nil, "ARTWORK")
-    b.icon:SetSize(ICON, ICON)
-    b.icon:SetPoint("CENTER", b, "CENTER", 0, 0)
+    b.face:SetVertexColor(hue[1], hue[2], hue[3], 1)
+    b.pressed:SetVertexColor(hue[1] * 0.6, hue[2] * 0.6, hue[3] * 0.6, 1)
+    b.icon:SetSize(B.icon, B.icon)
     b.def = def
     if onClick then b:SetScript("OnClick", onClick) end
-    b:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:AddLine(def.name, 1, 1, 1)
-        GameTooltip:AddLine(def.tip, 0.8, 0.8, 0.8)
-        local key = boundKey(def)   -- read now: a rebound key shows as rebound
-        if key then GameTooltip:AddLine("Key: " .. key, 1, 0.82, 0) end
-        GameTooltip:Show()
-    end)
-    b:SetScript("OnLeave", function() GameTooltip:Hide() end)
     return b
 end
 
@@ -81,38 +73,38 @@ end
 --- control under the pointer then. s6-input (round 49, separation step 4b): through the game layer's one press path,
 --- TK.Game.Parcels.Wire. Wire: ParcelPane::HandlePointerOrMouseEvent 0x00546610 (1 opens the mail's 3B 09, 0 sends 41);
 --- changing a button's control changes what the server sees.
-local function parcelButton(parent, def, control)
-    return TK.Game.Parcels.Wire(microButton(parent, def), control)
+local function parcelButton(ui, parent, def, control)
+    return TK.Game.Parcels.Wire(microButton(ui, parent, def), control)
 end
 
-function C:OnEnable()
-    local f = CreateFrame("Frame", "TKMicroMenu", UIParent)
-    self.frame = f
+--- The buttons, in the bar f, with what each opens.
+function scripts.Buttons(f, ui)
+    local self = C
     local V = TK.Game.Views -- the game layer's views (s6-interface-5x round 12, step 1): each button opens its view
     local defs = {}
     for _, d in ipairs(C.BUTTONS) do defs[d.id] = d end
     -- buttons[1] to [10] keep today's order (the tests and the gate name them so); Mail and Parcel follow.
     self.buttons = {
-        microButton(f, defs.character, function() V.Toggle("character") end),
-        microButton(f, defs.spellbook, function() V.Toggle("spellbook") end),
-        microButton(f, defs.bag, function() V.Toggle("bag") end),
+        microButton(ui, f, defs.character, function() V.Toggle("character") end),
+        microButton(ui, f, defs.spellbook, function() V.Toggle("spellbook") end),
+        microButton(ui, f, defs.bag, function() V.Toggle("bag") end),
         -- Modern's own window, on its last page (TK.Social:Toggle: the views' opening). s6-modular-g (round 18, kept = 7
         -- dropped; Astra's pass 18-3): its code is there only while one of Modern's windows is on (step 11); with all of
         -- them off the button opens the group view as that window's Toggle did, its start page, so an interface that shows
         -- the group itself (7.x's side panel) shows it. Wire: that is 4a's SwitchActiveTab(4) and the group's 2D 01
         -- (NewGroupPane::OnActivate 0x0056CB80); changing it changes what the server sees.
-        microButton(f, defs.social, function()
+        microButton(ui, f, defs.social, function()
             if TK.Components:Loaded("windows") then TK.Social:Toggle() else V.Open("group", "input") end
         end),
-        microButton(f, defs.emotes, function() V.Toggle("emotes") end),
-        microButton(f, defs.boards, function() TK.Actions:RunFrozen() end),
-        microButton(f, defs.menu, function() end),
-        microButton(f, defs.editmode, function() TK.EditMode:Toggle() end),
-        microButton(f, defs.settings, function() TK.Settings:Toggle() end),
-        microButton(f, defs.logout, function() TK.Login:LogOut() end),
+        microButton(ui, f, defs.emotes, function() V.Toggle("emotes") end),
+        microButton(ui, f, defs.boards, function() TK.Actions:RunFrozen() end),
+        microButton(ui, f, defs.menu, function() end),
+        microButton(ui, f, defs.editmode, function() TK.EditMode:Toggle() end),
+        microButton(ui, f, defs.settings, function() TK.Settings:Toggle() end),
+        microButton(ui, f, defs.logout, function() TK.Login:LogOut() end),
     }
-    self.mail = parcelButton(f, defs.mail, 1)
-    self.parcel = parcelButton(f, defs.parcel, 0)
+    self.mail = parcelButton(ui, f, defs.mail, 1)
+    self.parcel = parcelButton(ui, f, defs.parcel, 0)
     self.byId = {}
     for _, b in ipairs(self.buttons) do self.byId[b.def.id] = b end
     self.byId.mail, self.byId.parcel = self.mail, self.parcel
@@ -129,21 +121,30 @@ function C:OnEnable()
     -- The head: asked now and when the player's pictures change (the first look of a login brings it, the logout takes it
     -- away); the same picture all through a login, as the owner asked.
     self.head = self:Head()
-    f:RegisterEvent("UNIT_PORTRAIT_UPDATE")
-    f:SetScript("OnEvent", function(_, _, unit)
-        if unit ~= "player" then return end
-        self.head = self:Head()
-        self:ShowIcons()
-    end)
-    -- Mail and Parcel, while shown: "some" or "none" as the minimap's icons, looked at twice a second as the minimap does.
+end
+
+function scripts.PortraitChanged(_, _, unit)
+    if unit ~= "player" then return end
+    C.head = C:Head()
+    C:ShowIcons()
+end
+
+-- Mail and Parcel, while shown: "some" or "none" as the minimap's icons, looked at twice a second as the minimap does
+-- (its wait is this build's).
+function scripts.Ticker(f)
     local wait = 0
     f:SetScript("OnUpdate", function(_, elapsed)
-        if not (self.mail:IsShown() or self.parcel:IsShown()) then return end
+        if not (C.mail:IsShown() or C.parcel:IsShown()) then return end
         wait = wait - elapsed
         if wait > 0 then return end
         wait = 0.5
-        self:ShowIcons()
+        C:ShowIcons()
     end)
+end
+
+function C:OnEnable()
+    local f = TK.Xml.Load("main.xml", { scripts = scripts }).frame
+    self.frame = f
     TK.Visibility:Attach(f, function() return self:DB() end)
     TK.EditMode:Register(f, "micromenu", "Micro Menu", C.defaultPosition, "micromenu")
 end
@@ -176,6 +177,7 @@ function C:ApplySettings()
     local n = #shown
     -- All off: the panel keeps a button's size, so edit mode still finds it and its page turns them back on.
     local w = math.max(n, 1)
+    local BW, BH = B.width, B.height
     if db.vertical then
         self.frame:SetSize(BW, w * BH + (w - 1) * pad)
     else

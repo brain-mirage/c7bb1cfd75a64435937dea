@@ -3,20 +3,18 @@
 -- updates on events. s6-ui-core (round 82; the owner, 2026-10-09): the bars are Modern's vital bars (vitals.lua): the
 -- numbers in two rows when one line does not fit, the damage taken (a switch), and a hovered spell's cost marked by a
 -- small red triangle under the mana bar (under the health bar for a spell that costs health).
+-- s6-ui-core (round 85): the XML twin's scripts; the frame, its portrait and bars are main.xml's (core/xml.md).
 
 local C = TK.GetComponent("playerframe")
 local H = __tk
 local U = TK.Util
-local W = require("interfaces.modern.skin").UI -- s6-devtools (round 5, the separation's step 5): Modern's skin
-local Portrait = require("interfaces.modern.portrait") -- the portrait the target frame has too (s6-optimize round 52)
+local E = require("interfaces.modern.elements")
 local V = require("interfaces.modern.vitals") -- s6-ui-core (round 82)
 
-local PORTRAIT = 56
--- s6-ui-core (round 82; the owner, 2026-10-09): the health and mana bars a little taller, filling the room the experience
--- bar left when it moved under the portrait
-local HP_HEIGHT, MP_HEIGHT, XP_HEIGHT = 19, 14, 7
-
-local function bar(parent, height, r, g, b) return V.Bar(parent, height, r, g, b, 11) end
+-- the portrait's size and the bars' heights (main.xml's)
+local SIZES = TK.Xml.Data("main.xml").SIZES
+local PORTRAIT = SIZES.portrait
+local HP_HEIGHT, MP_HEIGHT = SIZES.hp, SIZES.mp
 
 --- s6-ui-core (round 82; the owner: "hovering the XP bar shows the experience held, what the level needs and the
 --- percentage"): the experience lines of the player frame's and its experience bar's tooltips. Online the server sends
@@ -32,82 +30,62 @@ local function xpLines()
              string.format("Progress: %.1f%%", pct) }
 end
 
-function C:OnEnable()
-    local f = CreateFrame("Frame", "TKPlayerFrame", UIParent)
-    f:SetBackdrop({ bg = { 0.04, 0.04, 0.05, 0.85 }, edge = { 0.55, 0.55, 0.58, 1 } })
-    TK.UI.HudPanel(f, C) -- s6-ui-settings (round 4): the shared panel style; s6-ui-core (round 53): or its own
-    self.frame = f
+-- the scripts main.xml names
+local scripts = {}
 
-    -- s6-characters seam (the owner, 2026-10-01): the character's portrait over the disc, under the ring: its figure's upper
-    -- body, or its profile image (ShowPortrait); the name's letter while there is neither (Modern's portrait.lua).
-    local portrait = Portrait.New(f, PORTRAIT, "TOPLEFT", 8, -8, 0.25, 0.35, 0.8)
-    local levelBadge = CreateFrame("Frame", nil, portrait)
-    levelBadge:SetSize(26, 18)
-    levelBadge:SetPoint("BOTTOMRIGHT", portrait, "BOTTOMRIGHT", 6, -4)
-    levelBadge:SetBackdrop({ bg = { 0.1, 0.08, 0.02, 0.95 }, edge = { 0.85, 0.75, 0.45, 1 } })
-    levelBadge:SetFrameLevel(portrait:GetFrameLevel() + 2)
-    f.level = W.Label(levelBadge, "", 11, W.gold)
-    f.level:SetPoint("CENTER", levelBadge, "CENTER", 0, 0)
-    f.portrait = portrait
+function scripts.HudPanel(f) TK.UI.HudPanel(f, C) end -- s6-ui-settings (round 4): the shared panel style; or its own
 
-    f.name = W.Label(f, "", 14, W.white, "LEFT")
-    f.name:SetFont("classic", 12, "")   -- names in the original's own font
-    f.path = W.Label(f, "", 11, { 0.7, 0.7, 0.75 }, "RIGHT")
-    f.hp = bar(f, HP_HEIGHT, 0.15, 0.75, 0.15)
-    f.mp = bar(f, MP_HEIGHT, 0.2, 0.45, 0.95)
-    -- The mana-cost preview (plan 5.11): over the mana bar, yellow for the mana a hovered spell would use and red for
-    -- the shortfall beyond the mana there is.
-    f.mp.costYellow = f.mp:CreateTexture(nil, "OVERLAY")
-    f.mp.costYellow:SetColorTexture(1, 0.85, 0.15, 0.85)
-    f.mp.costRed = f.mp:CreateTexture(nil, "OVERLAY")
-    f.mp.costRed:SetColorTexture(0.95, 0.15, 0.1, 0.85)
-    f.mp.costYellow:Hide()
-    f.mp.costRed:Hide()
-    f.xp = bar(f, XP_HEIGHT, 0.6, 0.25, 0.85)
-    f.xp.text:SetFont(9, "OUTLINE")
-    f.xp:EnableMouse(true)
-    f.xp:SetScript("OnEnter", function(frame)
-        GameTooltip:SetOwner(frame, "ANCHOR_BOTTOM")
-        for _, line in ipairs(xpLines()) do GameTooltip:AddLine(line, 0.8, 0.6, 1) end
-        GameTooltip:Show()
-    end)
-    f.xp:SetScript("OnLeave", function() GameTooltip:Hide() end)
+-- the level badge over the portrait
+function scripts.OverPortrait(badge) badge:SetFrameLevel(badge:GetParent():GetFrameLevel() + 2) end
 
-    f:RegisterEvent("UNIT_HEALTH")
-    f:RegisterEvent("UNIT_POWER")
-    f:RegisterEvent("PLAYER_XP_UPDATE")
-    f:RegisterEvent("UNIT_NAME_UPDATE")
-    f:RegisterEvent("PLAYER_ENTERING_WORLD")
-    f:RegisterEvent("UNIT_PORTRAIT_UPDATE")   -- s6-characters' (round 36): its pictures of the player changed
-    -- s6-ui-core (after build 41; s6-optimize's audit): the player chose their own picture (core/profilepicture.lua's Save)
-    -- to be their portrait, so its switch goes on and the portrait shows it.
+-- the experience bar's numbers in the small outlined font
+function scripts.SmallText(xp) xp.text:SetFont(9, "OUTLINE") end
+
+function scripts.XpTip(frame)
+    GameTooltip:SetOwner(frame, "ANCHOR_BOTTOM")
+    for _, line in ipairs(xpLines()) do GameTooltip:AddLine(line, 0.8, 0.6, 1) end
+    GameTooltip:Show()
+end
+
+function scripts.Untip() GameTooltip:Hide() end
+
+-- s6-ui-core (after build 41; s6-optimize's audit): the player chose their own picture (core/profilepicture.lua's Save)
+-- to be their portrait, so its switch goes on and the portrait shows it.
+function scripts.ProfilePicture()
     TK.On("TK_PROFILE_PICTURE_SAVED", function()
-        if not self:DB().useProfileImage then
-            self:DB().useProfileImage = true
+        if not C:DB().useProfileImage then
+            C:DB().useProfileImage = true
             TK.DB:MarkDirty()
         end
-        self:ShowPortrait()
+        C:ShowPortrait()
     end)
-    f:SetScript("OnEvent", function(_, event, unit)
-        if unit and unit ~= "player" then return end
-        -- s6-ui-core (round 33, the owner): the portrait is held until the look or the gear changes (UNIT_PORTRAIT_UPDATE)
-        -- or the character's name does; it was asked for twice a second.
-        if event == "UNIT_PORTRAIT_UPDATE" then return self:ShowPortrait() end
-        self:Update()
-        if event == "UNIT_NAME_UPDATE" or event == "PLAYER_ENTERING_WORLD" then self:ShowPortrait() end
-    end)
-    f:EnableMouse(true)
-    f:SetScript("OnEnter", function(frame)
-        GameTooltip:SetOwner(frame, "ANCHOR_BOTTOM")
-        local _, name, level, path = H:GetUnitInfo("player")
-        GameTooltip:AddLine(name, 1, 1, 1)
-        GameTooltip:AddLine("Level " .. level .. (path ~= "" and (" " .. path) or ""), 1, 0.82, 0)
-        for _, line in ipairs(xpLines()) do GameTooltip:AddLine(line, 0.8, 0.6, 1) end
-        GameTooltip:AddLine("Gold " .. U.FormatNumber(H:GetMoney()), 1, 0.85, 0.3)
-        GameTooltip:Show()
-    end)
-    f:SetScript("OnLeave", function() GameTooltip:Hide() end)
+end
 
+function scripts.Changed(_, event, unit)
+    if unit and unit ~= "player" then return end
+    -- s6-ui-core (round 33, the owner): the portrait is held until the look or the gear changes (UNIT_PORTRAIT_UPDATE)
+    -- or the character's name does; it was asked for twice a second.
+    if event == "UNIT_PORTRAIT_UPDATE" then return C:ShowPortrait() end
+    C:Update()
+    if event == "UNIT_NAME_UPDATE" or event == "PLAYER_ENTERING_WORLD" then C:ShowPortrait() end
+end
+
+function scripts.Tip(frame)
+    GameTooltip:SetOwner(frame, "ANCHOR_BOTTOM")
+    local _, name, level, path = H:GetUnitInfo("player")
+    GameTooltip:AddLine(name, 1, 1, 1)
+    GameTooltip:AddLine("Level " .. level .. (path ~= "" and (" " .. path) or ""), 1, 0.82, 0)
+    for _, line in ipairs(xpLines()) do GameTooltip:AddLine(line, 0.8, 0.6, 1) end
+    GameTooltip:AddLine("Gold " .. U.FormatNumber(H:GetMoney()), 1, 0.85, 0.3)
+    GameTooltip:Show()
+end
+
+function C:OnEnable()
+    local f = TK.Xml.Load("main.xml", { scripts = scripts, elements = E }).frame
+    self.frame = f
+    -- s6-characters seam (the owner, 2026-10-01): the portrait shows its figure's upper body, or its profile image
+    -- (ShowPortrait); the name's letter while there is neither (Modern's portrait.lua)
+    f.level = f.portrait.badge.level
     TK.Visibility:Attach(f, function() return self:DB() end)
     TK.EditMode:Register(f, "playerframe", "Player Frame", C.defaultPosition, "playerframe")
 end
@@ -124,7 +102,7 @@ function C:Layout()
     -- s6-ui-core (round 82; the owner, 2026-10-09): the experience bar under the portrait (and its level badge, 4 below
     -- it) and the bars, from the frame's left edge right across
     local bottom = math.max(28 + hpH + 3 + mpH, db.showPortrait and (8 + PORTRAIT + 4) or 0)
-    f:SetSize(db.width, bottom + (db.showXP and (2 + XP_HEIGHT + 6) or 4))
+    f:SetSize(db.width, bottom + (db.showXP and (2 + SIZES.xp + 6) or 4))
 
     f.name:ClearAllPoints()
     f.name:SetPoint("TOPLEFT", f, "TOPLEFT", left, -9)

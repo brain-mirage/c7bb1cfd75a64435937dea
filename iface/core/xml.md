@@ -5,8 +5,7 @@ in the file's order, so a frame built from XML is the frame the same Lua calls w
 frames are, where they sit and how they look; the Lua beside it keeps the scripts (what happens on a press, an update,
 an event). The host reads the files (`H:ReadXml`, `LuaApi.Xml.cs`); building them sends nothing.
 
-The first users are the XML twins of the 7.x, 5.x and Modern interfaces (`interfaces/xml/<id>/`), which Settings >
-Experimental > "Enable XML Interface" switches to (below).
+The first users are the 7.x, 5.x and Modern interfaces (`interfaces/<id>/`), whose layouts are XML (below).
 
 ## Loading a file
 
@@ -78,38 +77,33 @@ without building anything: what a Lua file needs at load (its tables, the places
 ## An interface's own elements
 
 `opts.elements` maps a tag to `function(parent, attrs, ctx)`, which gets the lowercase attributes as values and returns
-what it made; its capitalised attributes are then calls on that, and its children are built in it. 7.x's twin gives
-`<picture>`, `<bold>`, `<tiles>`, `<outline>` (`interfaces/xml/7x/elements.lua`) and its side panel's kit
-`<invenbutton>`, `<scrollbar>`, `<arrow>`, `<textpane>` (`interfaces/xml/7x/panels/side/elements.lua`, on the original's kit). 5.x's twin gives
-`<picture>`, `<fill>`, `<skintext>`, `<scrollbar>`, `<press>` (`interfaces/xml/5x/elements.lua`) and its side panel's
-`<textbox>`. Modern's twin gives its widgets (`interfaces/xml/modern/elements.lua`: `<label>`, `<button>`, `<window>`,
-`<tab>`, `<check>`, `<slotart>`, `<scrollarea>`...), each the call the original makes.
+what it made; its capitalised attributes are then calls on that, and its children are built in it. 7.x gives
+`<picture>`, `<bold>`, `<tiles>`, `<outline>` (`interfaces/7x/elements.lua`) and its side panel's kit
+`<invenbutton>`, `<scrollbar>`, `<arrow>`, `<textpane>` (`interfaces/7x/panels/side/elements.lua`, on the kit). 5.x gives
+`<picture>`, `<fill>`, `<skintext>`, `<scrollbar>`, `<press>` (`interfaces/5x/elements.lua`) and its side panel's
+`<textbox>`. Modern gives its widgets (`interfaces/modern/elements.lua`: `<label>`, `<button>`, `<window>`,
+`<tab>`, `<check>`, `<slotart>`, `<scrollarea>`...), each the call the hand-written form made.
 
-## The XML interfaces (round 85)
+## The XML interfaces (round 85; the only interfaces since round 115)
 
-- The twins live in `interfaces/xml/<id>/`: each holds the files of `interfaces/<id>/` whose layout it makes XML (that
-  layout as XML, the file's Lua its scripts); a file it does not hold is the original's, loaded as it is. The originals
-  are not changed.
-- Their registration is the originals': `interface.lua`, each `panels/<p>/settings.lua` and Modern's `manifest.json`
-  are not in the twins. So the components, their settings, the profiles, edit mode's places and the bindings are the
-  same in both forms.
-- With the box on, a require of `interfaces.<id>.<rest>` loads `interfaces/xml/<id>/<rest>` when the twin has that
-  file (`LuaHost.XmlInterfaces`, `FormPath`); the shared code (`interfaces/screen.lua`, `interfaces/original/`) is
-  shared by both.
-- The box (`TK.Interfaces:SetXml`) switches live: the open windows are noted and closed, the interface panels unloaded,
-  their modules dropped, the form set, the panels loaded again from the other form, the windows opened again. Nothing is
-  sent (the windows reopen as the server's views do, which carry no request).
+- Each interface's files whose layout is XML hold that layout as XML and keep the scripts in the Lua beside it. They
+  began in round 85 as twins of the hand-written files beside an Experimental switch; round 115 (head note 116) moved
+  them over the hand-written ones, which are archived in `archive/interfaces/` at the repository's root (not loaded,
+  not shipped), and the switch went.
+- The registration (`interface.lua`, each `panels/<p>/settings.lua`, Modern's `manifest.json`) and the files without a
+  layout of their own stayed as they were, so the components, their settings, the profiles, edit mode's places and the
+  bindings did not change.
 - The panels' frames are their `main.xml`'s (and the side panel's pages' `selflook.xml`, `look.xml`, `options.xml`);
   what a panel makes many of alike (item rows and cells, spell rows, gear, option rows) is made by its Lua in a loop
   from the file's data, as a `<run>` at its place.
 - The dialogs' windows are the dialogs component's (its renderers make them, the same for every look); an interface's
-  look only sizes and places their parts. The twin's look takes each family's sizes, pictures and places from the
+  look only sizes and places their parts. The look takes each family's sizes, pictures and places from the
   family's XML data (`dialogs/npc.xml`... beside `npc.lua`; `dialogs/look.xml` what every window shares;
-  `interfaces/xml/entry.lua`, shared by the twins, makes an entry from a dialog's data: its attributes are the entry's
-  values, its children the places, so a value that is not the entry's sits in a child).
+  `interfaces/original/entry.lua`, shared by 7.x and 5.x, makes an entry from a dialog's data: its attributes are the
+  entry's values, its children the places, so a value that is not the entry's sits in a child).
 - The skin's screen, font and standard window are `skin.xml`'s.
-- An interface's own login screen is its twin's alone (`interfaces/xml/<id>/screens/`, round 86: 7.x's and 5.x's
-  `title.xml`, made by the twins' shared `interfaces/xml/title.lua`), shown with Experimental's Original Login Screens
-  (`core/login.lua`, "an interface's own login screen").
-- Wire: a twin's scripts are the original's code; where a layout file holds what decides an input's path (a control's
-  rectangle, which presses a frame claims), the file's header says so, as the Lua's comments do.
+- An interface's own login screen (`interfaces/<id>/screens/`, round 86: 7.x's and 5.x's `title.xml`, made by their
+  shared `interfaces/original/title.lua`) shows with Experimental's Original Login Screens (`core/login.lua`, "an
+  interface's own login screen").
+- Wire: the scripts are the hand-written forms' code, unchanged; where a layout file holds what decides an input's path
+  (a control's rectangle, which presses a frame claims), the file's header says so, as the Lua's comments do.

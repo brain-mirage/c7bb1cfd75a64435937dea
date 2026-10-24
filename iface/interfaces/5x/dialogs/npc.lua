@@ -8,6 +8,12 @@
 -- NEXT, 53 CLOSE). The windows open at their placement slot, 1: centred on (320, 240) by 5.33's defaults (L.Place).
 -- Drawing only: the controls, their indexes, the keys and what is sent are the renderers' and the model's, the same
 -- in every look; the rectangles decide which control a press reaches, as in 5.33.
+--
+-- s6-ui-core (round 85): the XML twin's; the windows' sizes, pictures and the parts' places are npc.xml's (core/xml.md).
+
+local unpack = table.unpack
+local entry = require("interfaces.original.entry")
+local D = TK.Xml.Data("npc.xml")
 
 return function(L, X)
     local function textWindow(win) return not (win.view and win.view.contents.textWindow == false) end
@@ -18,125 +24,128 @@ return function(L, X)
         if win.portrait then win.portrait:Hide() end
     end
 
-    -- The text window (314 x 246): DLGMSG1 with the portrait at (36, 39)-(71, 92), DLGMSG11 without; PREVIOUS, NEXT and
-    -- CLOSE along y 196-212; the text (84, 40)-(273, 186) beside the portrait, (39, 37)-(275, 127) without. The small
-    -- window (316 x 214, DLGMSG2): BUTT002's bars, no text.
-    L.Message = {
-        width = 314, height = 246, button = 72,
-        place = function(win) X.Portrait(win, 36, 39, 71, 92) end,
+    --- The four image buttons along a row at y (their images, from x, step apart, width x height: the spec's).
+    local function row(win, buttons, spec, y)
+        for i, b in ipairs(buttons) do
+            local l = spec.x + (i - 1) * spec.step
+            X.Image(win, b, spec.images[i], l, y, l + spec.width, y + spec.height)
+        end
+    end
+
+    -- The text window: the portrait's picture or the plain one; PREVIOUS, NEXT and CLOSE; the text beside the portrait,
+    -- or wider without. The small window: BUTT002's bars, no text.
+    local M = D.Message
+    L.Message = entry(M, {
+        place = function(win) X.Portrait(win, unpack(M.portrait)) end,
         text = function() end,
         fit = function(win)
             if textWindow(win) then
-                local pic = hasPicture(win)
-                X.Size(win, 314, 246)
-                X.Art(win, pic and "DLGMSG1.EPF" or "DLGMSG11.EPF", "NPAL8.PAL")
-                X.Image(win, win.prev, 18, 44, 196, 116, 212)
-                X.Image(win, win.next, 19, 121, 196, 193, 212)
-                X.Image(win, win.close, 15, 198, 196, 270, 212)
-                if pic then X.Text(win.text, win, 84, 40, 273, 186) else X.Text(win.text, win, 39, 37, 275, 127) end
+                local pic, t = hasPicture(win), M.text
+                X.Size(win, t.width, t.height)
+                X.Art(win, pic and t.picture or t.plain, t.palette)
+                X.Image(win, win.prev, unpack(t.prev))
+                X.Image(win, win.next, unpack(t.next))
+                X.Image(win, win.close, unpack(t.close))
+                X.Text(win.text, win, unpack(pic and t.withPicture or t.without))
                 win.text:Show()
             else
-                X.Size(win, 316, 214)
-                X.Art(win, "DLGMSG2.EPF")
-                X.Image(win, win.prev, 52, 77, 88, 235, 103)
-                X.Image(win, win.next, 51, 77, 106, 235, 121)
-                X.Image(win, win.close, 53, 77, 124, 235, 139)
+                local s = M.small
+                X.Size(win, s.width, s.height)
+                X.Art(win, s.file)
+                X.Image(win, win.prev, unpack(s.prev))
+                X.Image(win, win.next, unpack(s.next))
+                X.Image(win, win.close, unpack(s.close))
                 win.text:Hide()
                 smallWindow(win)
             end
         end,
-    }
+    })
 
-    -- The text window (374 x 316): DLGMSG3 with the portrait at (36, 40)-(71, 88), DLGMSG31 without; the prompt (86, 29)-
-    -- (336, 92) beside the portrait, (55, 22)-(320, 67) without; the answers' list (36, 101)-(338, 245) of 302-pixel
-    -- cells in 12-pixel rows (ListPane(514, 16, 302, 12)); OK, PREVIOUS, NEXT and CLOSE along y 266-282. The small
-    -- window (374 x 286, DLGMSG4): the list (36, 71)-(338, 215) and the buttons along y 236-252, no prompt.
-    L.Question = {
-        width = 374, height = 316, button = 72, listWidth = 302, listHeight = 144,
-        place = function(win) X.Portrait(win, 36, 40, 71, 88) end,
+    -- The text window: the portrait's picture or the plain one; the prompt; the answers' list; OK, PREVIOUS, NEXT and
+    -- CLOSE. The small window: the list and the buttons higher, no prompt.
+    local Q = D.Question
+    L.Question = entry(Q, {
+        place = function(win) X.Portrait(win, unpack(Q.portrait)) end,
         text = function() end,
         fit = function(win)
             local text = textWindow(win)
             if text then
-                local pic = hasPicture(win)
-                X.Size(win, 374, 316)
-                X.Art(win, pic and "DLGMSG3.EPF" or "DLGMSG31.EPF", "NPAL8.PAL")
-                X.List(win, win.list, 36, 101, 338, 245, 302)
-                if pic then X.Text(win.text, win, 86, 29, 336, 92) else X.Text(win.text, win, 55, 22, 320, 67) end
+                local pic, t = hasPicture(win), Q.text
+                X.Size(win, t.width, t.height)
+                X.Art(win, pic and t.picture or t.plain, t.palette)
+                X.List(win, win.list, unpack(t.list))
+                X.Text(win.text, win, unpack(pic and t.withPicture or t.without))
                 win.text:Show()
             else
-                X.Size(win, 374, 286)
-                X.Art(win, "DLGMSG4.EPF")
-                X.List(win, win.list, 36, 71, 338, 215, 302)
+                local s = Q.small
+                X.Size(win, s.width, s.height)
+                X.Art(win, s.file)
+                X.List(win, win.list, unpack(s.list))
                 win.text:Hide()
                 smallWindow(win)
             end
-            local y = text and 266 or 236
-            for i, b in ipairs({ win.ok, win.prev, win.next, win.close }) do
-                X.Image(win, b, ({ 14, 18, 19, 15 })[i], 40 + (i - 1) * 74, y, 112 + (i - 1) * 74, y + 16)
-            end
+            row(win, { win.ok, win.prev, win.next, win.close }, Q.buttons, text and Q.text.top or Q.small.top)
         end,
-    }
+    })
 
-    -- The text window (374 x 246): DLGMSG5 with the portrait at (37, 40)-(71, 92), DLGMSG51 without; the NPC's text
-    -- (97, 35)-(302, 123) beside the portrait, (59, 37)-(313, 125) without; the prompt (54, 125)-(319, 137), the edit
-    -- (54, 141)-(319, 153) in 0x80 and the caption (54, 158)-(319, 170); OK, PREVIOUS, NEXT and CLOSE along y 196-212.
-    -- The small window (374 x 194, DLGMSG6): the same prompt, edit and caption, and the four buttons on the window's
-    -- rectangle (0, 0)-(374, 194), as 5.33 sets their rectangles only for the text window (7.5.2's TextDialog the same).
+    -- The text window: the portrait's picture or the plain one; the NPC's text; the prompt, the edit and the caption;
+    -- OK, PREVIOUS, NEXT and CLOSE. The small window: the same prompt, edit and caption, and the four buttons on the
+    -- window's rectangle, as 5.33 sets their rectangles only for the text window (7.5.2's TextDialog the same).
     --
     -- Input routing (wire): a press goes to the last control whose rectangle holds it (DialogPane_HitTestControls
     -- 0x004215F0), so in the small window a press on the prompt (5), the edit (6) or the caption (7) is theirs and any
     -- other press is CLOSE's (4). Here the buttons are one frame level apart in that order, under the edit and the
     -- texts' blockers (X.Blocker), as 7.x's look stacks them (the kit's X.Stacked). Changing the order or the rectangles changes which control
     -- a press reaches, so what the client sends.
-    L.TextReply = {
-        width = 374, height = 246, button = 72, editWidth = 265, editHeight = 12,
+    local T = D.TextReply
+    L.TextReply = entry(T, {
         place = function(win)
-            X.Portrait(win, 37, 40, 71, 92)
-            X.Text(win.prompt, win, 54, 125, 319, 137)
-            X.Edit(win.edit, win, 54, 141, 319, 153)
-            X.Text(win.caption, win, 54, 158, 319, 170)
+            X.Portrait(win, unpack(T.portrait))
+            X.Text(win.prompt, win, unpack(T.prompt))
+            X.Edit(win.edit, win, unpack(T.edit))
+            X.Text(win.caption, win, unpack(T.caption))
             win.x7over = X.Stacked(win, { win.ok, win.prev, win.next, win.close })
-            X.Blocker(win.x7over, win, 54, 125, 319, 137)
+            X.Blocker(win.x7over, win, unpack(T.prompt))
             win.edit:SetParent(win.x7over)
-            X.Blocker(win.x7over, win, 54, 158, 319, 170)
+            X.Blocker(win.x7over, win, unpack(T.caption))
         end,
         text = function() end,
         fit = function(win)
-            local buttons, ids = { win.ok, win.prev, win.next, win.close }, { 14, 18, 19, 15 }
+            local buttons = { win.ok, win.prev, win.next, win.close }
             if textWindow(win) then
-                local pic = hasPicture(win)
-                X.Size(win, 374, 246)
-                X.Art(win, pic and "DLGMSG5.EPF" or "DLGMSG51.EPF", "NPAL8.PAL")
-                if pic then X.Text(win.text, win, 97, 35, 302, 123) else X.Text(win.text, win, 59, 37, 313, 125) end
+                local pic, t = hasPicture(win), T.text
+                X.Size(win, t.width, t.height)
+                X.Art(win, pic and t.picture or t.plain, t.palette)
+                X.Text(win.text, win, unpack(pic and t.withPicture or t.without))
                 win.text:Show()
-                for i, b in ipairs(buttons) do X.Image(win, b, ids[i], 40 + (i - 1) * 74, 196, 112 + (i - 1) * 74, 212) end
+                row(win, buttons, T.buttons, t.top)
             else
-                X.Size(win, 374, 194)
-                X.Art(win, "DLGMSG6.EPF")
+                local s = T.small
+                X.Size(win, s.width, s.height)
+                X.Art(win, s.file)
                 win.text:Hide()
                 smallWindow(win)
-                for i, b in ipairs(buttons) do X.Image(win, b, ids[i], 0, 0, 374, 194) end
+                for i, b in ipairs(buttons) do X.Image(win, b, T.buttons.images[i], unpack(s.buttons)) end
             end
         end,
-    }
+    })
 
     -- s6-interface-5x-b (round 8, s6-interface-5x's Y2): the Nexonclub registration (0x30 kind 9), 5.33's own window
     -- (NexonclubRegistrationDialog 0x0047C3C0, which 4a keeps as its classic layout of 0x0052F950): 375 x 286 on DLGNC.EPF
     -- in NPAL8.PAL; the prompt (40, 30)-(336, 153); the id (2) (126, 171)-(216, 183) and the masked password (3) (126,
     -- 191)-(216, 203), font 0 in 0x80 with no frame; OK (4, image 14) (77, 236)-(149, 252), CANCEL (5, image 22) (154,
     -- 236)-(226, 252), the web site's registration (6, image 32) (231, 236)-(303, 252).
-    L.Nexonclub = {
-        width = 375, height = 286, button = 72, editWidth = 90, editHeight = 12,
+    local N = D.Nexonclub
+    L.Nexonclub = entry(N, {
         place = function(win)
-            X.Art(win, "DLGNC.EPF", "NPAL8.PAL")
-            X.Text(win.text, win, 40, 30, 336, 153)
+            X.Art(win, unpack(N.art))
+            X.Text(win.text, win, unpack(N.text))
             win.text:SetWordWrap(true)
-            X.Edit(win.account, win, 126, 171, 216, 183)
-            X.Edit(win.password, win, 126, 191, 216, 203)
-            X.Image(win, win.ok, 14, 77, 236, 149, 252)
-            X.Image(win, win.cancel, 22, 154, 236, 226, 252)
-            X.Image(win, win.create, 32, 231, 236, 303, 252)
+            X.Edit(win.account, win, unpack(N.account))
+            X.Edit(win.password, win, unpack(N.password))
+            X.Image(win, win.ok, unpack(N.ok))
+            X.Image(win, win.cancel, unpack(N.cancel))
+            X.Image(win, win.create, unpack(N.create))
         end,
-    }
+    })
 end

@@ -20,10 +20,17 @@
 -- the helpers are the original client's kit (interfaces/original/dialogkit.lua), made with 5.x's skin (5.33's font 0
 -- and its measures), its 640 x 480 screen and L.Place; they were 7.x's look's before. What is 5.33's own (its frames,
 -- image buttons, radios, portrait, item rows, default button, no slide) overrides them below.
+--
+-- s6-ui-core (round 85): the XML twin's; what every window shares (the standard window's tiles, the image buttons'
+-- and radios' pictures, the quit's line, the open sound) is look.xml's and each family's windows are its own XML file's
+-- (npc.xml...), read as data (core/xml.md; the windows themselves are the dialogs component's, made by its renderers);
+-- interfaces/original/entry.lua makes a family's entries from them.
 
 local fallback = TK.Dialogs.DefaultLook()
 local S = require("interfaces.5x.skin")
+local Bar = require("interfaces.5x.scrollbar")
 local Screen = require("interfaces.screen")
+local D = TK.Xml.Data("look.xml")
 
 local L = {} -- the entries 5.x has not are resolved by the dialogs component, over its default look
 -- Wire policy consumed by shared K.Edit: 4a Activate 0x00498ED0 selects all, then OnMouseEvent 0x00590DE0 places
@@ -37,11 +44,34 @@ local X = require("interfaces.original.dialogkit")({
 -- the look that draws the windows 5.x leaves (the kit's alerts ask it; the hired merchant's quantity, merchant.lua)
 X.Fallback = fallback
 
-X.DIALOG_FRAME = { file = "DLGFRAME.EPF", palette = "NPAL8.PAL", tile = 16 }
+X.DIALOG_FRAME = D.DIALOG_FRAME
 
---- The standard window's frames (DLGFRAME.EPF's): the background 8, the edges 1 top, 6 bottom, 3 left, 4 right, the corners
---- 0, 2, 5, 7, the background over all of it (inset 0).
-local FRAME_TILES = { bg = 8, top = 1, bottom = 6, left = 3, right = 4, tl = 0, tr = 2, bl = 5, br = 7, inset = 0 }
+-- the kit's text box being written, with its 7.5.2 bar
+local kitEditBar = X.EditBar
+
+--- s6-ui-core (round 94): a text box being written (the profile, the board editors', the paper) with 5.33's own scroll
+--- bar, SCRL001.EPF's arrows and track, drawn while the text fits too (interfaces/5x/scrollbar.lua, Bar.ForEdit), for
+--- the kit's 7.5.2 bar; the kit's edit, wheel and caret-following stay. New in this form only: the hand-written form is
+--- kept as it is until it is archived. Drawing only: nothing is sent.
+function X.EditBar(edit, win, l, t, r, b, colour)
+    kitEditBar(edit, win, l, t, r, b, colour)
+    Bar.ForEdit(edit, win, l, t, r, b)
+end
+
+-- the kit's list, with its 7.5.2 bar
+local kitList = X.List
+
+--- s6-ui-core (rounds 97 and 98): a dialog's list with 5.33's scroll bar (Bar.ForList; the real 5.33's NPC menu,
+--- r96-pictures): dimmed while its rows fit, its arrows, track and thumb while they scroll, in place of the kit's 7.5.2
+--- bar. Its parts move the list's 7.5.2 position and its events reach the list's model as the kit's bar's did, so the
+--- paging (3B 02) stays 7.5.2's (Bar.ForList's WIRE note). In this form only, as X.EditBar.
+function X.List(win, list, l, t, r, b, cell, rowHeight)
+    kitList(win, list, l, t, r, b, cell, rowHeight)
+    Bar.ForList(list, win, l, t, r, b)
+end
+
+--- The standard window's frames (look.xml's FRAME_TILES: which frame is which, and the background's inset).
+local FRAME_TILES = D.FRAME_TILES
 
 -- the kit's standard window (7.5.2's), drawn where the 5.33 set is not
 local kitFrame = X.Frame
@@ -55,7 +85,8 @@ local kitFrame = X.Frame
 function X.Frame(win, w, h, file, palette, size, tiles)
     tiles = tiles or FRAME_TILES
     -- without the 5.33 set (not built where the packs are) 7.5.2's standard window, so the dialog stays readable
-    if not S.Image(file, tiles.bg, palette) then return kitFrame(win, w, h, "DLGFRAME.EPF", "PAL01.PAL", 14) end
+    local kit = D.KIT_FRAME
+    if not S.Image(file, tiles.bg, palette) then return kitFrame(win, w, h, kit.file, kit.palette, kit.tile) end
     win.frameTiles = win.frameTiles or {}
     for _, t in ipairs(win.frameTiles) do t:Hide() end
     local n = 0
@@ -104,14 +135,15 @@ function X.Image(win, btn, id, l, t, r, b)
     btn.x5id, btn.x5size = id, w * 10000 + h
     -- the pictures it had for its states (the kit's, or another id's) give way
     for _, old in ipairs({ btn.__normal, btn.__pushed, btn.__disabled }) do if old then old:Hide() end end
-    local file, base = "BUTT001.EPF", 2 * id
-    if id >= 51 then file, base = "BUTT002.EPF", 2 * (id - 50) end
-    btn:SetNormalTexture(S.Picture(btn, nil, file, base, "NPAL8.PAL", 0, 0, "ARTWORK"))
-    btn:SetPushedTexture(S.Picture(btn, nil, file, base + 1, "NPAL8.PAL", 0, 0, "ARTWORK"))
-    btn:SetDisabledTexture(S.Picture(btn, nil, file, base, "NPAL8.PAL", 0, 0, "ARTWORK"))
+    local B = D.IMAGE_BUTTON
+    local file, base = B.file, 2 * id
+    if id >= B.from then file, base = B.high, 2 * (id - (B.from - 1)) end
+    btn:SetNormalTexture(S.Picture(btn, nil, file, base, B.palette, 0, 0, "ARTWORK"))
+    btn:SetPushedTexture(S.Picture(btn, nil, file, base + 1, B.palette, 0, 0, "ARTWORK"))
+    btn:SetDisabledTexture(S.Picture(btn, nil, file, base, B.palette, 0, 0, "ARTWORK"))
     -- the wash over the disabled picture, shown with the button's state (the kit sets it by SetEnabled)
     if not btn.x5wash then
-        btn.x5wash = S.Fill(btn:CreateTexture(nil, "OVERLAY"), S.WHITE, 0.5)
+        btn.x5wash = S.Fill(btn:CreateTexture(nil, "OVERLAY"), S.WHITE, B.wash)
         btn.x5wash:SetAllPoints(btn)
         local setEnabled = btn.SetEnabled
         function btn:SetEnabled(on)
@@ -156,7 +188,8 @@ end
 --- not (enabled), at the option rectangle's left, its top on the rectangle's middle - 5 (S.Picture, the texture kept under
 --- key of win). s6-interface-5x-b: the user list's sort (social.lua), the music dialog's radios (misc.lua).
 function X.Radio(win, key, chosen, l, t, b)
-    win[key] = S.Picture(win, win[key], "RADIOBUT.EPF", chosen and 1 or 0, "NPAL8.PAL", l, math.floor((t + b) / 2) - 5)
+    local R = D.RADIO
+    win[key] = S.Picture(win, win[key], R.file, chosen and R.chosen or R.other, R.palette, l, math.floor((t + b) / 2) - R.middle)
 end
 
 --- The portrait (ObjectImageControlPane) at (l, t)-(r, b): the object centred, on nothing (pane mode 1), the base set's
@@ -234,7 +267,7 @@ end
 -- dialogbase2.c:28-68: five steps 24 ms apart, step i drawn (4-i)*h/5 higher, as 7.5.2's 0x0049EAC0), so this look
 -- keeps the kit's slide (X.SlideOpen, X.Sliding) and slides the windows 7.x slides (L.Open, and the fits that know their
 -- size). The picture only: the stall is the dialog model's in every look (Dialog.Slide), so what is sent and when is
--- unchanged by it. (The owner, 2026-10-12: a real-client difference is fixed in both forms; the XML twin's the same.)
+-- unchanged by it.
 
 -- ----- what every 5.x dialog shares -----
 
@@ -278,7 +311,7 @@ function L.Open(win, view, i, layout)
     if not win.x5 then return fallback.Open(win, view, i, layout) end
     L.Place(win)
     -- (not the quit's line, round 7: a LineInputPane is no dialog)
-    if win.className ~= "QuitDialog" then TK.Game.Sound.PlayEffect(0x198) end
+    if win.className ~= "QuitDialog" then TK.Game.Sound.PlayEffect(D.OPEN_SOUND) end
     local slide = win.lookEntry.slide
     if type(slide) == "function" then slide = slide(win, view) end
     if slide then X.SlideOpen(win) end
@@ -306,7 +339,7 @@ require("interfaces.original.alerts")(L, X)
 -- 5.x's chat line: panels/chat), its question (string 3, the same in 7.5.2's table: "Do you really want to leave? (Y/N)")
 -- black on white with the caret after it. The dialog stays 7.5.2's QuitDialog (the rules': Y quits with 0B, N closes,
 -- Enter and Esc its Yes and No), as 5.x keeps 7.5.2's input rules; the line draws no buttons. Drawing only.
-local QUIT_LINE = { 14, 456, 408, 12 }
+local QUIT_LINE = D.QUIT_LINE
 local alertCentre, alertButtons = L.Alert.centre, L.Alert.buttons
 L.Alert.centre = function(win)
     if win.className ~= "QuitDialog" then return alertCentre(win) end

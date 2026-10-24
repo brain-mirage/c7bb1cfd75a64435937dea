@@ -51,23 +51,52 @@ C.tabs = {
     } },
 }
 
--- s6-ui-core (round 85; the owner, 2026-10-11: "To select these you click a box in experimental called Enable XML
--- Interface ... the onyl visisble change anywhere settings wise is that checkbox"): Experimental > Misc's switch between
--- the interfaces' two forms, the originals and their XML twins (core/interfaces.lua, "the XML form"). A computer setting,
--- as the interface is; it applies at once (TK.Interfaces:SetXml) and sends nothing.
-local misc = TK.MiscNode.tabs[1].args
-misc[#misc + 1] = { type = "toggle", name = "Enable XML Interface", default = false, machine = true,
-    desc = "The interfaces built from XML layouts and Lua scripts. They look and act as the originals.",
-    get = function() return TK.Interfaces:Xml() end,
-    set = function(_, on) TK.Interfaces:SetXml(on == true) end }
 -- s6-ui-core (round 86; the owner, 2026-10-12: the 7.x and 5.x interfaces' own login and character screens behind a
--- setting beside Enable XML Interface, off by default; decision 2026-10-12-original-pregame-screens): the interface's own
--- login screen in place of ours (core/login.lua, "an interface's own login screen"). A computer setting; it applies at
--- once and sends nothing.
+-- setting in Experimental, off by default; decision 2026-10-12-original-pregame-screens): the interface's own login screen
+-- in place of ours (core/login.lua, "an interface's own login screen"). A computer setting; it applies at once and sends
+-- nothing. (Round 115: the "Enable XML Interface" box beside it is gone, the XML interfaces being the only ones.)
+local misc = TK.MiscNode.tabs[1].args
 misc[#misc + 1] = { type = "toggle", name = "Original Login Screens", default = false, machine = true,
-    desc = "With Enable XML Interface: 7.x's and 5.x's own title and login. Escape there opens Settings.",
+    desc = "7.x's and 5.x's own title and login. Escape there opens Settings.",
     get = function() return TK.Machine:Get().originalScreens == true end,
     set = function(_, on)
         TK.Machine:Get().originalScreens = on == true
         TK.Login:ApplyScreens()
     end }
+-- s6-reprojection (round 63; the graphics plan, section 7, "The box"): the new graphics engine, built as a twin of the
+-- current one, in Experimental, off by default. A computer setting; it applies at once (the world renderers
+-- swap engines, TK.Machine:ApplyGraphics applies it at load) and sends nothing: only the drawing changes.
+misc[#misc + 1] = { type = "toggle", name = "Enable New Graphics Engine", default = false, machine = true,
+    desc = "The new graphics engine, in place of the current one where it has the mode (3D for now). It draws the same picture.",
+    get = function() return TK.Machine:Get().newGraphicsEngine == true end,
+    set = function(_, on)
+        TK.Machine:Get().newGraphicsEngine = on == true
+        TK.Machine:ApplyGraphicsEngine()
+    end }
+-- s6-reprojection-cloud-3 (head note 51; the owner, 2026-10-23, on the still-missing list's item 32, the graphics
+-- system choice: "put it in experimental"): the graphics system Unity's player starts on, Direct3D 11 by default. Unity
+-- picks it once, when it starts, so the launcher (project/launcher, MR-TK.exe) reads it at the next start and passes
+-- Unity -force-d3d11, -force-d3d12 or -force-vulkan. A computer setting; nothing changes until then, and nothing is
+-- sent.
+local graphicsSystems = { { value = "d3d11", text = "Direct3D 11" }, { value = "d3d12", text = "Direct3D 12" },
+                          { value = "vulkan", text = "Vulkan" } }
+misc[#misc + 1] = { type = "select", name = "Graphics System", default = "d3d11", machine = true,
+    desc = "Applies at the next start. If the one chosen does not start, the next start is on Direct3D 11.",
+    values = graphicsSystems,
+    get = function() return TK.Machine:Get().graphicsSystem or "d3d11" end,
+    set = function(_, value) TK.Machine:Get().graphicsSystem = value end }
+-- A start on the one chosen that did not come up (the launcher's trial file, LuaApi.GraphicsSystemFailed): the choice
+-- goes back to Direct3D 11, and the player is told once.
+local failed, running = __tk:GraphicsSystemFailed()
+if failed then
+    TK.Machine:Get().graphicsSystem = "d3d11"
+    TK.Machine:MarkDirty()
+    local function nameOf(value)
+        for _, system in ipairs(graphicsSystems) do
+            if system.value == value then return system.text end
+        end
+        return value
+    end
+    TK.Popup(nameOf(failed) .. " did not start, so the client started on " .. nameOf(running) .. ". Graphics System "
+        .. "(Experimental > Misc) is set back to Direct3D 11.", "Graphics System")
+end

@@ -23,10 +23,14 @@
 -- here is 7.x's: its windows, their placement, opening and focus mark.
 -- Round 9, step 6: the component resolves missing entries, selects the window's look and supplies its entry;
 -- this file no longer reaches Modern or the component's private building/focus state.
+-- s6-ui-core (round 85): the XML twin's; what every window shares (its placement, its open sound) is look.xml's and each
+-- family's windows are its own XML file's (npc.xml...), read as data (core/xml.md; the windows themselves are the
+-- dialogs component's, made by its renderers); entry.lua makes a family's entries from them.
 
 local fallback = TK.Dialogs.DefaultLook()
 local Screen = require("interfaces.screen")
 local S = require("interfaces.7x.skin")
+local D = TK.Xml.Data("look.xml")
 
 local L = {} -- Missing entries are resolved by the dialogs component, before it selects this drawing.
 -- Wire policy consumed by shared K.Edit: 4a Activate 0x00498ED0 selects all, then OnMouseEvent 0x00590DE0 places
@@ -52,12 +56,13 @@ function L.Place(win)
     local s, left, top = Screen.Fit(S.WIDTH, S.HEIGHT)
     win:SetScale(s)
     local w, h = math.floor(win:GetWidth() + 0.5), math.floor(win:GetHeight() + 0.5)
-    local cx, cy, clamp = 512, 384, true
+    local P = D.PLACE
+    local cx, cy, clamp = P.x, P.y, true
     if win.lookEntry.centre then cx, cy, clamp = win.lookEntry.centre(win) end
     local x, y = cx - math.floor(w / 2), cy - math.floor(h / 2)
     if clamp then
-        if y + h < 50 then y = 50 - h elseif y > 430 then y = 430 end
-        if x + w < 50 then x = 50 - w elseif x > 590 then x = 590 end
+        if y + h < P.bottom then y = P.bottom - h elseif y > P.top then y = P.top end
+        if x + w < P.right then x = P.right - w elseif x > P.left then x = P.left end
     end
     win.screenX, win.screenY = x, y
     win:ClearAllPoints()
@@ -77,7 +82,7 @@ function L.Open(win, view, i, layout)
     -- Menu, Player, Timer and Transfer build plain panes instead of L.Window; their entry places them.
     if not win.lookEntry then return X.Fallback.Open(win, view, i, layout) end
     L.Place(win)
-    TK.Game.Sound.PlayEffect(0x198)
+    TK.Game.Sound.PlayEffect(D.OPEN_SOUND)
     local slide = win.lookEntry.slide
     if type(slide) == "function" then slide = slide(win, view) end
     if slide then X.SlideOpen(win) end

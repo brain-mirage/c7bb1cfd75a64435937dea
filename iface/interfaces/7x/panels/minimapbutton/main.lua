@@ -4,6 +4,7 @@
 -- HandlePointerOrMouseEvent 0x005036A0). Its place follows the scaled screen until the player moves it (edit mode, its
 -- Layout tab). The minimap dialog the server's 70 opens is a dialog of the dialogs' look (the model's MiniMapDialog; Modern's
 -- map window stands in for it, core/mapwindow.lua).
+-- s6-ui-core (round 85): the XML twin's scripts; its frame, its claims, place and pictures are main.xml's (core/xml.md).
 --
 -- Wire: 4a's button is a push button whose click sends what m sends (UserPane::SendOpcode7CPacket: 7C while no minimap
 -- dialog is open). The click is a left press on it and the release over it: the left press is used up there (case 1
@@ -23,36 +24,35 @@ local C = TK.GetComponent("7x.minimapbutton")
 local S = require("interfaces.7x.skin")
 local Screen = require("interfaces.screen")
 
-local RECT = { 6, 6, 34, 34 }
+local L = TK.Xml.Data("main.xml")
+
+-- the scripts main.xml names
+local scripts = {}
+
+-- m's action, which the release runs (TK.Actions: C# freezes it as the input begins). WIRE: above
+function scripts.Action(f) TK.Actions:Set(f, "minimap") end
+
+-- WIRE: case 1 alone arms it (a left single press)
+function scripts.Press(f, button, double)
+    if button ~= "LeftButton" or double then return end
+    f.held = true
+    C:Paint()
+end
+
+-- WIRE: the release over it after its press is the click, which runs the game layer's one minimap press
+function scripts.Release(f, button)
+    if button ~= "LeftButton" then return end
+    local click = f.held and f:IsMouseOver()
+    f.held = false
+    C:Paint()
+    if click then TK.Game.Minimap.Press() end
+end
+
+-- frame 1 only while the held press is over it (case 0, a move while pressed)
+function scripts.Update(f) if f.held then C:Paint() end end
 
 function C:OnEnable()
-    local f = CreateFrame("Frame", "TK7xMinimapButton", UIParent)
-    f:SetFrameStrata("LOW")
-    f:SetFrameLevel(10) -- the frame layer, over the map view
-    f:SetSize(RECT[3] - RECT[1], RECT[4] - RECT[2])
-    f:SetClaimButtons("LeftButton") -- the left button's presses only: the rest is the map's (above)
-    f:SetPassesDoubles(true) -- and its single presses only: a double press is the map's (above)
-    -- s6-input (round 51, Astra's self-review 51-2): every left release over it is its own, a press elsewhere's too
-    -- (case 3 returns true for any release in it, MapNamePane.cpp:200), so a control lying under it gets none (no 41 or
-    -- 3B 09)
-    f:SetTakesEveryRelease(true)
-    -- m's action, which the release runs (TK.Actions: C# freezes it as the input begins)
-    TK.Actions:Set(f, "minimap")
-    f:SetScript("OnMouseDown", function(_, button, double)
-        if button ~= "LeftButton" or double then return end -- case 1 alone arms it
-        f.held = true
-        self:Paint()
-    end)
-    f:SetScript("OnMouseUp", function(_, button)
-        if button ~= "LeftButton" then return end
-        local click = f.held and f:IsMouseOver()
-        f.held = false
-        self:Paint()
-        if click then TK.Game.Minimap.Press() end
-    end)
-    -- frame 1 only while the held press is over it (case 0, a move while pressed)
-    f:SetScript("OnUpdate", function() if f.held then self:Paint() end end)
-    f:Hide()
+    local f = TK.Xml.Load("main.xml", { scripts = scripts }).frame
     self.frame = f
     self:Own(f)
     self.entry = Screen.Register(f, "7x.minimapbutton", "7.x Minimap Button", function() return self:DB().enabled == true end)
@@ -62,13 +62,14 @@ end
 --- MMAPBUT's frame 1 while the press is held over it, else frame 0; drawn when it changes.
 function C:Paint()
     local f = self.frame
-    local frame = (f.held and f:IsMouseOver()) and 1 or 0
+    local a = L.ART
+    local frame = (f.held and f:IsMouseOver()) and a.held or a.up
     if frame == f.shown then return end
     f.shown = frame
-    f.art = S.Picture(f, f.art, "MMAPBUT.EPF", frame, "FRMPART.PAL", 0, 0, "ARTWORK")
+    f.art = S.Picture(f, f.art, a.file, frame, a.palette, a.x, a.y, a.layer)
 end
 
-function C:Layout() Screen.PlacePanel(self, 1024, 768, RECT[1], RECT[2]) end
+function C:Layout() Screen.PlacePanel(self, 1024, 768, L.PLACE[1], L.PLACE[2]) end
 
 function C:ApplySettings() self:Layout() end
 

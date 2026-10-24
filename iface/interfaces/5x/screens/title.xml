@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 5.x's own title screen (the XML twin's only; title.lua makes it with the twins' shared script,
+     interfaces/original/title.lua): 5.33's MainMenuPane (constructor 0x457250, OnPaint 0x4591E0) on its 640 x 480 screen,
+     scaled to fit the window and letterboxed, and its Login entry's LoginDialogPane (constructor 0x45A0C0). It shows in
+     place of ours with Settings > Experimental's Original Login Screens and the XML interface on (decision
+     2026-10-12-original-pregame-screens). Format: core/xml.md.
+     Wire: the rectangles below decide which entry a release or a key activates and which control of the dialog a press
+     reaches; changing them changes which input opens the login or sends it. What the entries and OK send is
+     core/login.lua's (interfaces/original/title.lua). -->
+<ui>
+  <data key="SCREEN" value="640, 480"/>
+  <!-- the version over the picture, "V%d.%d" in colour 9 with the pen at (10, 20): 5.33's own, from its exe's product
+       version 5.3.3.384 (Application__ValidateLicense 0x403753: the first three digits, then the fourth). Only what is
+       drawn: this client's version packet still sends 7.5.2's numbers (TK-Core's ProtocolProfile.Kru752) -->
+  <data key="VERSION" text="V533.384" x="10" y="20" colour="9"/>
+  <!-- the six entries: entry i's rectangle (467, 299 + 30 i)-(640, 329 + 30 i), their names in the title's picture (no
+       picture of their own); the highlighted one's TITLESEL.EPF frame i in NPAL2.PAL at its top left. Entry 1 (Login) is
+       highlighted as the menu opens. -->
+  <data key="ITEMS" left="467" top="299" right="640" bottom="329" step="30" count="6" first="1"
+        selected="TITLESEL.EPF" selectedPalette="NPAL2.PAL"/>
+  <!-- the login dialog: 284 x 187 at (356, 191); DLGLOGIN.EPF frame 0 in NPAL8.PAL; the account field (125, 72)-(223, 85)
+       and the password field (125, 92)-(223, 105), at most 8 and masked; OK, image button 14 at (68, 137)-(140, 153), and
+       Cancel, 22 at (145, 137)-(217, 153) -->
+  <data key="DIALOG" maxPassword="8">
+    <data key="account" value="125, 72, 223, 85"/>
+    <data key="password" value="125, 92, 223, 105"/>
+    <data key="ok" id="14" rect="68, 137, 140, 153"/>
+    <data key="cancel" id="22" rect="145, 137, 217, 153"/>
+  </data>
+  <!-- Change Password (ChangePasswordDialogPane 0x45CD00): 314 x 227 at (326, 191); DLGPASS.EPF frame 0 in NPAL8.PAL;
+       the account field (154, 72)-(252, 85), then the current password, the new one and its repetition, masked, 20 lower
+       each; OK, image button 14 at (83, 177)-(155, 193), and Cancel, 22 at (160, 177)-(232, 193) -->
+  <data key="PASSWORD">
+    <data key="account" value="154, 72, 252, 85"/>
+    <data key="current" value="154, 92, 252, 105"/>
+    <data key="new" value="154, 112, 252, 125"/>
+    <data key="again" value="154, 132, 252, 145"/>
+    <data key="ok" id="14" rect="83, 177, 155, 193"/>
+    <data key="cancel" id="22" rect="160, 177, 232, 193"/>
+  </data>
+  <!-- the New User dialog (NewCreateUserDialogPane 0x47A0E0; decision 2026-10-13-5x-new-user-dialog-on-the-one-logic):
+       the whole 640 x 480 screen, DLGNEW02.EPF frame 0 in NPAL3.PAL; the account field (128, 129)-(272, 141), the
+       password (128, 166)-(272, 178) and its repetition (128, 203)-(272, 215), the last two masked, their text colour
+       143; picture buttons (PrettyButtonControlPane: the file, the palette, the normal, pressed and selected frames, the
+       rectangle): male and female, the row's arrows, the two nations (the chosen one's description at (41, 331)-(307,
+       432)) and the four totems (the chosen one's at (333, 331)-(599, 432)), both texts in colour 143; the row of shapes,
+       four 59 x 76 cells from (358, 134), the chosen one's CAPSULE.EPF frame 0 in NPAL3.PAL under its figure; OK, image
+       button 14 at (248, 460)-(320, 476), and Cancel, 22 at (325, 460)-(397, 476) -->
+  <data key="CREATE" colour="143">
+    <data key="account" value="128, 129, 272, 141"/>
+    <data key="password" value="128, 166, 272, 178"/>
+    <data key="again" value="128, 203, 272, 215"/>
+    <data key="male" file="GENDER.EPF" palette="NPAL3.PAL" frames="0, 1, 2" rect="428, 103, 533, 131"/>
+    <data key="female" file="GENDER.EPF" palette="NPAL3.PAL" frames="3, 4, 5" rect="428, 216, 533, 244"/>
+    <data key="left" file="DIREC.EPF" palette="NPAL3.PAL" frames="0, 1, 0" rect="331, 163, 353, 185"/>
+    <data key="right" file="DIREC.EPF" palette="NPAL3.PAL" frames="2, 3, 2" rect="599, 163, 621, 185"/>
+    <data key="nations">
+      <data file="NNATION.EPF" palette="NPAL3.PAL" frames="0, 1, 1" rect="124, 273, 171, 320"/>
+      <data file="NNATION.EPF" palette="NPAL3.PAL" frames="2, 3, 3" rect="174, 273, 221, 320"/>
+    </data>
+    <data key="nationText" value="41, 331, 307, 432"/>
+    <data key="totems">
+      <data file="NTOTEM.EPF" palette="NPAL3.PAL" frames="0, 1, 1" rect="367, 273, 414, 320"/>
+      <data file="NTOTEM.EPF" palette="NPAL3.PAL" frames="2, 3, 3" rect="417, 273, 464, 320"/>
+      <data file="NTOTEM.EPF" palette="NPAL3.PAL" frames="4, 5, 5" rect="467, 273, 514, 320"/>
+      <data file="NTOTEM.EPF" palette="NPAL3.PAL" frames="6, 7, 7" rect="517, 273, 564, 320"/>
+    </data>
+    <data key="totemText" value="333, 331, 599, 432"/>
+    <data key="shapes" left="358" top="134" width="59" height="76" capsule="CAPSULE.EPF" palette="NPAL3.PAL"/>
+    <data key="ok" id="14" rect="248, 460, 320, 476"/>
+    <data key="cancel" id="22" rect="325, 460, 397, 476"/>
+  </data>
+
+  <!-- the title over our screen (its parent), its window's sides black -->
+  <frame name="TK5xTitle" key="frame" AllPoints="@parent" FrameLevel="50" EnableMouse="true">
+    <texture key="black" layer="BACKGROUND" AllPoints="@parent" ColorTexture="0, 0, 0, 1"/>
+    <on script="OnMouseUp" call="Release"/>
+    <on script="OnUpdate" call="Track"/>
+    <!-- the 640 x 480 screen (the script fits it to the window) -->
+    <frame name="TK5xTitleScreen" key="page" Size="640, 480">
+      <picture file="TITLE.EPF" frame="0" palette="NPAL2.PAL" x="0" y="0" layer="BACKGROUND"/>
+      <text key="version" layer="OVERLAY"/>
+      <run call="Items"/>
+      <!-- the login dialog, on the screen's dialog layer -->
+      <frame name="TK5xLoginDialog" key="dialog" Size="284, 187" Point="TOPLEFT, @parent, TOPLEFT, 356, -191" FrameLevel="60"
+             EnableMouse="true">
+        <picture file="DLGLOGIN.EPF" frame="0" palette="NPAL8.PAL" x="0" y="0" layer="BACKGROUND"/>
+        <frame name="TK5xLoginAccount" key="account" type="EditBox"/>
+        <frame name="TK5xLoginPassword" key="password" type="EditBox"/>
+        <frame name="TK5xLoginOK" key="ok" type="Button"/>
+        <frame name="TK5xLoginCancel" key="cancel" type="Button"/>
+        <run call="Dialog"/>
+        <do Hide=""/>
+      </frame>
+      <!-- Change Password, on the dialog layer too -->
+      <frame name="TK5xPassword" key="password" Size="314, 227" Point="TOPLEFT, @parent, TOPLEFT, 326, -191" FrameLevel="60"
+             EnableMouse="true">
+        <picture file="DLGPASS.EPF" frame="0" palette="NPAL8.PAL" x="0" y="0" layer="BACKGROUND"/>
+        <frame name="TK5xPasswordAccount" key="account" type="EditBox"/>
+        <frame name="TK5xPasswordCurrent" key="current" type="EditBox"/>
+        <frame name="TK5xPasswordNew" key="new" type="EditBox"/>
+        <frame name="TK5xPasswordAgain" key="again" type="EditBox"/>
+        <frame name="TK5xPasswordOK" key="ok" type="Button"/>
+        <frame name="TK5xPasswordCancel" key="cancel" type="Button"/>
+        <run call="Password"/>
+        <do Hide=""/>
+      </frame>
+      <!-- the New User dialog (title.lua's scripts.CreateShapes), the whole screen over the menu, on the dialog layer; its
+           request's dimmer over it until the 0x02's answers (0x47BBB0's ScreenDimmer) -->
+      <frame name="TK5xCreate" key="create" AllPoints="@parent" FrameLevel="60" EnableMouse="true">
+        <picture file="DLGNEW02.EPF" frame="0" palette="NPAL3.PAL" x="0" y="0" layer="BACKGROUND"/>
+        <frame name="TK5xCreateAccount" key="account" type="EditBox"/>
+        <frame name="TK5xCreatePassword" key="password" type="EditBox"/>
+        <frame name="TK5xCreateAgain" key="repeatBox" type="EditBox"/>
+        <frame name="TK5xCreateMale" key="male" type="Button"/>
+        <frame name="TK5xCreateFemale" key="female" type="Button"/>
+        <frame name="TK5xCreateLeft" key="left" type="Button"/>
+        <frame name="TK5xCreateRight" key="right" type="Button"/>
+        <frame name="TK5xCreateShapes" key="shapes"/>
+        <frame name="TK5xCreateNation1" key="nations[]" type="Button"/>
+        <frame name="TK5xCreateNation2" key="nations[]" type="Button"/>
+        <text key="nationText" layer="OVERLAY"/>
+        <frame name="TK5xCreateTotem1" key="totems[]" type="Button"/>
+        <frame name="TK5xCreateTotem2" key="totems[]" type="Button"/>
+        <frame name="TK5xCreateTotem3" key="totems[]" type="Button"/>
+        <frame name="TK5xCreateTotem4" key="totems[]" type="Button"/>
+        <text key="totemText" layer="OVERLAY"/>
+        <frame name="TK5xCreateOK" key="ok" type="Button"/>
+        <frame name="TK5xCreateCancel" key="cancel" type="Button"/>
+        <frame name="TK5xCreateDimmer" key="dim" AllPoints="@parent" FrameLevel="68" EnableMouse="true">
+          <texture layer="BACKGROUND" AllPoints="@parent" ColorTexture="0, 0, 0, 0.45"/>
+          <do Hide=""/>
+        </frame>
+        <run call="CreateShapes"/>
+        <do Hide=""/>
+      </frame>
+      <!-- an alert (AlertPane: title.lua sizes, draws and places it), on the layer over the dialogs and their wait -->
+      <frame name="TK5xAlert" key="alert" FrameLevel="90" EnableMouse="true">
+        <text key="text" layer="OVERLAY"/>
+        <frame name="TK5xAlertOK" key="ok" type="Button"/>
+        <run call="Alert"/>
+        <do Hide=""/>
+      </frame>
+      <!-- the connect screen (TerminalPane, title.lua's P.Terminal): the screen black while a connection starts from it,
+           over the menu and its dialogs and under the alerts' layer; its own alert (AlertPane: the connecting one, string
+           156, no button; a failure's VersatileAlertPane, string 157, Reconnect and Leave). Over the whole window, so no
+           column of the title shows at the screen's fitted edge and no press beside it reaches the menu (the live check). -->
+      <frame name="TK5xTerminal" key="terminal" AllPoints="TK5xTitle" FrameLevel="70" EnableMouse="true">
+        <texture layer="BACKGROUND" AllPoints="@parent" ColorTexture="0, 0, 0, 1"/>
+        <frame name="TK5xTerminalAlert" key="alert" FrameLevel="75" EnableMouse="true">
+          <text key="text" layer="OVERLAY"/>
+          <frame name="TK5xTerminalReconnect" key="reconnect" type="Button"/>
+          <frame name="TK5xTerminalLeave" key="leave" type="Button"/>
+          <do Hide=""/>
+        </frame>
+        <run call="Terminal"/>
+        <do Hide=""/>
+      </frame>
+    </frame>
+    <!-- the wait after OK (ScreenDimmer(5): the screen dimmed, every press and key its own until the 0x02's answer;
+         title.lua shows the frame from the key on and its shade once the login is sent: TK_LOGIN_SENT) -->
+    <frame name="TK5xLoginDimmer" key="dim" AllPoints="@parent" FrameLevel="80" EnableMouse="true">
+      <texture key="shade" layer="BACKGROUND" AllPoints="@parent" ColorTexture="0, 0, 0, 0.45"/>
+      <do Hide=""/>
+    </frame>
+    <!-- Change Password's wait after OK, the same (until the 0x26's answer) -->
+    <frame name="TK5xPasswordDimmer" key="passwordDim" AllPoints="@parent" FrameLevel="80" EnableMouse="true">
+      <texture layer="BACKGROUND" AllPoints="@parent" ColorTexture="0, 0, 0, 0.45"/>
+      <do Hide=""/>
+    </frame>
+    <!-- an alert is modal (on the modal list, in front): every press outside it is its own; nothing drawn -->
+    <frame name="TK5xAlertModal" key="alertModal" AllPoints="@parent" FrameLevel="85" EnableMouse="true">
+      <do Hide=""/>
+    </frame>
+  </frame>
+</ui>

@@ -20,6 +20,9 @@ local function rulesSwitch(section, key, name)
             H:ClientSettingsSave()
             H:ApplyChat()
             if C:Loaded() then C:ShowBar() end -- s6-interface-5x (round 13, step 11): the bar only while it is loaded
+            -- s6-ui-core (round 101, T11 step 3): as G.SetBackToTalk does, so that the chat lines called only on change
+            -- (SetUpdateWhen) draw the switch at once
+            TK.FireEvent("TK_CHAT_SETTINGS")
         end,
         default = function() return H:ClientSettingDefaultBool(section, key) end, -- s6-ui-settings: the page's reset
     }

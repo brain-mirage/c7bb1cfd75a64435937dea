@@ -33,10 +33,13 @@
 -- takes the lower number first, the switch (pane slot 6), so the switches sit above the slots. The S key, the arrows and
 -- the views send nothing; S taken here keeps UserPane's RequestLocalPlayerStatus (2D 00) from running, as 4a's pane takes
 -- 's' first while it is the active tab (main.lua's StatusKey). Changing any of these changes what the server sees.
+-- s6-ui-core (round 85): the XML twin's scripts; the page, its slots', switches' and arrows' places are selflook.xml's
+-- (core/xml.md).
 
 local H = __tk
 local S = require("interfaces.7x.skin")
 local K = require("interfaces.7x.panels.side.kit")
+local Elements = require("interfaces.7x.panels.side.elements") -- the kit as layout elements (the twin's own)
 local Hud = require("interfaces.7x.hud")
 local Look = require("interfaces.7x.panels.side.look")
 local ItemBox = require("interfaces.7x.itembox")
@@ -44,35 +47,29 @@ local SelfLook = TK.Game.SelfLook
 
 local P = {}
 
--- The worn items' slots by the server's slot code (GetSlotRect: pane slots 7-20, 48 x 48), each with LOOKICON.EPF's
--- frame (slot - 7) drawn round it, at (fx, fy), while the pointer is over it; its name on a hover (OnTimer 0x00569860).
-local GEAR = {
-    [22] = { 12, 12, 0, 7, 10, "Faceaccessory(1)" }, [4] = { 68, 12, 1, 63, 10, "Head(h)" },
-    [23] = { 126, 12, 2, 121, 10, "Headaccessory(2)" }, [1] = { 10, 68, 3, 7, 62, "Righthand(w)" },
-    [2] = { 68, 68, 4, 63, 62, "Body(a)" }, [3] = { 126, 68, 5, 121, 62, "Lefthand(s)" },
-    [8] = { 10, 122, 6, 7, 114, "Rightaccessory(r)" }, [14] = { 68, 122, 7, 63, 114, "Mantle(m)" },
-    [7] = { 126, 122, 8, 121, 114, "Leftaccessory(l)" }, [20] = { 10, 174, 9, 7, 166, "Subaccessory([)" },
-    [16] = { 68, 174, 10, 63, 166, "Coat(c)" }, [21] = { 126, 174, 11, 121, 166, "Subaccessory(r)" },
-    [6] = { 10, 226, 12, 7, 218, "Necklace(n)" }, [13] = { 68, 226, 13, 63, 218, "Foot(f)" },
-}
+local X = TK.Xml.Data("selflook.xml")
 
--- The switches (buttons 0, 1, 5 and 6): the option each sends, their rectangles and pictures (STATBUTS on / off in
--- BUTTON.PAL, filled 0x8F while 0xFF; ONOFFBUT 1 / 0, 0 meaning off and anything else on), and button 0's and 1's help
--- line on a right press (strings 197 and 198).
-local SWITCHES = {
-    { id = "exchange", option = 8, rect = { 126, 228, 153, 255 }, file = "STATBUTS.EPF", on = 7, off = 2, help = 197 },
-    { id = "group", option = 2, rect = { 155, 228, 182, 255 }, file = "STATBUTS.EPF", on = 8, off = 3, help = 198 },
-    { id = "helmet", option = 14, rect = { 107, 7, 121, 21 }, file = "ONOFFBUT.EPF", on = 1, off = 0 },
-    { id = "necklace", option = 15, rect = { 49, 221, 63, 235 }, file = "ONOFFBUT.EPF", on = 1, off = 0 },
-}
+-- The worn items' slots by the server's slot code (selflook.xml's GEAR): { x, y, frame, fx, fy, name }.
+local GEAR = {}
+for _, g in ipairs(X.GEAR) do GEAR[g.code] = g end
 
-local NATIONS = { [0] = "Neutral", "Koguryo", "Buya", "Nagnang", "Han" }
-local SPIRITS = { [0] = "Ju jak", "Baekho", "Hyun moo", "Chung ryong" }
+-- The order the slots are made in: the original's (pairs over its table of the slots by code). This table has the same
+-- keys in the same order in its constructor, so pairs goes through it in that order (a table's order follows its keys
+-- and how they were put in): the slots' controls and pictures are made in the same order, their draw order and the
+-- frames' order the same.
+local ORDER = { [22] = true, [4] = true, [23] = true, [1] = true, [2] = true, [3] = true, [8] = true, [14] = true,
+    [7] = true, [20] = true, [16] = true, [21] = true, [6] = true, [13] = true }
+
+-- The switches (buttons 0, 1, 5 and 6: selflook.xml's SWITCHES)
+local SWITCHES = X.SWITCHES
+
+-- the nations' (0-4) and spirits' (0-3) names
+local NATIONS, SPIRITS = X.NATIONS, X.SPIRITS
 
 -- The arrows' places by view (GetSlotRect's 4, next, and 3, previous)
--- (indexed by view: a positional entry after [1] = would be [1] again; s6-interface-7x-b round 7, seen beside 7.5.2)
-local NEXT = { [0] = { 169, 268 }, [1] = { 169, 268 } }
-local BACK = { [1] = { 149, 268 }, [2] = { 169, 268 } }
+local NEXT, BACK = {}, {}
+for _, at in ipairs(X.NEXT) do NEXT[at.view] = { at.x, at.y } end
+for _, at in ipairs(X.BACK) do BACK[at.view] = { at.x, at.y } end
 
 --- A value as 4a's GetNationId and GetSpiritId give it: the low byte, sign-extended (255 for -1, not known).
 local function sbyte(v) v = (v or -1) % 256 return v >= 128 and v - 256 or v end
@@ -85,15 +82,15 @@ local function step(p, view)
     P.Show(p)
 end
 
-function P.Build(parent)
-    local p = CreateFrame("Frame", "TK7xSideSelf", parent)
-    p:SetAllPoints(parent)
-    p.view = 0
-    p.back = p:CreateTexture(nil, "BACKGROUND")
-    p.hover = p:CreateTexture(nil, "BORDER")
+-- the scripts selflook.xml names
+local scripts = {}
+
+--- The worn slots' controls, made in the original's order (ORDER).
+function scripts.Gear(p)
     p.gear = {}
-    for code, g in pairs(GEAR) do
-        local b = K.Hit(p, g[1], g[2], g[1] + 48, g[2] + 48, "TK7xGear" .. code)
+    for code in pairs(ORDER) do
+        local g = GEAR[code]
+        local b = K.Hit(p, g.x, g.y, g.x + 48, g.y + 48, "TK7xGear" .. code)
         b.code, b.icon = code, p:CreateTexture(nil, "ARTWORK")
         -- WIRE: 1F and the slot's code on the left press, held or empty (the header; the game layer's worn control)
         SelfLook.WornControl(b)
@@ -110,13 +107,17 @@ function P.Build(parent)
             -- cleared), where it came, for 5000 ms; leaving the slot does not stop it (OnTimer 0x00569860)
             if p.lastHover ~= code then
                 p.lastHover = code
-                p.tipAt, p.tipText = GetTime() + 1, g[6]
+                p.tipAt, p.tipText = GetTime() + 1, g.name
             end
             P.Show(p)
         end)
         b:SetScript("OnLeave", function() if p.over == b then p.over = nil P.Show(p) end end)
         p.gear[code] = b
     end
+end
+
+--- The switches' controls, over the slots: HitTestSlot's order (the header).
+function scripts.Switches(p)
     p.switches = {}
     for _, def in ipairs(SWITCHES) do
         local r = def.rect
@@ -126,36 +127,33 @@ function P.Build(parent)
         -- WIRE: the option on the self-look path, on the left press (the header; the game layer's switch control)
         SelfLook.SwitchControl(b, def.option)
         if def.help then
-            -- WIRE (s6-interface-7x-b round 6): SelfLookPane::HandlePointerOrMouseEvent (0x00568CB0) shows the help for
-            -- type 4 only, so a right double press (type 5) shows none, and none with the bow drawn (round 7: its
-            -- IsBowDrawing test comes first); the tip uses up the next press (Hud.HelpLine.Show), so a tip 4a does not
-            -- show would take a press 4a sends on
+            -- WIRE: which press shows the help, and its life, are the game layer's tip rule with SelfLookPane's bow test
+            -- first (TK.Game.Tips, core/game/tips.lua: SelfLookPane::HandlePointerOrMouseEvent 0x00568CB0;
+            -- s6-gateway-research round 37 moved it there); the tip uses up the next press (Hud.HelpLine.Show), so the
+            -- switch shows it only when the rule says so
             b:HookScript("OnMouseDown", function(_, button, double)
-                if button == "RightButton" and not double and not H:IsBowDrawing() then
-                    Hud.HelpLine.Show(p, H:OriginalString(def.help) or "", 5000)
-                end
+                local life = TK.Game.Tips.ForPress(button, double, true)
+                if life then Hud.HelpLine.Show(p, H:OriginalString(def.help) or "", life) end
             end)
         end
         p.switches[def.id] = b
     end
-    -- button 2 (126, 256)-(153, 283): it takes the press and sends nothing
-    p.stats = K.Hit(p, 126, 256, 153, 283, "TK7xSelfStats")
-    p.stats.tex = p.stats:CreateTexture(nil, "ARTWORK")
-    p.texts = {}
-    for i = 1, 15 do p.texts[i] = K.Text(p) end
-    p.numbers = {}
-    p.minus = {}
-    p.legend = K.TextPane(p, 7, 15, 182, 265)
-    p.next = K.Arrow(p, 6, function() step(p, p.view + 1) end)
-    p.previous = K.Arrow(p, 5, function() step(p, p.view - 1) end)
-    p:SetScript("OnUpdate", function()
-        if p.tipAt and GetTime() >= p.tipAt then
-            p.tipAt = nil
-            -- none while the item box shows (OnTimer 0x00569860 tests Singleton<ItemHelpPane> first)
-            if p.view == 0 and not ItemBox.Shown() then Hud.HelpLine.Show(p, p.tipText, 5000) end
-        end
-    end)
-    return p
+end
+
+function scripts.Next(p) step(p, p.view + 1) end
+
+function scripts.Previous(p) step(p, p.view - 1) end
+
+function scripts.Tip(p)
+    if p.tipAt and GetTime() >= p.tipAt then
+        p.tipAt = nil
+        -- none while the item box shows (OnTimer 0x00569860 tests Singleton<ItemHelpPane> first)
+        if p.view == 0 and not ItemBox.Shown() then Hud.HelpLine.Show(p, p.tipText, 5000) end
+    end
+end
+
+function P.Build(parent)
+    return TK.Xml.Load("selflook.xml", { scripts = scripts, elements = Elements, parent = parent }).frame
 end
 
 --- OnActivate (each 0x39): the view its notice carries (the page an S 0x3E asked for since the previous 0x39, else the
@@ -215,11 +213,11 @@ local function showEquipment(p)
         local up = p.over == b and iconId ~= nil
         if iconId then
             -- centred in its slot; moved (-2, -2) under the pointer, over LOOKICON's frame
-            Look.Item(b.icon, p, iconId, colours[code], g[1] + 24 - (up and 2 or 0), g[2] + 24 - (up and 2 or 0))
+            Look.Item(b.icon, p, iconId, colours[code], g.x + 24 - (up and 2 or 0), g.y + 24 - (up and 2 or 0))
         else
             b.icon:Hide()
         end
-        if up then S.Picture(p, p.hover, "LOOKICON.EPF", g[3], "LOOKICON.PAL", g[4], g[5], "BORDER") end
+        if up then S.Picture(p, p.hover, "LOOKICON.EPF", g.frame, "LOOKICON.PAL", g.fx, g.fy, "BORDER") end
     end
     local states = SelfLook.States()
     for _, def in ipairs(SWITCHES) do
@@ -250,12 +248,12 @@ local function showStatus(p)
     local nation, spirit = H:GetPlayerOrigin()
     nation, spirit = sbyte(nation), sbyte(spirit)
     if nation ~= -1 then
-        local text = NATIONS[nation] or ""
+        local text = NATIONS[nation + 1] or ""
         local hw = div(S.TextWidth(text) or 0, 2)
         triple(p, 3, text, 64 - hw, 86, 64 - hw, 63 - hw)
     end
     if spirit ~= -1 then
-        local text = SPIRITS[spirit] or ""
+        local text = SPIRITS[spirit + 1] or ""
         local hw = div(S.TextWidth(text) or 0, 2)
         triple(p, 4, text, 133 - hw, 86, 133 - hw, 132 - hw)
     end

@@ -16,7 +16,8 @@
 -- and every 30 ms after while the button is held: an arrow a line, the track the pane's page, each only while the
 -- pointer is still on that part; the thumb follows the pointer, the range times the thumb's travel over the track's;
 -- the release ends it. The wheel stays the pane's own.
--- Drawing and the panes' own views only: nothing here is sent (5.33's and 7.5.2's scroll bars send nothing).
+-- Drawing and the panes' own views only: nothing here is sent (5.33's and 7.5.2's scroll bars send nothing); a dialog's
+-- list's bar tells the list's model of its events, as 4a's bar's reach the list (Bar.ForList's WIRE note).
 -- s6-modular-g (round 21, the owner's research on presses reaching the wrong place): the bar takes only what 4a's takes
 -- (ScrollPane::HandlePointerOrMouseEvent 0x0055C400's classic branch, ScrollPane.cpp:144-172, the code 5.33's keeps):
 -- the left button's single press while the pane scrolls (Frame:SetClaimButtons, SetPassesDoubles), which captures the
@@ -37,7 +38,9 @@ local ARROW = { [0] = 13, 10, 10 }
 function Bar.Width(skin) return WIDTH[skin or 0] end
 
 --- A new bar at (l, t)-(l + its width, b) of parent, for skin 0-2, over a pane's view: view.Range() gives the pane's
---- range, its position and its page (in lines: 0 at the top), view.Set(pos) scrolls it there.
+--- range, its position and its page (in lines: 0 at the top), view.Set(pos) scrolls it there. A view may also be told
+--- of the left press on a part after it acted (view.Pressed(part)), of the moves while it is held (view.Moved()) and of
+--- its release (view.Released()): a dialog's list (Bar.ForList).
 function Bar.New(parent, l, t, b, skin, view)
     local self = setmetatable({ skin = skin or 0, view = view, pool = {}, used = 0 }, Bar)
     local f = CreateFrame("Frame", nil, parent)
@@ -52,6 +55,7 @@ function Bar.New(parent, l, t, b, skin, view)
     f:SetScript("OnMouseDown", function(_, button) if button == "LeftButton" then self:Press() end end)
     f:SetScript("OnMouseUp", function(_, button) if button == "LeftButton" then self:Release() end end)
     f:SetScript("OnHide", function() self:Release() end)
+    f:SetScript("OnPressedMove", function() if self.active and self.view.Moved then self.view.Moved() end end)
     f:SetScript("OnUpdate", function(_, elapsed)
         if not self.active then return end
         self.wait = self.wait - (elapsed or 0)
@@ -119,12 +123,14 @@ function Bar:Press()
     end
     self:Process()
     self.wait = 0.2
+    if self.view.Pressed then self.view.Pressed(part) end
 end
 
 function Bar:Release()
     if not self.active then return end
     self.active, self.lit = nil, nil
     self:Refresh()
+    if self.view.Released then self.view.Released() end
 end
 
 --- The active part acts (ProcessActivePart): the thumb follows the pointer; an arrow or the track steps while the pointer
@@ -169,7 +175,7 @@ function Bar:Texture(layer)
     return t
 end
 
---- SCRL001.EPF's frame n at (l, t) of the bar, cut at (r, b).
+--- SCRL001.EPF's frame n at (l, t) of the bar, cut at (r, b); its texture (nil when nothing is drawn).
 function Bar:Draw(n, l, t, r, b, layer)
     local key, w, h = S.Image("SCRL001.EPF", 12 * self.skin + n, "SCRL001.PAL")
     if not key then return end
@@ -183,6 +189,7 @@ function Bar:Draw(n, l, t, r, b, layer)
     tex:ClearAllPoints()
     tex:SetPoint("TOPLEFT", self.frame, "TOPLEFT", l + ox, -(t + oy))
     tex:Show()
+    return tex
 end
 
 --- Frame n tiled over (l, t)-(r, b) from its top left (GrafPort::DrawTiledBackground).
@@ -213,7 +220,7 @@ function Bar:Refresh()
         end
         l, t, r, b = self:Part(2)
         self:Tile(10, l, t, r, b)
-        self:Draw(lit == 2 and 9 or 8, l, t, r, b)
+        self.thumb = self:Draw(lit == 2 and 9 or 8, l, t, r, b) -- (its place for a test's press: the thumb's picture)
         self.wash:Hide()
     elseif self.quiet then
         -- drawWhenInactive off (the paper windows': Bar.ForEdit): nothing while the pane does not scroll
@@ -227,6 +234,16 @@ function Bar:Refresh()
         self:Draw(2, l, t, r, b)
         self.wash:SetShown(S.Image("SCRL001.EPF", 0, "SCRL001.PAL") ~= nil)
     end
+end
+
+--- A dialog's bar kept over its window: the dialog manager sets the window's stack level after the build and its show (as
+--- the folder dialog's bar), which left the bar under the window's picture (round 94's live check).
+local function keepOver(bar, win)
+    bar.frame:HookScript("OnUpdate", function(f)
+        local strata, level = win:GetFrameStrata(), win:GetFrameLevel() + 2
+        if f:GetFrameStrata() ~= strata then f:SetFrameStrata(strata) end
+        if f:GetFrameLevel() < level then f:SetFrameLevel(level) end
+    end)
 end
 
 --- s6-ui-core (round 94): 5.33's bar on a text box being written, an edit the kit placed at (l, t)-(r, b) of win with its
@@ -265,13 +282,7 @@ function Bar.ForEdit(edit, win, l, t, r, b)
             bar:Refresh()
         end)
         edit:HookScript("OnHide", function() bar.frame:Hide() end)
-        -- kept over the window: the dialog manager sets the window's stack level after the build and its show (as the
-        -- folder dialog's bar), which left the bar under the window's picture (round 94's live check)
-        bar.frame:HookScript("OnUpdate", function(f)
-            local strata, level = win:GetFrameStrata(), win:GetFrameLevel() + 2
-            if f:GetFrameStrata() ~= strata then f:SetFrameStrata(strata) end
-            if f:GetFrameLevel() < level then f:SetFrameLevel(level) end
-        end)
+        keepOver(bar, win)
     end
     bar.quiet = edit.quietBar
     local f = bar.frame
@@ -281,6 +292,79 @@ function Bar.ForEdit(edit, win, l, t, r, b)
     f:SetFrameLevel(win:GetFrameLevel() + 2)
     f:SetShown(edit:IsShown())
     sf.track:Hide()
+    bar:Refresh()
+end
+
+--- The kit's bar (its track and thumb) out of sight and out of the presses' way: 5.33's stands in for it.
+local function hideKit(sf)
+    sf.track:Hide()
+    sf.thumb:Hide()
+end
+
+--- s6-ui-core (rounds 97 and 98): 5.33's bar on a dialog's list, a list the kit placed at (l, t)-(r, b) of win (X.List:
+--- its rows left of a 13-pixel bar at the right edge). 5.33's lists are a ListPane in a ScrollablePane, whose skin-0
+--- ScrollPane (this file's header) is drawn dimmed while the rows fit (its range 0: listpane.c:353-363; drawWhenInactive:
+--- scrollpane.c:312-319), as the real 5.33's NPC menu shows (r96-pictures), and while they scroll with its arrows, its
+--- track and its 13-pixel thumb. It stands in for the kit's bar (styleBar's 4a look, hidden: sf.barStyle) and takes the
+--- bar's presses, on the drawn list's rows; a bar that does not scroll takes none (Bar:Refresh). Its parts scroll the
+--- drawn list as 5.33's do (drawing only). The list's own position is 4a's (the kit's list.logicalRow,
+--- components/dialogs/kit.lua K.List): the thumb is 4a's thumb and the arrows and track 4a's track on their side (4a's
+--- EPF bar has no arrows), the pointer on 4a's bar by the bars' travels (list:BarPress; decision
+--- 2026-10-04-paging-lists-pointer-on-752s-view), as the kit moves them; a list the look draws at 4a's size scrolls
+--- with that position. WIRE: the press after 4a's part acted, the moves while it is held and its release then go to the
+--- model as the kit's thumb's (list:BarPress, BarMove, BarRelease), after which the article and mail lists ask for older
+--- pages at the list's end (3B 02, as 4a's ArticleListPane::HandlePointerOrMouseEvent 0x00474EC0 and MailListPane's
+--- 0x0047AD80); changing what a part moves, or which events go, changes the 3B 02 requests the server sees. Made once a
+--- list (list.nativeBar), placed again at each call.
+function Bar.ForList(list, win, l, t, r, b)
+    local sf, bar = list.sf, list.nativeBar
+    if not bar then
+        local function rh() return list.rowHeight or 12 end
+        bar = Bar.New(win, r - WIDTH[0], t, b, 0, {
+            -- the drawn list's rows (what the player sees scroll), as the kit's styleBar reads them
+            Range = function()
+                local h = rh()
+                return math.floor(sf:GetVerticalScrollRange() / h + 0.5), math.floor(sf:GetVerticalScroll() / h + 0.5),
+                    math.max(1, math.floor(sf:GetHeight() / h))
+            end,
+            Set = function(to)
+                -- the drawn list; one drawn at 4a's size is at 4a's position, which the kit moves (list:BarPress)
+                if list.logical and not list:OwnDrawn() then return end
+                sf:SetVerticalScroll(math.max(0, math.min(sf:GetVerticalScrollRange(), to * rh())))
+                sf.Refresh()
+                list:ThumbDragged() -- a list that does not page: its position takes the row it shows
+            end,
+            Pressed = function(part)
+                list:BarPress(part, math.floor(bar.frame:GetHeight() + 0.5) - 3 * ARROW[0], ARROW[0])
+            end,
+            Moved = function() list:BarMove() end,
+            Released = function() list:BarRelease() end,
+        })
+        list.nativeBar = bar
+        -- the bar's events are the list's, as the kit's thumb's (its release over it: K's controlUnderPointer). Wire: the
+        -- mark decides which control a release over the bar reaches (DialogPane::HitTestControls 0x0049FB10); changing it
+        -- changes what the server receives. Round 115: through the kit's public TK.Dialogs.Control (the same two fields;
+        -- the separation guard's G3), no longer its private fields.
+        TK.Dialogs.Control(bar.frame, win, list.index)
+        sf.barStyle = function()
+            hideKit(sf)
+            bar:Refresh()
+        end
+        sf:HookScript("OnShow", function()
+            hideKit(sf)
+            bar.frame:Show()
+            bar:Refresh()
+        end)
+        sf:HookScript("OnHide", function() bar.frame:Hide() end)
+        keepOver(bar, win)
+    end
+    local f = bar.frame
+    f:ClearAllPoints()
+    f:SetPoint("TOPLEFT", win, "TOPLEFT", r - WIDTH[0], -t)
+    f:SetSize(WIDTH[0], b - t)
+    f:SetFrameLevel(win:GetFrameLevel() + 2)
+    f:SetShown(sf:IsShown())
+    hideKit(sf)
     bar:Refresh()
 end
 

@@ -18,28 +18,32 @@
 -- - The trade's count and the mix's quantity are the DLGEXC3 windows (merchant.lua's L.Input).
 -- Each draws DialogPane's Enter frames round its default button (X.Default: Accept, ADD, OK). Drawing only: the
 -- indexes, the money field's digits and what is sent are the renderer's and the model's.
+--
+-- s6-ui-core (round 85): the XML twin's; the windows' sizes, pictures and the parts' places are exchange.xml's
+-- (core/xml.md).
 
 local S = require("interfaces.5x.skin")
 local K = TK.GetComponent("dialogs").kit
+local unpack = table.unpack
+local entry = require("interfaces.original.entry")
+local D = TK.Xml.Data("exchange.xml")
 
 return function(L, X)
-    local P = "NPAL8.PAL"
-
-    L.Trade = {
-        width = 506, height = 322, button = 72, listWidth = 202, listHeight = 143, moneyWidth = 125, editHeight = 13,
+    local T = D.Trade
+    L.Trade = entry(T, {
         place = function(win)
-            X.Size(win, 506, 322)
-            X.Art(win, "DLGEXC1.EPF", P)
-            X.Image(win, win.accept, 14, 42, 272, 114, 288)
-            X.Image(win, win.add, 36, 217, 272, 289, 288)
-            X.Image(win, win.cancel, 22, 392, 272, 464, 288)
-            X.StaticText(win, "x5myName", 51, 71, 235, 84)
-            X.List(win, win.mine, 36, 89, 251, 232, 156, 24)
-            X.Edit(win.money, win, 79, 237, 204, 250) -- its own text, "0" at first (the model's, as 5.33's field)
-            X.Text(win.theirLabel, win, 271, 71, 454, 84)
+            X.Size(win, T.width, T.height)
+            X.Art(win, unpack(T.art))
+            X.Image(win, win.accept, unpack(T.accept))
+            X.Image(win, win.add, unpack(T.add))
+            X.Image(win, win.cancel, unpack(T.cancel))
+            X.StaticText(win, "x5myName", unpack(T.myName))
+            X.List(win, win.mine, unpack(T.mine))
+            X.Edit(win.money, win, unpack(T.money)) -- its own text, "0" at first (the model's, as 5.33's field)
+            X.Text(win.theirLabel, win, unpack(T.theirLabel))
             win.theirLabel:SetWordWrap(false)
-            X.List(win, win.theirs, 255, 89, 470, 232, 156, 24)
-            X.StaticText(win, "x5theirMoney", 298, 237, 454, 250)
+            X.List(win, win.theirs, unpack(T.theirs))
+            X.StaticText(win, "x5theirMoney", unpack(T.theirMoney))
             -- the renderer's own texts 5.33 has not (the money with " coins", the ready line)
             win.theirMoney:Hide()
             win.ready:Hide()
@@ -51,48 +55,49 @@ return function(L, X)
             local _, name = __tk:GetUnitInfo("player")
             win.x5myName:SetText(name or "")
             win.x5theirMoney:SetText(string.format("%d", tonumber(c.theirMoney) or 0))
+            local cx, x = unpack(T.row)
             for _, list in ipairs({ win.mine, win.theirs }) do
                 for i, it in ipairs(list.items) do
-                    X.ItemRow(list, list.rows[i], { item = it[2], colour = it[3], name = K.Text(it[4]) }, 25, 50)
+                    X.ItemRow(list, list.rows[i], { item = it[2], colour = it[3], name = K.Text(it[4]) }, cx, x)
                 end
             end
             X.Default(win, win.accept)
             -- ExchangeDialog 0x0042B300 slides open as it is built (0x004208F0): the picture once it has its rows
             if win.opened then X.SlideOpen(win) end
         end,
-    }
+    })
 
-    L.Picker = {
-        width = 287, height = 277, button = 72, listWidth = 202, listHeight = 144, slide = true,
+    local P = D.Picker
+    L.Picker = entry(P, {
         place = function(win)
-            X.Art(win, "DLGEXC2.EPF", P)
-            X.Image(win, win.ok, 36, 69, 225, 141, 241)
-            X.Image(win, win.cancel, 22, 146, 225, 218, 241)
-            X.List(win, win.list, 36, 61, 251, 205, 205, 24)
+            X.Art(win, unpack(P.art))
+            X.Image(win, win.ok, unpack(P.ok))
+            X.Image(win, win.cancel, unpack(P.cancel))
+            X.List(win, win.list, unpack(P.list))
             X.RowColours(win.list)
             X.Default(win, win.ok)
         end,
-        row = function(win, row, it) X.ItemRow(win.list, row, it, 25, 50, 155) end,
-    }
+        row = function(win, row, it) X.ItemRow(win.list, row, it, unpack(P.row)) end,
+    })
 
-    L.Mix = {
-        width = 446, height = 274, button = 72, listWidth = 206, listHeight = 132, slide = true,
+    local M = D.Mix
+    L.Mix = entry(M, {
         place = function(win)
-            X.Art(win, "MIXITEM.EPF", P)
-            X.Image(win, win.add, 36, 72, 224, 144, 240)
-            X.Image(win, win.delete, 21, 149, 224, 221, 240)
-            X.Image(win, win.ok, 14, 226, 224, 298, 240)
-            X.Image(win, win.cancel, 22, 303, 224, 375, 240)
-            X.List(win, win.list, 113, 71, 332, 203, 205, 24)
+            X.Art(win, unpack(M.art))
+            X.Image(win, win.add, unpack(M.add))
+            X.Image(win, win.delete, unpack(M.delete))
+            X.Image(win, win.ok, unpack(M.ok))
+            X.Image(win, win.cancel, unpack(M.cancel))
+            X.List(win, win.list, unpack(M.list))
             X.RowColours(win.list)
             X.Default(win, win.ok)
         end,
         -- a row ({ slot, quantity }): the slot's item
         row = function(win, row, r)
             local _, name, _, _, icon, colour = __tk:GetItemSlot(r[1])
-            X.ItemRow(win.list, row, { icon = icon, colour = colour, name = name or "" }, 25, 50, 155)
+            X.ItemRow(win.list, row, { icon = icon, colour = colour, name = name or "" }, unpack(M.row))
         end,
-    }
+    })
 
     -- The trade's counts and the mix's quantity: merchant.lua's L.Input draws them, by class.
     L.Count = {}

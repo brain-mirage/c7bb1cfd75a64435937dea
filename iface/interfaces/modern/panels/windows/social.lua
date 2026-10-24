@@ -13,6 +13,8 @@
 --
 -- It is the window of the game layer's views "group" and "ignore" (TK.Game.Views, s6-interface-5x round 12, step 1),
 -- whose keys are TOGGLEGROUP (F, the original's group key) and TOGGLESOCIAL (F9, the original's ignore key).
+--
+-- s6-ui-core (round 85): the XML twin's scripts; the window, its tabs and pages are social.xml's (core/xml.md).
 
 local H = __tk
 local W = require("interfaces.modern.skin").UI -- s6-devtools (round 5, the separation's step 5): Modern's skin
@@ -28,65 +30,42 @@ TK.On("TK_BLOCKLIST", function()
     if window and window:IsShown() then S:Refresh() end
 end)
 
-local function list(parent, width)
-    local fs = W.Label(parent, "", 12, W.white, "LEFT")
-    fs:SetWidth(width)
-    fs:SetWordWrap(true)
-    return fs
+-- the scripts social.xml names, and its build (its template: the window)
+local scripts = {}
+local ui = TK.Xml.Load("social.xml", { scripts = scripts, elements = require("interfaces.modern.elements") })
+
+function scripts.Own(w) TK.GetComponent("windows"):Own(w) end
+
+function scripts.Tab(b) b:GetParent().tabs[b.id] = b end
+
+function scripts.OpenTab(b) TK.Game.Views.Open(b.id, "input") end
+
+-- Wire: the Group tab carries the group page's request, its 2D 01 (NewGroupPane::OnActivate 0x0056CB80); changing which
+-- control carries it changes what the server sees.
+function scripts.GroupRequest(b) TK.Actions:Set(b, "open:group") end
+
+-- Wire: the group page asks for the list each time it becomes visible (2D 01, D20: NewGroupPane::OnActivate 0x0056CB80);
+-- changing it changes what the server sees.
+function scripts.GroupOpen(g) TK.Actions:SetOpen(g, "open:group") end
+
+function scripts.Invite()
+    W.Prompt({ title = "Invite", text = "Name of the new group member?", maxLetters = 15,
+        action = TK.Game.Social.InviteAction })
 end
 
-local function build()
-    window = W.Window("TKSocialWindow", "Social", 360, 380)
-    TK.GetComponent("windows"):Own(window) -- (as the character window: made by the shared widgets, it goes with the windows)
-    window:SetPoint("CENTER", UIParent, "CENTER", -320, 40)
-    window.tabs = {}
-    local function tab(id, text, x)
-        local b = W.Tab(window, text, 100, 24, function() TK.Game.Views.Open(id, "input") end) -- s6-ui-core (round 61): the shared tab
-        b:SetPoint("TOPLEFT", window, "TOPLEFT", x, -40)
-        window.tabs[id] = b
-    end
-    tab("group", "Group", 16)
-    -- The Group tab, F and the micro menu's Social button carry the group page's request (D20, plan 5.9). Wire: its 2D 01
-    -- (NewGroupPane::OnActivate 0x0056CB80); changing which control carries it changes what the server sees.
-    TK.Actions:Set(window.tabs.group, "open:group")
-    tab("ignore", "Ignore", 122)
-
-    local g = CreateFrame("Frame", nil, window)
-    g:SetPoint("TOPLEFT", window, "TOPLEFT", 16, -74)
-    g:SetPoint("BOTTOMRIGHT", window, "BOTTOMRIGHT", -16, 14)
-    g.list = list(g, 320)
-    g.list:SetPoint("TOPLEFT", g, "TOPLEFT", 0, 0)
-    g.invite = W.Button(g, "Invite...", 110, 24, "red", function()
-        W.Prompt({ title = "Invite", text = "Name of the new group member?", maxLetters = 15,
-            action = TK.Game.Social.InviteAction })
-    end)
-    g.invite:SetPoint("BOTTOMLEFT", g, "BOTTOMLEFT", 0, 0)
-    -- The group page is the original's group tab: it asks for the list each time it becomes visible (2D 01, D20).
-    TK.Actions:SetOpen(g, "open:group")
-    window.group = g
-
-    local ig = CreateFrame("Frame", nil, window)
-    ig:SetAllPoints(g)
-    ig.list = list(ig, 320)
-    ig.list:SetPoint("TOPLEFT", ig, "TOPLEFT", 0, 0)
-    ig.add = W.Button(ig, "Add...", 100, 24, "red", function()
-        W.Prompt({ title = "Ignore", text = "Who do you wish to ignore?", maxLetters = 15,
-            action = TK.Game.Social.IgnoreAction })
-    end)
-    ig.add:SetPoint("BOTTOMLEFT", ig, "BOTTOMLEFT", 0, 0)
-    ig.remove = W.Button(ig, "Remove...", 100, 24, nil, function()
-        W.Prompt({ title = "Hear again", text = "Who do you wish to hear?", maxLetters = 15,
-            action = TK.Game.Social.UnignoreAction })
-    end)
-    ig.remove:SetPoint("LEFT", ig.add, "RIGHT", 8, 0)
-    window.ignore = ig
-
-    local events = CreateFrame("Frame", nil, window)
-    events:RegisterEvent("GROUP_ROSTER_UPDATE")
-    events:RegisterEvent("UNIT_HEALTH")
-    events:RegisterEvent("TK_GROUP_UPDATE") -- s6-interface-7x-b (round 3): the group list's own change (the player's bars)
-    events:SetScript("OnEvent", function() if window:IsShown() then S:Refresh() end end)
+function scripts.Ignore()
+    W.Prompt({ title = "Ignore", text = "Who do you wish to ignore?", maxLetters = 15,
+        action = TK.Game.Social.IgnoreAction })
 end
+
+function scripts.HearAgain()
+    W.Prompt({ title = "Hear again", text = "Who do you wish to hear?", maxLetters = 15,
+        action = TK.Game.Social.UnignoreAction })
+end
+
+function scripts.Changed() if window:IsShown() then S:Refresh() end end
+
+local function build() window = ui:New("Window") end
 
 -- The group page's request can be attached only while the UI loads (plan 5.9): the window is made now.
 TK.On("PLAYER_LOGIN", function() if not window then build() end end)

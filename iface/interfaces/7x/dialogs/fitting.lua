@@ -9,10 +9,18 @@
 -- sunken while chosen); the item grid (2) at (218, 92), 586 x 362 (FittingRoomListPane::OnPaint 0x0041F2B0): six
 -- columns of three rows, a cell's 54 x 54 press area at (16 + 96 c, 31 + 112 r), its 50 x 50 box a pixel in (filled in
 -- 0x8A for an item tried on) with the item's picture in it, its name in 0x8F centred under it on lines from 66, 16 apart.
+-- s6-ui-core (round 85): the XML twin's; the window's buttons, preview, categories, grid and cells are fitting.xml's
+-- (core/xml.md).
 
 local S = require("interfaces.7x.skin")
+local unpack = table.unpack
+local entry = require("interfaces.original.entry")
+local D = TK.Xml.Data("fitting.xml")
 
 return function(L, X)
+    local R = D.Room
+    local CELLS, FLAT = R.cells, R.flat
+
     --- The chosen category's sunken bevels over its button (two nested one-pixel frames, dark top and left, lit bottom
     --- and right), a frame the renderer shows (b.mark).
     local function sunken(b)
@@ -22,7 +30,7 @@ return function(L, X)
         for k = 0, 1 do
             for _, side in ipairs({ "top", "left", "bottom", "right" }) do
                 local dark = side == "top" or side == "left"
-                X.Line(mark, X.Solid(mark, "OVERLAY", dark and 0xD8 or 0xD0), side, k)
+                X.Line(mark, X.Solid(mark, "OVERLAY", dark and FLAT[3] or FLAT[2]), side, k)
             end
         end
         mark:Hide()
@@ -34,7 +42,7 @@ return function(L, X)
     local function wrap(text)
         local lines, line = {}, ""
         for word in text:gmatch("%S+") do
-            if line ~= "" and #line + #word >= 14 then
+            if line ~= "" and #line + #word >= CELLS.wrap then
                 lines[#lines + 1] = line
                 line = word
             else
@@ -45,13 +53,15 @@ return function(L, X)
         return table.concat(lines, "\n")
     end
 
-    L.Room = {
-        width = 820, height = 500, button = 63, turn = 63, category = 86, categoryHeight = 22, icon = 50, previewSize = 192,
+    --- A flat text button of 4a's (FittingRoomTextButtonControlPane) on (l, t)-(r, b).
+    local function flat(win, b, l, t, r, bottom) X.TextButton(win, b, l, t, r, bottom, FLAT[1], FLAT[2], FLAT[3]) end
+
+    L.Room = entry(R, {
         --- The preview: 192 x 192 at (18, 50) on black (FittingRoomUserImageControlPane fills colour 0 in its opaque pane),
         --- the figure in its middle.
         preview = function(win)
             local preview = CreateFrame("Frame", nil, win)
-            X.Rect(preview, win, 18, 50, 210, 242)
+            X.Rect(preview, win, unpack(R.preview))
             local bg = preview:CreateTexture(nil, "BACKGROUND")
             bg:SetAllPoints(preview)
             bg:SetColorTexture(0, 0, 0, 1)
@@ -64,20 +74,21 @@ return function(L, X)
         cell = function(grid, i, cols)
             local c, r = (i - 1) % cols, math.floor((i - 1) / cols)
             local cell = CreateFrame("Button", nil, grid)
-            X.Rect(cell, grid, 16 + 96 * c, 31 + 112 * r, 70 + 96 * c, 85 + 112 * r)
+            local l, t = CELLS.x + CELLS.across * c, CELLS.y + CELLS.down * r
+            X.Rect(cell, grid, l, t, l + CELLS.size, t + CELLS.size)
             cell.on = cell:CreateTexture(nil, "BORDER")
             cell.on:SetPoint("TOPLEFT", cell, "TOPLEFT", 1, 0)
-            cell.on:SetSize(50, 50)
-            S.Fill(cell.on, 0x8A)
+            cell.on:SetSize(CELLS.box, CELLS.box)
+            S.Fill(cell.on, CELLS.fill)
             cell.icon = cell:CreateTexture(nil, "ARTWORK")
-            cell.icon:SetPoint("CENTER", cell, "TOPLEFT", 26, -25)
+            cell.icon:SetPoint("CENTER", cell, "TOPLEFT", CELLS.box // 2 + 1, -(CELLS.box // 2))
             cell.name = cell:CreateFontString(nil, "OVERLAY")
-            S.Text(cell.name, 0x8F)
+            S.Text(cell.name, CELLS.colour)
             cell.name:SetSpacing(2) -- 16-pixel lines
             cell.name:SetWordWrap(false)
             cell.name:SetJustifyH("CENTER")
-            cell.name:SetWidth(96)
-            cell.name:SetPoint("TOP", cell, "TOPLEFT", 26, -(66 - 11))
+            cell.name:SetWidth(CELLS.nameWidth)
+            cell.name:SetPoint("TOP", cell, "TOPLEFT", CELLS.box // 2 + 1, -(CELLS.name - 11))
             local set = cell.name.SetText
             function cell.name:SetText(text) set(self, wrap(text or "")) end
             return cell
@@ -88,30 +99,32 @@ return function(L, X)
         --- box too, and cuts only a glyph wider or taller than the box, which goes the half-size way here).
         --- (s6-interface-7x round 2: it was at the box's corner, 4 pixels up and left of 4a's.)
         placeIcon = function(cell, key, w, h)
+            local box = CELLS.box
             local icon = cell.icon
             icon:SetTexture(key)
             icon:ClearAllPoints()
-            if w > 50 or h > 50 then w, h = math.floor(w / 2), math.floor(h / 2) end
+            if w > box or h > box then w, h = math.floor(w / 2), math.floor(h / 2) end
             icon:SetSize(math.max(1, w), math.max(1, h))
             icon:SetTexCoord(0, 1, 0, 1)
-            icon:SetPoint("TOPLEFT", cell, "TOPLEFT", 1 + math.floor((50 - w) / 2), -math.floor((50 - h) / 2))
+            icon:SetPoint("TOPLEFT", cell, "TOPLEFT", 1 + math.floor((box - w) / 2), -math.floor((box - h) / 2))
         end,
         place = function(win, cols, rows)
-            X.WebFrame(win, 820, 500)
-            X.Image(win, win.controls[0], 14, 379, 468, 442, 492)
-            X.Image(win, win.controls[3], 44, 18, 248, 81, 272)
-            X.Image(win, win.controls[4], 45, 149, 250, 212, 274)
-            X.TextButton(win, win.controls[5], 18, 276, 110, 306, 0xD4, 0xD0, 0xD8)
-            X.TextButton(win, win.controls[6], 120, 276, 212, 306, 0xD4, 0xD0, 0xD8)
+            X.WebFrame(win, R.width, R.height)
+            X.Image(win, win.controls[0], unpack(R.ok))
+            X.Image(win, win.controls[3], unpack(R.previous))
+            X.Image(win, win.controls[4], unpack(R.next))
+            flat(win, win.controls[5], unpack(R.basic))
+            flat(win, win.controls[6], unpack(R.current))
+            local cat = R.categories
             for i, b in ipairs(win.categories) do
                 local n = i - 1
-                local x, y = 280 + 90 * (n % 5), 50 + 26 * math.floor(n / 5)
-                X.TextButton(win, b, x, y, x + 86, y + 22, 0xD4, 0xD0, 0xD8)
+                local x, y = cat.x + cat.across * (n % cat.columns), cat.y + cat.down * math.floor(n / cat.columns)
+                flat(win, b, x, y, x + cat.width, y + cat.height)
                 b.mark = sunken(b)
             end
-            X.Rect(win.grid, win, 218, 92, 804, 454)
-            X.Text(win.empty, win.grid, 0, 175, 586, 187)
+            X.Rect(win.grid, win, unpack(R.grid))
+            X.Text(win.empty, win.grid, unpack(R.empty))
             win.empty:SetJustifyH("CENTER")
         end,
-    }
+    })
 end

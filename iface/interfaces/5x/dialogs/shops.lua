@@ -7,9 +7,12 @@
 -- 120 + 73 k, CLOSE image 30 at 485), 7.5.2's 63 x 24. So 5.x takes the shared layout (interfaces/power.lua, round 7:
 -- the lists, the thresholds, the grid, the rows' swatches, its place at (20, 20)) with 5.33's buttons, drawn with this
 -- look's helpers and skin (5.33's POWER.EPF, its image buttons, its font 0).
+--
+-- s6-ui-core (round 85): the XML twin's; the buttons' size and row are shops.xml's (core/xml.md).
 
 local S = require("interfaces.5x.skin")
+local P = TK.Xml.Data("shops.xml").Power
 
 return function(L, X)
-    L.Power = require("interfaces.power").Entry(X, S, { width = 72, height = 16, top = 307 })
+    L.Power = require("interfaces.power").Entry(X, S, { width = P.width, height = P.height, top = P.top })
 end

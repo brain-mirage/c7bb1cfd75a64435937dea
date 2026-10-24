@@ -176,10 +176,10 @@ function Components:Boot(manifests)
         if not self.unloadable[c.name] then self:LoadMain(c) end
     end
 
+    -- s6-modular-g (interfaces, phase 2): the active interface's profile, its defaults on its first use.
+    TK.Startup:Load() -- the command line may select its defaults, in memory only
     TK.Machine:ApplyUIScale()
     TK.Machine:ApplyGraphics()
-    -- s6-modular-g (interfaces, phase 2): the active interface's profile, its defaults on its first use.
-    TK.DB:Load(TK.Interfaces:ProfileName())
     TK.Interfaces:Loaded()
     -- s6-interface-5x (round 13, step 11): the interface panels the profile has in use, in the manifests' order
     for _, c in ipairs(self.list) do
@@ -190,12 +190,14 @@ function Components:Boot(manifests)
         if self.loaded[c.name] then self:Enable(c) end
     end
     self:ReapplyAll()
+    TK.Startup:Apply() -- existing setters, after the panels exist and before the login presentation
     TK.FireEvent("PLAYER_LOGIN")
     self.booted = true
     __tk:Log("interface panels loaded: " .. self:LoadedList())
     -- The client starts on the login screen (a UI reload in the world stays there); PLAYER_ENTERING_WORLD follows
     -- when Login enters the world.
     TK.Login:Start()
+    TK.Startup:Notice()
 end
 
 --- Applies the whole profile again: every component's settings, positions, bindings and actions. s6-interface-5x (round
@@ -231,11 +233,10 @@ function Components:LoadedList()
     return #out > 0 and table.concat(out, ", ") or "no interface panel"
 end
 
--- The component whose folder holds a chunk ("@lua/interfaces/7x/panels/side/main.lua"; its XML twin's, s6-ui-core round
--- 85, "@lua/interfaces/xml/7x/panels/side/main.lua"; a tests' interface's from its own folder, its full path), among the
--- interface panels that load and unload.
+-- The component whose folder holds a chunk ("@lua/interfaces/7x/panels/side/main.lua"; a tests' interface's from its own
+-- folder, its full path), among the interface panels that load and unload.
 local function componentOfSource(source)
-    source = source:gsub("^@", ""):gsub("\\", "/"):gsub("^lua/interfaces/xml/", "lua/interfaces/")
+    source = source:gsub("^@", ""):gsub("\\", "/")
     for name in pairs(Components.unloadable) do
         local dir = Components.byName[name].dir
         if source:sub(1, #dir + 5) == "lua/" .. dir .. "/" or source:find("/" .. dir:sub(12) .. "/", 1, true) then
@@ -450,14 +451,6 @@ function Components:Unload(c)
     for k, v in pairs(kept) do c[k] = v end
     for _, k in ipairs(self.made[c.name] or {}) do TK[k] = nil end
     self.loaded[c.name], self.started[c.name], self.owned[c.name], self.made[c.name] = nil, nil, nil, nil
-end
-
---- s6-ui-core (round 85): every interface panel loaded, unloaded (Unload), for the interfaces' form switch
---- (TK.Interfaces:SwitchFormNow), whose ReapplyAll then loads those in use from the other form. Nothing is sent.
-function Components:UnloadPanels()
-    for _, c in ipairs(self.list) do
-        if self.unloadable[c.name] and self.loaded[c.name] then self:Unload(c) end
-    end
 end
 
 --- Loads the interface panels now in use and unloads those no longer in use (a panel's switch, a profile switched to or

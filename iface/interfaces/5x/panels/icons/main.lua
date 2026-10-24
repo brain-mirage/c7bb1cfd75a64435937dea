@@ -19,52 +19,48 @@
 -- 200-207, 7.5.2's 202-209 in its string table; interfaces/5x/help.lua); and the options' ACTION ICONS (C:SetAll,
 -- the 5.x options window) shows all eight or only Help and Quit, as IconsPane::ShowReducedIcons (0x00442640: the paint
 -- and the hit test start at icon 6). Local: nothing is sent.
+-- s6-ui-core (round 85): the XML twin's scripts; the row, its icons, their pictures, actions and help lines are
+-- main.xml's (core/xml.md).
 
 local C = TK.GetComponent("5x.icons")
 local S = require("interfaces.5x.skin")
 local Screen = require("interfaces.screen")
 local Help = require("interfaces.5x.help") -- s6-interface-5x-b
+local E = require("interfaces.5x.elements")
 
-local PLACE = { 263, 374 }
+local L = TK.Xml.Data("main.xml")
 
---- Each icon's action (nil: an opener only) and what its release does.
-local ICONS = {
-    { name = "Items", run = function() TK.Game.Views.Toggle("bag") end },
-    { name = "Spells", run = function() TK.Game.Views.Toggle("spellbook") end },
-    { name = "Info", action = { kind = "open:character" },
-      run = function() TK.Game.Views.Toggle("character") end },
-    { name = "Users", action = { kind = "userlist" } },
-    { name = "Board", action = { kind = "boards" } },
-    { name = "Talk", action = { kind = "chat:current" } },
-    { name = "Help", action = { kind = "helpmenu" } },
-    { name = "Quit", action = { kind = "dialog:open", text = "QuitDialog" } },
+--- The openers' icons (an icon of no action in main.xml) and what their release does: the side panel's pages (the game
+--- layer's views, TK.Game.Views); Info's request (open:character) runs as its page shows.
+local OPENERS = {
+    Items = function() TK.Game.Views.Toggle("bag") end,
+    Spells = function() TK.Game.Views.Toggle("spellbook") end,
+    Info = function() TK.Game.Views.Toggle("character") end,
 }
 
+-- the scripts main.xml names
+local scripts = {}
+
+--- An icon of main.xml (its pictures, its def: name, help line, action), as 5.33's row makes it.
+function scripts.Icon(b)
+    local f, def = b:GetParent(), b.def
+    local run = OPENERS[def.name]
+    b:SetNormalTexture(b.normal)
+    b:SetPushedTexture(b.pushed)
+    b:RegisterForClicks("LeftButtonUp")
+    if def.action then TK.Actions:SetTable(b, def.action) end
+    -- WIRE: the release on the pressed icon (IconsPane's case 3): an opener (Info's request runs as its page shows) or
+    -- the icon's action, frozen at its press (IconsPane__HandlePointerOrMouseEvent 0x00442740; ActivateIcon 0x004CF8E0).
+    -- Changing which runs, or when, changes what the server sees.
+    b:SetScript("OnClick", function()
+        if run then run() else TK.Actions:RunFrozen() end
+    end)
+    -- s6-interface-5x-b: its help line, the owner the whole row as 5.33's pane
+    Help.OnRightPress(f, function() return Help.String(def.help) end, b)
+end
+
 function C:OnEnable()
-    local f = CreateFrame("Frame", "TK5xIcons", UIParent)
-    f:SetFrameStrata("LOW")
-    f:SetSize(159, 14)
-    f.icons = {}
-    for i, def in ipairs(ICONS) do
-        local b = CreateFrame("Button", "TK5xIcon" .. def.name, f)
-        b:SetSize(19, 14)
-        b:SetPoint("TOPLEFT", f, "TOPLEFT", 20 * (i - 1), 0)
-        b.normal = S.Picture(b, nil, "ICONS.EPF", i - 1, "NPAL7.PAL", 0, 0, "ARTWORK")
-        b.pushed = S.Picture(b, nil, "ICONS.EPF", i + 7, "NPAL7.PAL", 0, 0, "ARTWORK")
-        b:SetNormalTexture(b.normal)
-        b:SetPushedTexture(b.pushed)
-        b:RegisterForClicks("LeftButtonUp")
-        if def.action then TK.Actions:SetTable(b, def.action) end
-        -- the release on the pressed icon (IconsPane's case 3): an opener (Info's request runs as its page shows) or
-        -- the icon's action, frozen at its press
-        b:SetScript("OnClick", function()
-            if def.run then def.run() else TK.Actions:RunFrozen() end
-        end)
-        -- s6-interface-5x-b: its help line, the owner the whole row as 5.33's pane
-        Help.OnRightPress(f, function() return Help.String(201 + i) end, b)
-        f.icons[i] = b
-    end
-    f:Hide()
+    local f = TK.Xml.Load("main.xml", { scripts = scripts, elements = E }).frame
     self:Own(f)
     self.frame = f
     self.entry = Screen.Register(f, "5x.icons", "5.x Icons", function() return self:DB().enabled == true end)
@@ -73,7 +69,7 @@ end
 --- At 5.33's place on the scaled 5.x screen unless moved, at the screen's scale times its own; in the game only.
 function C:ApplySettings()
     if not self.frame then return end
-    Screen.PlacePanel(self, S.WIDTH, S.HEIGHT, PLACE[1], PLACE[2])
+    Screen.PlacePanel(self, S.WIDTH, S.HEIGHT, L.PLACE[1], L.PLACE[2])
     -- s6-interface-5x-b: all eight, or Help and Quit only (IconsPane::ShowAllIcons / ShowReducedIcons)
     local db = self:DB()
     for i, b in ipairs(self.frame.icons) do b:SetShown(db.allIcons ~= false or i >= 7) end

@@ -38,6 +38,8 @@
 -- 4a's handlers ran in EventMan's order. The self tab's button and the S key only ask for the status
 -- (TK.Game.SidePanel.Request), as the collection tab's do while its list has not come; the 0x39 and the page list show
 -- them. Changing any of these changes what the server sees.
+-- s6-ui-core (round 85): the XML twin's scripts; the panel's frames, pages, controls and their rectangles are main.xml's,
+-- selflook.xml's, look.xml's and options.xml's (core/xml.md).
 
 local C = TK.GetComponent("7x.side")
 local H = __tk
@@ -48,17 +50,18 @@ local ItemBox = require("interfaces.7x.itembox")
 local Hud = require("interfaces.7x.hud") -- s6-interface-5x round 16: the inventory owns server help.
 local Inv, Spells = TK.Game.Inventory, TK.Game.Spells
 local K = require("interfaces.7x.panels.side.kit")
+local Elements = require("interfaces.7x.panels.side.elements") -- the kit as layout elements (the twin's own)
 local Self = require("interfaces.7x.panels.side.selflook")
 local Look = require("interfaces.7x.panels.side.look")
 local Options = require("interfaces.7x.panels.side.options")
 local DragLabel = require("interfaces.original.draglabel")
 
-local PLACE = { 808, 79 }       -- the strip's top left; the panel is the strip and the pane beside it
-local PANE_X = 832 - 808         -- the pane's left in the panel
-local WIDTH, HEIGHT = 1021 - 808, 367 - 79
-local EXPANDED = { 1021 - 827, 637 - 79 } -- an expanded pane's size, its left 5 pixels left of the pane's
-local EXPANDED_LEVEL = 20                 -- an expanded pane's frame level: above the messages pane's (placePage)
-local HEADER_ROWS = 287                   -- the tab header's rows over an expanded pane's left 5 columns (expandedBack)
+local L = TK.Xml.Data("main.xml")
+local PLACE = L.PLACE
+local EXPANDED = { L.EXPANDED.width, L.EXPANDED.height } -- an expanded pane's size, its left 5 pixels left of the pane's
+local EXPANDED_LEVEL = L.EXPANDED.level                  -- an expanded pane's frame level: above the messages pane's
+local HEADER_ROWS = L.EXPANDED.headerRows                -- the tab header's rows over an expanded pane's left 5 columns
+local SHOWN = L.SHOWN
 
 local hit, text = K.Hit, K.Text
 
@@ -144,81 +147,83 @@ end
 
 -- ----- the items (NewInventoryPane) -----
 
-local ROWS, CELLS = 13, 15
-local ROWS_EXPANDED, CELLS_EXPANDED = 26, 27
+local ROWS, CELLS = SHOWN.itemRows, SHOWN.itemCells
+local ROWS_EXPANDED, CELLS_EXPANDED = SHOWN.itemRowsExpanded, SHOWN.itemCellsExpanded
 
-local function buildItems(f)
-    local p = CreateFrame("Frame", "TK7xSideItems", f)
-    p:SetAllPoints(f)
-    p:EnableMouseWheel(true)
-    p.first, p.grid, p.resetOnToggle = 0, false, true
-    p.back = p:CreateTexture(nil, "BACKGROUND")
-    p.drop = p:CreateTexture(nil, "BORDER")
-    -- NewInventoryPane::OnPaint (0x004EBB20) keeps both grid fills at once.
-    -- These passive regions draw behind the items; shared slot controls own input.
-    p.selected = p:CreateTexture(nil, "BORDER")
+-- the scripts the layout files name
+local scripts = {}
+
+--- A slot's control on the items page: its picture and texts the page's, its input path whole the game layer's (a press,
+--- drag, double press or menu here sends what it sends in every interface).
+local function slotControl(p, name)
+    local b = CreateFrame("Button", name, p)
+    b.icon = p:CreateTexture(nil, "ARTWORK")
+    b.letter, b.letter2, b.name = text(p), text(p), text(p)
+    Inv.SlotControl(b, { help = function(slot) Inv.ShowHelp(ItemBox, p, slot) end,
+        tooltip = function() end, leave = function() end }) -- G2: original right-press help, no menu
+    b:HookScript("OnEnter", function() p.over = b C:Refresh() end)
+    b:HookScript("OnLeave", function() if p.over == b then p.over = nil C:Refresh() end end)
+    b:Hide()
+    return b
+end
+
+--- The items page's rows and cells (main.xml's ITEM_ROWS and ITEM_CELLS), each a slot control at its hit rectangle, its
+--- held label's pen following the row's or cell's (BuildInventorySlotOrigin 0x004EE4F0: including the expanded pane's
+--- +5; the hit and the action stay the control's).
+function scripts.ItemSlots(p)
     p.rows, p.cells = {}, {}
     p.dragLabel = DragLabel.New(p, S, 1)
     p.dragLabel.onChange = function() C:Refresh() end -- the press's selection paint (pressed)
-    local function slotControl(name)
-        local b = CreateFrame("Button", name, p)
-        b.icon = p:CreateTexture(nil, "ARTWORK")
-        b.letter, b.letter2, b.name = text(p), text(p), text(p)
-        -- the slot's input path whole (the game layer's): a press, drag, double press or menu here sends what it sends in
-        -- every interface
-        Inv.SlotControl(b, { help = function(slot) Inv.ShowHelp(ItemBox, p, slot) end,
-            tooltip = function() end, leave = function() end }) -- G2: original right-press help, no menu
-        b:HookScript("OnEnter", function() p.over = b C:Refresh() end)
-        b:HookScript("OnLeave", function() if p.over == b then p.over = nil C:Refresh() end end)
-        b:Hide()
-        return b
-    end
-    -- 27 rows and 27 cells, the compact pane using the first 13 and 15; expanded the 27th row is pressed but never drawn
-    -- (the hit test runs to row 27, the paint to 26: InventoryPane.cpp:1190-1224 against :649-748)
-    for n = 1, ROWS_EXPANDED + 1 do
-        local b = slotControl("TK7xItemRow" .. n)
-        -- the row's hit rectangle (2, 16 + 20n)-(160, 36 + 20n)
-        b:SetPoint("TOPLEFT", p, "TOPLEFT", 2, -(16 + 20 * (n - 1)))
-        b:SetSize(158, 20)
-        -- BuildInventorySlotOrigin 0x004EE4F0: paint follows the row's pen,
-        -- including the expanded pane's +5. The hit/action stays this control's.
-        p.dragLabel:Attach(b, function() return "list", 15 + (p.dx or 0), 30 + 20 * (n - 1) end)
+    local R, G = L.ITEM_ROWS, L.ITEM_CELLS
+    for n = 1, R.count do
+        local b = slotControl(p, "TK7xItemRow" .. n)
+        b:SetPoint("TOPLEFT", p, "TOPLEFT", R.x, -(R.y + R.step * (n - 1)))
+        b:SetSize(R.w, R.h)
+        p.dragLabel:Attach(b, function() return "list", R.penX + (p.dx or 0), R.penY + R.step * (n - 1) end)
         p.rows[n] = b
     end
-    for n = 1, CELLS_EXPANDED do
-        local b = slotControl("TK7xItemCell" .. n)
-        local c, r = (n - 1) % 3, math.floor((n - 1) / 3)
-        -- the cell's hit rectangle (9 + 51c, 18 + 51r)-(57 + 51c, 66 + 51r)
-        b:SetPoint("TOPLEFT", p, "TOPLEFT", 9 + 51 * c, -(18 + 51 * r))
-        b:SetSize(48, 48)
-        p.dragLabel:Attach(b, function() return "grid", 12 + 51 * c + (p.dx or 0), 21 + 51 * r end)
+    for n = 1, G.count do
+        local b = slotControl(p, "TK7xItemCell" .. n)
+        local c, r = (n - 1) % G.columns, math.floor((n - 1) / G.columns)
+        b:SetPoint("TOPLEFT", p, "TOPLEFT", G.x + G.step * c, -(G.y + G.step * r))
+        b:SetSize(G.size, G.size)
+        p.dragLabel:Attach(b, function() return "grid", G.penX + G.step * c + (p.dx or 0), G.penY + G.step * r end)
         p.cells[n] = b
     end
     -- the slots' actions reach these controls too (TK.Game.Inventory.UpdateActions)
     Inv.HelpOwner(p, Hud.HelpLine)
     Inv.Track(p.rows)
     Inv.Track(p.cells)
-    -- the buttons (GetButtonRect): List, Grid, Mix and Expand
-    p.buttons = {
-        K.InvenButton(p, 168, 37, 185, 54, 0, function() p.grid, p.first = false, 0 C:Refresh() end),
-        K.InvenButton(p, 168, 55, 185, 72, 1, function() p.grid, p.first = true, 0 C:Refresh() end),
-    }
-    -- Mix runs the dialog model's opener on its press (the pane's button 2; Shift+I's action)
-    p.mix = K.InvenButton(p, 168, 80, 185, 97, 2, Inv.Mix)
-    Inv.MixControl(p.mix)
-    p.expand = K.InvenButton(p, 168, 99, 185, 116, 4, function() toggleExpanded(p) end)
+end
+
+function scripts.ListView(p) p.grid, p.first = false, 0 C:Refresh() end
+
+function scripts.GridView(p) p.grid, p.first = true, 0 C:Refresh() end
+
+-- Mix runs the dialog model's opener on its press (the pane's button 2; Shift+I's action)
+function scripts.Mix() Inv.Mix() end
+
+function scripts.MixControl(p) Inv.MixControl(p.mix) end
+
+function scripts.ItemButtons(p)
     table.insert(p.buttons, p.mix)
     table.insert(p.buttons, p.expand)
-    p.bar = K.ScrollBar(p, 169, 122, 267, function(pos) p.first = pos C:Refresh() end) -- s6-modular-g round 22
-    -- the wheel moves the list a row (ScrollablePane: one step a notch)
-    p:SetScript("OnMouseWheel", function(_, delta)
-        p.first = p.first - delta
-        C:Refresh()
-    end)
-    -- no carry outlives the page (as the bag window's closing ends one)
-    Inv.EndCarryOnHide(p)
-    return p
 end
+
+-- s6-modular-g round 22: the bar's moves
+function scripts.Scrolled(p, pos)
+    p.first = pos
+    C:Refresh()
+end
+
+-- the wheel moves the list a row (ScrollablePane: one step a notch); nothing sent
+function scripts.Wheel(p, delta)
+    p.first = p.first - delta
+    C:Refresh()
+end
+
+-- no carry outlives the page (as the bag window's closing ends one)
+function scripts.EndCarryOnHide(p) Inv.EndCarryOnHide(p) end
 
 local function showItems(p)
     local dx = p.dx or 0
@@ -316,40 +321,31 @@ end
 
 -- ----- the spells (NewSpellInventoryPane) -----
 
-local function buildSpells(f)
-    local p = CreateFrame("Frame", "TK7xSideSpells", f)
-    p:SetAllPoints(f)
-    p:EnableMouseWheel(true)
-    p.first, p.resetOnToggle = 0, true
-    p.back = p:CreateTexture(nil, "BACKGROUND")
-    p.drop = p:CreateTexture(nil, "BORDER")
+--- The spells page's rows (main.xml's SPELL_ROWS), each a book cell at its hit rectangle.
+function scripts.SpellRows(p)
     p.rows = {}
     p.dragLabel = DragLabel.New(p, S, 1)
     p.dragLabel.onChange = function() C:Refresh() end -- the press's selection paint (pressed)
-    -- 27 rows (the compact pane uses 13); the 27th is pressed while expanded, never drawn
-    for n = 1, ROWS_EXPANDED + 1 do
-        -- the row's hit rectangle (2, 16 + 20n)-(170, 36 + 20n)
-        local b = hit(p, 2, 16 + 20 * (n - 1), 170, 36 + 20 * (n - 1), "TK7xSpellRow" .. n)
+    local R = L.SPELL_ROWS
+    for n = 1, R.count do
+        local t = R.t + R.step * (n - 1)
+        local b = hit(p, R.l, t, R.r, t + R.step, "TK7xSpellRow" .. n)
         b.letter, b.letter2, b.name = text(p), text(p), text(p)
         TK.Actions:SetPath(b, "spellbook")
         -- the book cell's input path whole (the game layer's): its casts, drags and drops send what the book's send
         Spells.CellControl(b)
         -- BuildSpellRowOrigin 0x0057E960: the label starts at the row's native origin.
-        p.dragLabel:Attach(b, function() return "spell", 12 + (p.dx or 0), 19 + 20 * (n - 1) end)
+        p.dragLabel:Attach(b, function() return "spell", R.penX + (p.dx or 0), R.penY + R.step * (n - 1) end)
         b:HookScript("OnEnter", function() p.over = b C:Refresh() end)
         b:HookScript("OnLeave", function() if p.over == b then p.over = nil C:Refresh() end end)
         b:Hide()
         p.rows[n] = b
     end
-    p.expand = K.InvenButton(p, 168, 37, 185, 54, 4, function() toggleExpanded(p) end)
-    p.buttons = { p.expand }
-    p.bar = K.ScrollBar(p, 169, 57, 267, function(pos) p.first = pos C:Refresh() end) -- s6-modular-g round 22
-    p:SetScript("OnMouseWheel", function(_, delta)
-        p.first = p.first - delta
-        C:Refresh()
-    end)
-    return p
 end
+
+function scripts.Expand(p) toggleExpanded(p) end
+
+function scripts.ExpandButtons(p) p.buttons = { p.expand } end
 
 local function showSpells(p)
     local dx = p.dx or 0
@@ -427,14 +423,10 @@ local function percent(p, row, key, right, y, value)
     row[key .. "Sign"] = S.Picture(p, row[key .. "Sign"], "FONTSYMB.EPF", 1, "FONTSYMB.PAL", x + 9 * #s, y, "ARTWORK")
 end
 
-local GROUP_ROWS, GROUP_ROWS_EXPANDED = 6, 12
+local GROUP_ROWS, GROUP_ROWS_EXPANDED = SHOWN.groupRows, SHOWN.groupRowsExpanded
 
-local function buildGroup(f)
-    local p = CreateFrame("Frame", "TK7xSideGroup", f)
-    p:SetAllPoints(f)
-    p:EnableMouseWheel(true)
-    p.first = 0
-    p.back = p:CreateTexture(nil, "BACKGROUND")
+--- The group page's member rows, their pictures and texts the page's.
+function scripts.GroupRows(p)
     p.rows = {}
     for i = 1, GROUP_ROWS_EXPANDED do
         local row = { hp = {}, mp = {} }
@@ -443,15 +435,6 @@ local function buildGroup(f)
         row.name, row.name2 = text(p), text(p)
         p.rows[i] = row
     end
-    p.expand = K.InvenButton(p, 168, 37, 185, 54, 4, function() toggleExpanded(p) end)
-    p.buttons = { p.expand }
-    p.bar = K.ScrollBar(p, 169, 60, 270, function(pos) p.first = pos C:Refresh() end) -- s6-modular-g round 22
-    -- the wheel a member a notch (NewGroupPane's ScrollPane); nothing sent
-    p:SetScript("OnMouseWheel", function(_, delta)
-        p.first = p.first - delta
-        C:Refresh()
-    end)
-    return p
 end
 
 local function showGroup(p)
@@ -517,22 +500,18 @@ end
 
 -- ----- the collection (CollectionPane) -----
 
-local VOLUMES = 5
+local VOLUMES = SHOWN.volumes
 
-local function buildCollection(f)
-    local p = CreateFrame("Frame", "TK7xSideCollection", f)
-    p:SetAllPoints(f)
-    p:EnableMouseWheel(true)
-    p.first = 0
-    p.back = S.Picture(p, nil, "CLTINV.EPF", 0, "ITEMINV.PAL", 0, 0, "BACKGROUND")
+--- The collection page's volumes (main.xml's VOLUME_ROWS), each a control at its row.
+function scripts.Volumes(p)
     p.rows = {}
+    local R = L.VOLUME_ROWS
     for s = 1, VOLUMES do
         local k = s - 1
-        -- the volume's row (6, 14 + 50s)-(161, 62 + 50s)
-        local row = hit(p, 6, 14 + 50 * k, 161, 62 + 50 * k, "TK7xCollectionVolume" .. s)
+        local row = hit(p, R.l, R.t + R.step * k, R.r, R.b + R.step * k, "TK7xCollectionVolume" .. s)
         row.back = p:CreateTexture(nil, "BORDER")
         row.glow = {}
-        for g = 1, 12 do row.glow[g] = text(p) end
+        for g = 1, R.glow do row.glow[g] = text(p) end
         row.name, row.name2, row.percent, row.percent2, row.count, row.count2 = text(p), text(p), text(p), text(p), text(p), text(p)
         -- a press opens the volume's album, or asks for it first (27 00 01): the collection dialog's opener, which applies
         -- Simple Click (the press) or the double press itself (CollectionPane::HandlePointerOrMouseEvent; DialogRules)
@@ -542,15 +521,9 @@ local function buildCollection(f)
         row:Hide()
         p.rows[s] = row
     end
-    p.bar = K.ScrollBar(p, 169, 27, 267, function(pos) p.first = pos C:Refresh() end) -- s6-modular-g round 22
-    p:SetScript("OnMouseWheel", function(_, delta)
-        p.first = p.first - delta
-        C:Refresh()
-    end)
     -- the page list comes some time after its request (12 00 00), and records change the counts (12 00 02):
-    -- TK_COLLECTION_UPDATE (C:OnEnable's events), in the packets' order with the input, so a press after the list came
+    -- TK_COLLECTION_UPDATE (the panel's events), in the packets' order with the input, so a press after the list came
     -- opens the volume 4a's would (round 14 fix)
-    return p
 end
 
 local function showCollection(p)
@@ -664,47 +637,27 @@ end
 --- The active tab's id, or nil.
 function C:Active() return SP.TABS[SP.Active()] end
 
--- TabPane's buttons (BuildTabActionRect 0x004CFB20: x 2-20 of the strip, right and bottom exclusive) and what each does
--- (HandlePointerOrMouseEvent 0x004CFA10, through UserPane's helpers): 0 the self look (RequestLocalPlayerStatus: 2D 00),
--- 1 the items, 2 the spells, 3 the group, 4 the collection, 5 the options; sample 0x198 after the items', spells', group's
--- and options' switch, even a refused one. again: a double click's second press (type 2) runs it too.
-local STRIP = {
-    { 1, 46, "self", again = true },
-    { 47, 93, "items", sound = true, again = true },
-    { 95, 140, "spells", sound = true, again = true },
-    { 142, 187, "group", sound = true },
-    { 189, 234, "collection" },
-    { 236, 281, "options", sound = true, again = true },
-}
--- the requests the strip's presses carry, which the pages run when they become visible (TK.Game.Views' notes)
-local STRIP_REQUEST = { self = "open:character", group = "open:group", collection = "open:collection" }
-
-local function buildStrip(f)
-    for i, def in ipairs(STRIP) do
-        local b = CreateFrame("Button", "TK7xSideTab" .. i, f)
-        b:SetPoint("TOPLEFT", f, "TOPLEFT", 2, -def[1])
-        b:SetSize(18, def[2] - def[1])
-        -- s6-modular-g round 22: TabPane 0x004CFA10 handles only left presses;
-        -- the double press goes on for Group/Collection. Changing this changes map packets.
-        b:EnableMouse(false)
-        b:SetClaimButtons("LeftButton")
-        b:SetPassesDoubles(not def.again)
-        if STRIP_REQUEST[def[3]] then TK.Actions:Set(b, STRIP_REQUEST[def[3]]) end
-        -- Wire: the left press (type 1) runs the button; the second press of a double click (type 2) runs it again for
-        -- the self, items, spells and options buttons only; no release does anything (TabPane::HandlePointerOrMouseEvent).
-        b:SetScript("OnMouseDown", function(_, button, double)
-            if button ~= "LeftButton" or (double and not def.again) then return end
-            if def[3] == "self" then
-                SP.Request("self") -- button 0: RequestLocalPlayerStatus alone, on each press; the 0x39 switches
-            elseif def[3] == "collection" then
-                C:CollectionTab() -- button 4: SwitchToCollectionTab
-            else
-                C:ShowTab(def[3])
-            end
-            if def.sound then TK.Game.Sound.PlayEffect(0x198) end
-        end)
+-- TabPane's buttons (main.xml's strip: BuildTabActionRect 0x004CFB20) and what each does (HandlePointerOrMouseEvent
+-- 0x004CFA10, through UserPane's helpers): 0 the self look (RequestLocalPlayerStatus: 2D 00), 1 the items, 2 the spells,
+-- 3 the group, 4 the collection, 5 the options; sample 0x198 after the items', spells', group's and options' switch, even
+-- a refused one. again: a double click's second press (type 2) runs it too.
+-- Wire: the left press (type 1) runs the button; the second press of a double click (type 2) runs it again for the self,
+-- items, spells and options buttons only; no release does anything (TabPane::HandlePointerOrMouseEvent).
+function scripts.TabPress(b, button, double)
+    local def = b.tab
+    if button ~= "LeftButton" or (double and not def.again) then return end
+    if def.id == "self" then
+        SP.Request("self") -- button 0: RequestLocalPlayerStatus alone, on each press; the 0x39 switches
+    elseif def.id == "collection" then
+        C:CollectionTab() -- button 4: SwitchToCollectionTab
+    else
+        C:ShowTab(def.id)
     end
+    if def.sound then TK.Game.Sound.PlayEffect(0x198) end
 end
+
+-- the requests the strip's presses carry, which the pages run when they become visible (TK.Game.Views' notes)
+function scripts.TabRequest(b) TK.Actions:Set(b, b.tab.request) end
 
 --- Whether the panel shows now (in the world, switched on), so the bag, book, character, collection, group, look and
 --- options openers show its pages.
@@ -754,32 +707,35 @@ function C:StatusKey()
     return true
 end
 
-function C:OnEnable()
-    local f = CreateFrame("Frame", "TK7xSide", UIParent)
-    f:SetFrameStrata("LOW")
-    f:SetFrameLevel(5) -- the base layer, over the backdrop
-    f:SetSize(WIDTH, HEIGHT)
-    -- s6-modular-g round 22: TabPane::HandlePointerOrMouseEvent (0x004CFA10)
-    -- takes only tab presses; blank strip pixels and right/release events pass to MapPane
-    -- (0x00507150). Changing this changes what the server sees there.
-    f:EnableMouse(false)
-    f:Hide()
-    self:Own(f)
-    self.frame = f
-    local pane = CreateFrame("Frame", "TK7xSidePane", f)
-    pane:SetPoint("TOPLEFT", f, "TOPLEFT", PANE_X, 0)
-    pane:SetSize(WIDTH - PANE_X, HEIGHT)
-    pane:EnableMouse(true) -- round 22: the page still takes its background, outside the map
-    f.pane = pane
-    f.pages = { items = buildItems(pane), spells = buildSpells(pane), self = Self.Build(pane), look = Look.Build(pane),
-                group = buildGroup(pane), collection = buildCollection(pane), options = Options.Build(pane) }
+function scripts.Own(f)
+    C:Own(f)
+    C.frame = f
+end
+
+-- the self look's, the look's and the options' pages, their own files' (selflook.xml, look.xml, options.xml)
+function scripts.BuildSelf(pane) pane.self = Self.Build(pane) end
+
+function scripts.BuildLook(pane) pane.look = Look.Build(pane) end
+
+function scripts.BuildOptions(pane) pane.options = Options.Build(pane) end
+
+function scripts.HidePages(f)
+    local pane = f.pane
+    f.pages = { items = pane.items, spells = pane.spells, self = pane.self, look = pane.look, group = pane.group,
+                collection = pane.collection, options = pane.options }
     for _, page in pairs(f.pages) do page:Hide() end
-    buildStrip(f)
-    self.entry = Screen.Register(f, "7x.side", "7.x Side Panel", function() return self:DB().enabled == true end)
-    -- the openers (TK.Game.Views, while this panel shows): every view's page is drawn here (s6-interface-7x-b round 5:
-    -- the look, the self look's legend view and the options too); the items' and the group's keys play sample 0x198
-    -- after the switch, as UserPane's helpers do; a tab the server opens (how "server": its 0x3E, a prompt's ?, whose
-    -- notice plays its own) plays none here
+end
+
+function scripts.Register(f)
+    C.entry = Screen.Register(f, "7x.side", "7.x Side Panel", function() return C:DB().enabled == true end)
+end
+
+-- the openers (TK.Game.Views, while this panel shows): every view's page is drawn here (s6-interface-7x-b round 5:
+-- the look, the self look's legend view and the options too); the items' and the group's keys play sample 0x198
+-- after the switch, as UserPane's helpers do; a tab the server opens (how "server": its 0x3E, a prompt's ?, whose
+-- notice plays its own) plays none here
+function scripts.Provide()
+    local self = C
     TK.Game.Views.Provide("7x.side", {
         views = { bag = "items", spellbook = "spells", character = "self", legend = "self", collection = "collection",
                   group = "group", look = "look", options = "options" },
@@ -812,16 +768,16 @@ function C:OnEnable()
             return shown
         end,
     })
-    local events = CreateFrame("Frame", nil, f)
-    -- s6-modular-g (round 14 fix): the world's events come before any input after their packets (UIHost.CatchUp), so a
-    -- press reaches the rows, cells and volumes 4a's pane had then (its slot, spell or volume is what the press sends)
-    for _, e in ipairs({ "BAG_UPDATE", "SPELLS_CHANGED", "CURSOR_CHANGED", "UNIT_NAME_UPDATE", "GROUP_ROSTER_UPDATE",
-                         "TK_GROUP_UPDATE", "UNIT_HEALTH", "UNIT_POWER", "UNIT_STATS", "TK_CHARACTER_SHEET",
-                         "TK_COLLECTION_UPDATE" }) do
-        events:RegisterEvent(e)
-    end
-    events:SetScript("OnEvent", function() self:Refresh() end)
-    f:SetScript("OnShow", function() self:Refresh() end)
+end
+
+function scripts.RegisterEvents(events)
+    for _, e in ipairs(events.events) do events:RegisterEvent(e) end
+end
+
+function scripts.Refresh() C:Refresh() end
+
+function C:OnEnable()
+    TK.Xml.Load("main.xml", { scripts = scripts, elements = Elements })
 end
 
 --- s6-interface-5x (round 12, build 46; the owner: another interface's panels that are off do nothing): the pages follow

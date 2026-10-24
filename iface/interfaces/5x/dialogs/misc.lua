@@ -25,41 +25,58 @@
 -- only the picture shows their captions until ui-core's X8 seam consumes r18's native hooks below.
 -- Wire: 5.33 sends 1B 00 as it opens, 7.5.2 1B 01 00; the protocol in use
 -- decides, so the model's 7.5.2 bytes are kept.
+--
+-- s6-ui-core (round 85): the XML twin's; the windows' sizes, pictures and the parts' places are misc.xml's and
+-- musiclayout.xml's (core/xml.md).
+
+local unpack = table.unpack
+local entry = require("interfaces.original.entry")
+local D = TK.Xml.Data("misc.xml")
 
 return function(L, X)
     require("interfaces.5x.dialogs.folder")(L, X)
 
     -- ----- the profile -----
 
-    L.Profile = {
-        width = 314, height = 246, button = 72, editWidth = 241, editHeight = 103, cancel = true,
-        slide = true, -- ProfileDialog 0x00489090 slides open (0x004208F0)
-        -- placed by its top left at (250, 200), as its AddToLayer puts it
-        centre = function() return 250 + 157, 200 + 123 end,
+    local P = D.Profile
+    L.Profile = entry(P, {
+        -- placed by its top left (at), as its AddToLayer puts it
+        centre = function() return P.at[1] + P.width // 2, P.at[2] + P.height // 2 end,
         place = function(win)
-            X.Art(win, "PROFILE.EPF", "NPAL8.PAL")
-            X.EditBar(win.edit, win, 36, 71, 277, 174) -- with its scroll bar (round 93, as the XML form)
-            X.Image(win, win.ok, 14, 83, 196, 155, 212)
-            if win.cancel then X.Image(win, win.cancel, 22, 160, 196, 232, 212) end
-            -- OK is the default (5.33's SetFocusedControl(1), asset_callers.c:12385) with its own 1-pixel frame and no
-            -- Enter frames round it, as the real 5.33 draws its profile (round 95; the XML form's misc.lua says why)
+            X.Art(win, unpack(P.art))
+            -- the text with its scroll bar at the right: 5.33's TextEditControlPane with a8 set (asset_callers.c:12362,
+            -- 12 pixels taken for the bar: control.c:2735), as 4a's (OptionPane.cpp:615) and 7.x's profile (round 93);
+            -- 5.33's own bar, drawn dimmed while the text fits (round 94: init.lua's X.EditBar)
+            X.EditBar(win.edit, win, unpack(P.edit))
+            X.Image(win, win.ok, unpack(P.ok))
+            if win.cancel then X.Image(win, win.cancel, unpack(P.cancelButton)) end
+            -- OK is the default (5.33's ProfileDialog: SetFocusedControl(1), asset_callers.c:12385): its own 1-pixel
+            -- frame in colour 1, and no Enter frames round it. The real 5.33 draws none on its profile's OK (run
+            -- r93-pages-uicoreb-2: no line 2 to 4 pixels outside it, only the button's blue edge; the Options dialog's OK
+            -- the same). 5.33's paint (0x420EC0, dialogbase2.c:135-160) draws the three frames only while +492 is set,
+            -- which its AlertPane sets itself (dialogbase.c:265); SetFocusedControl's body (0x0041FC10) is not in the
+            -- dumps, so the picture decides. 7.5.2 differs (DialogPane::OnPaint 0x0049F090 draws them for its
+            -- m_defaultControlId). Drawing only (round 95).
             X.Default(win, win.ok, false)
         end,
-    }
+    })
 
     -- ----- the paper -----
 
-    L.Paper = {
-        width = 64, height = 80, editWidth = 32, editHeight = 24,
+    local PAPER = D.Paper
+    L.Paper = entry(PAPER, {
         place = function() end,
         --- the window by the packet's cells (the renderer, as the paper opens): the kit's paper (X.Paper) on LINE001.EPF
         --- in the screen's palette; it slides open as it opens, as 7.x's (5.33's EditablePaperPane 0x0048C6B0 calls
         --- 0x004208F0)
         fit = function(win, c)
-            X.Paper(win, c, "LINE001.EPF", nil)
+            -- its bar draws nothing while the text fits (round 94: 5.33's paper turns drawWhenInactive off,
+            -- EditablePaperPane_BuildControlsWithText 0x0048C889; scrollbar.lua's Bar.ForEdit)
+            win.edit.quietBar = true
+            X.Paper(win, c, PAPER.art.file, nil)
             if win.opened then X.SlideOpen(win) end
         end,
-    }
+    })
 
     -- ----- the music dialog -----
 
@@ -68,8 +85,8 @@ return function(L, X)
     local NativeMusicArt = require("interfaces.5x.dialogs.musicart")
     local EFFECTS, THREE = NativeMusic.options[1], NativeMusic.options[3]
 
-    L.Music = {
-        width = NativeMusic.width, height = NativeMusic.height, button = 72, buttonHeight = 16, switch = 45, frequency = 45, play = 72,
+    L.Music = entry(D.Music, {
+        width = NativeMusic.width, height = NativeMusic.height,
         -- R18 art/rectangle contract for ui-core's shared X8 control/renderer seam.
         nativeLayout = NativeMusic,
         -- Ui-core's X8 renderer supplies these controls/states; these hooks only
@@ -82,15 +99,15 @@ return function(L, X)
             -- Native rectangles place shared input surfaces. 4a OnControlCommand
             -- 0x00529790 still owns their IDs/parts; changing those bindings would
             -- change what the server sees. Their pictures are drawn by paint.
-            X.Rect(win.on, win, table.unpack(EFFECTS[1]))
-            X.Rect(win.off, win, table.unpack(EFFECTS[2]))
-            for i, b in ipairs(win.freq) do X.Rect(b, win, table.unpack(THREE[i])) end
+            X.Rect(win.on, win, unpack(EFFECTS[1]))
+            X.Rect(win.off, win, unpack(EFFECTS[2]))
+            for i, b in ipairs(win.freq) do X.Rect(b, win, unpack(THREE[i])) end
             for _, b in ipairs({ win.on, win.off, win.freq[1], win.freq[2], win.freq[3] }) do b.noClickSound = true end
-            X.Image(win, win.browse, NativeMusic.buttons[7], table.unpack(NativeMusic.rects[7]))
-            X.Image(win, win.prev, NativeMusic.buttons[11], table.unpack(NativeMusic.rects[11]))
-            X.Image(win, win.pause, NativeMusic.buttons[12], table.unpack(NativeMusic.rects[12]))
-            X.Image(win, win.next, NativeMusic.buttons[13], table.unpack(NativeMusic.rects[13]))
-            X.Image(win, win.ok, NativeMusic.buttons[14], table.unpack(NativeMusic.rects[14]))
+            X.Image(win, win.browse, NativeMusic.buttons[7], unpack(NativeMusic.rects[7]))
+            X.Image(win, win.prev, NativeMusic.buttons[11], unpack(NativeMusic.rects[11]))
+            X.Image(win, win.pause, NativeMusic.buttons[12], unpack(NativeMusic.rects[12]))
+            X.Image(win, win.next, NativeMusic.buttons[13], unpack(NativeMusic.rects[13]))
+            X.Image(win, win.ok, NativeMusic.buttons[14], unpack(NativeMusic.rects[14]))
             X.Default(win, win.ok)
         end,
         --- the radios as 5.33 draws them (the renderer's states: effects 1 off, the three-way's selection); the kit's
@@ -101,5 +118,5 @@ return function(L, X)
             X.Radio(win, "x5off", effects == 1, EFFECTS[2][1], EFFECTS[2][2], EFFECTS[2][4])
             for i, r in ipairs(THREE) do X.Radio(win, "x5three" .. i, win.frequency == i - 1, r[1], r[2], r[4]) end
         end,
-    }
+    })
 end

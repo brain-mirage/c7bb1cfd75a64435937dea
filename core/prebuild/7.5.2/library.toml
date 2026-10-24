@@ -2650,6 +2650,8 @@ Yeoni = [69, 9, 104, 95, 1]
 "131,109" = [4507, 15, 28, 1, 1]
 "137,203" = [3950, 13, 18, 1, 1]
 "138,203" = [3950, 14, 18, 1, 1]
+"147,17" = [3930, 19, 18, 1, 1]
+"148,17" = [3930, 20, 18, 1, 1]
 "152,187" = [10, 8, 14, 1, 1]
 "153,187" = [10, 9, 14, 1, 1]
 "167,124" = [23, 5, 10, 1, 1]
@@ -2658,6 +2660,8 @@ Yeoni = [69, 9, 104, 95, 1]
 "169,62" = [13, 9, 22, 1, 1]
 "176,162" = [3920, 7, 18, 1, 1]
 "177,162" = [3920, 7, 18, 1, 1]
+"178,12" = [5010, 14, 25, 1, 1]
+"179,12" = [5010, 15, 25, 1, 1]
 "184,29" = [31, 10, 20, 1, 1]
 "184,181" = [17, 8, 22, 1, 1]
 "185,29" = [31, 11, 20, 1, 1]
@@ -2668,7 +2672,9 @@ Yeoni = [69, 9, 104, 95, 1]
 "197,92" = [9, 5, 8, 1, 1]
 "197,199" = [28, 6, 10, 1, 1]
 "198,92" = [9, 6, 8, 1, 1]
+"199,51" = [4980, 16, 29, 1, 1]
 "199,70" = [59, 17, 18, 1, 1]
+"200,51" = [4980, 17, 29, 1, 1]
 "200,70" = [59, 18, 18, 1, 1]
 "219,107" = [1004, 39, 62, 1, 1]
 "219,108" = [1004, 40, 62, 1, 1]
@@ -4507,6 +4513,7 @@ name = "Monkey Wasteland 1"
 width = 28
 height = 28
 seen = 1
+random_warps = 1
 
 [maps.167.warps]
 "11,21" = [168, 27, 1, 1, 1]
@@ -4517,6 +4524,7 @@ name = "Monkey Divide 1"
 width = 30
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.168.warps]
 "27,0" = [167, 11, 22, 1, 1]
@@ -4627,6 +4635,7 @@ name = "Sunset 1"
 width = 24
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.177.warps]
 "7,22" = [178, 13, 4, 1, 1]
@@ -4640,6 +4649,7 @@ name = "Ox Path 1"
 width = 30
 height = 27
 seen = 1
+random_warps = 1
 
 [maps.178.warps]
 "3,2" = [174, 22, 2, 1, 1]
@@ -4727,6 +4737,7 @@ name = "Grub Hunt 1"
 width = 30
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.186.warps]
 "3,26" = [187, 11, 23, 1, 1]
@@ -4737,6 +4748,7 @@ name = "Clove Hill 1"
 width = 28
 height = 28
 seen = 1
+random_warps = 1
 
 [maps.187.warps]
 "9,12" = [182, 1, 6, 1, 1]
@@ -4770,6 +4782,7 @@ name = "Boar Fields 1"
 width = 30
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.190.warps]
 "15,6" = [186, 4, 16, 1, 1]
@@ -4791,6 +4804,7 @@ name = "Run 1"
 width = 30
 height = 20
 seen = 1
+random_warps = 1
 
 [maps.192.warps]
 "6,19" = [191, 26, 3, 1, 1]
@@ -4811,6 +4825,7 @@ name = "Mongrel Gateway 1"
 width = 24
 height = 24
 seen = 1
+random_warps = 1
 
 [maps.194.warps]
 "2,23" = [192, 27, 2, 1, 1]
@@ -4862,6 +4877,7 @@ name = "Gnawed Bones 1"
 width = 24
 height = 24
 seen = 1
+random_warps = 1
 
 [maps.199.warps]
 "6,1" = [200, 9, 18, 1, 1]
@@ -4905,6 +4921,7 @@ name = "Rabbit Hole 1"
 width = 30
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.203.warps]
 "15,6" = [208, 17, 36, 1, 1]
@@ -4935,6 +4952,7 @@ name = "Foraged Fields 1"
 width = 26
 height = 39
 seen = 1
+random_warps = 1
 
 [maps.205.warps]
 "6,6" = [207, 29, 27, 1, 1]
@@ -4968,6 +4986,7 @@ name = "Hare Summit 1"
 width = 30
 height = 40
 seen = 1
+random_warps = 1
 
 [maps.208.warps]
 "1,11" = [208, 2, 24, 1, 1]
@@ -5006,6 +5025,7 @@ name = "Peck 1"
 width = 25
 height = 25
 seen = 1
+random_warps = 1
 
 [maps.212.warps]
 "0,16" = [213, 1, 22, 1, 1]
@@ -5057,6 +5077,7 @@ name = "Chicken Conquest 1"
 width = 23
 height = 23
 seen = 1
+random_warps = 1
 
 [maps.216.warps]
 "10,4" = [215, 22, 19, 1, 1]
@@ -5081,6 +5102,7 @@ name = "Angry Roost 1"
 width = 20
 height = 70
 seen = 1
+random_warps = 1
 
 [maps.218.warps]
 "17,69" = [212, 23, 15, 1, 1]
@@ -5237,6 +5259,7 @@ name = "Snake Sleep 1"
 width = 30
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.233.warps]
 "26,21" = [238, 0, 17, 1, 1]
@@ -5268,6 +5291,7 @@ name = "Snake Fields 1"
 width = 30
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.236.warps]
 "1,26" = [238, 14, 17, 1, 1]
@@ -5278,6 +5302,7 @@ name = "Final Rest 1"
 width = 20
 height = 20
 seen = 1
+random_warps = 1
 
 [maps.237.warps]
 "1,0" = [239, 7, 3, 1, 1]
@@ -5341,6 +5366,7 @@ name = "Island of Light 1"
 width = 20
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.243.warps]
 "7,0" = [242, 1, 14, 1, 1]
@@ -5364,6 +5390,7 @@ name = "Clovers 1"
 width = 20
 height = 20
 seen = 1
+random_warps = 1
 
 [maps.245.warps]
 "1,0" = [240, 12, 10, 1, 1]
@@ -5384,6 +5411,7 @@ name = "Hooved Sands 1"
 width = 40
 height = 40
 seen = 1
+random_warps = 1
 
 [maps.247.warps]
 "1,19" = [248, 1, 4, 1, 1]
@@ -5439,6 +5467,7 @@ name = "Dragon Death 1"
 width = 20
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.253.warps]
 "4,29" = [250, 13, 1, 1, 1]
@@ -5451,6 +5480,7 @@ name = "Dragon's Gold 1"
 width = 20
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.254.warps]
 "8,0" = [252, 6, 38, 1, 1]
@@ -5494,6 +5524,7 @@ name = "Jeweled Dragon 1"
 width = 18
 height = 36
 seen = 1
+random_warps = 1
 
 [maps.258.warps]
 "3,0" = [254, 13, 28, 1, 1]
@@ -6117,7 +6148,9 @@ Wim = [8, 7, 109, 88, 1]
 "19,102" = [333, 6, 9, 1, 1]
 "19,118" = [335, 5, 8, 1, 1]
 "19,126" = [336, 5, 10, 1, 1]
+"19,140" = [5040, 14, 18, 1, 1]
 "20,118" = [335, 6, 8, 1, 1]
+"20,140" = [5040, 15, 18, 1, 1]
 "21,87" = [343, 8, 22, 1, 1]
 "22,87" = [343, 9, 22, 1, 1]
 "26,24" = [341, 8, 22, 1, 1]
@@ -6126,10 +6159,14 @@ Wim = [8, 7, 109, 88, 1]
 "29,142" = [363, 5, 9, 1, 1]
 "30,56" = [338, 6, 7, 1, 1]
 "30,142" = [363, 6, 9, 1, 1]
+"32,45" = [3990, 15, 28, 1, 1]
+"33,45" = [3990, 16, 28, 1, 1]
 "36,104" = [332, 3, 12, 1, 1]
 "37,104" = [332, 4, 12, 1, 1]
 "38,128" = [334, 5, 9, 1, 1]
 "39,128" = [334, 6, 9, 1, 1]
+"41,143" = [3940, 12, 18, 1, 1]
+"42,143" = [3940, 13, 18, 1, 1]
 "43,104" = [361, 3, 11, 1, 1]
 "44,104" = [361, 4, 11, 1, 1]
 "46,104" = [361, 21, 12, 1, 1]
@@ -6172,7 +6209,9 @@ Wim = [8, 7, 109, 88, 1]
 "110,133" = [331, 5, 10, 1, 1]
 "111,125" = [400, 1, 3, 1, 1]
 "111,133" = [331, 6, 10, 1, 1]
+"112,120" = [3960, 14, 18, 1, 1]
 "112,125" = [400, 1, 3, 1, 1]
+"113,120" = [3960, 15, 18, 1, 1]
 "118,133" = [365, 5, 9, 1, 1]
 "119,133" = [365, 6, 9, 1, 1]
 "124,143" = [390, 11, 28, 1, 1]
@@ -6187,6 +6226,8 @@ Wim = [8, 7, 109, 88, 1]
 "127,130" = [3910, 19, 17, 1, 1]
 "128,120" = [3041, 5, 8, 1, 1]
 "128,130" = [3910, 20, 17, 1, 1]
+"132,22" = [3970, 11, 24, 1, 1]
+"133,22" = [3970, 12, 24, 1, 1]
 "145,88" = [1008, 1, 6, 1, 1]
 "145,89" = [1008, 1, 6, 1, 1]
 
@@ -7462,6 +7503,7 @@ name = "Shadow Grove 1"
 width = 20
 height = 20
 seen = 1
+random_warps = 1
 
 [maps.482.warps]
 "2,2" = [484, 0, 2, 1, 1]
@@ -7483,6 +7525,7 @@ name = "Shepherd's Nook 1"
 width = 15
 height = 17
 seen = 1
+random_warps = 1
 
 [maps.484.warps]
 "0,1" = [482, 2, 3, 1, 1]
@@ -9610,6 +9653,7 @@ name = ".....Iron Labyrinth....."
 width = 40
 height = 40
 seen = 1
+random_warps = 1
 
 [maps.1302.warps]
 "3,3" = [1305, 3, 4, 1, 1]
@@ -9622,6 +9666,7 @@ name = ".....Iron Labyrinth....."
 width = 40
 height = 40
 seen = 1
+random_warps = 1
 
 [maps.1303.warps]
 "3,35" = [1304, 3, 36, 1, 1]
@@ -9634,6 +9679,7 @@ name = ".....Iron Labyrinth....."
 width = 40
 height = 40
 seen = 1
+random_warps = 1
 
 [maps.1304.warps]
 "3,35" = [1303, 3, 36, 1, 1]
@@ -9646,6 +9692,7 @@ name = ".....Iron Labyrinth....."
 width = 40
 height = 40
 seen = 1
+random_warps = 1
 
 [maps.1305.warps]
 "3,3" = [1302, 3, 4, 1, 1]
@@ -9658,6 +9705,7 @@ name = ".....Iron Labyrinth....."
 width = 40
 height = 40
 seen = 1
+random_warps = 1
 
 [maps.1306.warps]
 "6,34" = [1305, 6, 35, 1, 1]
@@ -10502,6 +10550,8 @@ Saeroun = [87, 13, 48, 89, 1]
 "22,87" = [2518, 6, 10, 1, 1]
 "29,56" = [2510, 8, 22, 1, 1]
 "30,56" = [2510, 9, 22, 1, 1]
+"30,69" = [5060, 15, 29, 1, 1]
+"31,69" = [5060, 16, 29, 1, 1]
 "36,2" = [2970, 8, 20, 1, 1]
 "36,16" = [2520, 5, 18, 1, 1]
 "37,2" = [2970, 9, 20, 1, 1]
@@ -10512,17 +10562,23 @@ Saeroun = [87, 13, 48, 89, 1]
 "39,128" = [2506, 6, 10, 1, 1]
 "40,16" = [2520, 9, 18, 1, 1]
 "41,16" = [2520, 10, 18, 1, 1]
+"41,144" = [5030, 20, 28, 1, 1]
 "42,16" = [2520, 11, 18, 1, 1]
+"42,144" = [5030, 21, 28, 1, 1]
 "43,16" = [2520, 12, 18, 1, 1]
 "52,47" = [2978, 16, 34, 1, 1]
 "64,143" = [2979, 16, 34, 1, 1]
 "69,78" = [2596, 5, 10, 1, 1]
 "70,78" = [2596, 6, 10, 1, 1]
+"72,51" = [3980, 14, 27, 1, 1]
+"73,51" = [3980, 15, 27, 1, 1]
 "73,101" = [2590, 9, 18, 1, 1]
 "74,101" = [2590, 10, 18, 1, 1]
 "82,130" = [2503, 3, 12, 1, 1]
 "83,130" = [2503, 4, 12, 1, 1]
+"87,78" = [5000, 14, 29, 1, 1]
 "87,142" = [2504, 3, 12, 1, 1]
+"88,78" = [5000, 15, 29, 1, 1]
 "88,142" = [2504, 4, 12, 1, 1]
 "96,101" = [2516, 8, 22, 1, 1]
 "96,130" = [2519, 5, 10, 1, 1]
@@ -10530,8 +10586,12 @@ Saeroun = [87, 13, 48, 89, 1]
 "97,121" = [2502, 3, 12, 1, 1]
 "97,130" = [2519, 6, 10, 1, 1]
 "98,121" = [2502, 4, 12, 1, 1]
+"111,59" = [4990, 14, 18, 1, 1]
 "111,125" = [2501, 3, 12, 1, 1]
+"112,59" = [4990, 15, 18, 1, 1]
 "112,125" = [2501, 4, 12, 1, 1]
+"118,5" = [5020, 14, 28, 1, 1]
+"119,5" = [5020, 15, 28, 1, 1]
 "126,34" = [2512, 8, 21, 1, 1]
 "127,34" = [2512, 9, 21, 1, 1]
 "127,130" = [2505, 3, 12, 1, 1]
@@ -10853,6 +10913,7 @@ name = "Oblivion"
 width = 40
 height = 40
 seen = 1
+random_warps = 1
 
 [maps.2528.warps]
 "0,18" = [2527, 38, 14, 1, 1]
@@ -14925,6 +14986,7 @@ name = "Monkey Wasteland 2"
 width = 28
 height = 28
 seen = 1
+random_warps = 1
 
 [maps.3167.warps]
 "11,21" = [3168, 27, 1, 1, 1]
@@ -14935,6 +14997,7 @@ name = "Monkey Divide 2"
 width = 30
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.3168.warps]
 "27,0" = [3167, 11, 22, 1, 1]
@@ -15047,6 +15110,7 @@ name = "Sunset 2"
 width = 24
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.3177.warps]
 "7,22" = [3178, 13, 4, 1, 1]
@@ -15060,6 +15124,7 @@ name = "Ox Path 2"
 width = 30
 height = 27
 seen = 1
+random_warps = 1
 
 [maps.3178.warps]
 "3,2" = [3174, 22, 2, 1, 1]
@@ -15149,6 +15214,7 @@ name = "Grub Hunt 2"
 width = 30
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.3186.warps]
 "3,26" = [3187, 11, 23, 1, 1]
@@ -15159,6 +15225,7 @@ name = "Clove Hill 2"
 width = 28
 height = 28
 seen = 1
+random_warps = 1
 
 [maps.3187.warps]
 "9,12" = [3182, 1, 6, 1, 1]
@@ -15192,6 +15259,7 @@ name = "Boar Fields 2"
 width = 30
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.3190.warps]
 "15,6" = [3186, 4, 16, 1, 1]
@@ -15213,6 +15281,7 @@ name = "Run 2"
 width = 30
 height = 20
 seen = 1
+random_warps = 1
 
 [maps.3192.warps]
 "6,19" = [3191, 26, 3, 1, 1]
@@ -15233,6 +15302,7 @@ name = "Mongrel Gateway 2"
 width = 24
 height = 24
 seen = 1
+random_warps = 1
 
 [maps.3194.warps]
 "2,23" = [3192, 27, 2, 1, 1]
@@ -15284,6 +15354,7 @@ name = "Gnawed Bones 2"
 width = 24
 height = 24
 seen = 1
+random_warps = 1
 
 [maps.3199.warps]
 "6,1" = [3200, 9, 18, 1, 1]
@@ -15327,6 +15398,7 @@ name = "Rabbit Hole 2"
 width = 30
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.3203.warps]
 "15,6" = [3208, 17, 36, 1, 1]
@@ -15357,6 +15429,7 @@ name = "Foraged Fields 2"
 width = 26
 height = 39
 seen = 1
+random_warps = 1
 
 [maps.3205.warps]
 "6,6" = [3207, 29, 27, 1, 1]
@@ -15390,6 +15463,7 @@ name = "Hare Summit 2"
 width = 30
 height = 40
 seen = 1
+random_warps = 1
 
 [maps.3208.warps]
 "1,11" = [3208, 2, 24, 1, 1]
@@ -15428,6 +15502,7 @@ name = "Peck 2"
 width = 25
 height = 25
 seen = 1
+random_warps = 1
 
 [maps.3212.warps]
 "0,16" = [3213, 1, 22, 1, 1]
@@ -15479,6 +15554,7 @@ name = "Chicken Conquest 2"
 width = 23
 height = 23
 seen = 1
+random_warps = 1
 
 [maps.3216.warps]
 "10,4" = [3215, 22, 19, 1, 1]
@@ -15503,6 +15579,7 @@ name = "Angry Roost 2"
 width = 20
 height = 70
 seen = 1
+random_warps = 1
 
 [maps.3218.warps]
 "17,69" = [3212, 23, 15, 1, 1]
@@ -15535,6 +15612,7 @@ name = "Snake Sleep 2"
 width = 30
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.3233.warps]
 "26,21" = [3238, 0, 17, 1, 1]
@@ -15566,6 +15644,7 @@ name = "Snake Fields 2"
 width = 30
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.3236.warps]
 "1,26" = [3238, 14, 17, 1, 1]
@@ -15576,6 +15655,7 @@ name = "Final Rest 2"
 width = 20
 height = 20
 seen = 1
+random_warps = 1
 
 [maps.3237.warps]
 "1,0" = [3239, 7, 3, 1, 1]
@@ -15639,6 +15719,7 @@ name = "Island of Light 2"
 width = 20
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.3243.warps]
 "7,0" = [3242, 1, 14, 1, 1]
@@ -15663,6 +15744,7 @@ name = "Clovers 2"
 width = 20
 height = 20
 seen = 1
+random_warps = 1
 
 [maps.3245.warps]
 "1,0" = [3240, 12, 10, 1, 1]
@@ -15683,6 +15765,7 @@ name = "Hooved Sands 2"
 width = 40
 height = 40
 seen = 1
+random_warps = 1
 
 [maps.3247.warps]
 "1,19" = [3248, 1, 4, 1, 1]
@@ -15738,6 +15821,7 @@ name = "Dragon Death 2"
 width = 20
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.3253.warps]
 "4,29" = [3250, 13, 1, 1, 1]
@@ -15750,6 +15834,7 @@ name = "Dragon's Gold 2"
 width = 20
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.3254.warps]
 "8,0" = [3252, 6, 38, 1, 1]
@@ -15793,6 +15878,7 @@ name = "Jeweled Dragon 2"
 width = 18
 height = 36
 seen = 1
+random_warps = 1
 
 [maps.3258.warps]
 "3,0" = [3254, 13, 28, 1, 1]
@@ -16003,6 +16089,7 @@ name = "Shadow Grove 2"
 width = 20
 height = 20
 seen = 1
+random_warps = 1
 
 [maps.3482.warps]
 "2,2" = [3484, 0, 2, 1, 1]
@@ -16024,6 +16111,7 @@ name = "Shepherd's Nook 2"
 width = 15
 height = 17
 seen = 1
+random_warps = 1
 
 [maps.3484.warps]
 "0,1" = [3482, 2, 3, 1, 1]
@@ -17450,6 +17538,8 @@ height = 20
 seen = 1
 
 [maps.3910.warps]
+"13,4" = [3911, 15, 29, 1, 1]
+"14,4" = [3911, 15, 29, 1, 1]
 "19,19" = [330, 127, 131, 1, 1]
 
 [maps.3911]
@@ -17583,6 +17673,14 @@ width = 32
 height = 42
 seen = 1
 
+[maps.3921.warps]
+"13,41" = [3920, 11, 5, 1, 1]
+"14,41" = [3920, 11, 5, 1, 1]
+"15,41" = [3920, 11, 5, 1, 1]
+"16,41" = [3920, 12, 5, 1, 1]
+"17,41" = [3920, 12, 5, 1, 1]
+"18,41" = [3920, 12, 5, 1, 1]
+
 [maps.3922]
 name = "Sun Moon Arena"
 width = 35
@@ -17636,6 +17734,10 @@ name = "Bear Clan"
 width = 30
 height = 20
 seen = 1
+
+[maps.3930.warps]
+"19,19" = [0, 147, 18, 1, 1]
+"20,19" = [0, 148, 18, 1, 1]
 
 [maps.3931]
 name = "Bear Hall"
@@ -17697,11 +17799,24 @@ width = 30
 height = 20
 seen = 1
 
+[maps.3940.warps]
+"12,4" = [3941, 24, 48, 1, 1]
+"12,19" = [330, 41, 144, 1, 1]
+"13,4" = [3941, 24, 48, 1, 1]
+"13,19" = [330, 42, 144, 1, 1]
+"14,4" = [3941, 25, 48, 1, 1]
+
 [maps.3941]
 name = "Phoenix Hall"
 width = 50
 height = 50
 seen = 1
+
+[maps.3941.warps]
+"23,49" = [3940, 12, 7, 1, 1]
+"24,49" = [3940, 12, 7, 1, 1]
+"25,49" = [3940, 13, 7, 1, 1]
+"26,49" = [3940, 14, 7, 1, 1]
 
 [maps.3942]
 name = "Phoenix Arena"
@@ -17821,6 +17936,10 @@ width = 30
 height = 20
 seen = 1
 
+[maps.3960.warps]
+"14,19" = [330, 112, 121, 1, 1]
+"15,19" = [330, 113, 121, 1, 1]
+
 [maps.3961]
 name = "Lost Kingdom Hall"
 width = 33
@@ -17875,11 +17994,23 @@ width = 24
 height = 26
 seen = 1
 
+[maps.3970.warps]
+"11,8" = [3971, 15, 30, 1, 1]
+"11,25" = [330, 132, 23, 1, 1]
+"12,8" = [3971, 16, 30, 1, 1]
+"12,25" = [330, 133, 23, 1, 1]
+
 [maps.3971]
 name = "Dharma"
 width = 32
 height = 32
 seen = 1
+
+[maps.3971.warps]
+"14,31" = [3970, 11, 9, 1, 1]
+"15,31" = [3970, 11, 9, 1, 1]
+"16,31" = [3970, 12, 9, 1, 1]
+"17,31" = [3970, 12, 9, 1, 1]
 
 [maps.3973]
 name = "Dharma Primogen"
@@ -17928,6 +18059,12 @@ name = "Forsaken Clan"
 width = 30
 height = 29
 seen = 1
+
+[maps.3980.warps]
+"13,28" = [2500, 72, 53, 1, 1]
+"14,28" = [2500, 72, 53, 1, 1]
+"15,28" = [2500, 73, 53, 1, 1]
+"16,28" = [2500, 73, 53, 1, 1]
 
 [maps.3981]
 name = "The Forsaken Clan"
@@ -17988,6 +18125,10 @@ name = "Elendhirin Clan"
 width = 30
 height = 30
 seen = 1
+
+[maps.3990.warps]
+"15,29" = [330, 32, 46, 1, 1]
+"16,29" = [330, 33, 46, 1, 1]
 
 [maps.3991]
 name = "Elendhirin Hall"
@@ -18581,6 +18722,7 @@ name = "Monkey Wasteland 3"
 width = 28
 height = 28
 seen = 1
+random_warps = 1
 
 [maps.4167.warps]
 "11,21" = [4168, 27, 1, 1, 1]
@@ -18591,6 +18733,7 @@ name = "Monkey Divide 3"
 width = 30
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.4168.warps]
 "27,0" = [4167, 11, 22, 1, 1]
@@ -18703,6 +18846,7 @@ name = "Sunset 3"
 width = 24
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.4177.warps]
 "7,22" = [4178, 13, 4, 1, 1]
@@ -18716,6 +18860,7 @@ name = "Ox Path 3"
 width = 30
 height = 27
 seen = 1
+random_warps = 1
 
 [maps.4178.warps]
 "3,2" = [4174, 22, 2, 1, 1]
@@ -18804,6 +18949,7 @@ name = "Grub Hunt 3"
 width = 30
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.4186.warps]
 "3,26" = [4187, 11, 23, 1, 1]
@@ -18814,6 +18960,7 @@ name = "Clove Hill 3"
 width = 28
 height = 28
 seen = 1
+random_warps = 1
 
 [maps.4187.warps]
 "9,12" = [4182, 1, 6, 1, 1]
@@ -18847,6 +18994,7 @@ name = "Boar Fields 3"
 width = 30
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.4190.warps]
 "15,6" = [4186, 4, 16, 1, 1]
@@ -18868,6 +19016,7 @@ name = "Run 3"
 width = 30
 height = 20
 seen = 1
+random_warps = 1
 
 [maps.4192.warps]
 "6,19" = [4191, 26, 3, 1, 1]
@@ -18888,6 +19037,7 @@ name = "Mongrel Gateway 3"
 width = 24
 height = 24
 seen = 1
+random_warps = 1
 
 [maps.4194.warps]
 "2,23" = [4192, 27, 2, 1, 1]
@@ -18939,6 +19089,7 @@ name = "Gnawed Bones 3"
 width = 24
 height = 24
 seen = 1
+random_warps = 1
 
 [maps.4199.warps]
 "6,1" = [4200, 9, 18, 1, 1]
@@ -18982,6 +19133,7 @@ name = "Rabbit Hole 3"
 width = 30
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.4203.warps]
 "15,6" = [4208, 17, 36, 1, 1]
@@ -19012,6 +19164,7 @@ name = "Foraged Fields 3"
 width = 26
 height = 39
 seen = 1
+random_warps = 1
 
 [maps.4205.warps]
 "6,6" = [4207, 29, 27, 1, 1]
@@ -19045,6 +19198,7 @@ name = "Hare Summit 3"
 width = 30
 height = 40
 seen = 1
+random_warps = 1
 
 [maps.4208.warps]
 "1,11" = [4208, 2, 24, 1, 1]
@@ -19083,6 +19237,7 @@ name = "Peck 3"
 width = 25
 height = 25
 seen = 1
+random_warps = 1
 
 [maps.4212.warps]
 "0,16" = [4213, 1, 22, 1, 1]
@@ -19134,6 +19289,7 @@ name = "Chicken Conquest 3"
 width = 23
 height = 23
 seen = 1
+random_warps = 1
 
 [maps.4216.warps]
 "10,4" = [4215, 22, 19, 1, 1]
@@ -19158,6 +19314,7 @@ name = "Angry Roost 3"
 width = 20
 height = 70
 seen = 1
+random_warps = 1
 
 [maps.4218.warps]
 "17,69" = [4212, 23, 15, 1, 1]
@@ -19189,6 +19346,7 @@ name = "Snake Sleep 3"
 width = 30
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.4233.warps]
 "26,21" = [4238, 0, 17, 1, 1]
@@ -19220,6 +19378,7 @@ name = "Snake Fields 3"
 width = 30
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.4236.warps]
 "1,26" = [4238, 14, 17, 1, 1]
@@ -19230,6 +19389,7 @@ name = "Final Rest 3"
 width = 20
 height = 20
 seen = 1
+random_warps = 1
 
 [maps.4237.warps]
 "1,0" = [4239, 7, 3, 1, 1]
@@ -19293,6 +19453,7 @@ name = "Island of Light 3"
 width = 20
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.4243.warps]
 "7,0" = [4242, 1, 14, 1, 1]
@@ -19317,6 +19478,7 @@ name = "Clovers 3"
 width = 20
 height = 20
 seen = 1
+random_warps = 1
 
 [maps.4245.warps]
 "1,0" = [4240, 12, 10, 1, 1]
@@ -19337,6 +19499,7 @@ name = "Hooved Sands 3"
 width = 40
 height = 40
 seen = 1
+random_warps = 1
 
 [maps.4247.warps]
 "1,19" = [4248, 1, 4, 1, 1]
@@ -19392,6 +19555,7 @@ name = "Dragon Death 3"
 width = 20
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.4253.warps]
 "4,29" = [4250, 13, 1, 1, 1]
@@ -19404,6 +19568,7 @@ name = "Dragon's Gold 3"
 width = 20
 height = 30
 seen = 1
+random_warps = 1
 
 [maps.4254.warps]
 "8,0" = [4252, 6, 38, 1, 1]
@@ -19447,6 +19612,7 @@ name = "Jeweled Dragon 3"
 width = 18
 height = 36
 seen = 1
+random_warps = 1
 
 [maps.4258.warps]
 "3,0" = [4254, 13, 28, 1, 1]
@@ -19656,6 +19822,7 @@ name = "Shadow Grove 3"
 width = 20
 height = 20
 seen = 1
+random_warps = 1
 
 [maps.4482.warps]
 "2,2" = [4484, 0, 2, 1, 1]
@@ -19677,6 +19844,7 @@ name = "Shepherd's Nook 3"
 width = 15
 height = 17
 seen = 1
+random_warps = 1
 
 [maps.4484.warps]
 "0,1" = [4482, 2, 3, 1, 1]
@@ -21725,11 +21893,23 @@ width = 31
 height = 31
 seen = 1
 
+[maps.4980.warps]
+"16,7" = [4981, 28, 34, 1, 1]
+"16,30" = [0, 199, 52, 1, 1]
+"17,7" = [4981, 29, 34, 1, 1]
+"17,30" = [0, 200, 52, 1, 1]
+
 [maps.4981]
 name = "Destiny Clan Hall"
 width = 34
 height = 36
 seen = 1
+
+[maps.4981.warps]
+"27,35" = [4980, 16, 9, 1, 1]
+"28,35" = [4980, 16, 9, 1, 1]
+"29,35" = [4980, 17, 9, 1, 1]
+"30,35" = [4980, 17, 9, 1, 1]
 
 [maps.4982]
 name = "Destiny Council Chambers"
@@ -21785,11 +21965,22 @@ width = 30
 height = 20
 seen = 1
 
+[maps.4990.warps]
+"14,0" = [4991, 20, 37, 1, 1]
+"14,19" = [2500, 111, 61, 1, 1]
+"15,0" = [4991, 20, 37, 1, 1]
+"15,19" = [2500, 112, 61, 1, 1]
+
 [maps.4991]
 name = "Pegasus Clan Hall"
 width = 41
 height = 39
 seen = 1
+
+[maps.4991.warps]
+"19,38" = [4990, 14, 3, 1, 1]
+"20,38" = [4990, 14, 3, 1, 1]
+"21,38" = [4990, 15, 3, 1, 1]
 
 [maps.4992]
 name = "Pegasus Hallway"
@@ -21839,11 +22030,26 @@ width = 31
 height = 31
 seen = 1
 
+[maps.5000.warps]
+"14,10" = [5001, 16, 32, 1, 1]
+"14,30" = [2500, 87, 79, 1, 1]
+"15,10" = [5001, 16, 32, 1, 1]
+"15,30" = [2500, 88, 79, 1, 1]
+
 [maps.5001]
 name = "Silla Clan Hall"
 width = 34
 height = 34
 seen = 1
+
+[maps.5001.warps]
+"13,33" = [5000, 14, 13, 1, 1]
+"14,33" = [5000, 14, 13, 1, 1]
+"15,33" = [5000, 14, 13, 1, 1]
+"16,33" = [5000, 14, 13, 1, 1]
+"17,33" = [5000, 15, 13, 1, 1]
+"18,33" = [5000, 15, 13, 1, 1]
+"19,33" = [5000, 15, 13, 1, 1]
 
 [maps.5002]
 name = "Desert Weaver"
@@ -21886,6 +22092,10 @@ name = "Tiger Clan Garden"
 width = 30
 height = 27
 seen = 1
+
+[maps.5010.warps]
+"14,26" = [0, 178, 13, 1, 1]
+"15,26" = [0, 179, 13, 1, 1]
 
 [maps.5011]
 name = "Tiger Clan Hall"
@@ -21947,6 +22157,15 @@ width = 30
 height = 30
 seen = 1
 
+[maps.5020.warps]
+"11,29" = [2500, 118, 7, 1, 1]
+"12,29" = [2500, 118, 7, 1, 1]
+"13,29" = [2500, 118, 7, 1, 1]
+"14,29" = [2500, 118, 7, 1, 1]
+"15,29" = [2500, 119, 7, 1, 1]
+"16,29" = [2500, 119, 7, 1, 1]
+"17,29" = [2500, 119, 7, 1, 1]
+
 [maps.5021]
 name = "K'urimja Clan Hall"
 width = 34
@@ -21994,6 +22213,10 @@ name = "Alizarin Clan Garden"
 width = 30
 height = 30
 seen = 1
+
+[maps.5030.warps]
+"20,29" = [2500, 41, 145, 1, 1]
+"21,29" = [2500, 42, 145, 1, 1]
 
 [maps.5031]
 name = "Alizarin Haven"
@@ -22043,11 +22266,22 @@ width = 30
 height = 20
 seen = 1
 
+[maps.5040.warps]
+"14,2" = [5041, 17, 33, 1, 1]
+"14,19" = [330, 19, 141, 1, 1]
+"15,2" = [5041, 17, 33, 1, 1]
+"15,19" = [330, 20, 141, 1, 1]
+
 [maps.5041]
 name = "SanSin Clan Hall"
 width = 35
 height = 35
 seen = 1
+
+[maps.5041.warps]
+"16,34" = [5040, 14, 4, 1, 1]
+"17,34" = [5040, 14, 4, 1, 1]
+"18,34" = [5040, 15, 4, 1, 1]
 
 [maps.5042]
 name = "Crafter's Haven"
@@ -22150,6 +22384,10 @@ name = "Viper Clan Garden"
 width = 31
 height = 31
 seen = 1
+
+[maps.5060.warps]
+"15,30" = [2500, 30, 72, 1, 1]
+"16,30" = [2500, 31, 72, 1, 1]
 
 [maps.5061]
 name = "Viper Clan Hall"

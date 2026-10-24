@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's target frame (its XML twin's layout; main.lua fills it from the target and its last hit, lays it out by the
+     page's settings and keeps the effect row): the portrait on the right, the name and level, the hit bar with its dead
+     sign, the effect icons and their line of text under the frame. Format: core/xml.md. Drawing only. -->
+<ui>
+  <!-- the portrait's size; main.lua's ApplySettings places the name, level and hit bar left of it -->
+  <data key="SIZES" portrait="56"/>
+
+  <frame name="TKTargetFrame" key="frame" parent="UIParent">
+    <backdrop bg="0.05, 0.03, 0.03, 0.85" edge="0.6, 0.5, 0.45, 1"/>
+    <!-- s6-ui-settings (round 4): the shared panel style; s6-ui-core (round 53): or its own -->
+    <run call="HudPanel"/>
+    <!-- s6-ui-core (round 32): the target's portrait on the right, as the player frame's on the left: s6-characters'
+         GetPortrait("object", id), the figure's upper body as the map draws it; the name's letter while there is none
+         (out of view, offline) -->
+    <portrait key="portrait" size="@SIZES.portrait" point="TOPRIGHT" x="-8" y="-8" colour="0.55, 0.2, 0.15"/>
+
+    <!-- the name in the original's own font -->
+    <label key="name" text="" size="14" colour="white" justify="LEFT" Font="classic, 12, "
+           Point="TOPLEFT, @parent, TOPLEFT, 10, -9"/>
+    <frame key="badge" Size="30, 18">
+      <backdrop bg="0.1, 0.08, 0.02, 0.95" edge="0.85, 0.75, 0.45, 1"/>
+      <label key="level" text="" size="11" colour="gold" Point="CENTER, @parent, CENTER, 0, 0"/>
+    </frame>
+
+    <vitalbar key="hit" name="TKTargetFrameHit" height="16" colour="0.75, 0.2, 0.15" textsize="11"
+              MinMaxValues="0, 100"/>
+    <!-- s6-library round 2 (head note 4): what is known of the target's buffs under the frame, the Library's estimates
+         marked as such ("~" and "est."), a peer's word as shared; read again four times a second for the countdowns.
+         s6-ui-core (round 43, effects on others): as a row of icons (Modern's effecticons.lua, the group the icons on units
+         share, each with its tooltip on mouse-over and its time under it), debuffs first; the line of text stays, shown
+         when the Effects tab's "also as text" is on. -->
+    <iconrow key="effects" name="TKTargetEffects" mouse="true">
+      <!-- round 44: a right-click on an icon puts its name on a list -->
+      <run call="ListMenu"/>
+      <do Point="TOPLEFT, @parent, BOTTOMLEFT, 2, -3" Hide=""/>
+    </iconrow>
+    <label key="buffs" text="" size="11" colour="0.72, 0.84, 1" justify="LEFT"
+           Point="TOPLEFT, @parent, BOTTOMLEFT, 4, -3"/>
+    <!-- the target's tooltip (head note 40): its name, level and the last hit, all the client knows of it -->
+    <do EnableMouse="true"/>
+    <on script="OnEnter" call="Tip"/>
+    <on script="OnLeave" call="Untip"/>
+    <label key="hitText" text="" size="12" colour="white" justify="LEFT"/>
+    <texture key="dead" layer="OVERLAY" Size="24, 24" Point="LEFT, @hit, LEFT, 4, 0">
+      <run call="DeadSign"/>
+      <do Hide=""/>
+    </texture>
+    <!-- the bar goes away 500 ms after the hit that showed it: its own frame's script, called only while a hit shows
+         (s6-ui-core, round 101, T11 step 4: main.lua's ShowHit) -->
+    <frame key="hitTimer">
+      <on script="OnUpdate" call="HitTimer"/>
+    </frame>
+    <!-- s6-library (round 4): the effects read again four times a second (s6-ui-core, round 101: the frame's own script,
+         counted by the host) -->
+    <run call="EffectsTicker"/>
+
+    <do RegisterEvent="PLAYER_TARGET_CHANGED"/>
+    <do RegisterEvent="UNIT_HEALTH"/>
+    <do RegisterEvent="PLAYER_ENTERING_WORLD"/>
+    <do RegisterEvent="UNIT_MODEL_CHANGED"/>
+    <on script="OnEvent" call="Changed"/>
+
+    <!-- s6-rules-dialogs: a right-click opens the player menu on another player (D-56; the model decides) -->
+    <do EnableMouse="true"/>
+    <on script="OnMouseDown" call="PlayerMenu"/>
+  </frame>
+</ui>

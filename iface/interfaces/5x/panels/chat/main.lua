@@ -24,19 +24,21 @@
 -- Shift+PgUp and Shift+PgDn a page: the pane's 4 lines, as 7.5.2's page is the lines shown less one) while it shows
 -- (TK.Game.Chat.ProvideLog; s6-interface-5x round 12, Astra's s6-interface-5x-self-12-2).
 -- It draws only; nothing here is sent, and only its bar takes a press.
+-- s6-ui-core (round 85): the XML twin's scripts; the log, its clip, bar and line and their places are main.xml's
+-- (core/xml.md).
 
 local C = TK.GetComponent("5x.chat")
 local H = __tk
 local S = require("interfaces.5x.skin")
 local Screen = require("interfaces.screen")
-local Bar = require("interfaces.5x.scrollbar") -- s6-interface-5x-b
+local E = require("interfaces.5x.elements")
 
-local PLACE = { 14, 390 }
-local LOG_W, LOG_H, TEXT_W, LINE_H = 420, 65, 408, 13
-local KEEP = 100
+local L = TK.Xml.Data("main.xml")
+local LOG = L.LOG
+local LOG_H, TEXT_W, LINE_H = LOG.height, LOG.text, LOG.line
 
 -- The background colour's frame of CHATBACK.EPF (none for any other colour).
-local BANDS = { [S.WHITE] = 0, [S.RED] = 1, [S.BLUE] = 2 }
+local BANDS = { [S.WHITE] = L.BANDS.WHITE, [S.RED] = L.BANDS.RED, [S.BLUE] = L.BANDS.BLUE }
 
 --- A line's text and background colours as 5.33's chat pane gives them, by the client's channel (TK_CHAT_MESSAGE) and
 --- speaker (only 0x0D's lines carry one); nil for a line it does not show.
@@ -56,7 +58,7 @@ end
 --- The log as 5.33's starts it: five empty messages, black on white.
 function C:Clear()
     self.messages, self.offset = {}, 0
-    for i = 1, 5 do self.messages[i] = { text = "", fg = S.TEXT, bg = S.WHITE } end
+    for i = 1, LOG.start do self.messages[i] = { text = "", fg = S.TEXT, bg = S.WHITE } end
     self:Draw()
 end
 
@@ -66,7 +68,7 @@ end
 function C:Add(text, fg, bg, rgb, show)
     local m = self.messages
     m[#m + 1] = { text = text, fg = fg, bg = bg, rgb = rgb }
-    if #m > KEEP then table.remove(m, 1) end
+    if #m > LOG.keep then table.remove(m, 1) end
     -- s6-interface-5x (round 13's hotfix, a marked edit): the game screen's lines given at a late start are drawn once
     -- after them (TK_CHAT_REPLAYED, OnEnable)
     if TK.Game.Chat.replaying then return end
@@ -137,7 +139,7 @@ function C:Draw()
         local band = BANDS[m.bg]
         for k = 1, n do
             if band then
-                r.bands[k] = S.Picture(f.content, r.bands[k], "CHATBACK.EPF", band, "NPAL7.PAL", 0, y + (k - 1) * LINE_H, "BORDER")
+                r.bands[k] = S.Picture(f.content, r.bands[k], L.BANDS.file, band, L.BANDS.palette, 0, y + (k - 1) * LINE_H, "BORDER")
             end
         end
     end
@@ -176,52 +178,30 @@ function C:DrawLine()
     f.lineText:SetText(line.Label .. TK.Util.WithCaret(line.Text, line.SelectionEnd))
 end
 
-function C:OnEnable()
-    local f = CreateFrame("Frame", "TK5xChat", UIParent)
-    f:SetFrameStrata("LOW")
-    f:SetSize(LOG_W, LOG_H + 1 + 12)
-    f.white = f:CreateTexture(nil, "BACKGROUND")
-    f.white:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 0)
-    f.white:SetSize(LOG_W, LOG_H)
-    S.Fill(f.white, S.WHITE)
-    -- the messages, clipped to the log (a ScrollFrame clips what is in it)
-    f.clip = CreateFrame("ScrollFrame", nil, f)
-    f.clip:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 0)
-    f.clip:SetSize(TEXT_W, LOG_H)
-    f.content = CreateFrame("Frame", nil, f.clip)
-    f.content:SetSize(TEXT_W, LOG_H)
-    f.clip:SetScrollChild(f.content)
-    f.rows = {}
-    -- the messages' lines are measured in a row's layout, once each (C:Lines)
-    f.measure = S.Text(f.content:CreateFontString(nil, "ARTWORK"), S.TEXT)
-    f.measure:SetSpacing(-1)
-    f.measure:SetWordWrap(true)
-    f.measure:SetWidth(TEXT_W)
-    f.measure:Hide()
-    f:EnableMouseWheel(true)
-    f:SetScript("OnMouseWheel", function(_, delta) C:Scroll(delta > 0 and 1 or -1) end)
-    -- s6-interface-5x-b: the log's bar; 5.33's position counts lines from the oldest, this view's offset from the newest
-    f.bar = Bar.New(f, LOG_W - Bar.Width(1), 0, LOG_H, 1, {
-        Range = function() return C:Range(), C:Range() - (C.offset or 0), 4 end,
-        Set = function(pos) C:Scroll(C:Range() - pos - C.offset) end,
-    })
-    -- the line being typed, under the log
-    f.line = CreateFrame("Frame", nil, f)
-    f.line:SetPoint("TOPLEFT", f, "TOPLEFT", 0, -(LOG_H + 1))
-    f.line:SetSize(TEXT_W, 12)
-    S.Fill(f.line:CreateTexture(nil, "BACKGROUND"), S.WHITE):SetAllPoints(f.line)
-    f.lineText = S.Text(f.line:CreateFontString(nil, "ARTWORK"), S.TEXT)
-    f.lineText:SetWordWrap(false)
-    f.lineText:SetJustifyH("LEFT")
-    f.lineText:SetPoint("TOPLEFT", f.line, "TOPLEFT", 0, -1)
-    f.line:Hide()
-    -- offline: the game layer's line (TK.Game.Chat, which drives the box), its prompt in lineText, the box after it in
-    -- 5.33's font, black, with no frame (on the line's white)
-    f.box = CreateFrame("EditBox", "TK5xChatLine", f.line)
-    H:SetFontFace(f.box.__h, "classic533")
+-- the scripts main.xml names
+local scripts = {}
+
+function scripts.Wheel(_, delta) C:Scroll(delta > 0 and 1 or -1) end
+
+-- s6-interface-5x-b: the log's bar; 5.33's position counts lines from the oldest, this view's offset from the newest
+function scripts.BarRange() return C:Range(), C:Range() - (C.offset or 0), 4 end
+function scripts.BarSet(_, pos) C:Scroll(C:Range() - pos - C.offset) end
+
+--- The offline line's box: 5.33's font, black, no insets (the game layer drives it).
+function scripts.Box(box)
+    H:SetFontFace(box.__h, S.FACE)
     local r, g, b = S.Colour(S.TEXT)
-    H:SetTextColor(f.box.__h, r, g, b, 1)
-    H:SetTextInsets(f.box.__h, 0, 0, 0, 0)
+    H:SetTextColor(box.__h, r, g, b, 1)
+    H:SetTextInsets(box.__h, 0, 0, 0, 0)
+end
+
+function scripts.DrawLine() C:DrawLine() end
+
+function C:OnEnable()
+    local f = TK.Xml.Load("main.xml", { scripts = scripts, elements = E }).frame
+    f.content, f.lineText, f.box = f.clip.content, f.line.lineText, f.line.box
+    f.measure = f.content.measure
+    f.rows = {}
     self.offlineLine = {
         shown = function() return f:IsVisible() end,
         box = f.box,
@@ -235,11 +215,12 @@ function C:OnEnable()
         end,
     }
     TK.Game.Chat.ProvideLine("5x.chat", self.offlineLine)
+    -- s6-ui-core (round 101, T11 step 3): the line, drawn on change only (main.xml), again after the offline line opened or
+    -- closed; drawing only (this line takes no press)
+    TK.On("TK_CHAT_SETTINGS", function() f:SetUpdateWhen("line") end)
     TK.Game.Prompts.ProvideHost("5x.chat", function() return f:IsVisible() end, true) -- every prompt (Y3)
     TK.Game.Chat.ProvideLog("5x.chat", { shown = function() return f:IsVisible() end,
                                          scroll = function(n) C:Scroll(n) end, page = function(dir) C:Scroll(dir * 4) end })
-    f:SetScript("OnUpdate", function() C:DrawLine() end)
-    f:Hide()
     self:Own(f)
     self.frame = f
     self.entry = Screen.Register(f, "5x.chat", "5.x Chat", function() return self:DB().enabled == true end)
@@ -270,6 +251,6 @@ function C:OnEnable()
 end
 
 --- At 5.33's place on the scaled 5.x screen unless moved, at the screen's scale times its own; in the game only.
-function C:ApplySettings() Screen.PlacePanel(self, S.WIDTH, S.HEIGHT, PLACE[1], PLACE[2]) end
+function C:ApplySettings() Screen.PlacePanel(self, S.WIDTH, S.HEIGHT, L.PLACE[1], L.PLACE[2]) end
 
 Screen.Follow(C, "ApplySettings")

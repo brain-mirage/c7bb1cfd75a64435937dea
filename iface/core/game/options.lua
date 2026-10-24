@@ -217,6 +217,15 @@ function O.Press(row)
     if not live() then O.LocalRow(row) end
 end
 
+--- Whether a press on an options row acts on it, for any interface's options page (s6-gateway-research round 38, P3:
+--- moved from 7.x's XML options page, research inventory-doubled-rules.md row 10). WIRE: NewOptionPane::
+--- HandlePointerOrMouseEvent (0x00540910, ui/OptionPane.cpp:986-1082) acts on a single left press only (event type 1):
+--- a double click's second press and the releases do nothing. A sending row then runs O.Press at that press, so
+--- changing this test changes which press sends the row's option and when.
+function O.RowPress(button, double)
+    return button == "LeftButton" and not double
+end
+
 -- ----- the windows and the opener -----
 
 -- An interface's own options window, under its panel (5.x's: interfaces/5x/panels/options), the latest provided asked

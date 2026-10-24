@@ -9,6 +9,9 @@
 --
 -- The tab's two pages: page 2 has rows 23-26 (here Orb and the F1 swap; 25 and 26 are the nameplates' settings), page
 -- 1 the rest. The arrows and PgUp and PgDn turn them (K-097).
+--
+-- s6-ui-core (round 85): the XML twin's scripts; the window, its pages, labels, rows and stepper are gameoptions.xml's
+-- (core/xml.md).
 
 local C = TK.GetComponent("windows")
 local W = require("interfaces.modern.skin").UI -- s6-devtools (round 5, the separation's step 5): Modern's skin
@@ -46,84 +49,98 @@ local window
 -- Its switch (Modern's panel gameoptions; section 5.1), as the other windows'.
 local PANEL = { component = "windows", node = "gameoptionswindow", switch = "enabled" }
 
+-- the scripts gameoptions.xml names, and its build (its templates: the window, a row)
+local scripts = {}
+local ui = TK.Xml.Load("gameoptions.xml", { scripts = scripts, elements = require("interfaces.modern.elements") })
+
+local making -- the row being made (row below): its text, its row number, its place and its page
+
+--- A row's box on a page, at (x, y) of it.
+local function row(parent, text, number, x, y)
+    making = { text = text, number = number, x = x, y = y, page = parent }
+    local c = ui:New("Row", parent, nil, nil, making) -- (its label: the Row template's @with.text)
+    making = nil
+    return c
+end
+
+-- the window (its rows and its first page read it while it is built), the windows' own
+function scripts.Own(w)
+    window = w
+    C:Own(w)
+end
+
+function scripts.Refresh() M:Refresh() end
+
 --- A row's box: its action runs from its press script (s6-ui-bag's press seam: the press's own record), so the release
 --- has none and only shows the state again. Wire: the optionrow action, frozen and run at the left press
 --- (TK.Game.Options.Press: NewOptionPane::HandlePointerOrMouseEvent 0x00540910); changing when it runs, or the row
 --- number it carries, changes what the server sees.
-local function row(parent, text, number, x, y)
-    local c = W.Check(parent, text, function() M:Refresh() end)
-    c:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
-    TK.Actions:Set(c, "optionrow", nil, number)
-    c:HookScript("OnMouseDown", function(_, button) if button == "LeftButton" then O.Press(number) end end)
-    window["optionrow" .. number] = c
-    return c
+function scripts.Row(c)
+    local m = making
+    c:SetPoint("TOPLEFT", m.page, "TOPLEFT", m.x, m.y)
+    TK.Actions:Set(c, "optionrow", nil, m.number)
+    c:HookScript("OnMouseDown", function(_, button) if button == "LeftButton" then O.Press(m.number) end end)
+    window["optionrow" .. m.number] = c
 end
 
-local function build()
-    window = W.Window("TKGameOptions", "Game Options", 380, 440)
-    window:SetPoint("CENTER", UIParent, "CENTER", 0, 60)
-    C:Own(window)
-    -- The tab's two pages (NewOptionPane: field_12B8 = 2), each row on its own (BuildOptionRows); the arrows (rows 0
-    -- and 1) and PgUp and PgDn (HandleKeyOrTextEvent, OptionPane.cpp:963) turn them.
-    window.pages = {}
-    for p = 1, 2 do
-        local f = CreateFrame("Frame", nil, window)
-        f:SetAllPoints(window)
-        window.pages[p] = f
-    end
-    local first, second = window.pages[1], window.pages[2]
-    local more = W.Label(second, "This computer:", 12, { 0.75, 0.75, 0.75 }, "LEFT")
-    more:SetPoint("TOPLEFT", window, "TOPLEFT", 18, -40)
-    local note = W.Label(first, "Kept by the server: a click asks it to turn the option over.", 12, { 0.75, 0.75, 0.75 }, "LEFT")
-    note:SetPoint("TOPLEFT", window, "TOPLEFT", 18, -40)
-    window.rows = {}
+function scripts.Pages(w) w.pages = { w.first, w.second } end
+
+function scripts.ServerRows(w)
+    w.rows = {}
     for i, r in ipairs(M.rows) do
-        -- The box shows the server's state, not the click: it changes when the server answers.
-        window.rows[i] = row(first, r[1], r[2], 18 + ((i - 1) % 2) * 172, -62 - math.floor((i - 1) / 2) * 28)
+        w.rows[i] = row(w.first, r[1], r[2], 18 + ((i - 1) % 2) * 172, -62 - math.floor((i - 1) / 2) * 28)
     end
-    local here = W.Label(first, "This computer:", 12, { 0.75, 0.75, 0.75 }, "LEFT")
-    here:SetPoint("TOPLEFT", window, "TOPLEFT", 18, -184)
-    window.locals = {}
+end
+
+function scripts.LocalRows(w)
+    w.locals = {}
     local placed = { 0, 0 }
     for i, r in ipairs(M.localRows) do
         -- Page 1's local rows in two columns under the server's; page 2's in one.
         local p, n = r[4], placed[r[4]]
         placed[p] = n + 1
         if p == 1 then
-            window.locals[i] = row(first, r[1], r[2], 18 + (n % 2) * 172, -206 - math.floor(n / 2) * 28)
+            w.locals[i] = row(w.first, r[1], r[2], 18 + (n % 2) * 172, -206 - math.floor(n / 2) * 28)
         else
-            window.locals[i] = row(second, r[1], r[2], 18, -62 - n * 28)
+            w.locals[i] = row(w.second, r[1], r[2], 18, -62 - n * 28)
         end
     end
-    local system = W.Label(first, "System:", 12, { 0.75, 0.75, 0.75 }, "LEFT")
-    system:SetPoint("TOPLEFT", window, "TOPLEFT", 18, -326)
-    window.system = {}
-    for mode, text in ipairs({ "Low", "High", "Manual" }) do
-        window.system[mode - 1] = row(first, text, 19 + mode, 18 + (mode - 1) * 110, -346)
-    end
-    local hint = W.Label(first, "Low and High also set magic and weather on the server.", 11, { 0.6, 0.6, 0.6 }, "LEFT")
-    hint:SetPoint("BOTTOMLEFT", window, "BOTTOMLEFT", 18, 40)
-    -- s6-ui-core (round 62; s6-optimize's plan step 4): the page arrows are the shared stepper (W.Stepper), the page
-    -- between them; its parts keep their names (window.back, window.on, window.pageLabel). Changing a page sends nothing.
-    local pages = W.Stepper(window, nil, function(step) M:Page(step) end, { valueWidth = 72, size = 11, colour = { 0.6, 0.6, 0.6 } })
-    pages:SetPoint("BOTTOMRIGHT", window, "BOTTOMRIGHT", -16, 12)
-    window.back, window.on, window.pageLabel = pages.back, pages.forward, pages.value
-    M:ShowPage(M.page or 1)
-    -- The server's answer comes as 0x23 or in 0x08: an open window looks a few times a second.
-    local elapsed = 0
-    window:SetScript("OnUpdate", function(_, dt)
-        elapsed = elapsed + (dt or 0)
-        if elapsed < 0.2 then return end
-        elapsed = 0
-        M:Refresh()
-    end)
-    -- s6-rules-dialogs. Wire: while the options tab shows, the server's "saved" (S 0x21) opens the tab's modal alert in
-    -- place of the saved notice (NewOptionPane::HandlePacketEvent 0x00540DB0); until it closes it takes the keys, and a
-    -- click outside it goes on to the side panel (DialogPane::HandlePointerOrMouseEvent 0x0049E240). Changing when these
-    -- two hooks run changes what the client sends after a 0x21.
-    window:HookScript("OnShow", function() __tk:DialogOptionPageShown(true); M:Refresh() end)
-    window:HookScript("OnHide", function() __tk:DialogOptionPageShown(false) end)
 end
+
+function scripts.SystemRows(w)
+    w.system = {}
+    for mode, text in ipairs({ "Low", "High", "Manual" }) do
+        w.system[mode - 1] = row(w.first, text, 19 + mode, 18 + (mode - 1) * 110, -346)
+    end
+end
+
+function scripts.Page(step) M:Page(step) end
+
+function scripts.Stepper(pages)
+    local w = pages:GetParent()
+    w.back, w.on, w.pageLabel = pages.back, pages.forward, pages.value
+end
+
+function scripts.FirstPage() M:ShowPage(M.page or 1) end
+
+local elapsed = 0
+function scripts.Poll(_, dt)
+    elapsed = elapsed + (dt or 0)
+    if elapsed < 0.2 then return end
+    elapsed = 0
+    M:Refresh()
+end
+
+-- Wire: the options tab's shown state for the dialogs (NewOptionPane::HandlePacketEvent 0x00540DB0's modal alert at the
+-- server's 0x21); changing when these run changes what the client sends after a 0x21.
+function scripts.Shown()
+    __tk:DialogOptionPageShown(true)
+    M:Refresh()
+end
+
+function scripts.Hidden() __tk:DialogOptionPageShown(false) end
+
+local function build() ui:New("Window") end
 
 --- Shows one of the tab's pages (kept while the window is closed, as the tab keeps field_12B9).
 function M:ShowPage(p)
@@ -177,16 +194,5 @@ O.SetWindow({
     Refresh = function() M:Refresh() end,
     IsOpen = function() return M:IsOpen() end, -- s6-modular-g (round 17): TK.Game.Options.WindowOpen asks it
 })
-
--- s6-ui-core (round 86, round 85's final review, P2): open at the interfaces' form switch, it opens again on its page
--- (TK.Interfaces:KeepAcrossForms), shown without the opener's tab switch (TK.Game.Options.Toggle's SidePanel.Switch(6)),
--- so nothing is sent and the active tab stays as it was. Wire: its OnShow marks the option page shown again, as before the
--- switch (a 0x21's alert, NewOptionPane::HandlePacketEvent 0x00540DB0); changing this changes what the client sends after
--- a 0x21.
-TK.Interfaces:KeepAcrossForms("gameoptions", function() return M:IsOpen() and (M.page or 1) or nil end, function(page)
-    if not window then build() end
-    M:ShowPage(page)
-    window:Show()
-end)
 
 return M

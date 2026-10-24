@@ -8,24 +8,27 @@
 -- this file): the colours, the palette's indexes, Fill, Digit and Number are the original client's palette
 -- (interfaces/original/palette.lua, moved there from here by s6-devtools), which this skin inherits; the font, the
 -- pictures, the bars and the item pictures stay 7.x's.
+-- s6-ui-core (round 85): the XML twin's; the screen's size and the font are skin.xml's (core/xml.md).
 
 local H = __tk
 
 local S = setmetatable({}, { __index = require("interfaces.original.palette") })
+local D = TK.Xml.Data("skin.xml")
+local FONT = D.FONT
 
--- 7.5.2's game screen: it runs at 1024 x 768 only (the EPF layout: Source-5's systems/entering-the-game-world.md).
-S.WIDTH, S.HEIGHT = 1024, 768
+-- 7.5.2's game screen: it runs at 1024 x 768 only (skin.xml's SCREEN).
+S.WIDTH, S.HEIGHT = D.SCREEN.width, D.SCREEN.height
 
 -- 7.5.2's font 0's face, for the texts and the edits (the original-client kit's X.Edit takes it).
-S.FACE = "classic"
+S.FACE = FONT.face
 
 --- A font string in the original's font and a colour index (S.TEXT by default), its lines 12 pixels apart as font 0's
 --- (TextEditPane's line height; our classic font asset leaves 2 more, its cell + 2, for Modern's chat). In smaller
 --- windows the whole original layout shrinks: text must follow its artwork to fit those fixed rectangles.
 function S.Text(fs, index)
-    fs:SetFont(S.FACE, 12, "SCALEWITHFRAME")
+    fs:SetFont(S.FACE, FONT.size, "SCALEWITHFRAME")
     fs:SetTextColor(S.Colour(index or S.TEXT))
-    fs:SetSpacing(-2)
+    fs:SetSpacing(FONT.spacing)
     return fs
 end
 

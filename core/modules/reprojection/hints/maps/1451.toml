@@ -1,0 +1,8 @@
+# Map 1451. s6-reprojection-cloud-1 (run 24): its waterfalls (7626-7628, rows 2 to 37) step down terraces, one below
+# the next. The module hints' wall of falls, three rows high, broke the steps into pieces there, so the rule's prop
+# stays.
+[check]
+size = "16x42"
+
+[sobj.7626-7628]
+kind = "prop"

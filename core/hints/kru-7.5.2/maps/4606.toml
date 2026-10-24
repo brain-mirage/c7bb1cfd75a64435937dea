@@ -1,0 +1,10 @@
+# Map 4606 (the arch over the stars) on the test server: what its own cells need beyond the base hints. Applies only
+# when the map the server sends passes the check (3.5).
+
+[check]
+size = "22x40"
+
+# s6-reprojection-cloud-3 (run 21, the sweep): the green roof over the great arch (the base hints' moon-gate, 2602-2615,
+# and the roof 2618-2629). As on Nagnang (maps/2500.toml), it floats here only, so the arch shows the stars behind it.
+[cells."6,6-15,6"]
+floats = true

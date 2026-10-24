@@ -513,8 +513,34 @@ function Frame:SetTakesEveryRelease(on) H:SetTakesEveryRelease(self.__h, on and 
 
 function Frame:SetScript(script, fn)
     self.__scripts = self.__scripts or {}
+    if script == "OnUpdate" and self.__updatePeriod then
+        -- s6-ui-core (round 101, T11 step 2): the host was counting a Throttled script's wait; what it had left goes back
+        -- to that script, which counts on from there if it keeps running (wrapped by HookScript, say)
+        self.__updateLeft, self.__updateLeftOf = H:GetUpdateWait(self.__h), self.__scripts.OnUpdate
+    end
     self.__scripts[script] = fn
+    if script == "OnUpdate" then self.__updatePeriod = nil end -- the host drops the period with it (UIFrame.SetScriptFlag)
     H:SetScriptFlag(self.__h, script, fn ~= nil)
+end
+
+--- s6-ui-core (round 101, the graphics plan's T11 step 2): the OnUpdate script is called by the host only every period
+--- seconds, the next time in wait; a new SetScript("OnUpdate") drops it. For TK.Util.Throttled, which hands its countdown
+--- over; drawing and polling only (no wire-timed script has a period).
+function Frame:SetUpdatePeriod(period, wait)
+    self.__updatePeriod = period
+    H:SetUpdatePeriod(self.__h, period, wait)
+end
+
+--- s6-ui-core (round 101, T11 step 3): the OnUpdate script is called by the host only on the frames where one of the
+--- named values changed since its last call, at the same point of the frame, and on its first frame shown (with a period,
+--- on a due frame only). The names (one argument each, so an XML <do SetUpdateWhen="world, position"/> gives them too):
+--- "position" (__tk:GetLocation's), "world" (the units, the player's values, the target: the world's snapshot), "line"
+--- (the logic's line and whether input is live), "look" (a look and the self-look presses), "minimap" (the minimap
+--- requests), "shown" (any frame shown or hidden), "saymode". For a script that only compares those values; when
+--- something else it draws from changes, calling this again has the script called on its next frame. Set after
+--- SetScript("OnUpdate"), which drops it. Drawing and watching only: no wire-timed script uses it.
+function Frame:SetUpdateWhen(...)
+    H:SetUpdateWhen(self.__h, table.concat({ ... }, ","))
 end
 
 function Frame:GetScript(script)

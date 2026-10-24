@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern's prompt line (its XML twin's layout; main.lua shows the prompts on it): the two lines a prompt is drawn on,
+     the rules' live one (TKRulesPrompt) and Classic Commands' offline one (TKClassicPrompt), and the watcher that shows
+     the live one. Format: core/xml.md. Drawing only: nothing is sent. -->
+<ui>
+  <!-- one prompt line, hidden: the bar a prompt's text is drawn on, above the chat (both lines are alike; main.lua makes
+       each by its name, the panel's own) -->
+  <template name="Bar">
+    <panel parent="UIParent">
+      <run call="Own"/>
+      <do FrameStrata="DIALOG" Size="460, 30" Point="BOTTOM, @parent, BOTTOM, 0, 190"/>
+      <label key="text" text="" size="13" colour="white" justify="LEFT" Point="LEFT, @parent, LEFT, 12, 0"/>
+      <do Hide=""/>
+    </panel>
+  </template>
+
+  <!-- shows the rules' line: a frame that runs while the panel is on (the prompt comes from the logic, not from a key of
+       ours); the panel's own -->
+  <template name="Watch">
+    <frame parent="UIParent">
+      <run call="Own"/>
+      <on script="OnUpdate" call="Watch"/>
+      <!-- s6-ui-core (round 101, T11 step 3): called only when the line changed or a frame was shown or hidden -->
+      <do SetUpdateWhen="line, shown"/>
+    </frame>
+  </template>
+</ui>

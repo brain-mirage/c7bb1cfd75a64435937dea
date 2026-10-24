@@ -12,6 +12,8 @@
 --   Drop Gold, Give Gold the gold commands, with the amount asked first
 --
 -- Each command is an action attached to its control (TK.Actions); the rules decide what is sent.
+--
+-- s6-ui-core (round 85): the XML twin's scripts; the window, its cells and rows are window.xml's (core/xml.md).
 
 local H = __tk
 local W = require("interfaces.modern.skin").UI -- s6-devtools (round 5, the separation's step 5): Modern's skin
@@ -19,11 +21,15 @@ local W = require("interfaces.modern.skin").UI -- s6-devtools (round 5, the sepa
 local Bag = {}
 TK.Bag = Bag
 
-local SLOTS, COLS, SIZE, GAP, ROW = 52, 13, 38, 4, 22
-local WIDTH = COLS * (SIZE + GAP) - GAP + 32
--- The lines a view shows at once, compact and expanded: the original's list has 13 rows, 26 expanded
--- (RebuildInventoryList); the grid keeps our 13 columns, 2 lines compact and all 4 expanded.
-local LINES = { grid = { [false] = 2, [true] = 4 }, list = { [false] = 13, [true] = 26 } }
+-- the scripts window.xml names, and its build (its templates: the window, a cell, a row)
+local scripts = {}
+local ui = TK.Xml.Load("window.xml", { scripts = scripts, elements = require("interfaces.modern.elements") })
+
+local B = ui.BAG -- the slots, the grid's columns, a cell's side and gap, a row's step, the window's width (window.xml's)
+local SLOTS, COLS, SIZE, GAP, ROW, WIDTH = B.slots, B.cols, B.size, B.gap, B.row, B.width
+
+--- The lines a view shows at once, compact or expanded (window.xml's LINES).
+local function linesOf(view, expanded) return ui.LINES[view][expanded and "expanded" or "compact"] end
 
 local window
 
@@ -46,52 +52,6 @@ local function setView(key, value)
     if TK.Settings:IsOpen() then TK.Settings:RefreshPage() end
 end
 
-local function makeCell(parent, i)
-    local b = CreateFrame("Button", "TKBagSlot" .. i, parent)
-    b:SetSize(SIZE, SIZE)
-    b.bg, b.icon, b.edge = W.SlotArt(b) -- s6-ui-core (round 62): the shared slot's picture, an item's edge, the light
-    b.glyph = W.Label(b, "", 18, W.white)
-    b.glyph:SetFont(18, "OUTLINE")
-    b.glyph:SetPoint("CENTER", b, "CENTER", 0, 1)
-    b.letter = W.Label(b, "", 10, { 0.85, 0.85, 0.85 }, "LEFT")
-    b.letter:SetFont(10, "OUTLINE")
-    b.letter:SetPoint("TOPLEFT", b, "TOPLEFT", 3, -2)
-    b.count = W.Label(b, "", 11, W.white, "RIGHT")
-    b.count:SetFont(11, "OUTLINE")
-    b.count:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", -3, 3)
-    local col, line = (i - 1) % COLS, math.floor((i - 1) / COLS)
-    b:SetPoint("TOPLEFT", parent, "TOPLEFT", 16 + col * (SIZE + GAP), -42 - line * (SIZE + GAP))
-    Inv.SlotControl(b)
-    return b
-end
-
-local function makeRow(parent, i)
-    local b = CreateFrame("Button", "TKBagRow" .. i, parent)
-    b:SetSize(WIDTH - 32, ROW - 2)
-    b:SetPoint("TOPLEFT", parent, "TOPLEFT", 16, -42 - (i - 1) * ROW)
-    b.bg = b:CreateTexture(nil, "BACKGROUND")
-    b.bg:SetAllPoints(b)
-    b.bg:SetColorTexture(1, 1, 1, i % 2 == 0 and 0.03 or 0.07)
-    local hl = b:CreateTexture(nil, "HIGHLIGHT")
-    hl:SetAllPoints(b)
-    hl:SetTexture("tk:button-hl")
-    hl:SetVertexColor(1, 1, 1, 0.35)
-    b.letter = W.Label(b, "", 12, { 0.85, 0.85, 0.85 }, "LEFT")
-    b.letter:SetPoint("LEFT", b, "LEFT", 6, 0)
-    b.iconBox = CreateFrame("Frame", nil, b)
-    b.iconBox:SetSize(18, 18)
-    b.iconBox:SetPoint("LEFT", b, "LEFT", 24, 0)
-    b.icon = b:CreateTexture(nil, "ARTWORK")
-    b.glyph = W.Label(b.iconBox, "", 12, W.white)
-    b.glyph:SetPoint("CENTER", b.iconBox, "CENTER", 0, 0)
-    b.name = W.Label(b, "", 12, W.white, "LEFT")
-    b.name:SetPoint("LEFT", b, "LEFT", 50, 0)
-    b.count = W.Label(b, "", 12, W.white, "RIGHT")
-    b.count:SetPoint("RIGHT", b, "RIGHT", -8, 0)
-    Inv.SlotControl(b)
-    return b
-end
-
 --- A control shows its real slot: the icon (or the empty slot's letter alone), and in a row the name.
 local function show(b, slot)
     local name, count = itemAt(slot)
@@ -106,60 +66,80 @@ local function show(b, slot)
     b.count:SetText(count and count > 1 and tostring(count) or "")
 end
 
-local function build()
-    window = W.Window("TKBagWindow", "Bag", WIDTH, LINES.grid[true] * (SIZE + GAP) + 112)
-    -- s6-interface-5x (round 14; Astra's review of round 13, P2): the shared widgets make it on UIParent, which makes it
-    -- no panel's until owned, so it goes with the bag when it is unloaded
-    TK.GetComponent("bag"):Own(window)
-    window:SetPoint("CENTER", UIParent, "CENTER", 260, 40)
-    window.offset = 0
-    window.cells, window.rows = {}, {}
-    for i = 1, SLOTS do window.cells[i] = makeCell(window, i) end
-    for i = 1, LINES.list[true] do window.rows[i] = makeRow(window, i) end
-    Inv.Track(window.cells)
-    Inv.Track(window.rows)
-    window.range = W.Label(window, "", 11, { 0.6, 0.6, 0.6 }, "LEFT")
-    window.range:SetPoint("TOPLEFT", window, "TOPLEFT", 18, -16)
-    window.gold = W.Label(window, "", 13, W.gold, "LEFT")
-    window.gold:SetPoint("BOTTOMLEFT", window, "BOTTOMLEFT", 18, 50)
-    local drop = W.Button(window, "Drop Gold", 110, 24, nil, function() Inv.GoldPrompt("dropgold", "Drop Gold") end)
-    drop:SetPoint("BOTTOMLEFT", window, "BOTTOMLEFT", 16, 14)
-    local give = W.Button(window, "Give Gold", 110, 24, nil, function() Inv.GoldPrompt("givegold", "Give Gold") end)
-    give:SetPoint("LEFT", drop, "RIGHT", 8, 0)
-    window.dropGold, window.giveGold = drop, give
-    -- The original's four buttons (GetButtonRect 2-5): List, Grid, Expand and Mix. Mix runs the dialog model's opener,
-    -- the action Shift+I runs (components/originalkeys), through the game layer's (TK.Game.Inventory.MixControl).
-    window.mix = W.Button(window, "Mix", 56, 24, nil, Inv.Mix)
-    window.mix:SetPoint("BOTTOMRIGHT", window, "BOTTOMRIGHT", -16, 14)
-    Inv.MixControl(window.mix)
-    window.expand = W.Button(window, "Compact", 76, 24, nil, function()
-        local _, expanded = viewSettings()
-        setView("expanded", not expanded)
-    end)
-    window.expand:SetPoint("RIGHT", window.mix, "LEFT", -6, 0)
-    window.list = W.Button(window, "List", 56, 24, nil, function() setView("view", "list") end)
-    window.list:SetPoint("RIGHT", window.expand, "LEFT", -6, 0)
-    window.grid = W.Button(window, "Grid", 56, 24, nil, function() setView("view", "grid") end)
-    window.grid:SetPoint("RIGHT", window.list, "LEFT", -6, 0)
-    window.hint = W.Label(window, "Right-click an item for its commands.", 11, { 0.6, 0.6, 0.6 }, "RIGHT")
-    window.hint:SetPoint("BOTTOMRIGHT", window, "BOTTOMRIGHT", -18, 50)
-    window:EnableMouseWheel(true)
-    window:SetScript("OnMouseWheel", function(_, delta) Bag:Scroll(-delta) end)
-    window:SetScript("OnShow", function() Bag:Refresh() end)
-    Inv.EndCarryOnHide(window) -- review r1: no carry outlives it
+-- ----- window.xml's scripts -----
 
-    local events = CreateFrame("Frame", nil, window)
-    events:RegisterEvent("BAG_UPDATE")
-    events:RegisterEvent("PLAYER_MONEY")
-    events:RegisterEvent("TK_WORLD_SOURCE")
-    events:SetScript("OnEvent", function()
-        if window:IsShown() then Bag:Refresh() end
-    end)
+local making -- the index of the cell or row being made (scripts.Slots), for its scripts
+
+function scripts.Own(w) TK.GetComponent("bag"):Own(w) end
+
+-- Wire: a slot's input path is the game layer's slot control (TK.Game.Inventory.SlotControl, 4a's
+-- NewInventoryPane::HandlePointerOrMouseEvent 0x004ECB50 whole: the press, the drag, the double press, Simple Click's
+-- release); changing it changes what the server sees.
+function scripts.SlotControl(b) Inv.SlotControl(b) end
+
+-- a cell's place in the grid, then its input path (wire: SlotControl above)
+function scripts.Cell(b)
+    local col, line = (making - 1) % COLS, math.floor((making - 1) / COLS)
+    b:SetPoint("TOPLEFT", b:GetParent(), "TOPLEFT", 16 + col * (SIZE + GAP), -42 - line * (SIZE + GAP))
+    Inv.SlotControl(b)
 end
+
+function scripts.RowPlace(b)
+    b:SetSize(WIDTH - 32, ROW - 2)
+    b:SetPoint("TOPLEFT", b:GetParent(), "TOPLEFT", 16, -42 - (making - 1) * ROW)
+end
+
+function scripts.RowShade(bg) bg:SetColorTexture(1, 1, 1, making % 2 == 0 and 0.03 or 0.07) end
+
+-- Every slot's cell, then the expanded list's rows. Wire: their actions follow the carry (TK.Game.Inventory.Track).
+function scripts.Slots(w, build)
+    for i = 1, SLOTS do
+        making = i
+        w.cells[i] = build:New("Cell", w, "TKBagSlot" .. i)
+    end
+    for i = 1, linesOf("list", true) do
+        making = i
+        w.rows[i] = build:New("Row", w, "TKBagRow" .. i)
+    end
+    making = nil
+    Inv.Track(w.cells)
+    Inv.Track(w.rows)
+end
+
+function scripts.DropGold() Inv.GoldPrompt("dropgold", "Drop Gold") end
+
+function scripts.GiveGold() Inv.GoldPrompt("givegold", "Give Gold") end
+
+-- Wire: the Mix button's action and its path are the game layer's (TK.Game.Inventory.MixControl and Mix, 4a's
+-- UserPane::OpenMixItemDialog), its click the game layer's own function; changing them changes what the server sees.
+scripts.Mix = Inv.Mix
+
+function scripts.MixControl(b) Inv.MixControl(b) end
+
+function scripts.ToggleExpanded()
+    local _, expanded = viewSettings()
+    setView("expanded", not expanded)
+end
+
+function scripts.ListView() setView("view", "list") end
+
+function scripts.GridView() setView("view", "grid") end
+
+function scripts.Wheel(_, delta) Bag:Scroll(-delta) end
+
+function scripts.Refresh() Bag:Refresh() end
+
+function scripts.EndCarryOnHide(w) Inv.EndCarryOnHide(w) end
+
+function scripts.Changed()
+    if window:IsShown() then Bag:Refresh() end
+end
+
+local function build() window = ui:New("Window") end
 
 --- The window's size and buttons for a view; the other view's controls hide.
 local function layout(view, expanded)
-    local lines = LINES[view][expanded]
+    local lines = linesOf(view, expanded)
     window:SetSize(WIDTH, (view == "grid" and lines * (SIZE + GAP) or lines * ROW) + 112)
     for _, b in ipairs(view == "grid" and window.rows or window.cells) do
         b.slot = nil
@@ -181,7 +161,7 @@ function Bag:Refresh()
         layout(view, expanded)
     end
     local per = view == "grid" and COLS or 1
-    local lines = LINES[view][expanded]
+    local lines = linesOf(view, expanded)
     local slots = {}
     for slot = 1, SLOTS do
         if expanded or itemAt(slot) then slots[#slots + 1] = slot end
@@ -224,7 +204,7 @@ function Bag:IsOpen() return window ~= nil and window:IsShown() end
 function Bag:Page(delta)
     if not self:IsOpen() then return false end
     local view, expanded = viewSettings()
-    self:Scroll(delta * LINES[view][expanded])
+    self:Scroll(delta * linesOf(view, expanded))
     return true
 end
 

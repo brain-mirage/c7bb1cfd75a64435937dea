@@ -8,4 +8,5 @@ local W = TK.UI
 function C:ApplySettings()
     local db = self:DB()
     W.SetUITransparency(db.uiTransparency / 100) -- s6-ui-settings (round 4); s6-ui-core (round 53): one level
+    TK.RefreshSpellIconAnimator() -- s6-ui-core (round 101, T11 step 1): Animate Spell Icons starts or stops the animators
 end

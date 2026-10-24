@@ -11,16 +11,19 @@
 -- 2), OK (0, image 14) at ((w - 63) / 2, h - 32), the area (11, 42) w - 22 by h - 82 (ComputeControlRect). 4a shows a
 -- browser in the area; ours shows the page's text, its address and Open in browser there (plan 5.11, D10: the system
 -- browser).
+-- s6-ui-core (round 85): the XML twin's; the windows' sizes, buttons and areas are web.xml's (core/xml.md).
 
 local S = require("interfaces.7x.skin")
+local unpack = table.unpack
+local entry = require("interfaces.original.entry")
+local D = TK.Xml.Data("web.xml")
 
 return function(L, X)
-    -- the web board's modes: the window's size, CLOSE's place and the browser's area
-    local MODES = {
-        [0] = { 700, 500, 318, 468, { 11, 42, 689, 460 } },
-        [4] = { 418, 566, 318, 468, { 11, 42, 407, 526 } },
-        [6] = { 800, 600, 368, 568, { 11, 42, 789, 560 } },
-    }
+    local A = D.AREA
+
+    -- the web board's modes (web.xml's): the window's size, CLOSE's place and the browser's area
+    local MODES = {}
+    for _, m in ipairs(D.WebBoard.modes) do MODES[m.mode] = m end
 
     --- The window at w x h on the web board's frame, its button (image) at (bx, by), the page's text, address and Open in
     --- browser in the browser's area (l, t)-(r, b); it slides open when it has just opened.
@@ -30,31 +33,35 @@ return function(L, X)
         X.WebFrame(win, w, h)
         X.Image(win, button, image, bx, by, bx + 63, by + 24)
         local l, t, r, b = area[1], area[2], area[3], area[4]
-        X.Text(win.text, win, l + 10, t + 10, r - 10, b - 40)
+        local i = A.inset
+        X.Text(win.text, win, l + i, t + i, r - i, b - A.textBottom)
         win.text:SetWordWrap(true)
-        X.Text(win.url, win, l + 10, t + 50, r - 10, t + 62, S.LIST)
+        X.Text(win.url, win, l + i, t + A.address, r - i, t + A.address + 12, S.LIST)
         win.open:ClearAllPoints()
-        win.open:SetPoint("BOTTOMLEFT", win, "TOPLEFT", l + 10, -(b - 10))
+        win.open:SetPoint("BOTTOMLEFT", win, "TOPLEFT", l + i, -(b - i))
         if opened then X.SlideOpen(win) end
     end
 
-    L.WebBoard = {
-        width = 700, height = 500, button = 63, openButton = 140, buttonHeight = 24,
+    local W = D.WebBoard
+    L.WebBoard = entry(W, {
         place = function(win) end,
         -- the mode's window (Board.update, after its texts)
         fill = function(win, c)
             local m = MODES[c.mode or 0] or MODES[0]
-            lay(win, m[1], m[2], win.close, 30, m[3], m[4], m[5])
+            local w, h = unpack(m.size)
+            local bx, by = unpack(m.close)
+            lay(win, w, h, win.close, W.image, bx, by, m.area)
         end,
-    }
+    })
 
-    L.Browser = {
-        width = 662, height = 562, button = 63, openButton = 140, buttonHeight = 24,
+    local B = D.Browser
+    L.Browser = entry(B, {
         place = function(win) end,
         fill = function(win, c)
-            local w, h = 662, 562
-            if c and c.help then w, h = 900, 650 end
-            lay(win, w, h, win.ok, 14, math.floor((w - 63) / 2), h - 32, { 11, 42, w - 11, h - 40 })
+            local w, h = B.width, B.height
+            if c and c.help then w, h = unpack(B.help) end
+            local a = B.area
+            lay(win, w, h, win.ok, B.image, math.floor((w - B.button) / 2), h - B.okUp, { a.left, a.top, w - a.right, h - a.bottom })
         end,
-    }
+    })
 end

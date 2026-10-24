@@ -96,6 +96,8 @@ local TREE_W = 226
 S.categories = {
     { id = "general", title = "General" },
     { id = "interface", title = "Interface" },
+    -- s6-reprojection-cloud-3 (run 21; the owner, head note 67: an "Aids" section beside the others): components/aids
+    { id = "aids", title = "Aids" },
     { id = "plugins", title = "Plugins" },
     { id = "experimental", title = "Experimental" }, -- s6-modular (round 13; the owner): the world renderers (components/worldrenderer)
 }
@@ -1403,8 +1405,8 @@ function S:ScrollTo(widget)
 end
 
 --- Sets an option exactly as its widget would (used by tests and scripts): finds the node's arg by key or name.
-function S:SetOption(nodeId, keyOrName, value)
-    local node = self:FindNode(nodeId)
+function S:SetOption(nodeId, keyOrName, value, startup)
+    local node = self:FindNode(nodeId, startup)
     if not node then return false end
     for _, tab in ipairs(node.tabs or {}) do
         -- s6-interface-5x (round 12): a row's controls are found by their own names (BuildPage's "row")
@@ -1573,12 +1575,9 @@ end
 local treeButtons = {}
 S.treeButtons = treeButtons -- tests: the tree's rows (and S.treeScroll, set when the window is built)
 
-function S:Nodes()
-    local all, inWorld = TK.Components:AllNodes(), TK.GameState:InWorld()
-    TK.KeyBindingsNode.tabs = TK.KeyBindingTabs()
-    -- s6-optimize (round 7's note): the login-only pages' tabs only at the login screen, where they are listed.
-    if not inWorld then TK.ServersNode.tabs = TK.ServerTabs() end
-    if not TK.LibraryPage.built and not inWorld then TK.LibraryNode.tabs = TK.LibraryTabs() end -- s6-library
+--- All built-in pages, including ones hidden in the current game state. Startup choices use the same registry.
+function S:AllNodes()
+    local all = TK.Components:AllNodes()
     for _, n in ipairs({ TK.ServersNode, TK.LocalServerNode, TK.LibraryNode, TK.TargetingNode, TK.KeyBindingsNode, -- s6-play-modes
                          TK.GraphicsNode, TK.GraphicsAdvancedNode, TK.GraphicsAdvancedGeneralNode, -- s6-ui-core (round 54)
                          TK.SoundNode, TK.ProfilesNode, TK.MiscNode }) do -- s6-ui-core (build 41): Misc
@@ -1589,8 +1588,18 @@ function S:Nodes()
         local place = S.places[n.id]
         if place then for k, v in pairs(place) do n[k] = v end end
     end
+    return all
+end
+
+--- The pages available to the player here (login or world).
+function S:Nodes()
+    local inWorld = TK.GameState:InWorld()
+    TK.KeyBindingsNode.tabs = TK.KeyBindingTabs()
+    -- Build menu contents when listing them, not when validating startup options. Server tabs can seed saved servers.
+    if not inWorld then TK.ServersNode.tabs = TK.ServerTabs() end
+    if not TK.LibraryPage.built and not inWorld then TK.LibraryNode.tabs = TK.LibraryTabs() end -- s6-library
     local nodes = {}
-    for _, n in ipairs(all) do
+    for _, n in ipairs(self:AllNodes()) do
         if (inWorld and not n.loginOnly) or (not inWorld and (n.atLogin or n.loginOnly)) then nodes[#nodes + 1] = n end
     end
     return nodes
@@ -1767,8 +1776,9 @@ function S:BuildTree(all)
     self:BuildCategoryTabs(all)
 end
 
-function S:FindNode(id)
-    for _, node in ipairs(self:Nodes()) do
+function S:FindNode(id, startup)
+    -- A launch override can set a page before login even when the menu hides that page there.
+    for _, node in ipairs(startup and self:AllNodes() or self:Nodes()) do
         if node.id == id then return node end
     end
 end
@@ -2580,6 +2590,7 @@ function TK.ServerTabs()
         args[#args + 1] = { type = "select", name = s.name .. " (" .. host .. ":" .. port .. ")", values = versions,
             get = function() return P.VersionOf(host, port) end,
             set = function(_, v)
+                P.StartupVersion = nil -- an explicit menu choice replaces the launch's temporary protocol override
                 P.SetVersion(host, port, v)
                 if s.id == H:GetEnabledServer() then TK.Login:ServerChanged() end
             end }

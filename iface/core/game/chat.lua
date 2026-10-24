@@ -87,6 +87,26 @@ function G.MenuChosen(i)
     if live() then TK.Actions:RunFrozen() elseif i <= 5 then G.OpenOffline(i - 1) end
 end
 
+--- The say-mode menu's press and release, for any interface's say-mode menu (s6-gateway-research round 38, P3: moved
+--- from 7.x's XML say-mode menu, research inventory-doubled-rules.md row 7, after Astra's review 38-1). The menu keeps
+--- the armed flag, its hit-testing and its drawing. WIRE: ChattingVarietySelectPane::HandlePointerOrMouseEvent
+--- (0x004811C0) arms on a left press (field_F8), and in its case 3 takes a left release only while armed. That release
+--- disarms the menu and chooses the row under it (MenuChosen); an unarmed release passes on to the map (MapPane
+--- 0x00507150). Changing which press arms or which release acts changes which action or object-info request the server
+--- sees.
+function G.MenuArms(button) return button == "LeftButton" end
+
+function G.MenuReleaseActs(button, armed) return button == "LeftButton" and armed == true end
+
+--- The setting buttons' press and release rules, moved from 7xchatbar for P3. The interface retains held/released
+--- flags, hit testing and artwork. WIRE: ChattingHandlePane::HandlePointerOrMouseEvent (0x00481D60),
+--- ChattingPane.cpp:1244-1268 (press): a single left press arms field_119/11A/11B, and a double press arms
+--- nothing; ChattingPane.cpp:1269-1302 (release): only a matching left release with a truthy armed flag acts.
+--- Changing this changes Back to Talk and later chat packets the server sees.
+function G.BarButtonArms(button, double) return button == "LeftButton" and not double end
+
+function G.BarButtonReleaseActs(button, armed) return button == "LeftButton" and armed end
+
 -- ----- the typing area -----
 
 --- The typing area's action as the line is now: the rules' chat:current (the say mode's line, or Talk's with Back to
@@ -99,11 +119,14 @@ function G.UpdateTyping(area)
     TK.Actions:SetTable(area, idle and { kind = "chat:current" } or nil)
 end
 
---- A left press on a typing area (ChattingPane.cpp:1244-1257: the press opens the line, so keys typed before the release
---- are its). Live: the area's action as the line is at this press (s6-ui-core round 32: a press in the frame whose Esc
---- closed the line opens it again, as 4a's in the input's order), run on the press's record. Offline: the say mode's
---- line (Talk's with Back to Talk), unless one is open. Wire: as UpdateTyping.
-function G.TypingPress(area)
+--- A typing-area press (ChattingPane.cpp:1244-1257: the press opens the line, so keys typed before the release are its).
+--- Interface handlers pass the button for the shared left-button check; an omitted button retains the documented direct
+--- call's existing admitted-press behavior. Live: the area's action as the line is at this press (s6-ui-core round 32:
+--- a press in the frame whose Esc closed the line opens it again, as 4a's in the input's order), run on the press's
+--- record. Offline: the say mode's line (Talk's with Back to Talk), unless one is open. WIRE: changing which press is
+--- accepted changes which chat packet follows.
+function G.TypingPress(area, button)
+    if button ~= nil and button ~= "LeftButton" then return end
     if live() then
         G.UpdateTyping(area)
         TK.Actions:RunFrame(area)

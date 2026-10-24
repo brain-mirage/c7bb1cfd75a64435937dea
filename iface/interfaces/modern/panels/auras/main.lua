@@ -10,6 +10,8 @@
 --
 -- The aether list is an optional frame with the running aethers (cooldowns), shortest first. The action buttons
 -- show the same aethers as their numbers and clocks.
+-- s6-ui-core (round 85): the XML twin's scripts; the frames, an effect's icon and an aether's row are main.xml's
+-- (core/xml.md).
 
 local C = TK.GetComponent("auras")
 local H = __tk
@@ -72,23 +74,10 @@ local function showTooltip(b)
     GameTooltip:Show()
 end
 
+local ui -- main.xml's build (C:OnEnable)
+
 local function makeIcon(f, i)
-    local b = CreateFrame("Button", f:GetName() .. "Icon" .. i, f)
-    -- s6-ui-core (round 62): the shared slot's picture, darker, the edge in the effect's colour (updated), the light
-    b.bg, b.icon, b.border = W.SlotArt(b, { bg = { 0.12, 0.12, 0.14, 0.9 }, inset = 4 })
-    b.mark = W.Label(b, "?", 12, { 1, 0.6, 0.2 })
-    b.mark:SetFont(12, "OUTLINE")
-    b.mark:SetPoint("TOPRIGHT", b, "TOPRIGHT", -2, -1)
-    b.time = W.Label(b, "", 11, W.white)
-    b.time:SetFont(11, "OUTLINE")
-    b.time:SetPoint("TOP", b, "BOTTOM", 0, -1)
-    b:RegisterForClicks("RightButtonUp")
-    b:SetScript("OnClick", function(self, button)
-        if button == "RightButton" and self.effect then C:Reclassify(self.effect.name) end
-    end)
-    b:SetScript("OnEnter", showTooltip)
-    b:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    return b
+    return ui:New("EffectIcon", f, f:GetName() .. "Icon" .. i)
 end
 
 local function styleIcon(b, e)
@@ -105,6 +94,14 @@ local function styleIcon(b, e)
     b.timeKey = nil
     b.blinking = false
     b:SetAlpha(1)
+end
+
+--- Whether any of the effects has a time (one the server sent with a negative time has none).
+local function timed(list)
+    for _, e in ipairs(list) do
+        if e.expires >= 0 then return true end
+    end
+    return false
 end
 
 --- Lays out a buff or debuff frame: icons in rows of perRow, in the chosen directions, the time under each.
@@ -138,9 +135,12 @@ function C:LayoutIcons(key)
         end
     end
     self:TickIcons(key)
+    -- s6-ui-core (round 101, T11 step 4): ticked only while an icon has a time to show or to blink by
+    TK.Util.Updating(f, (db.showTime or db.blink) and timed(list))
 end
 
---- Every frame: the time labels (only when the shown text changes) and blinking in the last 10 seconds.
+--- Every frame while an icon has a time (LayoutIcons): the time labels (only when the shown text changes) and blinking in
+--- the last 10 seconds.
 function C:TickIcons(key)
     local db, f, list = self:DB()[key], self.frames[key], self.lists[key]
     if #list == 0 then return end
@@ -199,30 +199,11 @@ end
 
 -- ----- the aether list -----
 
-local ROW = 24
+local ROW = TK.Xml.Data("main.xml").SIZES.row -- main.xml's
 
 local function makeRow(f, i)
-    local r = CreateFrame("Frame", nil, f)
-    r:SetHeight(ROW - 2)
-    r.box = CreateFrame("Frame", nil, r)
-    r.box:SetSize(ROW - 4, ROW - 4)
-    r.box:SetPoint("LEFT", r, "LEFT", 2, 0)
-    r.icon = r.box:CreateTexture(nil, "ARTWORK")
-    r.glyph = W.Label(r.box, "", 12, W.white)
-    r.glyph:SetFont(12, "OUTLINE")
-    r.glyph:SetPoint("CENTER", r.box, "CENTER", 0, 0)
-    r.name = W.Label(r, "", 12, W.white, "LEFT")
-    r.name:SetPoint("LEFT", r.box, "RIGHT", 6, 2)
-    r.time = W.Label(r, "", 12, { 1, 0.95, 0.6 }, "RIGHT")
-    r.time:SetFont(12, "OUTLINE")
-    r.time:SetPoint("RIGHT", r, "RIGHT", -4, 2)
-    r.bar = CreateFrame("StatusBar", nil, r)
-    r.bar:SetHeight(3)
-    r.bar:SetPoint("BOTTOMLEFT", r.box, "BOTTOMRIGHT", 6, 0)
-    r.bar:SetPoint("BOTTOMRIGHT", r, "BOTTOMRIGHT", -4, 1)
-    r.bar:SetStatusBarTexture("tk:bar")
-    r.bar:SetStatusBarColor(0.9, 0.75, 0.3, 1)
-    r.bar:SetMinMaxValues(0, 1)
+    local r = ui:New("AetherRow", f)
+    r.icon, r.glyph = r.box.icon, r.box.glyph
     return r
 end
 
@@ -270,6 +251,7 @@ function C:LayoutAethers()
         end
     end
     self:TickAethers()
+    TK.Util.Updating(f, n > 0) -- s6-ui-core (round 101, T11 step 4): ticked only while it lists an aether
 end
 
 function C:TickAethers()
@@ -292,40 +274,44 @@ end
 
 -- ----- frames -----
 
-function C:OnEnable()
-    local titles = { buffs = "Buffs", debuffs = "Debuffs", aethers = "Aether List" }
-    local names = { buffs = "TKBuffFrame", debuffs = "TKDebuffFrame", aethers = "TKAetherFrame" }
-    for _, key in ipairs({ "buffs", "debuffs", "aethers" }) do
-        local f = CreateFrame("Frame", names[key], UIParent)
-        f.icons, f.rows = {}, {}
-        self.frames[key] = f
-        TK.Visibility:Attach(f, function() return self:DB()[key] end)
-        TK.EditMode:Register(f, key, titles[key], C.defaultPositions[key], key,
-            function() return self:DB()[key].enabled end)
-    end
-    self.frames.aethers:SetBackdrop({ bg = { 0.04, 0.04, 0.05, 0.75 }, edge = { 0, 0, 0, 0 } })
-    -- s6-ui-settings (round 4): the shared panel style; s6-ui-core (round 53): or the aether list's own
-    TK.UI.HudPanel(self.frames.aethers, function() return self:DB().aethers end)
-    self.frames.buffs:SetScript("OnUpdate", function() self:TickIcons("buffs") end)
-    self.frames.debuffs:SetScript("OnUpdate", function() self:TickIcons("debuffs") end)
-    self.frames.aethers:SetScript("OnUpdate", function() self:TickAethers() end)
+-- the scripts main.xml names
+local scripts = {}
 
-    local events = CreateFrame("Frame")
-    for _, e in ipairs({ "UNIT_AURA", "ACTIONBAR_UPDATE_COOLDOWN", "PLAYER_ENTERING_WORLD", "SPELLS_CHANGED",
-                         "BAG_UPDATE", "TK_DRAWING_STYLE_CHANGED", -- s6-ui-bars: the aethers' spell pictures
-                         "TK_SPELL_ICONS_CHANGED" }) do -- s6-spell-icons: a spell's icon chosen in its editor
-        events:RegisterEvent(e)
+function scripts.Reclassify(self, button)
+    if button == "RightButton" and self.effect then C:Reclassify(self.effect.name) end
+end
+
+scripts.Tip = showTooltip
+
+function scripts.Untip() GameTooltip:Hide() end
+
+-- a frame's edit mode entry, its visibility by its settings (f.edit: their key and the mover's title)
+function scripts.Register(f)
+    local key = f.edit.id
+    C.frames[key] = f
+    TK.Visibility:Attach(f, function() return C:DB()[key] end)
+    TK.EditMode:Register(f, key, f.edit.title, C.defaultPositions[key], key, function() return C:DB()[key].enabled end)
+end
+
+function scripts.HudPanel(f) TK.UI.HudPanel(f, function() return C:DB().aethers end) end
+
+function scripts.TickIcons(f) C:TickIcons(f.edit.id) end
+
+function scripts.TickAethers() C:TickAethers() end
+
+function scripts.Changed(_, event, unit)
+    if event == "UNIT_AURA" then
+        if unit == "player" then C:Refresh() end
+    elseif event == "PLAYER_ENTERING_WORLD" then
+        C:Refresh()
+        C:RefreshAethers()
+    else
+        C:RefreshAethers()
     end
-    events:SetScript("OnEvent", function(_, event, unit)
-        if event == "UNIT_AURA" then
-            if unit == "player" then self:Refresh() end
-        elseif event == "PLAYER_ENTERING_WORLD" then
-            self:Refresh()
-            self:RefreshAethers()
-        else
-            self:RefreshAethers()
-        end
-    end)
+end
+
+function C:OnEnable()
+    ui = TK.Xml.Load("main.xml", { scripts = scripts, elements = require("interfaces.modern.elements") })
 end
 
 function C:ApplySettings()

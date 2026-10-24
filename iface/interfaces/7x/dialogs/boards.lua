@@ -39,141 +39,156 @@
 --   rectangle), the next from 6 x lines + 5 further or, ending its row, 21 lower at 36; a block value 21 lower at
 --   (36, y)-(400, y + 16 lines), the next 21 x (16 lines / 21 + 1) lower; the free form's one field (36, 110)-(410, 25 rows
 --   + 110). Edits in 0x8F. It slides open when it is the session's first.
+-- s6-ui-core (round 85): the XML twin's; the windows' pictures, buttons, lists and the parts' places are boards.xml's
+-- (core/xml.md).
 
 local S = require("interfaces.7x.skin")
+local unpack = table.unpack
+local entry = require("interfaces.original.entry")
+local D = TK.Xml.Data("boards.xml")
 
 return function(L, X)
     -- what 5.x's look draws alike: interfaces/original/boards.lua
     local B = require("interfaces.original.boards")(X)
     local first = B.First
+    local EDIT = D.EDIT
 
-    --- The window's picture and its image buttons: { index, image, left, top } each (63 x 24).
-    local function frame(win, file, buttons)
-        X.Art(win, file, (file:gsub("EPF$", "PAL")))
-        for _, b in ipairs(buttons) do
-            X.Image(win, win.controls[b[1]], b[2], b[3], b[4], b[3] + 63, b[4] + 24)
+    --- The window's picture and its image buttons (boards.xml's window: its file, and { index, image, x, y } each,
+    --- 63 x 24).
+    local function frame(win, w)
+        X.Art(win, w.file, (w.file:gsub("EPF$", "PAL")))
+        for _, b in ipairs(w) do
+            X.Image(win, win.controls[b.index], b.image, b.x, b.y, b.x + 63, b.y + 24)
         end
     end
 
-    L.Boards = {
-        width = 451, height = 420, button = 63, listWidth = 347, listHeight = 300, slide = first,
+    local BO = D.Boards
+    L.Boards = entry(BO, {
+        slide = first,
         place = function(win)
-            frame(win, "DLGBBS01.EPF", { { 1, 17, 144, 381 }, { 2, 15, 231, 381 } })
-            X.List(win, win.list, 25, 56, 430, 356, 360, 14)
+            frame(win, BO.window)
+            X.List(win, win.list, unpack(BO.window.list))
             B.Colours(win.list)
         end,
-    }
+    })
 
     -- An article list or the mail list, by the class being built.
     -- Wire (Astra's review of round 12): these two lists page. Their 14-pixel rows (ListPane's m_cellSize.y) and their
-    -- rectangles' heights (the mail's 280, twenty rows exactly; the articles' 272) are 4a's, and they decide when a
-    -- list shows its end: ListPane::GetScrollRange (0x004F3F20) and the position a wheel notch or the bar moves by a row,
-    -- the older rows asked for (3B 02) when the position meets the range (MailListPane::HandlePointerOrMouseEvent
-    -- 0x0047AD80, ArticleListPane's 0x00474EC0; the kit's list:AtEnd). Changing a row's height or a list's rectangle
-    -- changes when the client asks for older mail or articles.
-    L.BoardList = {
-        width = 451, height = 420, button = 63, listWidth = 367, listHeight = 272, slide = first,
+    -- rectangles' heights (the mail's 280, twenty rows exactly; the articles' 272: boards.xml's) are 4a's, and they
+    -- decide when a list shows its end: ListPane::GetScrollRange (0x004F3F20) and the position a wheel notch or the bar
+    -- moves by a row, the older rows asked for (3B 02) when the position meets the range
+    -- (MailListPane::HandlePointerOrMouseEvent 0x0047AD80, ArticleListPane's 0x00474EC0; the kit's list:AtEnd). Changing
+    -- a row's height or a list's rectangle changes when the client asks for older mail or articles.
+    local BL = D.BoardList
+    L.BoardList = entry(BL, {
+        slide = first,
         place = function(win)
             if win.className == "MailListDialog" then
-                frame(win, "DLGBBS05.EPF", { { 1, 17, 37, 356 }, { 2, 32, 112, 356 }, { 3, 33, 187, 356 }, { 4, 21, 262, 356 },
-                    { 5, 31, 337, 356 }, { 6, 15, 187, 386 } })
-                X.List(win, win.list, 25, 56, 430, 336, 360, 14)
+                frame(win, BL.mail)
+                X.List(win, win.list, unpack(BL.mail.list))
             else
-                frame(win, "DLGBBS02.EPF", { { 1, 17, 37, 381 }, { 2, 32, 112, 381 }, { 3, 31, 187, 381 }, { 4, 21, 262, 381 },
-                    { 5, 15, 337, 381 }, { 8, 31, 348, 53 } })
-                B.Heading(win, 94, 59, 404, 71)
-                X.List(win, win.list, 25, 85, 430, 357, 380, 14)
+                frame(win, BL.articles)
+                B.Heading(win, unpack(BL.articles.heading))
+                X.List(win, win.list, unpack(BL.articles.list))
             end
             B.Colours(win.list)
         end,
         -- a row (the model's { status, id, author or sender, month, day, subject }): the columns above
-        row = function(win, row, r) B.Row(row, r, 35, 110, 150, 208) end,
-    }
+        row = function(win, row, r) B.Row(row, r, BL.row.author, BL.row.date, BL.row.subject, BL.row.width) end,
+    })
 
-    L.Reader = {
-        width = 451, height = 420, button = 63, bodyWidth = 392, bodyHeight = 200, slide = first,
+    local R = D.Reader
+    L.Reader = entry(R, {
+        slide = first,
         place = function(win)
-            frame(win, "DLGBBS03.EPF", { { 1, 19, 37, 356 }, { 2, 32, 112, 356 }, { 3, 31, 187, 356 }, { 4, 21, 262, 356 },
-                { 5, 18, 337, 356 }, { 6, 15, 187, 386 } })
-            B.Heading(win, 94, 58, 406, 70)
-            X.StaticText(win, "x7author", 94, 85, 214, 97, S.LIST)
-            X.StaticText(win, "x7date", 309, 85, 405, 97, S.LIST)
-            X.StaticText(win, "x7subject", 94, 112, 406, 124, S.LIST)
+            frame(win, R.window)
+            B.Heading(win, unpack(R.heading))
+            X.StaticText(win, "x7author", R.author[1], R.author[2], R.author[3], R.author[4], S.LIST)
+            X.StaticText(win, "x7date", R.date[1], R.date[2], R.date[3], R.date[4], S.LIST)
+            X.StaticText(win, "x7subject", R.subject[1], R.subject[2], R.subject[3], R.subject[4], S.LIST)
             win.head:Hide()
-            B.Body(win, 25, 139, 430, 339, 379)
+            B.Body(win, unpack(R.body))
         end,
         fill = B.Fill("author"),
-    }
+    })
 
-    L.Letter = {
-        width = 451, height = 420, button = 63, bodyWidth = 392, bodyHeight = 224, slide = first,
+    local LE = D.Letter
+    L.Letter = entry(LE, {
+        slide = first,
         place = function(win)
-            frame(win, "DLGBBS06.EPF", { { 1, 32, 59, 356 }, { 2, 33, 144, 356 }, { 3, 21, 229, 356 }, { 4, 31, 314, 356 },
-                { 5, 19, 102, 386 }, { 6, 15, 187, 386 }, { 7, 18, 272, 386 } })
-            X.StaticText(win, "x7author", 94, 59, 214, 71, S.LIST)
-            X.StaticText(win, "x7date", 310, 59, 430, 71, S.LIST)
-            X.StaticText(win, "x7subject", 94, 86, 406, 98, S.LIST)
+            frame(win, LE.window)
+            X.StaticText(win, "x7author", LE.author[1], LE.author[2], LE.author[3], LE.author[4], S.LIST)
+            X.StaticText(win, "x7date", LE.date[1], LE.date[2], LE.date[3], LE.date[4], S.LIST)
+            X.StaticText(win, "x7subject", LE.subject[1], LE.subject[2], LE.subject[3], LE.subject[4], S.LIST)
             win.head:Hide()
-            B.Body(win, 25, 112, 430, 336, 379)
+            B.Body(win, unpack(LE.body))
         end,
         fill = B.Fill("sender"),
-    }
+    })
 
     -- the predefined form: its entries laid out by 4a's cursor (entryAt), its size and tiles by the rows they took (fit)
-    L.Form = {
-        width = 450, height = 329, button = 63, subjectWidth = 310, editHeight = 12, freeWidth = 374, freeHeight = 125,
-        entryWidth = 120, firstEntry = 0,
+    local F = D.Form
+    local function editBar(w, edit, l, t, r, b) X.EditBar(edit, w, l, t, r, b, EDIT) end
+    L.Form = entry(F, {
         place = function(win)
-            B.Heading(win, 94, 59, 404, 71)
-            X.Edit(win.subject, win, 94, 86, 404, 98, 0x8F)
-            X.EditBar(win.free, win, 36, 110, 410, 235, 0x8F)
+            B.Heading(win, unpack(F.heading))
+            local s = F.subject
+            X.Edit(win.subject, win, s[1], s[2], s[3], s[4], EDIT)
+            editBar(win, win.free, unpack(F.free))
         end,
         entrySize = B.EntrySize,
         -- the entries at 4a's cursor from (36, 110) (B.EntryAt), their values edits in 0x8F
-        entryAt = B.EntryAt(110,
-            function(w, edit, l, t, r, b) X.Edit(edit, w, l, t, r, b, 0x8F) end,
-            function(w, edit, l, t, r, b) X.EditBar(edit, w, l, t, r, b, 0x8F) end),
+        entryAt = B.EntryAt(F.entries,
+            function(w, edit, l, t, r, b) X.Edit(edit, w, l, t, r, b, EDIT) end,
+            editBar),
         nextEntry = B.NextEntry,
         -- the window by its rows: its tiles, SEND and CANCEL under them; it slides open when it is the session's first
         fit = function(win, free, count)
             local rows = B.FormRows(win, free, count)
-            local h = 25 * rows + 204
+            local t = F.tiles
+            local h = t.header + t.row * rows + t.footer
             local opened = win.opened
-            X.Size(win, 450, h)
-            local tile, F, P = X.Tiler(win), "DLGBBS08.EPF", "DLGBBS08.PAL"
-            tile(F, 0, P, 0, 0, 450, 120)
-            for k = 0, rows - 1 do tile(F, 1, P, 0, 120 + 25 * k, 450, 25) end
-            tile(F, 2, P, 0, 120 + 25 * rows, 450, 84)
-            local top = 25 * rows + 139
-            X.Image(win, win.controls[0], 23, 149, top, 212, top + 24)
-            X.Image(win, win.controls[1], 22, 226, top, 289, top + 24)
-            if free then X.EditBar(win.free, win, 36, 110, 410, 25 * rows + 110, 0x8F) end
+            X.Size(win, F.width, h)
+            local tile = X.Tiler(win)
+            tile(t.file, 0, t.palette, 0, 0, F.width, t.header)
+            for k = 0, rows - 1 do tile(t.file, 1, t.palette, 0, t.header + t.row * k, F.width, t.row) end
+            tile(t.file, 2, t.palette, 0, t.header + t.row * rows, F.width, t.footer)
+            local top = t.header + t.row * rows + t.buttons
+            for _, b in ipairs(F.buttons) do
+                X.Image(win, win.controls[b.index], b.image, b.x, top, b.x + 63, top + 24)
+            end
+            if free then
+                local f = F.free
+                editBar(win, win.free, f[1], f[2], f[3], t.row * rows + F.entries)
+            end
             if opened and win.view and first(win, win.view) then X.SlideOpen(win) end
         end,
-    }
+    })
 
-    L.Editor = {
-        width = 451, height = 420, button = 63, subjectWidth = 312, editHeight = 12, bodyWidth = 405, bodyHeight = 244,
+    local E = D.Editor
+    L.Editor = entry(E, {
         slide = first,
         place = function(win)
-            frame(win, "DLGBBS04.EPF", { { 1, 23, 144, 381 }, { 2, 22, 231, 381 } })
-            B.Heading(win, 94, 58, 406, 70)
-            X.Edit(win.subject, win, 94, 85, 406, 97, 0x8F)
-            X.EditBar(win.body, win, 25, 112, 430, 356, 0x8F)
+            frame(win, E.window)
+            B.Heading(win, unpack(E.heading))
+            local s = E.subject
+            X.Edit(win.subject, win, s[1], s[2], s[3], s[4], EDIT)
+            editBar(win, win.body, unpack(E.body))
         end,
-    }
+    })
 
-    L.NewMail = {
-        width = 451, height = 420, button = 63, recipientWidth = 312, subjectWidth = 312, editHeight = 12,
-        bodyWidth = 405, bodyHeight = 244, slide = first,
+    local N = D.NewMail
+    L.NewMail = entry(N, {
+        slide = first,
         place = function(win)
-            frame(win, "DLGBBS07.EPF", { { 1, 23, 144, 381 }, { 2, 22, 231, 381 } })
-            X.Edit(win.recipient, win, 94, 58, 406, 70, 0x8F)
-            X.Text(win.fixed, win, 94, 58, 406, 70, S.LIST)
-            X.Edit(win.subject, win, 94, 85, 406, 97, 0x8F)
-            X.EditBar(win.body, win, 25, 112, 430, 356, 0x8F)
+            frame(win, N.window)
+            local r, s = N.recipient, N.subject
+            X.Edit(win.recipient, win, r[1], r[2], r[3], r[4], EDIT)
+            X.Text(win.fixed, win, r[1], r[2], r[3], r[4], S.LIST)
+            X.Edit(win.subject, win, s[1], s[2], s[3], s[4], EDIT)
+            editBar(win, win.body, unpack(N.body))
             -- keep a copy (6), its caption in 0x80
-            B.KeepCopy(win, { 36, 384, 52, 400 }, { 56, 386, 128, 398 })
+            B.KeepCopy(win, N.keepCopy, N.keepCopyCaption)
         end,
-    }
+    })
 end

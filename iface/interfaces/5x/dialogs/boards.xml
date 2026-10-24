@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 5.x's look of the boards and mail (its XML twin's layout; boards.lua draws with it), from 5.33's own constructors,
+     7.5.2's older layout to the pixel but for the rows' columns and the form's entries (boards.lua's header). Every
+     window but the form 446 x 366 on its DLGBBSnn.EPF frame 0 in NPAL8.PAL. Format: core/xml.md; each dialog's attributes
+     are its look entry's values (interfaces/original/entry.lua), its children where boards.lua draws its parts: rectangles (left, top,
+     right, bottom) and the window's frame: its picture, its image buttons ({ control index, image, left, top }, 72 x 16)
+     and its default button's index.
+     WIRE: a control's rectangle is where a press on it lands (changing one changes which control a press reaches); the
+     lists' drawn rows do not decide when older rows are asked for (3B 02: the component's 7.5.2 view, boards.lua's
+     header). -->
+<ui>
+  <!-- the image buttons' size -->
+  <data key="BUTTON" width="72" height="16"/>
+  <!-- the lists' place: (36, 71)-(410, 295), 360 x 14 cells -->
+  <data key="LIST" value="36, 71, 410, 295, 360, 14"/>
+
+  <!-- the boards (BoardListDialog 0x004087C0, DLGBBS01): VIEW (1), QUIT (2); VIEW the default -->
+  <data key="Boards" width="446" height="366" button="72" listWidth="361" listHeight="224">
+    <data key="frame" file="DLGBBS01.EPF" default="1">
+      <b value="1, 17, 149, 316"/>
+      <b value="2, 15, 226, 316"/>
+    </data>
+  </data>
+  <!-- the article list (ArticleListDialog 0x00409040, DLGBBS02): VIEW, NEW, UP, DELETE, QUIT (1-5) along y 316, the
+       extra UP (8) at (34, 53), the board's title; the mail list (MailListDialog 0x0040D8B0, DLGBBS05): VIEW, NEW, REPLY,
+       DELETE, UP (1-5), QUIT (6) at (187, 333). Their rows: from x 60 the author (the sender), from 150 the date, from 200
+       the subject fitted to 160 (the mail's 110) -->
+  <data key="BoardList" width="446" height="366" button="72" listWidth="361" listHeight="224">
+    <data key="mail" file="DLGBBS05.EPF" default="1">
+      <b value="1, 17, 37, 316"/>
+      <b value="2, 32, 112, 316"/>
+      <b value="3, 33, 187, 316"/>
+      <b value="4, 21, 262, 316"/>
+      <b value="5, 31, 337, 316"/>
+      <b value="6, 15, 187, 333"/>
+    </data>
+    <data key="articles" file="DLGBBS02.EPF" default="1">
+      <b value="1, 17, 37, 316"/>
+      <b value="2, 32, 112, 316"/>
+      <b value="3, 31, 187, 316"/>
+      <b value="4, 21, 262, 316"/>
+      <b value="5, 15, 337, 316"/>
+      <b value="8, 31, 34, 53"/>
+    </data>
+    <data key="heading" value="131, 54, 409, 66"/>
+    <data key="columns" author="60" date="150" subject="200" subjectWidth="160" mailSubjectWidth="110"/>
+  </data>
+  <!-- an article (ArticleDialog 0x0040B2A0, DLGBBS03): NEXT, NEW, UP, DELETE, PREV (1-5) along y 316, QUIT (6) at
+       (187, 333), PREV the default; the heading, the author, the date, the subject in 0x25; the body wrapped at 362 -->
+  <data key="Reader" width="446" height="366" button="72" bodyWidth="361" bodyHeight="180">
+    <data key="frame" file="DLGBBS03.EPF" default="5">
+      <b value="1, 19, 37, 316"/>
+      <b value="2, 32, 112, 316"/>
+      <b value="3, 31, 187, 316"/>
+      <b value="4, 21, 262, 316"/>
+      <b value="5, 18, 337, 316"/>
+      <b value="6, 15, 187, 333"/>
+    </data>
+    <data key="heading" value="142, 54, 410, 66"/>
+    <data key="author" value="111, 74, 231, 86"/>
+    <data key="date" value="290, 74, 410, 86"/>
+    <data key="subject" value="111, 93, 410, 106"/>
+    <data key="body" value="36, 115, 410, 295, 362"/>
+  </data>
+  <!-- a letter (MailDialog 0x0040F5B0, DLGBBS06): NEW, REPLY, DELETE, UP (1-4) along y 316 from x 74; NEXT, QUIT, PREV
+       (5-7) along y 333 from x 112, PREV the default; the sender, the date, the subject; the body -->
+  <data key="Letter" width="446" height="366" button="72" bodyWidth="361" bodyHeight="168">
+    <data key="frame" file="DLGBBS06.EPF" default="7">
+      <b value="1, 32, 74, 316"/>
+      <b value="2, 33, 149, 316"/>
+      <b value="3, 21, 224, 316"/>
+      <b value="4, 31, 299, 316"/>
+      <b value="5, 19, 112, 333"/>
+      <b value="6, 15, 187, 333"/>
+      <b value="7, 18, 262, 333"/>
+    </data>
+    <data key="author" value="111, 84, 231, 96"/>
+    <data key="date" value="290, 84, 410, 96"/>
+    <data key="subject" value="111, 103, 410, 116"/>
+    <data key="body" value="36, 127, 410, 295, 362"/>
+  </data>
+  <!-- the predefined form (NewPredefinedFormArticleDialog 0x0040C870, OnPaint 0x0040D630): 446 x (21 rows + 158), filled
+       in colour 0, then DLGBBS08's header (frame 0), a row tile (frame 1 at its own left, 16) for each row from y 88 and
+       its footer (frame 2); SEND (0, image 23) and CANCEL (1, image 22) at (149, T) and (226, T), T = 21 rows + 108; the
+       heading, the subject; the entries from (36, 88), 21 a row, their values edits in 0x8F with 5.33's border (its text
+       2 pixels in, a frame in 0x80 one pixel in, the outer edge's top and left 0x88, its bottom and right 0x8C:
+       SharedTextControlPaneOnPaint 0x0041BF00); the free form's field (36, 88)-(410, 21 rows + 88) -->
+  <data key="Form" width="446" height="263" button="72" subjectWidth="279" editHeight="12" freeWidth="374"
+        freeHeight="105" entryWidth="120" firstEntry="0">
+    <data key="heading" value="131, 51, 410, 63"/>
+    <data key="subject" value="131, 71, 410, 83"/>
+    <data key="free" value="36, 88, 410, 193"/>
+    <data key="tiles" file="DLGBBS08.EPF" row="21" header="88" rowX="16" base="158" buttons="108"/>
+    <data key="send" value="0, 23, 149"/>
+    <data key="cancel" value="1, 22, 226"/>
+    <data key="entries" top="88" ink="0x8F"/>
+    <data key="border" light="0x88" dark="0x8C"/>
+  </data>
+  <!-- the editor (NewArticleDialog 0x0040BF90, DLGBBS04): SEND (1), CANCEL (2); the heading; the subject and the body,
+       edits in 0x8F -->
+  <data key="Editor" width="446" height="366" button="72" subjectWidth="279" editHeight="13" bodyWidth="374"
+        bodyHeight="204">
+    <data key="frame" file="DLGBBS04.EPF">
+      <b value="1, 23, 149, 316"/>
+      <b value="2, 22, 226, 316"/>
+    </data>
+    <data key="heading" value="131, 54, 410, 66"/>
+    <data key="subject" value="131, 72, 410, 85"/>
+    <data key="body" value="36, 91, 410, 295"/>
+  </data>
+  <!-- a new letter (NewMailDialog 0x00410300, DLGBBS07): SEND, CANCEL; the recipient (a reply's fixed name in 0x25, else
+       an edit), the subject, the body; 7.5.2's keep a copy (control 6, the base set's picture: 5.33 has none) left of
+       SEND, its caption in 0x25 -->
+  <data key="NewMail" width="446" height="366" button="72" recipientWidth="299" subjectWidth="299" editHeight="12"
+        bodyWidth="374" bodyHeight="180">
+    <data key="frame" file="DLGBBS07.EPF">
+      <b value="1, 23, 149, 316"/>
+      <b value="2, 22, 226, 316"/>
+    </data>
+    <data key="recipient" value="111, 73, 410, 85"/>
+    <data key="subject" value="111, 93, 410, 105"/>
+    <data key="body" value="36, 115, 410, 295"/>
+    <data key="keepCopy" value="36, 316, 52, 332"/>
+    <data key="keepCopyCaption" value="56, 318, 146, 330"/>
+  </data>
+</ui>

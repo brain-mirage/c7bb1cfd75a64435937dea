@@ -10,6 +10,10 @@
 -- (TK.Game.Views, s6-interface-5x round 12, step 1): their keys (TOGGLECHARACTER, C; TOGGLESPELLBOOK, P;
 -- TOGGLECOLLECTION), the micro menu's buttons, the server's and the map's openings (an S 0x3E 4, 7 or 8, a right press on
 -- oneself) and PgUp/PgDn are the views', which open this window when no interface's page takes the view.
+--
+-- s6-ui-core (round 85): the XML twin's scripts; the window, its side tabs, its pages and the Character, Legend and
+-- Collection tabs' contents are character.xml's (core/xml.md). A tab another file adds (spell book, a plugin's) builds
+-- its own page as before.
 
 local H = __tk
 local W = require("interfaces.modern.skin").UI -- s6-devtools (round 5, the separation's step 5): Modern's skin
@@ -17,9 +21,13 @@ local W = require("interfaces.modern.skin").UI -- s6-devtools (round 5, the sepa
 local CW = { tabs = {}, current = nil }
 TK.CharacterWindow = CW
 
-local WIDTH, HEIGHT, TAB = 560, 600, 46
+-- the scripts character.xml names (below, after the helpers they use), and its build (its templates)
+local scripts = {}
+local ui = TK.Xml.Load("character.xml", { scripts = scripts, elements = require("interfaces.modern.elements") })
 
-local frame, title
+local WIDTH, TAB = ui.SIZES.width, ui.SIZES.tab -- the window's width, a side tab's side (character.xml's)
+
+local frame
 
 --- Adds a side tab: { id, title, icon = texture key, order, request = action kind, build = function(page) end,
 --- refresh = function(page) end }. build fills the tab's page (a frame covering the window's content area) the first
@@ -39,35 +47,8 @@ function CW:Tab(id)
     end
 end
 
-local function build()
-    frame = W.Panel(UIParent, "TKCharacterWindow")
-    -- s6-interface-5x (round 14; Astra's review of round 13, P2): the shared widgets make it on UIParent, which makes it
-    -- no panel's until owned, so it goes with the windows when they are unloaded
-    TK.GetComponent("windows"):Own(frame)
-    W.TitleBand(frame) -- s6-ui-core (round 49): the shallow band of light behind the title, as W.Window's
-    frame:SetFrameStrata("HIGH")
-    frame:SetSize(WIDTH, HEIGHT)
-    frame:SetPoint("CENTER", UIParent, "CENTER", -60, 30)
-    frame:EnableMouse(true)
-    frame:SetMovable(true)
-    frame:SetClampedToScreen(true)
-    frame:RegisterForDrag("LeftButton")
-    frame:SetScript("OnDragStart", function(self) self:StartMoving() end)
-    frame:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
-    frame:Hide()
-
-    title = W.Label(frame, "", 16, W.gold)
-    title:SetPoint("TOP", frame, "TOP", 0, -14)
-    local x = W.IconButton(frame, "tk:close", 16, function() CW:Close() end)
-    x:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -10, -10)
-
-    frame.content = W.Panel(frame, nil, true)
-    frame.content:SetPoint("TOPLEFT", frame, "TOPLEFT", 12, -42)
-    frame.content:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -12, 12)
-    frame.tabButtons = {}
-    CW:LayoutTabs()
-    TK.Escape:AddWindow(frame, function() CW:Close() end)
-end
+-- the window (frame: its Own script), hidden
+local function build() ui:New("Window") end
 
 --- Places the side tabs down the window's right edge, outside it, in their order.
 function CW:LayoutTabs()
@@ -75,21 +56,8 @@ function CW:LayoutTabs()
     for i, def in ipairs(self.tabs) do
         local b = frame.tabButtons[def.id]
         if not b then
-            -- s6-ui-core (round 61): the shared tab (core/widgets.lua), an icon side tab
-            b = W.Tab(frame, nil, TAB, TAB, function() TK.Game.Views.Open(def.id, "input") end,
-                { name = "TKCharacterTab" .. def.id, icon = def.icon or "tk:circle" })
-            -- D20: the tab carries its page's request, which the page runs when it becomes visible (plan 5.9). Wire: the
-            -- self look's and the legend's 2D 00 (4a's UserPane::RequestLocalPlayerStatus 0x005A4F70), the collection's
-            -- 27 00 00 (UserPane::SwitchToCollectionTab 0x005A4EA0, until its list has come); changing which control
-            -- carries a request changes what the server sees.
-            if def.request then TK.Actions:Set(b, def.request) end
-            b:SetScript("OnEnter", function(self)
-                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                GameTooltip:AddLine(def.title, 1, 1, 1)
-                if def.key then GameTooltip:AddLine("Key: " .. (GetBindingKey(def.key) or "not bound"), 0.5, 0.8, 1) end
-                GameTooltip:Show()
-            end)
-            b:SetScript("OnLeave", function() GameTooltip:Hide() end)
+            -- s6-ui-core (round 61): the shared tab (core/widgets.lua), an icon side tab (character.xml's SideTab)
+            b = ui:New("SideTab", frame, "TKCharacterTab" .. def.id, nil, { def = def, icon = def.icon or "tk:circle" })
             frame.tabButtons[def.id] = b
         end
         b:ClearAllPoints()
@@ -102,10 +70,7 @@ end
 --- A tab's page, empty and hidden; its contents are built when it first shows. D20: the original's request for the tab
 --- goes with its page, which asks when it becomes visible by the player's hand.
 local function makePage(def)
-    def.page = CreateFrame("Frame", nil, frame.content)
-    def.page:Hide()
-    def.page:SetAllPoints(frame.content)
-    if def.request then TK.Actions:SetOpen(def.page, def.request) end
+    def.page = ui:New("Page", frame.content, nil, nil, def)
 end
 
 --- A tab's page with its contents, made once: when the tab first shows, or earlier by CW:Build.
@@ -138,7 +103,7 @@ local function openWindow(id)
     if def.refresh then TK.SafeCall(def.refresh, def.page) end
     if def.page.figureBox then CW.ShowFigure(def.page) end -- s6-ui-core (round 33): asked for as the page opens
     CW.current = def.id
-    title:SetText(def.title)
+    frame.title:SetText(def.title)
     CW:LayoutTabs()
     frame:Show()
     -- Always all on the screen (head note 7.3): shrunk to fit, the side tabs included.
@@ -221,30 +186,12 @@ local CH = W.Character
 
 local SelfLook = TK.Game.SelfLook
 
-local SWITCHES = {
-    { id = "exchange", option = 8, label = "Exchange", tip = "Exchange on or off: 1B 01 08 00 (as Shift+E here)." },
-    { id = "group", option = 2, label = "Group", tip = "Group on or off: 1B 01 02 00 (as Shift+G here)." },
-    { id = "helmet", option = 14, label = "Helmet", tip = "The helmet shown or not: 1B 01 0E." },
-    { id = "necklace", option = 15, label = "Necklace", tip = "The necklace shown or not: 1B 01 0F." },
-}
+local SWITCHES = ui.SWITCHES -- their ids, options, names and tips (character.xml's)
 
 --- A switch's state: 1 on, 0 off; anything else (0xFF before the server's 0x39, -1 offline) not known.
 local function stateText(v)
     if v == 1 then return "On" elseif v == 0 then return "Off" end
     return "-"
-end
-
-local function switchButton(page, def)
-    local b = W.Button(page, def.label, 124, 22)
-    SelfLook.SwitchControl(b, def.option)
-    b:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine(def.label, 1, 1, 1)
-        GameTooltip:AddLine(def.tip, 0.7, 0.7, 0.7)
-        GameTooltip:Show()
-    end)
-    b:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    return b
 end
 
 --- The switches' states as the rules and the server's options hold them (0xFF or -1: not known yet).
@@ -258,28 +205,6 @@ end
 
 -- ----- Character: the 14 equipment records of 0x39 (and 0x37 / 0x38), the identity lines and the stats -----
 
-local function gearSlot(page, i, x, y, point)
-    local s = CH.GearSlot(page, "TKCharacterSlot" .. i, x, y, point)
-    s.index = i
-    -- The hover tooltip stands for 4a's right-press help on a worn item (coverage H-16, a declared deviation, the owner's
-    -- answer; client-only, nothing is sent): SelfLookPane::HandlePointerOrMouseEvent (0x00568CB0, type 4) opens an
-    -- ItemHelpPane on slots 7-20 only when the slot holds an item, so an empty slot shows none (s6-ui-settings round 19).
-    s:SetScript("OnEnter", function(self)
-        local _, _, _, name, _, description = H:GetEquipment(self.index)
-        if name == "" then return end
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine(name, 1, 1, 1)
-        if description ~= "" then GameTooltip:AddLine(description, 0.8, 0.8, 0.8) end
-        GameTooltip:AddLine("Click to take it off.", 0.5, 0.5, 0.5)
-        GameTooltip:Show()
-    end)
-    s:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    -- A press takes the item off, as on the original's gear slot (1F with the slot's code, set by refresh): the game
-    -- layer's worn item control, on the left button down (s6-ui-character). Wire: an empty slot's 1F too (refresh).
-    SelfLook.WornControl(s)
-    return s
-end
-
 --- The Character tab's figure: the player's look (GetFigureOn "player") on the figure box's colour, scaled by whole
 --- steps to fit its box; the emoji while there is none (offline, before the first look). The picture changes only when
 --- the key does.
@@ -291,61 +216,155 @@ function CW.ShowFigure(page)
     CH.PlaceFigure(page.figure, key, w, h)
 end
 
+-- ----- character.xml's scripts -----
+
+-- the window (its tabs' layout reads it while it is built), the windows' own
+function scripts.Own(f)
+    frame = f
+    TK.GetComponent("windows"):Own(f)
+end
+
+function scripts.DragStart(self) self:StartMoving() end
+
+function scripts.DragStop(self) self:StopMovingOrSizing() end
+
+function scripts.Close() CW:Close() end
+
+function scripts.LayoutTabs() CW:LayoutTabs() end
+
+function scripts.Escape(f) TK.Escape:AddWindow(f, function() CW:Close() end) end
+
+function scripts.OpenTab(b) TK.Game.Views.Open(b.def.id, "input") end
+
+-- D20: the tab carries its page's request, which the page runs when it becomes visible (plan 5.9). Wire: the self look's
+-- and the legend's 2D 00 (4a's UserPane::RequestLocalPlayerStatus 0x005A4F70), the collection's 27 00 00
+-- (UserPane::SwitchToCollectionTab 0x005A4EA0, until its list has come); changing which control carries a request
+-- changes what the server sees.
+function scripts.SideTab(b, _, with)
+    b.def = with.def
+    if b.def.request then TK.Actions:Set(b, b.def.request) end
+end
+
+function scripts.SideTabTip(self)
+    local def = self.def
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:AddLine(def.title, 1, 1, 1)
+    if def.key then GameTooltip:AddLine("Key: " .. (GetBindingKey(def.key) or "not bound"), 0.5, 0.8, 1) end
+    GameTooltip:Show()
+end
+
+function scripts.Untip() GameTooltip:Hide() end
+
+-- Wire: the page runs its tab's request when it becomes visible (the side tab's comment above); changing it changes what
+-- the server sees.
+function scripts.PageRequest(page, _, def)
+    if def.request then TK.Actions:SetOpen(page, def.request) end
+end
+
+-- a tab's page drawn again on its events while it shows (the events frame's tab)
+function scripts.RefreshTab(f)
+    local page = f:GetParent()
+    if page:IsVisible() then TK.SafeCall(CW:Tab(f.tab).refresh, page) end
+end
+
+-- the Character tab's gear slots, half down the left and half down the right
+function scripts.GearSlots(page, build)
+    local n = H:GetNumEquipmentSlots()
+    local half = math.ceil(n / 2)
+    for i = 1, n do
+        local left = i <= half
+        local row = left and i - 1 or i - half - 1
+        page.slots[i] = build:New("GearSlot", page, "TKCharacterSlot" .. i, nil,
+            { index = i, x = left and 12 or -12, y = -12 - row * 46, point = left and "TOPLEFT" or "TOPRIGHT" })
+    end
+end
+
+function scripts.GearSlot(s, _, with) s.index = with.index end
+
+function scripts.GearTip(self)
+    local _, _, _, name, _, description = H:GetEquipment(self.index)
+    if name == "" then return end
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:AddLine(name, 1, 1, 1)
+    if description ~= "" then GameTooltip:AddLine(description, 0.8, 0.8, 0.8) end
+    GameTooltip:AddLine("Click to take it off.", 0.5, 0.5, 0.5)
+    GameTooltip:Show()
+end
+
+-- Wire: a press takes the item off, as on the original's gear slot (1F with the slot's code, set by refresh: 4a's
+-- SendTakeOffPacket 0x005B27C0), on the left button down: the game layer's worn item control; changing it changes what
+-- the server sees.
+function scripts.WornControl(s) SelfLook.WornControl(s) end
+
+function scripts.Figure(box) box:GetParent().figure = box.figure end
+
+function scripts.SwitchTicker(box)
+    local page = box:GetParent()
+    box:SetScript("OnUpdate", TK.Util.Throttled(0.25, function() CW.UpdateSwitches(page) end))
+end
+
+function scripts.PortraitChanged(box, _, unit)
+    local page = box:GetParent()
+    if unit == "player" and page:IsVisible() then CW.ShowFigure(page) end
+end
+
+function scripts.ShowFigure(box) CW.ShowFigure(box:GetParent()) end
+
+-- Wire: Bare Hands (12 00) and Take Off All (fourteen 1F) are the game layer's actions (TK.Game.SelfLook), run as frozen
+-- on the press (4a's SelfLookPane::HandlePointerOrMouseEvent 0x00568CB0); changing them changes what the server sees.
+function scripts.RunFrozen() TK.Actions:RunFrozen() end
+
+function scripts.BareHandsAction(b) SelfLook.BareHandsAction(b) end
+
+function scripts.TakeOffAllControl(b) SelfLook.TakeOffAllControl(b) end
+
+-- the self-look pane's four switches, two by two at the right
+function scripts.Switches(page, build)
+    for i, def in ipairs(SWITCHES) do
+        local b = build:New("Switch", page, nil, nil, def)
+        local col, row = (i - 1) % 2, math.floor((i - 1) / 2)
+        b:SetPoint("TOPRIGHT", page, "TOPRIGHT", -12 - (1 - col) * 130, -330 - row * 28)
+        page.switches[def.id] = b
+    end
+end
+
+-- Wire: a switch is the game layer's switch control (TK.Game.SelfLook.SwitchControl: its option on the "selflook" path,
+-- run on the left press; SelfLookPane::HandlePointerOrMouseEvent 0x00568CB0); changing it changes what the server sees.
+function scripts.SwitchControl(b, _, def)
+    b.def = def
+    SelfLook.SwitchControl(b, def.option)
+end
+
+function scripts.SwitchTip(self)
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:AddLine(self.def.label, 1, 1, 1)
+    GameTooltip:AddLine(self.def.tip, 0.7, 0.7, 0.7)
+    GameTooltip:Show()
+end
+
+function scripts.UpdateSwitches(page) CW.UpdateSwitches(page) end
+
+function scripts.LegendPlace(page) page.list.sf:SetPoint("TOPLEFT", page, "TOPLEFT", 12, -12) end
+
+function scripts.CollectionRevision(page)
+    if H:GetCollectionRevision() ~= page.revision then TK.SafeCall(CW:Tab("collection").refresh, page) end
+end
+
+function scripts.VolumePlace(row, _, with)
+    row:SetPoint("TOPLEFT", row:GetParent(), "TOPLEFT", 12, -14 - (with.index - 1) * 42)
+    row.volume = with.index - 1
+end
+
+-- Wire: a volume's press goes to the dialog model with the page's index (CollectionPane::HandlePointerOrMouseEvent;
+-- DialogRules: the first opening asks the server for the volume, 27 00 01, later ones open the album); changing it
+-- changes what the server sees.
+function scripts.VolumePress(row, button)
+    if button == "LeftButton" and TK.Dialogs then TK.Dialogs.Open("CollectionDialogPane", 0, tostring(row.volume)) end
+end
+
 CW:AddTab({ id = "character", title = "Character", icon = "emoji:1f9cd", order = 10, key = "TOGGLECHARACTER",
     request = "open:character",
-    build = function(page)
-        page.slots = {}
-        local n = H:GetNumEquipmentSlots()
-        local half = math.ceil(n / 2)
-        for i = 1, n do
-            local left = i <= half
-            local row = left and i - 1 or i - half - 1
-            page.slots[i] = gearSlot(page, i, left and 12 or -12, -12 - row * 46, left and "TOPLEFT" or "TOPRIGHT")
-        end
-        page.name = W.Label(page, "", 16, W.white)
-        page.name:SetPoint("TOP", page, "TOP", 0, -16)
-        page.info = W.Label(page, "", 12, W.gold)
-        page.info:SetPoint("TOP", page.name, "BOTTOM", 0, -6)
-        page.lines = W.Label(page, "", 11, { 0.8, 0.8, 0.8 })
-        page.lines:SetPoint("TOP", page.info, "BOTTOM", 0, -6)
-        -- Head note 39: the player's own look as the original's look pane draws one (s6-characters' figure, painted onto
-        -- this box's colour so a translucent look blends as the original's does); the emoji only offline, with no look.
-        page.figureBox = CH.FigureBox(page, "TKCharacterFigure")
-        page.figureBox:SetPoint("TOP", page, "TOP", 0, -84)
-        page.figure = page.figureBox.figure
-        -- s6-ui-character: the states change on the logic thread
-        page.figureBox:SetScript("OnUpdate", TK.Util.Throttled(0.25, function() CW.UpdateSwitches(page) end))
-        -- s6-ui-core (round 33, the owner): the figure is held until the look or the gear changes (UNIT_PORTRAIT_UPDATE), and
-        -- asked for when the page opens (TK.Game.Views.Open); it was asked for four times a second.
-        page.figureBox:RegisterEvent("UNIT_PORTRAIT_UPDATE") -- s6-characters' (round 36)
-        page.figureBox:SetScript("OnEvent", function(_, _, unit)
-            if unit == "player" and page:IsVisible() then CW.ShowFigure(page) end
-        end)
-        CW.ShowFigure(page)
-        page.stats = W.Label(page, "", 12, W.white, "LEFT")
-        page.stats:SetPoint("TOPLEFT", page, "TOPLEFT", 24, -396)
-        page.stats2 = W.Label(page, "", 12, W.white, "LEFT")
-        page.stats2:SetPoint("TOPLEFT", page, "TOP", 30, -396)
-        page.note = note(page, "", -480)
-        -- Bare hands (12 00) and Take Off All (fourteen 1F), the game layer's actions (TK.Game.SelfLook).
-        page.bare = W.Button(page, "Bare Hands", 110, 22, nil, function() TK.Actions:RunFrozen() end)
-        page.bare:SetPoint("TOPLEFT", page, "TOPLEFT", 12, -330)
-        SelfLook.BareHandsAction(page.bare)
-        page.takeOffAll = W.Button(page, "Take Off All", 110, 22)
-        page.takeOffAll:SetPoint("TOPLEFT", page.bare, "BOTTOMLEFT", 0, -6)
-        SelfLook.TakeOffAllControl(page.takeOffAll)
-        -- The self-look pane's four switches, two by two at the right.
-        page.switches = {}
-        for i, def in ipairs(SWITCHES) do
-            local b = switchButton(page, def)
-            local col, row = (i - 1) % 2, math.floor((i - 1) / 2)
-            b:SetPoint("TOPRIGHT", page, "TOPRIGHT", -12 - (1 - col) * 130, -330 - row * 28)
-            page.switches[def.id] = b
-        end
-        CW.UpdateSwitches(page)
-        refreshOn(page, { "TK_CHARACTER_SHEET", "UNIT_STATS", "UNIT_HEALTH", "UNIT_POWER", "PLAYER_MONEY",
-            "PLAYER_XP_UPDATE", "UNIT_NAME_UPDATE" }, "character")
-    end,
+    build = function(page) ui:New("CharacterPage", page) end,
     refresh = function(page)
         local _, name, level, path = H:GetUnitInfo("player")
         local _, hp, hpMax, mp, mpMax = H:GetUnitVitals("player")
@@ -392,12 +411,7 @@ CW.Note, CW.RefreshOn = note, refreshOn
 -- ----- Legend: the marks at the end of 0x39 (the original's own-status tab, so it asks with 2D 00 too) -----
 
 CW:AddTab({ id = "legend", title = "Legend", icon = "emoji:1f4dc", order = 30, request = "open:character",
-    build = function(page)
-        -- s6-ui-character (D-77): each mark's symbol and colour, as the original's LegendPane draws them.
-        page.list = CH.LegendList(page, WIDTH - 60, HEIGHT - 90)
-        page.list.sf:SetPoint("TOPLEFT", page, "TOPLEFT", 12, -12)
-        refreshOn(page, { "TK_CHARACTER_SHEET" }, "legend")
-    end,
+    build = function(page) ui:New("LegendPage", page) end,
     refresh = function(page)
         page.list:Fill(H:GetNumLegend(), function(i)
             local _, text, symbol, colour = H:GetLegend(i)
@@ -412,19 +426,7 @@ CW:AddTab({ id = "legend", title = "Legend", icon = "emoji:1f4dc", order = 30, r
 -- (plan D14: English only): this tab says "Volume N" there.
 
 CW:AddTab({ id = "collection", title = "Collection", icon = "emoji:1f3c6", order = 40, request = "open:collection",
-    build = function(page)
-        page.text = W.Label(page, "", 12, W.white, "LEFT")
-        page.text:SetPoint("TOPLEFT", page, "TOPLEFT", 16, -16)
-        note(page, "Double-click a volume to open its album (one click with Simple Click).", -490)
-        -- s6-rules-dialogs (round 8): one row a volume, which takes its presses (CollectionPane's) for the dialog model
-        -- with the page's index: the first opening asks the server for the volume (27 00 01), later ones open the album.
-        page.rows = {}
-        -- The page list arrives as 0x12 00 some time after the request, and records change the counts (12 00 02):
-        -- the page shows each new revision.
-        page:SetScript("OnUpdate", function()
-            if H:GetCollectionRevision() ~= page.revision then TK.SafeCall(CW:Tab("collection").refresh, page) end
-        end)
-    end,
+    build = function(page) ui:New("CollectionPage", page) end,
     refresh = function(page)
         -- One copy of the collection, its revision with it (review r6 finding 4).
         local pages, revision = H:GetCollection()
@@ -435,22 +437,7 @@ CW:AddTab({ id = "collection", title = "Collection", icon = "emoji:1f3c6", order
             if not row and i <= n then
                 -- Named TKCollectionVolume1, 2... for the gate's driver (s6-gate round 37, H-18: the double click on a
                 -- volume row); gate mode logs a named control's place while it shows (core/gatecontrols.lua).
-                row = CreateFrame("Button", "TKCollectionVolume" .. i, page)
-                row:SetSize(WIDTH - 60, 38)
-                row:SetPoint("TOPLEFT", page, "TOPLEFT", 12, -14 - (i - 1) * 42)
-                local hl = row:CreateTexture(nil, "HIGHLIGHT")
-                hl:SetAllPoints(row)
-                hl:SetColorTexture(1, 1, 1, 0.08)
-                row.name = W.Label(row, "", 13, W.white, "LEFT")
-                row.name:SetPoint("TOPLEFT", row, "TOPLEFT", 4, -3)
-                row.percent = W.Label(row, "", 12, W.white, "LEFT")
-                row.percent:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", 4, 3)
-                row.count = W.Label(row, "", 12, W.white, "RIGHT")
-                row.count:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", -4, 3)
-                local index = i - 1
-                row:SetScript("OnMouseDown", function(_, button)
-                    if button == "LeftButton" and TK.Dialogs then TK.Dialogs.Open("CollectionDialogPane", 0, tostring(index)) end
-                end)
+                row = ui:New("Volume", page, "TKCollectionVolume" .. i, nil, { index = i })
                 page.rows[i] = row
             end
             if row then

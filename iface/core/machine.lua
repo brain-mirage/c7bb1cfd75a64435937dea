@@ -60,10 +60,11 @@ M.rules = {
     port = { min = 1, max = 65535 },
 }
 
-M.store = TK.NewStore("The machine settings", function(data)
+-- s6-gateway round 39 (head note 113): machine.json's write is queued on the files thread unless now (store.lua).
+M.store = TK.NewStore("The machine settings", function(data, now)
     local ok = M:WriteClientSettings(data)
-    return H:MachineSave(data) and ok
-end)
+    return H:MachineSave(data, now) and ok
+end, "machine")
 table.insert(TK.Stores, M.store)
 
 --- Account names: at most 15 characters, as the original allows.
@@ -249,6 +250,13 @@ function M:ApplyGraphics()
     local width = self.seedWidth or 0
     self.seedWidth = nil
     H:ApplyGraphics(g.windowMode, g.vsync and true or false, math.floor(g.frameCap), math.floor(width))
+    self:ApplyGraphicsEngine()
+end
+
+--- s6-reprojection (round 63; the graphics plan, section 7): Enable New Graphics Engine (Experimental > Misc), told to
+--- the world renderers, which swap engines at once. Drawing only: nothing is sent.
+function M:ApplyGraphicsEngine()
+    CS.TK.Modular.Draw.WorldRenderers.SetNewEngine(self:Get().newGraphicsEngine == true)
 end
 
 --- Remembers an account name for the login screen's recent list (most recent first). Never a password.

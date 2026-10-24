@@ -59,8 +59,8 @@ return {
     -- (head note 14, item 1): heard from the 5.33 set, where ntkx interface puts it; nothing without that set, and no
     -- other track stands in. Only what is heard: the audio logic still plays 7.5.2's 999, so its draws and every packet
     -- stay 7.5.2's.
-    -- s6-ui-core (round 86): screens, its own login screen (5.33's title and login dialog), the XML twin's only
-    -- (interfaces/xml/5x/screens/title.lua), with Experimental's Original Login Screens (core/login.lua)
+    -- s6-ui-core (round 86): screens, its own login screen (5.33's title and login dialog)
+    -- (interfaces/5x/screens/title.lua), with Experimental's Original Login Screens (core/login.lua)
     login = { titleMusic = "nexustk-5.33", loadingScreen = false, screens = "interfaces.5x.screens.title" },
     enable = ENABLE,
     migrate = MIGRATE,

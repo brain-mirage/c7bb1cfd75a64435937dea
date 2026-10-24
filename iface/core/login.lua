@@ -899,8 +899,8 @@ end
 --
 -- The owner's answer of 2026-10-12 to the XML interfaces' choice 3: 7.x and 5.x have the real client's whole interface,
 -- its login screen included, behind Settings > Experimental's Original Login Screens (off: ours). Decision
--- 2026-10-12-original-pregame-screens: such a screen is its interface's XML twin's (the interface's login.screens, a
--- module only the twin has), and it is a presentation over this file's logic. The connection, the login and its wait, the
+-- 2026-10-12-original-pregame-screens: such a screen is its interface's own (the interface's login.screens, a
+-- module only 7.x and 5.x have), and it is a presentation over this file's logic. The connection, the login and its wait, the
 -- refusals and the menu's other entries stay here, one code for every screen, so what is sent is the same whichever
 -- screen shows. The module is a function(L, screen) that makes and returns the presentation:
 --   frame                its full-screen frame on our screen, over it (our login box hides meanwhile);
@@ -936,15 +936,14 @@ end
 
 --- The module of the active interface's own login screen when it is in use, or nil for ours.
 local function screensModule()
-    if TK.Machine:Get().originalScreens ~= true or not TK.Interfaces:Xml() or L.mode == "server"
-        or not TK.Art.Available() then
+    if TK.Machine:Get().originalScreens ~= true or L.mode == "server" or not TK.Art.Available() then
         return nil
     end
     return (TK.Interfaces:Active().login or {}).screens
 end
 
---- Our screen or the interface's own, as the setting, the form and the play mode now ask: at each L:Show, at the
---- setting's change and at the form's switch (TK.Interfaces:SwitchFormNow). A presentation is made once and kept. The
+--- Our screen or the interface's own, as the setting and the play mode now ask: at each L:Show and at the setting's
+--- change. A presentation is made once and kept. The
 --- account typed and the status carry over. Drawing only: nothing is sent.
 function L:ApplyScreens()
     if not screen then return end
@@ -995,6 +994,7 @@ end
 
 local function setBusy(on)
     L.busy = on
+    L.loginSent = false -- (s6-ui-core round 97: TK_LOGIN_SENT below sets it for this wait)
     L:UpdateButtons()
 end
 
@@ -1026,7 +1026,12 @@ function L:Submit()
     if not self.connected then return self:Error("Connect to the server first.") end
     local account = screen.account:GetText()
     local password = screen.password:GetText()
-    screen.password:SetText("")
+    -- s6-ui-core (round 97): an interface's own login dialog keeps the password in its box, as the original's: 4a's
+    -- LoginDialogPane::OnControlCommand (0x004FAD00) reads both fields and clears neither, and HandlePacketEvent
+    -- (0x004FAB10) leaves them for another try (5.33's the same: login-path.c:425-525), so Enter again after a refusal
+    -- sends the same login (and OK keeps its look through the wait: the live 7.5.2, r97-pictures). WIRE: changing this
+    -- changes what a retry sends. Our own screen forgets it here.
+    if not presentation then screen.password:SetText("") end
     local length = #password
     if account == "" then return self:Error("Enter your account name.") end
     if not TK.Machine.IsAccountName(account) then
@@ -1383,6 +1388,15 @@ TK.On("TK_SESSION_IN_WORLD", function()
 end)
 
 local function creating() return create ~= nil and create:IsShown() end
+
+-- s6-ui-core (round 97): the login's 03 has gone out (GameConnection, after the session's wait). An interface's own title
+-- draws its dimmer from here, as 4a makes its ScreenDimmer only once SendLoginRequest has slept and sent
+-- (LoginDialogPane::OnControlCommand, MainMenuPane.cpp:1328-1333). Drawing only: the wait and the send are the session's.
+TK.On("TK_LOGIN_SENT", function()
+    if not L.busy then return end
+    L.loginSent = true
+    L:UpdateButtons()
+end)
 
 TK.On("TK_LOGIN_REFUSED", function(_, code, message)
     -- Wire: LoginDialogPane::HandlePacketEvent 0x004FAB10 keeps the accepted menu connection after a bad password.
@@ -2232,7 +2246,9 @@ end
 --- first (its routing's UiKeys), so the hook above hears it. s6-ui-core (round 86): an interface's own login screen too,
 --- while no box has the keyboard. WIRE: a key the UI takes never reaches the rules; 4a's title takes every key and sends
 --- nothing for one (MainMenuPane::HandleKeyOrTextEvent 0x004F6BF0), and changing this changes what a key at the title
---- can send.
+--- can send. s6-ui-core (round 97): a box a Tab is moving the keyboard to counts as having it (H:IsTextInputActive,
+--- UIHost.TextBoxHasKeys), as 4a's Tab moves the active control at once; else the key after Tab is taken here and the
+--- login 0x03 carries a password a letter short.
 function TK.LoginTakesKeys()
     return alertUp() or (book ~= nil and book:IsShown())
         or (presentation ~= nil and screen:IsShown() and not H:IsTextInputActive()) or false

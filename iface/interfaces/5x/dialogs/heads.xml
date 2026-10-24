@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 5.x's look of the barber's head choice (its XML twin's layout; heads.lua draws with it), 5.33's HeadSelectDialog
+     (constructor 0x00494840; 4a's legacy branch, PursuitMessageDialogCreator.cpp). Format: core/xml.md; the dialog's
+     attributes are its look entry's values (interfaces/original/entry.lua), its children where heads.lua draws its parts:
+     rectangles (left, top, right, bottom), pictures (file, palette) and image buttons (BUTT001.EPF's image id first).
+     WIRE: a control's rectangle is where a press on it lands; changing one changes which control a press reaches. -->
+<ui>
+  <!-- 374 x 316 on DLGMSGH.EPF in NPAL8.PAL (5.33's standard window behind it where no set holds it); OK (1, image 14),
+       the page back (2, image 18), on (3, image 19), CLOSE (4, image 15), all 72 x 16; the preview (36, 40)-(71, 88),
+       35 x 48; the text; the heads on the 5 x 2 grid of 41 x 54 buttons from (58, 113), 54 across and 64 down, the
+       chosen one's capsule (5.33's CAPSULE.EPF in NPAL3.PAL) centred behind it -->
+  <data key="Heads" width="374" height="316" button="72" page="72">
+    <data key="head" value="41, 54"/>
+    <data key="art" value="DLGMSGH.EPF, NPAL8.PAL"/>
+    <data key="ok" value="14, 40, 266, 112, 282"/>
+    <data key="left" value="18, 114, 266, 186, 282"/>
+    <data key="right" value="19, 188, 266, 260, 282"/>
+    <data key="close" value="15, 262, 266, 334, 282"/>
+    <data key="previewSize" value="35, 48"/>
+    <data key="previewRect" value="36, 40, 71, 88"/>
+    <data key="text" value="86, 29, 336, 92"/>
+    <data key="heads" x="58" y="113" across="54" down="64" columns="5" count="10"/>
+    <data key="capsule" file="CAPSULE.EPF" palette="NPAL3.PAL"/>
+  </data>
+</ui>

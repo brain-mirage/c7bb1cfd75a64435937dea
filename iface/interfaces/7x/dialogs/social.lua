@@ -20,11 +20,16 @@
 --
 -- The friend list (FriendListDialog 0x0053F2C0): 332 x 399 on FRIEND.EPF in FRIEND.PAL, slot 11, sliding open; OK (1, 14)
 -- (138, 363); the twenty names (2-21) at (49, 60 + 29 i)-(133, 72 + 29 i) and (199, ...)-(283, ...), edits in 0x80.
+-- s6-ui-core (round 85): the XML twin's; the windows' pictures and the parts' places are social.xml's (core/xml.md).
 
 local S = require("interfaces.7x.skin")
+local unpack = table.unpack
+local entry = require("interfaces.original.entry")
+local D = TK.Xml.Data("social.xml")
 
 return function(L, X)
     local K = TK.Dialogs
+    local C = D.CHECK
 
     --- A picture of a file's frame on a texture (made once under key) at (l, t) of the window, its own size.
     --- For a centred badge, t is the row's middle; centre the whole native frame before adding its crop origin.
@@ -51,12 +56,13 @@ return function(L, X)
 
     --- A check box of 4a's (CheckBoxControlPane / CheckBoxTextControlPane) over the kit's check: its rectangle takes the
     --- press, ONOFFBUT.EPF's frame 0 (frame 1 checked) 4 and 3 pixels in, its caption (if any) from x 28 in 0x80.
-    local function check(win, box, l, t, r, b, caption)
+    local function check(win, box, rect, caption)
+        local l, t, r, b = unpack(rect)
         X.Rect(box, win, l, t, r, b)
-        local off, on = TK.Art.Image("ONOFFBUT.EPF", 0, "BUTTON.PAL"), TK.Art.Image("ONOFFBUT.EPF", 1, "BUTTON.PAL")
+        local off, on = TK.Art.Image(C.file, 0, C.palette), TK.Art.Image(C.file, 1, C.palette)
         box.box:ClearAllPoints()
-        box.box:SetPoint("TOPLEFT", box, "TOPLEFT", 4, -3)
-        box.box:SetSize(20, 20)
+        box.box:SetPoint("TOPLEFT", box, "TOPLEFT", C.x, -C.y)
+        box.box:SetSize(C.size, C.size)
         if off then box.box:SetTexture(off) end
         local mark = box.check
         mark:ClearAllPoints()
@@ -66,22 +72,23 @@ return function(L, X)
         box.label:SetShown(caption ~= nil)
         if caption then
             box.label:SetText(caption)
-            X.Text(box.label, win, l + 28, t + 4, r, t + 16)
+            X.Text(box.label, win, l + C.captionX, t + C.captionY, r, t + C.captionY + 12)
         end
     end
 
-    L.Users = {
-        width = 709, height = 452, button = 63, page = 63, party = 150, columnWidth = 108, columnHeight = 236,
-        slide = true,
+    local U = D.Users
+    L.Users = entry(U, {
         place = function(win)
-            X.Art(win, "USERLIST.EPF", "USERLIST.PAL")
-            X.Image(win, win.close, 15, 608, 412, 671, 436)
-            X.Image(win, win.prev, 44, 7, 386, 70, 410)
-            X.Image(win, win.next, 45, 270, 386, 333, 410)
-            X.Text(win.nation, win, 82, 391, 154, 403, S.LIST)
+            X.Art(win, unpack(U.art))
+            X.Image(win, win.close, unpack(U.close))
+            X.Image(win, win.prev, unpack(U.prev))
+            X.Image(win, win.next, unpack(U.next))
+            local n = U.nation
+            X.Text(win.nation, win, n[1], n[2], n[3], n[4], S.LIST)
+            local col = U.columns
             for c, list in ipairs(win.lists) do
-                local l = 16 + 135 * (c - 1)
-                X.List(win, list, l, 95, l + 121, 331, 108)
+                local l = col.left + col.step * (c - 1)
+                X.List(win, list, l, col.top, l + col.width, col.bottom, col.cell)
                 list.rowPainter = function(row, selected)
                     local r = row.x7record
                     if not r then return end
@@ -92,53 +99,58 @@ return function(L, X)
                     if r[7] then textColour = 9 end
                     row.text:SetTextColor(S.Colour(textColour))
                 end
-                X.Text(win.counts[c], win, l + 73, 344, l + 97, 356, S.LIST)
+                X.Text(win.counts[c], win, l + col.count, col.countTop, l + col.count + col.countWidth, col.countTop + 12, S.LIST)
             end
             -- the shown sum (15) and the packet's total (14)
-            for key, t in pairs({ x7shown = 391, x7total = 419 }) do
+            local sums = U.sums
+            for key, t in pairs({ x7shown = sums.shown, x7total = sums.total }) do
                 if not win[key] then win[key] = win:CreateFontString(nil, "OVERLAY") end
-                X.Text(win[key], win, 176, t, 248, t + 12, S.LIST)
+                X.Text(win[key], win, sums.left, t, sums.right, t + 12, S.LIST)
             end
             win.total:Hide()
             -- a hunter's note: 4a prints it as a chat line ("%s > %s" in 0x8F: AddUserListSourceMessage); here the
             -- renderer's line, under the counts
-            X.Text(win.note, win, 16, 362, 700, 374, S.LIST)
+            local note = U.note
+            X.Text(win.note, win, note[1], note[2], note[3], note[4], S.LIST)
             win.note:SetWordWrap(false)
             -- the sort: a radio group of two options, the press anywhere on it (the kit's switch)
-            X.Rect(win.sort, win, 379, 388, 469, 432)
+            X.Rect(win.sort, win, unpack(U.sort))
             for _, part in ipairs({ win.sort.box, win.sort.check, win.sort.hl, win.sort.label }) do part:SetAlpha(0) end
             win.sort:HookScript("OnClick", function() L.Users.radio(win) end)
-            check(win, win.only, 514, 13, 642, 37)
+            check(win, win.only, U.only)
             -- the hunters box (20): a check box without a caption over the kit's button, which keeps its press
-            X.Rect(win.party, win, 530, 385, 680, 409)
+            X.Rect(win.party, win, unpack(U.partyRect))
             for _, old in ipairs({ win.party.__normal, win.party.__pushed, win.party.__disabled }) do if old then old:Hide() end end
             if win.party:GetFontString() then win.party:GetFontString():Hide() end
             if win.party:GetHighlightTexture() then win.party:GetHighlightTexture():SetColorTexture(0, 0, 0, 0) end
-            picture(win, win.party, "x7box", "ONOFFBUT.EPF", 0, "BUTTON.PAL", 534, 388)
+            picture(win, win.party, "x7box", C.file, 0, C.palette, unpack(U.partyBox))
         end,
         -- the two options' pictures by the switch (frame 0 the chosen option, 1 the other)
         radio = function(win)
-            local byName = win.sort:GetChecked()
-            picture(win, win, "x7byStatus", "RBUTTON.EPF", byName and 1 or 0, "RBUTTON.PAL", 379, 389)
-            picture(win, win, "x7byName", "RBUTTON.EPF", byName and 0 or 1, "RBUTTON.PAL", 379, 417)
+            local byName, r = win.sort:GetChecked(), U.radio
+            picture(win, win, "x7byStatus", r.file, byName and 1 or 0, r.palette, unpack(U.byStatus))
+            picture(win, win, "x7byName", r.file, byName and 0 or 1, r.palette, unpack(U.byName))
         end,
         -- a row ({ name, hunters flag, status, badge, colour, text, friend, bucket }): the marks and the name right-aligned
         row = function(win, list, row, r)
             row.x7record = r
             row.text:SetText(K.Text(r[1]))
             row.text:SetJustifyH("RIGHT")
-            row.text:SetWidth(108)
+            row.text:SetWidth(U.columns.cell)
             local hunter = (r[2] or 0) ~= 0
-            local mark = picture(row, row, "x7hunter", "SYMBOLS.EPF", 223, "BARAM.PAL", 0, 0)
+            local h = U.hunter
+            local mark = picture(row, row, "x7hunter", h.file, h.frame, h.palette, h.x, 0)
             mark:SetShown(hunter and mark:GetTexture() ~= nil)
             local status = r[3] or 0
-            local star = picture(row, row, "x7star", "STAR.EPF", math.max(0, status - 1), "BARAM.PAL", 12, 0)
+            local st = U.star
+            local star = picture(row, row, "x7star", st.file, math.max(0, status - 1), st.palette, st.x, 0)
             star:SetShown(status >= 1 and status <= 4 and star:GetTexture() ~= nil)
             -- DrawListEntry (0x0059EA90): x24 and the native frame's height, before crop offsets.
             local bucket, badge = r[8] or 0, r[4] or 0
             if bucket >= 1 and bucket <= 4 and badge >= 1 and badge <= 4 then
-                picture(row, row, "x7badge", "ICON.EPF", (bucket - 1) * 4 + badge - 1, "BARAM.PAL",
-                    24, math.floor(list.rowHeight / 2), true)
+                local bd = U.badge
+                picture(row, row, "x7badge", bd.file, (bucket - 1) * 4 + badge - 1, bd.palette,
+                    bd.x, math.floor(list.rowHeight / 2), true)
             elseif row.x7badge then
                 row.x7badge:Hide() -- sorting/paging reuses rows; this record has no native badge
             end
@@ -148,28 +160,30 @@ return function(L, X)
             win.x7total:SetText(string.format("%d", c.total or 0))
             L.Users.radio(win)
         end,
-    }
+    })
 
-    L.PartySearch = {
-        width = 338, height = 190, button = 63, editWidth = 306, editHeight = 38, slide = true,
+    local P = D.PartySearch
+    L.PartySearch = entry(P, {
         place = function(win)
-            X.Art(win, "DLGSETUP.EPF", "DLGSETUP.PAL")
-            X.Image(win, win.ok, 14, 138, 156, 201, 180)
-            check(win, win.hunters, 16, 58, 322, 82, "Put me on the hunters list")
-            X.Edit(win.note, win, 16, 88, 322, 126, S.TEXT)
+            X.Art(win, unpack(P.art))
+            X.Image(win, win.ok, unpack(P.ok))
+            check(win, win.hunters, P.hunters, P.caption)
+            local n = P.note
+            X.Edit(win.note, win, n[1], n[2], n[3], n[4], S.TEXT)
         end,
-    }
+    })
 
-    L.Friends = {
-        width = 332, height = 399, button = 63, editWidth = 84, editHeight = 12, slide = true,
+    local F = D.Friends
+    L.Friends = entry(F, {
         place = function(win)
-            X.Art(win, "FRIEND.EPF", "FRIEND.PAL")
-            X.Image(win, win.ok, 14, 138, 363, 201, 387)
+            X.Art(win, unpack(F.art))
+            X.Image(win, win.ok, unpack(F.ok))
+            local n = F.names
             for i, e in ipairs(win.edits) do
-                local col, row = (i - 1) // 10, (i - 1) % 10
-                local l = col == 0 and 49 or 199
-                X.Edit(e, win, l, 60 + 29 * row, l + 84, 72 + 29 * row, S.TEXT)
+                local col, row = (i - 1) // n.rows, (i - 1) % n.rows
+                local l, t = n.columns[col + 1], n.top + n.step * row
+                X.Edit(e, win, l, t, l + n.width, t + n.height, S.TEXT)
             end
         end,
-    }
+    })
 end

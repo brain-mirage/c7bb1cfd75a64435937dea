@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 7.x's chat log (its XML twin's layout; main.lua is its scripts), the original's chat area over the bottom of the map
+     view, in the frame layer. Format: core/xml.md.
+     WIRE: nothing is sent, but a press on the log's text or the backdrop goes on to the map view under it (a step, a
+     target, a look): the text takes the wheel only, and the handle passes a double click's second press on (its handler,
+     4a ChattingModifyHeightPane::HandlePointerOrMouseEvent 0x00480890, acts on event type 1 only); it claims the left
+     button only while the chat is on (main.lua's Arrange). Changing which presses these frames take changes what the
+     server sees. -->
+<ui>
+  <!-- the panel's area: the backdrop's at 8 rows, (9, 596)-(816, 720); everything placed from its bottom (720 on the
+       screen) -->
+  <data key="PLACE" value="9, 596"/>
+  <!-- a row's height -->
+  <data key="ROW" value="13"/>
+  <!-- the log (ChattingPane) at (23, 710 - 13 r)-(806, 710), its text to 793 (4a's bar from there); 50 blank lines at the
+       start (the constructor 0x0047EFB0), at most 1000 kept (AddIncomingMessage 0x0047F370); 4 to 50 rows -->
+  <data key="LOG" left="23" right="793" bottom="710" blanks="50" keep="1000" min="4" max="50"/>
+  <!-- the height handle (ChattingModifyHeightPane) at (792, 693 - 13 r); dragged, it follows the pointer from y 50 to 650 -->
+  <data key="HANDLE" x="792" top="693" low="50" high="650"/>
+  <!-- GrafPort::DrawOutlinedText (0x004BAFA0): the text in the outline colour a pixel left, right, up and down, then the
+       text -->
+  <data key="OUTLINE">
+    <at x="-1" y="0"/>
+    <at x="1" y="0"/>
+    <at x="0" y="-1"/>
+    <at x="0" y="1"/>
+  </data>
+
+  <!-- the frame layer: over the map view, under the chat bar and the strip's buttons -->
+  <frame name="TK7xChatLog" key="frame" parent="UIParent" FrameStrata="LOW" FrameLevel="6" Size="807, 124">
+    <do Hide=""/>
+    <run call="Own"/>
+    <!-- the log -->
+    <frame key="logFrame" AllPoints="@parent" FrameLevel="7">
+      <run call="LogList"/>
+    </frame>
+    <!-- the height handle: CHATSC.EPF in INVENBUT.PAL (OnPaint 0x00480BB0), dragged with the left button while the chat
+         is on -->
+    <frame name="TK7xChatHandle" key="handle" FrameLevel="8" Size="15, 15">
+      <picture key="art" file="CHATSC.EPF" frame="0" palette="INVENBUT.PAL" x="0" y="0" layer="ARTWORK"/>
+      <do PassesDoubles="true"/>
+      <on script="OnMouseDown" call="HandleDown"/>
+      <on script="OnMouseUp" call="HandleUp"/>
+      <on script="OnPressCancelled" call="HandleCancelled"/>
+      <on script="OnUpdate" call="HandleUpdate"/>
+    </frame>
+    <on script="OnUpdate" call="Follow"/>
+    <!-- s6-ui-core (round 105, T11 step 9): followed only when the settings changed (and on its first frame shown) -->
+    <do SetUpdateWhen="settings"/>
+    <run call="Register"/>
+  </frame>
+</ui>

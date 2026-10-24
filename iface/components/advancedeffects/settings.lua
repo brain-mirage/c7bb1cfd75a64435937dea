@@ -25,15 +25,17 @@ C.defaults.chimney_smoke = false -- s6-effects (round 8): Embers and Smoke's chi
 C.defaults.moon_shadows, C.defaults.height_shading = false, false -- s6-effects-c (round 8): Sun Shadows' children
 C.defaults.reflection_banks, C.defaults.sky_in_water = false, false -- s6-effects-c (round 8): Water Reflections' children
 C.defaults.snow_cover, C.defaults.footprints, C.defaults.leaves = false, false, false -- s6-effects-b (round 2): phase 5's extras
+C.defaults.max_snow_cover = 100 -- s6-reprojection-cloud-3 (the owner, 2026-10-21): the most snow cover drawn, %
 C.defaults.wind_speed = { 0.6, 3.3 } -- s6-effects (round 11, the owner): the sway's speed range, tiles a second (TK.Core.Map.WindSway)
 C.defaults.indoor_lightning, C.defaults.roof_rain = false, false -- s6-effects (round 12): the storm outside heard and seen indoors
 C.defaults.door_light = false -- s6-effects (round 12): light from the buildings' doorways and windows at night
 
--- What greys a control out (s6-effects round 4: what each one's description says it needs). A child sits right under its
--- parent and is greyed until the parent is on, as Footprints under Snow Cover (the owner, 2026-10-04: sub-options "so you
--- can 'add to it' if it's enabled"): the page's master switch; the thunder the Lightning switch; Bloom and Dust Motes a
--- light to work with (Global Illumination or Real Lights); the silhouettes a positional flash (Lightning, on the other
--- page, and Global Illumination); Colour by Hour Global Illumination off (it colours by the hour itself).
+-- What greys a control out (s6-effects round 4: what each one's description says it needs). A child sits right under
+-- its parent and is greyed until the parent is on, as Max Snow Cover under Snow Cover (the owner, 2026-10-04:
+-- sub-options "so you can 'add to it' if it's enabled"): the page's master switch; the thunder the Lightning switch;
+-- Bloom and Dust Motes a light to work with (Global Illumination or Real Lights); the silhouettes a positional flash
+-- (Lightning, on the other page, and Global Illumination); Colour by Hour Global Illumination off (it colours by the
+-- hour itself).
 -- s6-ui-core (round 54; the owner's rule for every settings page, 2026-10-05): these were disabled conditions; now each
 -- control names what it needs (TK.Needs, core/settings.lua) and stays usable, its value kept, with a (!) after its title
 -- while it is on and a need is unmet. Both pages read one settings table, so a need on the other page names it.
@@ -43,7 +45,7 @@ C.defaults.door_light = false -- s6-effects (round 12): light from the buildings
 -- hide their page's group; the others still mark (!). A need on the other page, or on two settings, is written out.
 local weather = TK.NeedSetting("weather", true, "hide")
 local windShader = TK.NeedSetting("wind") -- s6-effects (round 11): Sway Speed is its
-local snowCover = TK.NeedSetting("snow_cover") -- s6-effects-b: the prints lie in the snow
+local snowCover = TK.NeedSetting("snow_cover") -- s6-effects-b: Max Snow Cover caps it
 local rainShader = TK.NeedSetting("rain") -- s6-effects (round 6): the ripples ring its rain
 local lightning = TK.NeedSetting("lightning") -- as main.lua reads it: on unless off (a profile always has it: its default)
 local lighting = TK.NeedSetting("lighting", true, "hide") -- s6-effects-c
@@ -122,9 +124,13 @@ function C:SettingsNodes()
                   desc = "New snow in place of the original's: flakes near and far, carried by the wind, thicker in a blizzard." },
                 { type = "toggle", key = "snow_cover", name = "Snow Cover", -- s6-effects-b
                   desc = "While it snows, the ground, roofs, walls and trees whiten, melting after it stops. None on water." },
+                -- s6-reprojection-cloud-1 (run 20; open question 111, answered "follow Footprints alone"): out of Snow
+                -- Cover's group, so the prints on sand need only this switch; those in snow need snow lying
+                { type = "toggle", key = "footprints", name = "Footprints", -- s6-effects-b
+                  desc = "Walking figures leave prints in snow (with Snow Cover) and on sand, fading after a while." },
                 { type = "group", requires = { snowCover }, args = {
-                    { type = "toggle", key = "footprints", name = "Footprints in Snow", -- s6-effects-b
-                      desc = "Walking figures leave prints in the snow, fading after a while. Needs Snow Cover." },
+                    { type = "range", key = "max_snow_cover", name = "Max Snow Cover", min = 0, max = 100, step = 5, -- s6-reprojection-cloud-3
+                      desc = "The most snow that lies, in %. Lower makes heavy snow patchier; 0 lets none lie. Needs Snow Cover." },
                 } },
 
                 { type = "header", name = "Wet Ground", -- s6-effects (round 4, the owner): the wet ground's children

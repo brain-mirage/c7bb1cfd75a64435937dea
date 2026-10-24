@@ -25,19 +25,20 @@
 -- player's cell) are the zone and coordinates labels, from the live session. s6-ui-core (round 37, the owner): the zone
 -- name is the minimap's location label, centred above the box (where the time was), or inside it under its N where the
 -- screen's top leaves no room; the Location Label setting turns it off.
+-- s6-ui-core (round 85): the XML twin's scripts; the box, its picture, labels, buttons and border icons are main.xml's
+-- (core/xml.md).
 
 local C = TK.GetComponent("minimap")
-local W = require("interfaces.modern.skin").UI -- s6-devtools (round 5, the separation's step 5): Modern's skin
 local U = TK.Util
 local H = __tk
 local Markers = require("core.mapmarkers")
 local Border = require("interfaces.modern.panels.minimap.border")
 
-local MINIMAP = "live:minimap"
+local DATA = TK.Xml.Data("main.xml")
+local MINIMAP = DATA.MINIMAP -- the live picture's key (main.xml's)
 local MINIMAP_PIXELS = 256   -- the picture's width in texture pixels (MinimapPicture.Key)
 
-local ICON = 24   -- the border icons' side, about the bottom mail and parcel buttons' size (30 x 25)
-local ZONE_HEIGHT = 14   -- the zone name's line (12 with its outline)
+local ZONE_HEIGHT = DATA.SIZES.zone   -- the zone name's line (main.xml's)
 
 -- The weather the server sets (1F, 4a's MapPane weather types) and what a weather report would say for it.
 local WEATHER = { [0] = "clear", "raining", "snowing", "clear, with swallows in the air" }
@@ -72,132 +73,94 @@ function C.ParcelCount(kind)
     return (TK.Game.Parcels.Count(kind.control))
 end
 
-function C:OnEnable()
-    local f = CreateFrame("Frame", "TKMinimap", UIParent)
-    TK.Game.Minimap.SetFrame(f) -- s6-input (round 49, separation step 4b): the interface's minimap, for the Debug page
-    f:SetBackdrop({ bg = { 0.12, 0.2, 0.12, 0.9 }, edge = { 0.7, 0.62, 0.42, 1 } })
-    TK.UI.HudPanel(f, C) -- s6-ui-settings (round 4): the shared panel style; s6-ui-core (round 53): or its own
-    -- The mock world's placeholder: a faint grid and the player's dot, so it reads as a map.
-    f.lines = {}
-    for i = 1, 6 do
-        local v = f:CreateTexture(nil, "ARTWORK")
-        v:SetColorTexture(1, 1, 1, 0.07)
-        v:SetWidth(1)
-        local h = f:CreateTexture(nil, "ARTWORK")
-        h:SetColorTexture(1, 1, 1, 0.07)
-        h:SetHeight(1)
-        f.lines[i] = { v, h }
-    end
-    -- s6-world-view (round 10): in a live session, the cached cells' picture (fog of war) with the player and the
-    -- objects in view; drawn by the world view, updated in place.
-    f.map = f:CreateTexture(nil, "ARTWORK")
-    f.map:SetPoint("TOPLEFT", f, "TOPLEFT", 3, -3)
-    f.map:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -3, 3)
-    f.map:SetTexture(MINIMAP)
-    f.map:Hide()
-    f.dot = f:CreateTexture(nil, "OVERLAY")
-    f.dot:SetSize(10, 10)
-    f.dot:SetPoint("CENTER", f, "CENTER", 0, 0)
-    f.dot:SetTexture("tk:circle")
-    f.dot:SetVertexColor(1, 0.85, 0.2, 1)
-    local north = W.Label(f, "N", 12, W.gold)
-    north:SetFont(12, "OUTLINE")
-    north:SetPoint("TOP", f, "TOP", 0, -7)
-    f.north = north
-    f.zone = W.Label(f, "", 12, W.gold)
-    f.zone:SetFont(12, "OUTLINE")
-    f.zone:SetPoint("BOTTOM", f, "TOP", 0, 6)
-    f.coords = W.Label(f, "", 10, W.white)
-    f.coords:SetFont(10, "OUTLINE")
-    f.coords:SetPoint("BOTTOM", f, "BOTTOM", 0, 5)
-    -- s6-world-view (round 17): the plugins' markers, over the picture.
-    f.marks = CreateFrame("Frame", nil, f)
-    f.marks:SetPoint("TOPLEFT", f, "TOPLEFT", 3, -3)
-    f.marks:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -3, 3)
-    f.marks:SetFrameLevel(f:GetFrameLevel() + 2)
-    f.pins = Markers.NewPins(f.marks, 9)
-    -- A button's one-line tooltip, opening to the left as the minimap's others do. s6-optimize (round 64): the zoom
-    -- buttons' and the Map button's, each written out before.
-    local function buttonTip(b, text)
-        b:SetScript("OnEnter", function(button)
-            GameTooltip:SetOwner(button, "ANCHOR_LEFT")
-            GameTooltip:AddLine(text, 1, 1, 1)
-            GameTooltip:Show()
-        end)
-        b:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    end
-    -- The zoom (the owner, 2026-10-01: + and - zoom, and no longer open the big map); the wheel zooms too.
-    local function zoomButton(text, step, tip)
-        local b = W.Button(f, text, 18, 18, nil, function() C:Zoom(step) end)
-        b:SetFrameLevel(f:GetFrameLevel() + 4)
-        buttonTip(b, tip)
-        return b
-    end
-    -- The original's minimap button (MiniMapButtonPane, coverage G-40 and H-24): m's action (7C, by the rules), which the
-    -- map window follows (core/mapwindow.lua). Wire (s6-input round 49, separation step 4b): its click is the game
-    -- layer's one minimap press, TK.Game.Minimap.Press (MiniMapButtonPane 0x005036A0: nothing while the model's minimap
-    -- dialog is open); changing when it runs changes what the server sees.
-    f.mapButton = W.Button(f, "Map", 34, 18, nil, function() TK.Game.Minimap.Press() end)
-    f.mapButton:SetFrameLevel(f:GetFrameLevel() + 4)
-    f.mapButton:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 3, 3)
-    TK.Actions:Set(f.mapButton, "minimap")
-    buttonTip(f.mapButton, "The map (M)")
-    f.zoomIn = zoomButton("+", 1, "Zoom in")
-    f.zoomIn:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -3, 3)
-    f.zoomOut = zoomButton("-", -1, "Zoom out")
-    f.zoomOut:SetPoint("BOTTOM", f.zoomIn, "TOP", 0, 2)
-    -- s6-gate round 19: named, so the gate's driver can click them (core/gatecontrols.lua logs the shown TK globals)
-    _G.TKMinimapMap, _G.TKMinimapZoomIn, _G.TKMinimapZoomOut = f.mapButton, f.zoomIn, f.zoomOut
-    f:EnableMouseWheel(true)
-    f:SetScript("OnMouseWheel", function(_, delta) if not f.mock then C:Zoom(delta > 0 and 1 or -1) end end)
-    -- s6-world-view (round 19): the border icons.
-    local function tooltip(item, lines)
-        item:SetScript("OnEnter", function(i)
-            GameTooltip:SetOwner(i, "ANCHOR_LEFT")
-            for n, line in ipairs(lines(i)) do
-                if n == 1 then GameTooltip:AddLine(line, 1, 1, 1) else GameTooltip:AddLine(line, 0.8, 0.8, 0.8) end
-            end
-            if TK.EditMode.unlocked then GameTooltip:AddLine("Drag it along the minimap's border.", 0.6, 0.6, 0.6) end
-            GameTooltip:Show()
-        end)
-        item:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    end
-    local db = function() return self:DB() end
-    -- The time, then its weather icon on its right (s6-ui-core round 37, the owner), in the bottom row.
-    f.clock = Border.New(f, "TKMinimapClock", "timeAt", C.defaults.timeAt, db)
-    f.clock:SetSize(ICON + 44, ICON)
-    f.clock.time = W.Label(f.clock, "", 13, W.white, "LEFT")
-    f.clock.time:SetFont(13, "OUTLINE")
-    f.clock.time:SetPoint("LEFT", f.clock, "LEFT", 0, 0)
-    f.clock.icon = f.clock:CreateTexture(nil, "OVERLAY")
-    f.clock.icon:SetSize(ICON, ICON)
-    f.clock.icon:SetPoint("LEFT", f.clock.time, "RIGHT", 4, 0)
-    tooltip(f.clock, function(i) return { "Time " .. (i.timeText or ""), i.weatherText or "" } end)
-    f.clock:Hide()
-    -- Mail and parcels: the ParcelPane's two controls (review r19). A press goes to the icon's control; its release to
-    -- the pane's control under the pointer then (s6-input round 49, separation step 4b: the game layer's one press path,
-    -- TK.Game.Parcels; the icons are its controls outside edit mode, where they are dragged instead). Wire: this is the
-    -- input path of 4a's ParcelIconPane (ParcelPane::HandlePointerOrMouseEvent 0x00546610: control 0 the parcels, 1 the
-    -- letters, as the bottom buttons'), so the press, its release and their control index are what the server sees;
-    -- changing them changes what it sees. Showing or hiding an icon (its switch, hideEmptyMail) sends nothing.
-    local function parcelItem(kind, name, at)
-        local item = Border.New(f, name, kind == MAIL and "mailAt" or "parcelAt", at, db, function(_, down, button)
-            TK.Game.Parcels.Press(kind.control, down, button)
-        end)
+-- the scripts main.xml names, and its own element
+local scripts = {}
+local elements = setmetatable({}, { __index = require("interfaces.modern.elements") })
+local KINDS = { mail = MAIL, parcel = PARCEL }
+
+local function db() return C:DB() end
+
+--- <borderitem name at parcel/>: a border icon (border.lua's New) at its settings key's place (at; C.defaults' the
+--- default), dragged along the border in edit mode. parcel="mail" or "parcel": that of the ParcelPane's two controls
+--- (review r19). A press goes to the icon's control; its release to the pane's control under the pointer then (s6-input
+--- round 49, separation step 4b: the game layer's one press path, TK.Game.Parcels; the icons are its controls outside
+--- edit mode, where they are dragged instead). Wire: this is the input path of 4a's ParcelIconPane
+--- (ParcelPane::HandlePointerOrMouseEvent 0x00546610: control 0 the parcels, 1 the letters, as the bottom buttons'), so
+--- the press, its release and their control index are what the server sees; changing them changes what it sees.
+--- Showing or hiding an icon (its switch, hideEmptyMail) sends nothing.
+function elements.borderitem(box, a)
+    local kind = a.parcel and KINDS[a.parcel]
+    local item = Border.New(box, a.name, a.at, C.defaults[a.at], db, kind and function(_, down, button)
+        TK.Game.Parcels.Press(kind.control, down, button)
+    end)
+    if kind then
         item.kind = kind
         TK.Game.Parcels.Control(item, kind.control)
-        item:SetSize(ICON, ICON)
-        item.icon = item:CreateTexture(nil, "OVERLAY")
-        item.icon:SetAllPoints(item)
-        tooltip(item, function(i)
-            local n = C.ParcelCount(kind)
-            return { n > 0 and (kind.name .. ": " .. n) or kind.noneText }
-        end)
-        item:Hide()
-        return item
     end
-    f.mail = parcelItem(MAIL, "TKMinimapMail", C.defaults.mailAt)
-    f.parcel = parcelItem(PARCEL, "TKMinimapParcel", C.defaults.parcelAt)
+    return item
+end
+
+function scripts.SetFrame(f) TK.Game.Minimap.SetFrame(f) end
+
+function scripts.HudPanel(f) TK.UI.HudPanel(f, C) end
+
+function scripts.Grid(f)
+    f.lines = {}
+    for i = 1, 6 do f.lines[i] = { f.grid[2 * i - 1], f.grid[2 * i] } end
+end
+
+-- the markers over the picture, the buttons over them
+function scripts.OverPicture(marks) marks:SetFrameLevel(marks:GetParent():GetFrameLevel() + 2) end
+
+function scripts.OverBox(b) b:SetFrameLevel(b:GetParent():GetFrameLevel() + 4) end
+
+function scripts.Pins(marks) marks:GetParent().pins = Markers.NewPins(marks, 9) end
+
+-- Wire (s6-input round 49, separation step 4b): the Map button's click is the game layer's one minimap press,
+-- TK.Game.Minimap.Press (MiniMapButtonPane 0x005036A0: nothing while the model's minimap dialog is open), and its action
+-- path the minimap's; changing when it runs changes what the server sees.
+function scripts.MapPress() TK.Game.Minimap.Press() end
+
+function scripts.MapAction(b) TK.Actions:Set(b, "minimap") end
+
+-- A button's one-line tooltip (b.tip), opening to the left as the minimap's others do. s6-optimize (round 64): the zoom
+-- buttons' and the Map button's.
+function scripts.ButtonTip(button)
+    GameTooltip:SetOwner(button, "ANCHOR_LEFT")
+    GameTooltip:AddLine(button.tip, 1, 1, 1)
+    GameTooltip:Show()
+end
+
+function scripts.Untip() GameTooltip:Hide() end
+
+function scripts.ZoomIn() C:Zoom(1) end
+
+function scripts.ZoomOut() C:Zoom(-1) end
+
+function scripts.GateNames(f)
+    _G.TKMinimapMap, _G.TKMinimapZoomIn, _G.TKMinimapZoomOut = f.mapButton, f.zoomIn, f.zoomOut
+end
+
+function scripts.Wheel(f, delta) if not f.mock then C:Zoom(delta > 0 and 1 or -1) end end
+
+--- A border icon's tooltip: its lines, the first white.
+local function borderTip(item, lines)
+    GameTooltip:SetOwner(item, "ANCHOR_LEFT")
+    for n, line in ipairs(lines) do
+        if n == 1 then GameTooltip:AddLine(line, 1, 1, 1) else GameTooltip:AddLine(line, 0.8, 0.8, 0.8) end
+    end
+    if TK.EditMode.unlocked then GameTooltip:AddLine("Drag it along the minimap's border.", 0.6, 0.6, 0.6) end
+    GameTooltip:Show()
+end
+
+function scripts.ClockTip(i) borderTip(i, { "Time " .. (i.timeText or ""), i.weatherText or "" }) end
+
+function scripts.ParcelTip(i)
+    local n = C.ParcelCount(i.kind)
+    borderTip(i, { n > 0 and (i.kind.name .. ": " .. n) or i.kind.noneText })
+end
+
+function scripts.Border(f)
     f.parcelItems = { f.mail, f.parcel }
     f.layout = {}   -- the parts of the last layout Refresh arranged for
     -- f.borderItems (Border.New) holds them in this order: the time keeps its place first, then the mail, the parcels.
@@ -217,18 +180,21 @@ function C:OnEnable()
         end
         return false
     end
-    f:EnableMouse(true)
-    f:SetScript("OnEnter", function(frame)
-        GameTooltip:SetOwner(frame, "ANCHOR_LEFT")
-        GameTooltip:AddLine("Minimap", 1, 1, 1)
-        local zone = frame.zone:GetText()
-        if zone ~= "" then GameTooltip:AddLine(zone .. "  " .. frame.coords:GetText(), 0.8, 0.8, 0.8) end
-        GameTooltip:AddLine("Wheel or + and -: zoom.  M: the map.", 0.6, 0.6, 0.6)
-        GameTooltip:Show()
-    end)
-    f:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    -- Where the player is, read a few times a second; the labels change only when it does.
-    f:SetScript("OnUpdate", U.Throttled(0.1, function() self:Refresh() end))
+end
+
+function scripts.Tip(frame)
+    GameTooltip:SetOwner(frame, "ANCHOR_LEFT")
+    GameTooltip:AddLine("Minimap", 1, 1, 1)
+    local zone = frame.zone:GetText()
+    if zone ~= "" then GameTooltip:AddLine(zone .. "  " .. frame.coords:GetText(), 0.8, 0.8, 0.8) end
+    GameTooltip:AddLine("Wheel or + and -: zoom.  M: the map.", 0.6, 0.6, 0.6)
+    GameTooltip:Show()
+end
+
+function scripts.Ticker(f) f:SetScript("OnUpdate", U.Throttled(0.1, function() C:Refresh() end)) end
+
+function C:OnEnable()
+    local f = TK.Xml.Load("main.xml", { scripts = scripts, elements = elements }).frame
     self.frame = f
     TK.Visibility:Attach(f, function() return self:DB() end)
     TK.EditMode:Register(f, "minimap", "Minimap", C.defaultPosition, "minimap")

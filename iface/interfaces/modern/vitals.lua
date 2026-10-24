@@ -7,9 +7,13 @@
 --   a hovered spell's cost: a small red triangle under the bar, its tip at the cost's place counted from the left;
 --   a spell's healing or damage previewed on a bar whose value is known in points.
 -- Drawing only: nothing here is sent or asked of the server.
+-- s6-ui-core (round 85): the XML twin's; the colours, the damage taken's timing and the cost mark are vitals.xml's
+-- (core/xml.md).
 
 local W = require("interfaces.modern.skin").UI -- s6-devtools (round 5, the separation's step 5): Modern's skin
 local U = TK.Util
+
+local ui = TK.Xml.Load("vitals.xml")
 
 local V = {}
 
@@ -22,12 +26,11 @@ V.FORMATS = {
     { value = "both", text = "4,100 / 5,200 (79%)" },
 }
 
-V.HOLD, V.SHRINK = 0.3, 0.6 -- the damage taken: seconds it stays, then seconds it takes to shrink away
-local LOSS = { 0.9, 0.12, 0.1, 0.9 }
+V.HOLD, V.SHRINK = ui.LOSS_TIME.hold, ui.LOSS_TIME.shrink -- the damage taken: seconds it stays, then it shrinks away
+local LOSS = ui.LOSS
 --- The damage taken on a bar whose own fill is red (the NPCs' bars over heads; a bar's lossColour): light, so it shows.
-V.LOSS_ON_RED = { 1, 0.82, 0.5, 0.95 }
-local MARK = { 0.95, 0.15, 0.1, 1 }
-local HEAL, HIT = { 0.55, 1, 0.55, 0.55 }, { 0.15, 0, 0, 0.6 }
+V.LOSS_ON_RED = ui.LOSS_ON_RED
+local HEAL, HIT = ui.HEAL, ui.HIT
 
 --- A vital bar (W.VitalBar) that keeps its text size, for the second row.
 function V.Bar(parent, height, r, g, b, textSize, name)
@@ -172,15 +175,8 @@ function V.Mark(bar, value, max)
         return
     end
     if not m then
-        m = CreateFrame("Frame", nil, bar)
-        m:SetSize(7, 4)
+        m = ui:New("Mark", bar)
         m:SetFrameLevel(bar:GetFrameLevel() + 3)
-        for k = 1, 4 do
-            local row = m:CreateTexture(nil, "OVERLAY")
-            row:SetColorTexture(MARK[1], MARK[2], MARK[3], MARK[4])
-            row:SetSize(2 * k - 1, 1)
-            row:SetPoint("TOP", m, "TOP", 0, 1 - k)
-        end
         bar.mark = m
     end
     m:ClearAllPoints()

@@ -158,9 +158,22 @@ kind = "shadow"
 [sobj.70]             # Buya's gate building: its side roofs running back, at the top of its 3-cell corner pieces
 kind = "top"
 height = 3
+skin = "tile/338"     # s6-reprojection-cloud-3 (run 21): the blocks under it are brick (below)
 
 [sobj.71-73]          # their painted shadow
 kind = "shadow"
+
+# s6-reprojection-cloud-3 (run 21, head note 71): the same blue caps run along the brick walls of every
+# compound in Kugnae and Buya (maps 0, 330, 2000, 3502, 3544, 4401, 4510, 4607, 4613, 3977), with 65-69 at their
+# corners and ends. The 3D mode raises the blocked cells under a cap to it and invents their sides from the cap's
+# picture, so each wall showed a tall face of blue roof tiles down to its foot. The sides are the walls' brick, as
+# for the gate building. The red-capped walls (85-89 fronts, 90-94 corners, 95 the side cap: Kugnae's palace, maps
+# 5330, 5331, 3951, 3980, 3300, 3927, 4401, 4498 and more) are the same family in red, and get the same sides
+[sobj.65-69]
+skin = "tile/338"
+
+[sobj.90-95]
+skin = "tile/338"
 
 # Buya's gate building's brick walls (its corner pieces, the walls beside its opening): the sides the 3D mode invents for
 # them, and for the blocks under its side roofs, repeated the front's doors and roof edge (round 9, r5 findings G1 and
@@ -264,6 +277,294 @@ ground = "flat"
 
 [tile.23343]
 ground = "flat"
+
+# Small floor decorations (s6-reprojection-cloud-3, run 20, head note 53; the owner: the haunted houses' "little skull
+# decorations, holes in the walls floors ... that need heightmaps", which looked flat). Each is painted over a plain
+# floor tile, so its plan (maps/plans/deco-<tile>.png) is where it differs from that floor: the decoration white, a
+# little lighter where the art is, the floor black. The bones, skulls and stones stand a little off the floor, the
+# boulder half a cell; the floor round them stays level. Every map that paints them gets them (the deserts', caves' and
+# graveyards' too).
+
+[tile.908]          # a few small bones
+bump = 0.08
+plan = "maps/plans/deco-908.png"
+
+[tile.909]          # a mossy boulder
+bump = 0.5
+plan = "maps/plans/deco-909.png"
+
+[tile.912]          # a ribcage and a bone
+bump = 0.12
+plan = "maps/plans/deco-912.png"
+
+[tile.913]          # a leg's bones
+bump = 0.08
+plan = "maps/plans/deco-913.png"
+
+[tile.914]          # two stones
+bump = 0.12
+plan = "maps/plans/deco-914.png"
+
+[tile.916]          # a skull
+bump = 0.18
+plan = "maps/plans/deco-916.png"
+
+[tile.995]          # a skull on the cobbles
+bump = 0.18
+plan = "maps/plans/deco-995.png"
+
+[tile.1007]         # a ribcage on the boards
+bump = 0.12
+plan = "maps/plans/deco-1007.png"
+
+[tile.1012]         # a bone on the boards
+bump = 0.06
+plan = "maps/plans/deco-1012.png"
+
+# The holes (run 20, the same note): a negative bump dips the cell, its darkest parts that deep and its lightest on the
+# ground (MapHints' Dip). The holes in the sand and in the boards sink, the broken floor's boards show a little below
+# it, and the cracks a little. Both 3D engines use the shared dip rule (run 22); Normal's Height Shading still reads
+# a dip as no bump. No plan: these dips take the art's brightness (its black hole is its deepest).
+
+[tile.906]          # a round hole in the sand
+bump = -0.4
+
+[tile.907]          # two holes in the sand
+bump = -0.3
+
+[tile.917-920]      # the sandy floor broken away, its boards below
+bump = -0.2
+
+[tile.927]          # a hole in the cobbles
+bump = -0.4
+
+[tile.1013]         # cracks in the boards
+bump = -0.12
+
+[tile.1014]         # a hole in the boards
+bump = -0.4
+
+# The sweep of the other maps (s6-reprojection-cloud-3, run 20, head note 53's step 4): the same kinds of small floor
+# decorations elsewhere, found by matching every ground tile the maps use with the plain floor it is painted over, and
+# given the same bumps with plans (maps/plans/deco-<tile>.png): stones and rocks, snow lumps, a skull, a ribcage, bones,
+# tusks and an ice crystal. What was left flat, and why: docs/user-related/research/10-23/2026-10-23-haunted-house-hints.md,
+# section 7.
+
+# - stones and rocks
+
+[tile.993]          # two brown stones on the cracked earth
+bump = 0.08
+plan = "maps/plans/deco-993.png"
+
+[tile.1226]         # a pebble on the sand
+bump = 0.06
+plan = "maps/plans/deco-1226.png"
+
+[tile.1715]         # rocks on the pink sand
+bump = 0.3
+plan = "maps/plans/deco-1715.png"
+
+[tile.2181]         # red pebbles on the dark floor
+bump = 0.08
+plan = "maps/plans/deco-2181.png"
+
+[tile.2182]         # a grey boulder on the dark floor
+bump = 0.5
+plan = "maps/plans/deco-2182.png"
+
+[tile.15248]        # two small stones on the earth
+bump = 0.1
+plan = "maps/plans/deco-15248.png"
+
+[tile.15311]        # stones on the earth
+bump = 0.1
+plan = "maps/plans/deco-15311.png"
+
+[tile.31183]        # a rock on the sand
+bump = 0.2
+plan = "maps/plans/deco-31183.png"
+
+[tile.31184]        # rocks on the sand
+bump = 0.25
+plan = "maps/plans/deco-31184.png"
+
+[tile.31185]        # a heap of rocks on the sand
+bump = 0.3
+plan = "maps/plans/deco-31185.png"
+
+[tile.31186]        # a small rock on the sand
+bump = 0.12
+plan = "maps/plans/deco-31186.png"
+
+[tile.31187]        # rocks on the sand
+bump = 0.15
+plan = "maps/plans/deco-31187.png"
+
+[tile.31189]        # a stone on the sand
+bump = 0.08
+plan = "maps/plans/deco-31189.png"
+
+[tile.31203]        # a rock on the sand
+bump = 0.25
+plan = "maps/plans/deco-31203.png"
+
+[tile.31204]        # rocks on the sand
+bump = 0.25
+plan = "maps/plans/deco-31204.png"
+
+[tile.31205]        # a heap of rocks on the sand
+bump = 0.3
+plan = "maps/plans/deco-31205.png"
+
+[tile.31206]        # small stones on the sand
+bump = 0.1
+plan = "maps/plans/deco-31206.png"
+
+[tile.31207]        # rocks on the sand
+bump = 0.15
+plan = "maps/plans/deco-31207.png"
+
+[tile.31209]        # a stone on the sand
+bump = 0.12
+plan = "maps/plans/deco-31209.png"
+
+[tile.36237]        # stones on the grass
+bump = 0.12
+plan = "maps/plans/deco-36237.png"
+
+[tile.36238]        # a stone on the grass
+bump = 0.08
+plan = "maps/plans/deco-36238.png"
+
+[tile.36241]        # a rock on the grass
+bump = 0.15
+plan = "maps/plans/deco-36241.png"
+
+[tile.36242]        # a heap of rocks on the grass
+bump = 0.3
+plan = "maps/plans/deco-36242.png"
+
+[tile.36245]        # stones on the grass
+bump = 0.12
+plan = "maps/plans/deco-36245.png"
+
+[tile.36247]        # stones on the grass
+bump = 0.15
+plan = "maps/plans/deco-36247.png"
+
+[tile.36248]        # stones on the grass
+bump = 0.1
+plan = "maps/plans/deco-36248.png"
+
+[tile.36249]        # pebbles on the grass
+bump = 0.05
+plan = "maps/plans/deco-36249.png"
+
+# - snow lumps
+
+[tile.860]          # snow lumps
+bump = 0.15
+plan = "maps/plans/deco-860.png"
+
+[tile.861]          # snow lumps and stones
+bump = 0.15
+plan = "maps/plans/deco-861.png"
+
+[tile.889]          # snow lumps on the sand
+bump = 0.15
+plan = "maps/plans/deco-889.png"
+
+[tile.890]          # snow lumps on the sand
+bump = 0.15
+plan = "maps/plans/deco-890.png"
+
+[tile.30439]        # a snowy stone
+bump = 0.12
+plan = "maps/plans/deco-30439.png"
+
+[tile.30440]        # snowy stones
+bump = 0.12
+plan = "maps/plans/deco-30440.png"
+
+[tile.30441]        # snow lumps
+bump = 0.15
+plan = "maps/plans/deco-30441.png"
+
+[tile.30442]        # a small snow lump
+bump = 0.08
+plan = "maps/plans/deco-30442.png"
+
+[tile.30443]        # snowy stones
+bump = 0.1
+plan = "maps/plans/deco-30443.png"
+
+[tile.30453]        # snow lumps
+bump = 0.12
+plan = "maps/plans/deco-30453.png"
+
+[tile.30454]        # snow lumps
+bump = 0.12
+plan = "maps/plans/deco-30454.png"
+
+[tile.30455]        # snow lumps
+bump = 0.15
+plan = "maps/plans/deco-30455.png"
+
+[tile.30456]        # a snow drift
+bump = 0.3
+plan = "maps/plans/deco-30456.png"
+
+[tile.30469]        # snow lumps on the pink ground
+bump = 0.15
+plan = "maps/plans/deco-30469.png"
+
+[tile.30470]        # snow lumps on the pink ground
+bump = 0.15
+plan = "maps/plans/deco-30470.png"
+
+[tile.30471]        # snow lumps on the pink ground
+bump = 0.2
+plan = "maps/plans/deco-30471.png"
+
+# - bones, a skull and tusks
+
+[tile.991]          # a ribcage on the cracked earth
+bump = 0.12
+plan = "maps/plans/deco-991.png"
+
+[tile.1716]         # a skull on the pink sand
+bump = 0.18
+plan = "maps/plans/deco-1716.png"
+
+[tile.1862]         # tusks by the stones
+bump = 0.15
+plan = "maps/plans/deco-1862.png"
+
+[tile.1892]         # a tusk by the stones
+bump = 0.15
+plan = "maps/plans/deco-1892.png"
+
+[tile.1907]         # tusks by the stones
+bump = 0.15
+plan = "maps/plans/deco-1907.png"
+
+[tile.1931]         # a tusk by the stones
+bump = 0.15
+plan = "maps/plans/deco-1931.png"
+
+[tile.2002]         # a tusk by the stones
+bump = 0.15
+plan = "maps/plans/deco-2002.png"
+
+[tile.2183]         # bones on the dark floor
+bump = 0.08
+plan = "maps/plans/deco-2183.png"
+
+# - ice
+
+[tile.28012]        # an ice crystal
+bump = 0.3
+plan = "maps/plans/deco-28012.png"
 
 # The river by Kugnae's shrine and through Buya: its banks are painted sloping down to the water, two columns deep, as the
 # canal's are; the west bank rises west (17762 or 17770, then 17763 or 17771), the east bank east (17768 or 17774, then
@@ -410,6 +711,54 @@ shape = "turning"
 shape = "turning"
 
 [sobj.707-711]
+shape = "turning"
+
+# s6-reprojection-cloud-1 (run 24, head note 90; the 3D audit's group E): more wide props that stood as thin solids, a
+# sliver from the side and a blade from above, as turning cards too: the golden warrior statue (12253-12255: Kugnae and
+# 7 more maps), the wide statues (3236-3241, 3245-3247, 3254-3256: Kugnae, Buya, Kinung, Vale, Baek Shop, Tower Arena,
+# 45, 19 and 20 maps), the boats (1018-1021: Hausson and 12 more; 12837-12843: Nagnang's jetty and 4 more; 10822-10827:
+# Kinung's and 2 more), the tents (10543-10564 on 34 maps, 10788-10795 on 10: Kinung's and the camps'), the log piles
+# (7685-7688 on 27 maps, 7862-7863 on 8), the Wilderness's carved grey rock (16946-16954) and the gold heaps and chests
+# (13575-13590 on 18 maps: Kinung Crafters, the Bargain Market). Each shows its whole picture from every side, and
+# straight on it is drawn as before. The blocked ones the rule stood as walls are props in the reprojection module's
+# hints. Not the green hedge hill (797-800): it is on 108 maps, 7,489 cells, mostly as hedges.
+[sobj.12253-12255]
+shape = "turning"
+
+[sobj.3236-3241]
+shape = "turning"
+
+[sobj.3245-3247]
+shape = "turning"
+
+[sobj.3254-3256]
+shape = "turning"
+
+[sobj.1018-1021]
+shape = "turning"
+
+[sobj.12837-12843]
+shape = "turning"
+
+[sobj.10822-10827]
+shape = "turning"
+
+[sobj.10543-10564]
+shape = "turning"
+
+[sobj.10788-10795]
+shape = "turning"
+
+[sobj.7685-7688]
+shape = "turning"
+
+[sobj.7862-7863]
+shape = "turning"
+
+[sobj.16946-16954]
+shape = "turning"
+
+[sobj.13575-13590]
 shape = "turning"
 
 # The dark strips along an interior's walls (the same handover; in about a hundred interiors, in no town): where the floor
@@ -788,3 +1137,37 @@ surface = "ice"
 
 [tile.864-876]
 surface = "ice"
+
+# The yellow huts' and shrines' doorways and windows paint their opening as a dark dither, which the painted-shadow rule took
+# off the face, so the door's lintel stood on the ground alone; the faces keep it, as the net and the yurts do.
+[sobj.4106-4107]
+painted_shadow = false
+
+[sobj.4117-4124]
+painted_shadow = false
+
+# The domed caves' mouth and door darkness is painted as a dither, which the painted-shadow rule took off the face, so the
+# mouth showed the invented rock behind it; the face keeps it, as the huts' doorways do.
+[sobj.783-784]
+painted_shadow = false
+
+[sobj.790-791]
+painted_shadow = false
+
+# s6-reprojection-cloud-3 run 21: the whole-object sway remains a base hint.
+[sobj.855-859]
+wind = "whole"
+
+# s6-reprojection-cloud-3 run 21: keep the turning shape and wind setting in the base hints.
+[sobj.18443-18448]
+shape = "turning"
+wind = "none"
+
+# s6-reprojection-cloud-3 (run 21, the sweep): the Vale's canopy plateau (ground tile 24082: 2,696 cells on 1005's two
+# plateaus, 99 on 1453), ringed by Buya's hill rims (the module's 1201-1225, terraces whose ledges lie two cells
+# up). Its free blocked cells stood as the rule's blocks one cell up, and those under the rims' ledges two, so the
+# canopy was jagged. Its blocks stand at the ledges' height; its trails (495 cells walked on) keep their ground
+# (ground = "blocked": the rule's blocks only).
+[tile.24082]
+ground = "blocked"
+level = 2

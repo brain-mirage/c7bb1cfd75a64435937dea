@@ -4,29 +4,32 @@
 -- texts in font 0, colour 0x80, from (24, 24), and its buttons 4a's 74 x 20 text buttons along the bottom from (W - 98,
 -- H - 44), the last control rightmost, 86 pixels apart. Drawing only, but for where each button's press lands: the
 -- buttons, their indexes and what is sent are the renderer's and the model's.
+-- s6-ui-core (round 85): the XML twin's; the window's size, text and buttons' places are generic.xml's (core/xml.md).
 
 local S = require("interfaces.7x.skin")
+local entry = require("interfaces.original.entry")
+local D = TK.Xml.Data("generic.xml")
 
 return function(L, X)
-    local WIDTH = 380
+    local G = D.Generic
+    local T, B = G.text, G.buttons
 
-    L.Generic = {
-        width = WIDTH, height = 140, button = 74,
+    L.Generic = entry(G, {
         place = function(win)
             S.Text(win.text, S.TEXT)
             win.text:SetWordWrap(true)
         end,
         --- as tall as its texts (12-pixel lines) and the buttons' row, at least 140
         fit = function(win)
-            local w = WIDTH
-            X.Text(win.text, win, 24, 24, w - 24, 24)
-            local h = math.max(140, math.floor(win.text:GetStringHeight() + 0.5) + 80)
+            local w = G.width
+            X.Text(win.text, win, T.left, T.top, w - T.right, T.top)
+            local h = math.max(G.height, math.floor(win.text:GetStringHeight() + 0.5) + G.below)
             X.Size(win, w, h)
             X.Frame(win, w, h, X.DIALOG_FRAME.file, X.DIALOG_FRAME.palette, X.DIALOG_FRAME.tile)
             for i, b in ipairs(win.buttons) do
-                local r = w - 24 - (i - 1) * 86
-                X.TextButton(win, b, r - 74, h - 44, r, h - 24)
+                local r = w - B.right - (i - 1) * B.step
+                X.TextButton(win, b, r - G.button, h - B.top, r, h - B.bottom)
             end
         end,
-    }
+    })
 end

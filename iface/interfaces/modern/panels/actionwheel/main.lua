@@ -10,15 +10,18 @@
 --   Multi-pick (its own binding, default Shift+X): the wheel opens as in hold mode, each click runs its segment, and
 --   it stays open until the key is released; that release picks nothing.
 --   A click outside the wheel cancels it, always; so does Escape.
+-- s6-ui-core (round 85): the XML twin's scripts; the catcher, the wheel and its segments are main.xml's (core/xml.md).
 
 local C = TK.GetComponent("actionwheel")
 local W = require("interfaces.modern.skin").UI -- s6-devtools (round 5, the separation's step 5): Modern's skin
 local Mark = require("interfaces.modern.slotmark") -- s6-ui-core (round 83): the red edge, as the action bars'
 
-C.SEGMENTS = 8
+-- the segments' count, circle and size (main.xml's)
+local WHEEL = TK.Xml.Data("main.xml").WHEEL
+C.SEGMENTS = WHEEL.segments
 C.FIRST_SLOT = 121
-C.RADIUS = 86
-C.SIZE = 46
+C.RADIUS = WHEEL.radius
+C.SIZE = WHEEL.size
 
 -- Its commands' default keys (X, Shift+X) and their being newer than the profiles' note are its manifest's (commands),
 -- declared before the profile loads whether this file is loaded or not (s6-interface-5x round 13, the separation's
@@ -38,6 +41,7 @@ local function markSegment(b)
     local cooling, ends = Mark.Cooling(kind, slot)
     b.coolEnd = ends
     Mark.Draw(b, b.edge, Mark.Unusable(kind, slot, cooling, C:DB()), W.slotActionEdge)
+    if ends and wheel then TK.Util.Updating(wheel, true) end -- s6-ui-core (round 101, T11 step 4): its end looked for
 end
 
 local function refreshSegment(b)
@@ -80,85 +84,92 @@ TK.SetSpellIconAnimator("actionwheel", function()
     end
 end)
 
-local function makeSegment(i)
-    local b = CreateFrame("Button", "TKActionWheelSegment" .. i, wheel)
+-- the scripts main.xml names
+local scripts = {}
+local making -- the index of the segment being made (scripts.Segments), for its Segment script
+
+function scripts.Own(f) C:Own(f) end
+
+function scripts.Close() C:Close() end
+
+-- the ring round the segments, 10 beyond their edges
+function scripts.Fit(f)
+    local size = 2 * (C.RADIUS + C.SIZE / 2 + 10)
+    f:SetSize(size, size)
+end
+
+-- A segment's action slot and the path its press goes on: the hotkey path (TK.Actions), whose press freezes the slot's
+-- action, so the wheel sends nothing itself. Wire: a pick runs as a hotkey's (4a's UserPane::ExecuteHotkeyAction
+-- 0x005A3AE0); changing this changes what the server sees. Its size, and its place on the circle, the first at the top.
+function scripts.Segment(b)
+    local i = making
+    local wheel = b:GetParent()
     b.action = C.FIRST_SLOT + i - 1
     TK.Actions:SetPath(b, "hotkey")
     b:SetSize(C.SIZE, C.SIZE)
     local angle = math.pi / 2 - (i - 1) * 2 * math.pi / C.SEGMENTS
     b:SetPoint("CENTER", wheel, "CENTER", C.RADIUS * math.cos(angle), C.RADIUS * math.sin(angle))
-    -- s6-ui-core (round 62): the shared slot's picture, an action button's edge, the wheel's warm light
-    b.bg, b.icon, b.edge = W.SlotArt(b, { edge = W.slotActionEdge, light = { 1, 0.9, 0.5, 0.7 } })
-    b.glyph = b:CreateFontString(nil, "ARTWORK", nil, 3)
-    b.glyph:SetFont(20, "OUTLINE")
-    b.glyph:SetPoint("CENTER", b, "CENTER", 0, 1)
-    b:RegisterForDrag("LeftButton")
-    b:SetScript("OnClick", function(self, button)
-        if TK.Cursor:ConsumeCancel(button) then return end
-        if GetCursorInfo() then
-            PlaceAction(self.action)
-            C:Refresh()
-            return
-        end
-        if C.state == "edit" or not self.name then return end
-        TK.Actions:RunFrozen()
-        if C.state == "toggle" or (C.state == "hold" and not C:DB().stayOpen) then C:Close() end
-    end)
-    b:SetScript("OnDragStart", function(self)
-        if TK.DB:Global().buttonLock and not IsShiftKeyDown() then return end
-        if not HasAction(self.action) then return end
-        PickupAction(self.action)
-        C:Refresh()
-    end)
-    b:SetScript("OnReceiveDrag", function(self)
-        if not GetCursorInfo() then return end
+end
+
+function scripts.Segments(f, build)
+    for i = 1, C.SEGMENTS do
+        making = i
+        C.segments[i] = build:New("Segment", f, "TKActionWheelSegment" .. i)
+    end
+    making = nil
+end
+
+-- A pick: placing the cursor's action, or the segment's frozen action run on the hotkey path. Wire: TK.Actions:RunFrozen
+-- (4a's UserPane::ExecuteHotkeyAction 0x005A3AE0's run); changing this changes what the server sees.
+function scripts.Pick(self, button)
+    if TK.Cursor:ConsumeCancel(button) then return end
+    if GetCursorInfo() then
         PlaceAction(self.action)
         C:Refresh()
-    end)
-    b:SetScript("OnEnter", function(self)
-        wheel.label:SetText(self.name or "")
-        local action = TK.ActionAt(self.action)
-        if self.name and action and action.kind == "spell" then TK.ManaPreview.Show(self.name) end
-    end)
-    b:SetScript("OnLeave", function()
-        wheel.label:SetText("")
-        TK.ManaPreview.Hide()
-    end)
-    return b
+        return
+    end
+    if C.state == "edit" or not self.name then return end
+    TK.Actions:RunFrozen()
+    if C.state == "toggle" or (C.state == "hold" and not C:DB().stayOpen) then C:Close() end
+end
+
+function scripts.DragStart(self)
+    if TK.DB:Global().buttonLock and not IsShiftKeyDown() then return end
+    if not HasAction(self.action) then return end
+    PickupAction(self.action)
+    C:Refresh()
+end
+
+function scripts.ReceiveDrag(self)
+    if not GetCursorInfo() then return end
+    PlaceAction(self.action)
+    C:Refresh()
+end
+
+function scripts.Enter(self)
+    wheel.label:SetText(self.name or "")
+    local action = TK.ActionAt(self.action)
+    if self.name and action and action.kind == "spell" then TK.ManaPreview.Show(self.name) end
+end
+
+function scripts.Leave()
+    wheel.label:SetText("")
+    TK.ManaPreview.Hide()
+end
+
+-- s6-ui-core (round 101, T11 step 4): called only while a segment has an end to look for (markSegment puts it back)
+function scripts.AethersEnd()
+    local now, any = GetTime(), false
+    for _, b in ipairs(C.segments) do
+        if b.coolEnd and now >= b.coolEnd then markSegment(b) end
+        any = any or b.coolEnd ~= nil
+    end
+    if not any then TK.Util.Updating(wheel, false) end
 end
 
 function C:OnEnable()
-    -- A click anywhere outside the wheel cancels it: this catcher takes the whole screen under it.
-    catcher = self:Own(CreateFrame("Frame", "TKActionWheelCatcher", UIParent))
-    catcher:SetFrameStrata("FULLSCREEN")
-    catcher:SetFrameLevel(1)
-    catcher:SetAllPoints(UIParent)
-    catcher:EnableMouse(true)
-    catcher:SetScript("OnMouseDown", function() C:Close() end)
-    catcher:Hide()
-    local size = 2 * (C.RADIUS + C.SIZE / 2 + 10)
-    wheel = self:Own(CreateFrame("Frame", "TKActionWheel", UIParent))
-    wheel:SetFrameStrata("FULLSCREEN")
-    wheel:SetFrameLevel(10)
-    wheel:SetSize(size, size)
-    local ring = wheel:CreateTexture(nil, "BACKGROUND")
-    ring:SetAllPoints(wheel)
-    ring:SetTexture("tk:ring")
-    ring:SetVertexColor(0.05, 0.05, 0.07, 0.75)
-    wheel.label = W.Label(wheel, "", 13, W.gold)
-    wheel.label:SetFont(13, "OUTLINE")
-    wheel.label:SetPoint("CENTER", wheel, "CENTER", 0, 0)
-    wheel.done = W.Button(wheel, "Done", 70, 22, nil, function() C:Close() end)
-    wheel.done:SetPoint("CENTER", wheel, "CENTER", 0, -22)
-    wheel:Hide()
-    for i = 1, C.SEGMENTS do self.segments[i] = makeSegment(i) end
-    -- s6-ui-core (round 83): a segment's aether ending while the wheel is open takes its red edge away (markSegment)
-    wheel:SetScript("OnUpdate", function()
-        local now = GetTime()
-        for _, b in ipairs(C.segments) do
-            if b.coolEnd and now >= b.coolEnd then markSegment(b) end
-        end
-    end)
+    local ui = TK.Xml.Load("main.xml", { scripts = scripts, elements = require("interfaces.modern.elements") })
+    catcher, wheel = ui.catcher, ui.wheel
     TK.Escape:AddCancel("actionwheel", 5, function()
         if not C.state then return false end
         C:Close()

@@ -4,11 +4,12 @@
 -- pixels with "..." (HandlePacketEvent 0x005034A0's FitTextAndAppendSuffix), centred on the plate in 0x80, drawn twice a
 -- pixel apart (bold), its pen 5 below the plate's middle (OnPaint 0x00503350). Its place follows the scaled screen until
 -- the player moves it (edit mode, its Layout tab).
+-- s6-ui-core (round 85): the XML twin's scripts; its frame, place, plate and text are main.xml's (core/xml.md).
 --
 -- Wire: nothing is sent. It only reads 0x15, which goes on to the map (HandlePacketEvent returns false). It takes no
 -- press: 4a's pane keeps Pane::HandlePointerOrMouseEvent, which declines it, so a press on the plate goes on to the map
--- view under it (a step, a target, a look). This frame is therefore never mouse-enabled; enabling it would turn those
--- presses into no map press, which the server would see.
+-- view under it (a step, a target, a look). This frame is therefore never mouse-enabled (main.xml); enabling it would turn
+-- those presses into no map press, which the server would see.
 
 local C = TK.GetComponent("7x.mapname")
 local H = __tk
@@ -17,20 +18,17 @@ local Screen = require("interfaces.screen")
 -- 7.x's drawing helpers (X.Bold; s6-interface-7x-b round 8, the separation's step 5: interfaces/7x/draw.lua, the
 -- dialogs look's file's before)
 local X = require("interfaces.7x.draw")
+local E = require("interfaces.7x.elements")
 
-local RECT = { 316, 0, 509, 24 }
-local FIT = 173 -- FitTextAndAppendSuffix's width (0xAD)
+local L = TK.Xml.Data("main.xml")
+
+-- the scripts main.xml names
+local scripts = {}
+
+function scripts.Update() C:Paint() end
 
 function C:OnEnable()
-    local f = CreateFrame("Frame", "TK7xMapName", UIParent)
-    f:SetFrameStrata("LOW")
-    f:SetFrameLevel(10) -- the frame layer, over the map view
-    f:SetSize(RECT[3] - RECT[1], RECT[4] - RECT[2])
-    f.plate = S.Picture(f, nil, "MAPNAME.EPF", 0, "FRMPART.PAL", 0, 0, "BACKGROUND")
-    f.name = f:CreateFontString(nil, "OVERLAY")
-    X.Bold(f, f.name, 0, 17, S.TEXT)
-    f:SetScript("OnUpdate", function() self:Paint() end)
-    f:Hide()
+    local f = TK.Xml.Load("main.xml", { scripts = scripts, elements = E }).frame
     self.frame = f
     self:Own(f)
     self.entry = Screen.Register(f, "7x.mapname", "7.x Map Name", function() return self:DB().enabled == true end)
@@ -44,13 +42,14 @@ function C:Paint()
     local name = known and zone or ""
     if name == self.shown then return end
     self.shown = name
-    local text = S.Cut(name, FIT)
+    local n = L.NAME
+    local text = S.Cut(name, n.fit)
     local width = S.TextWidth(text) or 0
-    X.Bold(f, f.name, math.floor((RECT[3] - RECT[1]) / 2) - math.floor(width / 2), 17, S.TEXT)
+    X.Bold(f, f.name, math.floor(f:GetWidth() / 2) - math.floor(width / 2), n.baseline, S[n.colour])
     f.name:SetText(text)
 end
 
-function C:Layout() Screen.PlacePanel(self, 1024, 768, RECT[1], RECT[2]) end
+function C:Layout() Screen.PlacePanel(self, 1024, 768, L.PLACE[1], L.PLACE[2]) end
 
 function C:ApplySettings() self:Layout() end
 

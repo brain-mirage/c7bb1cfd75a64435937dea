@@ -1294,13 +1294,15 @@ function errors:AddMessage(text, r, g, b, key)
     top.age, top.key = 0, key
     top.fs:Show()
     self.active = true
+    TK.Util.Updating(self, true)
 end
 
 -- s6-ui-core (build 41): a message's three seconds are counted in drawn frames, each at most a tenth of a second, so a long
 -- frame (a restyle, a map's load) does not use them up before it is seen: the Cycle Graphics Style's "Mode: Retro" went by
--- unseen behind its own restyle on a loaded machine.
+-- unseen behind its own restyle on a loaded machine. s6-ui-core (round 101, T11 step 4): called only while a line shows
+-- (AddMessage puts it back).
 errors:SetScript("OnUpdate", function(self, elapsed)
-    if not self.active then return end
+    if not self.active then return TK.Util.Updating(self, false) end
     local step = math.min(elapsed or 0, 0.1)
     local any = false
     for _, l in ipairs(self.lines) do

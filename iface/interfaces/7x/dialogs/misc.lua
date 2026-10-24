@@ -19,48 +19,66 @@
 -- (width - 16, 16 (rows + 1)) in whole 12-pixel lines with its scroll bar (the TextEditControlPane's vertical bar), or a
 -- read-only paper's centred line. It slides open (SlideOpenVertical). LINE001.EPD's verified 7.5.2 bytes use the
 -- existing EPF reader/export and named image keys; a pack with those nine tiles supplies the paper art (X.Frame).
+-- s6-ui-core (round 85): the XML twin's; the windows' pictures, options, buttons and the inputs' rectangles are
+-- misc.xml's (core/xml.md).
+-- s6-ui-core (round 99): the world map (components/dialogs/misc.lua, drawn there as 4a's OnPaint): its names in font 0,
+-- measured by its advances; with an entry of its own, no "At ..." line (4a draws no text but the names). Drawing only.
+
+local unpack = table.unpack
+local entry = require("interfaces.original.entry")
+local S = require("interfaces.7x.skin")
+local D = TK.Xml.Data("misc.xml")
+
+--- The rectangles of a list of misc.xml's options.
+local function rects(options)
+    local out = {}
+    for i, o in ipairs(options) do out[i] = o.rect end
+    return out
+end
 
 return function(L, X)
+    L.WorldMap = { text = { style = function(fs) S.Text(fs) end, width = S.TextWidth } }
+
     -- ----- the music dialog -----
 
+    local M = D.Music
     -- the radios' options (left, top, right, bottom): the effects (control 1: on, off), the frequency (control 3)
-    local EFFECTS = { { 52, 77, 97, 88 }, { 200, 77, 245, 88 } }
-    local FREQUENCY = { { 51, 139, 96, 150 }, { 124, 139, 169, 150 }, { 192, 139, 237, 150 } }
+    local EFFECTS = rects(M.effects)
+    local FREQUENCY = rects(M.frequencies)
 
-    L.Music = {
-        width = 407, height = 410, button = 63, buttonHeight = 11, switch = 45, frequency = 45, play = 63,
+    L.Music = entry(M, {
         place = function(win)
-            X.Art(win, "DLGSCNTL.EPF", "PFLOOK.PAL")
+            X.Art(win, unpack(M.art))
             -- the radios' options take the presses on 4a's option rectangles; their pictures are drawn by paint
-            X.Rect(win.on, win, table.unpack(EFFECTS[1]))
-            X.Rect(win.off, win, table.unpack(EFFECTS[2]))
-            for i, b in ipairs(win.freq) do X.Rect(b, win, table.unpack(FREQUENCY[i])) end
+            X.Rect(win.on, win, unpack(EFFECTS[1]))
+            X.Rect(win.off, win, unpack(EFFECTS[2]))
+            for i, b in ipairs(win.freq) do X.Rect(b, win, unpack(FREQUENCY[i])) end
             for _, b in ipairs({ win.on, win.off, win.freq[1], win.freq[2], win.freq[3] }) do b.noClickSound = true end
-            X.Image(win, win.browse, 50, 205, 205, 268, 229)
-            X.Image(win, win.prev, 46, 36, 305, 99, 329)
-            X.Image(win, win.pause, 48, 110, 305, 173, 329)
-            X.Image(win, win.next, 47, 184, 305, 247, 329)
-            X.Image(win, win.ok, 14, 110, 360, 173, 384)
+            X.Image(win, win.browse, unpack(M.browse))
+            X.Image(win, win.prev, unpack(M.prev))
+            X.Image(win, win.pause, M.pauseImages.playing, unpack(M.pause))
+            X.Image(win, win.next, unpack(M.next))
+            X.Image(win, win.ok, unpack(M.ok))
         end,
         -- s6-ui-core r66, X8: place the new shared input surfaces using 4a's existing rectangles.
         -- Drawing only; the original indexes/parts and all audio stay in the shared renderer/model.
         placeControls = function(win)
-            for _, item in ipairs({ { win.effectsVolume, 51, 92 }, { win.musicVolume, 51, 155 } }) do
-                local f = item[1]
-                X.Rect(f, win, item[2], item[3], item[2] + 192, item[3] + 13)
+            local v = M.volumes
+            for _, item in ipairs({ { win.effectsVolume, v.effects }, { win.musicVolume, v.music } }) do
+                local f, x, y = item[1], item[2][1], item[2][2]
+                X.Rect(f, win, x, y, x + v.width, y + v.height)
                 f.title:Hide() f.lo:Hide() f.hi:Hide()
-                X.Rect(f.slider, win, item[2], item[3], item[2] + 192, item[3] + 13)
+                X.Rect(f.slider, win, x, y, x + v.width, y + v.height)
             end
-            for _, item in ipairs({ { win.source, { { 30, 182, 140, 193 }, { 30, 198, 140, 209 }, { 30, 233, 140, 244 } } },
-                { win.order, { { 30, 260, 110, 271 }, { 147, 260, 227, 271 } } },
-                { win.repeatMode, { { 30, 275, 110, 286 }, { 147, 275, 227, 286 } } } }) do
+            for _, item in ipairs({ { win.source, rects(M.sources) }, { win.order, rects(M.orders) },
+                { win.repeatMode, rects(M.repeats) } }) do
                 item[1].title:Hide()
                 local first, last = item[2][1], item[2][#item[2]]
                 X.Rect(item[1], win, first[1], first[2], last[3], last[4])
-                for i, b in ipairs(item[1].buttons) do X.Rect(b, win, table.unpack(item[2][i])) b:SetText("") end
+                for i, b in ipairs(item[1].buttons) do X.Rect(b, win, unpack(item[2][i])) b:SetText("") end
             end
-            X.Rect(win.folder, win, 29, 214, 203, 226) win.folder:SetBackdrop(nil)
-            win.cd.title:Hide() X.Rect(win.cd.button, win, 176, 230, 250, 246)
+            X.Rect(win.folder, win, unpack(M.folder)) win.folder:SetBackdrop(nil)
+            win.cd.title:Hide() X.Rect(win.cd.button, win, unpack(M.cd))
         end,
         --- the radios as 4a draws them (the renderer's states: effects 0 on, 1 off; the frequency's selection); the kit's
         --- buttons under them stay where they are but show nothing
@@ -81,20 +99,21 @@ return function(L, X)
             end
             -- TogglePauseState 0x0052A180: the button's picture follows the dialog's flag, not a stream retained
             -- from an earlier dialog. Drawing only; the control index and release command remain the model's.
-            X.Image(win, win.pause, win.view and win.view.contents.paused and 37 or 48, 110, 305, 173, 329)
+            local images = M.pauseImages
+            X.Image(win, win.pause, win.view and win.view.contents.paused and images.paused or images.playing, unpack(M.pause))
         end,
-    }
+    })
 
     -- ----- the paper -----
 
-    L.Paper = {
-        width = 64, height = 80, editWidth = 32, editHeight = 24,
+    local P = D.Paper
+    L.Paper = entry(P, {
         place = function() end,
         --- the window by the packet's cells (the renderer, as the paper opens): the kit's paper (X.Paper) on LINE001.EPD
         --- in BARAM.PAL; it slides open as it opens
         fit = function(win, c)
-            X.Paper(win, c, "LINE001.EPD", "BARAM.PAL")
+            X.Paper(win, c, unpack(P.art))
             if win.opened then X.SlideOpen(win) end
         end,
-    }
+    })
 end

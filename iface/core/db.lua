@@ -25,8 +25,10 @@ local DB = { name = "Default" }
 TK.DB = DB
 
 -- s6-modular-g (interfaces, phase 2): the profile is saved without the other interfaces' panels that are off
--- (TK.Interfaces:Trimmed).
-DB.store = TK.NewStore("The profile", function(data) return H:ProfileSave(DB.name, TK.Interfaces:Trimmed(data)) end)
+-- (TK.Interfaces:Trimmed). s6-gateway round 39 (head note 113): queued on the files thread unless now (store.lua).
+DB.store = TK.NewStore("The profile", function(data, now)
+    return H:ProfileSave(DB.name, TK.Interfaces:Trimmed(data), now)
+end, "profile")
 table.insert(TK.Stores, DB.store)
 
 DB.globalDefaults = {
@@ -255,6 +257,9 @@ end
 function DB:Load(name)
     if not H:ProfileIsValidName(name) then name = "Default" end
     local p, status = H:ProfileLoad(name)
+    -- A launch preset starts with this interface's existing defaults once; later menu/profile choices work normally.
+    -- Its ordinary saves go to LuaApi's in-memory profile table for this launch.
+    if TK.Startup and TK.Startup.loadingPreset then p, status = nil, "missing" end
     self.name = name
     -- s6-interface-5x (round 11): a profile its interface's Reset marked (TK.Interfaces:Reset, for an interface not in
     -- use then) loads as new, as a first start in its interface makes it; its file is written over at the save below.

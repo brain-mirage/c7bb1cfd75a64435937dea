@@ -37,13 +37,17 @@
 -- model's FriendListDialog and ProfileDialog; nothing sent on opening); SPELL MACRO opens 7.5.2's Macro Setup (the
 -- model's IntegrateMacroDialog, the macro window's Hotkeys tab) where the player's setting offers it, else the macro
 -- window; SAY MACRO the macro window (7.5.2 has no say macros) (decision 2026-10-04-5x-options-and-macro-windows); OK closes.
+-- s6-ui-core (round 85): the XML twin's scripts; the window, its rows' and buttons' places, pictures and actions are
+-- main.xml's (core/xml.md).
 
 local C = TK.GetComponent("5x.options")
 local H = __tk
 local S = require("interfaces.5x.skin")
 local Screen = require("interfaces.screen")
+local E = require("interfaces.5x.elements")
 
-local WIDTH, HEIGHT = 407, 410
+local L = TK.Xml.Data("main.xml")
+local WIDTH, HEIGHT = L.SIZE[1], L.SIZE[2]
 
 -- s6-play-modes (round 8, step 4): the game layer's options and sound (core/game/options.lua, core/game/sound.lua)
 local O, Sound = TK.Game.Options, TK.Game.Sound
@@ -81,18 +85,17 @@ C.rows = {
       set = function(on) O.Set("hear_emotions", on) end },
 }
 
--- The buttons: image, the action 7.5.2 runs for it (frozen at the press, run on the release) or a local opener. Wire:
--- FRIENDS is 7.5.2's F3 (UserPane::HandleKeyOrTextEvent 0x005A5BD0: new FriendListDialog, 0x0053F2C0), PROFILE the
--- Menu popup's Profile (MenuVarietySelectPane: new ProfileDialog, 0x0053F940), SPELL MACRO its Macro Setup
--- (IntegrateMacroDialog 0x00541B30); none sends anything on opening, and what their windows send is the model's.
-local BUTTONS = {
-    { id = 54, name = "SpellMacro", run = function()
-          local macros = TK.GetComponent("macros")
-          if macros and macros:OriginalSetup() then TK.Actions:RunFrozen() elseif macros then macros:Open() end
-      end, action = { kind = "dialog:open", text = "IntegrateMacroDialog" } },
-    { id = 55, name = "SayMacro", run = function() local m = TK.GetComponent("macros") if m then m:Open() end end },
-    { id = 56, name = "Friends", action = { kind = "dialog:open", text = "FriendListDialog" } },
-    { id = 57, name = "Profile", action = { kind = "dialog:open", text = "ProfileDialog" } },
+-- The buttons' own openers (main.xml has their pictures and actions: the action 7.5.2 runs for it, frozen at the press
+-- and run on the release, or a local opener). Wire: FRIENDS is 7.5.2's F3 (UserPane::HandleKeyOrTextEvent 0x005A5BD0:
+-- new FriendListDialog, 0x0053F2C0), PROFILE the Menu popup's Profile (MenuVarietySelectPane: new ProfileDialog,
+-- 0x0053F940), SPELL MACRO its Macro Setup (IntegrateMacroDialog 0x00541B30); none sends anything on opening, and what
+-- their windows send is the model's.
+local OPENERS = {
+    SpellMacro = function()
+        local macros = TK.GetComponent("macros")
+        if macros and macros:OriginalSetup() then TK.Actions:RunFrozen() elseif macros then macros:Open() end
+    end,
+    SayMacro = function() local m = TK.GetComponent("macros") if m then m:Open() end end,
 }
 
 --- A row's switch for one of its options (ON, or OFF) at (l, t)-(r, b) of the window: the radio picture and the press.
@@ -119,54 +122,67 @@ local function option(win, r, isOn, l, t, rgt, b)
     return f
 end
 
-local function build()
-    local win = CreateFrame("Frame", "TK5xOptions", UIParent)
-    C:Own(win) -- the component's root (Astra's review of round 1): a replaced component keeps it hidden (TK.ReplaceComponent)
-    -- HIGH, the macro window's strata, so SAY MACRO and SPELL MACRO show it over this window (round 93, as the XML form)
-    win:SetFrameStrata("HIGH")
-    win:SetSize(WIDTH, HEIGHT)
-    win:EnableMouse(true)
-    win.back = S.Picture(win, nil, "DLGOPT.EPF", 0, "NPAL8.PAL", 0, 0, "BACKGROUND")
-    -- without the 5.33 set, a plain panel so the window stays usable
+-- the scripts main.xml names
+local scripts = {}
+
+--- The component's root (Astra's review of round 1): a replaced component keeps it hidden (TK.ReplaceComponent).
+function scripts.Own(win) C:Own(win) end
+
+--- Without the 5.33 set, a plain panel so the window stays usable.
+function scripts.Plain(win)
     if not S.Image("DLGOPT.EPF", 0, "NPAL8.PAL") then
         S.Fill(win:CreateTexture(nil, "BACKGROUND"), S.TEXT, 0.85):SetAllPoints(win)
     end
+end
+
+--- The rows (C.rows, top to bottom), each its ON and OFF switch at main.xml's ROWS; their captions are the picture's.
+function scripts.Rows(win)
+    local R = L.ROWS
     win.rows = {}
     for i, r in ipairs(C.rows) do
-        local t = 80 + 14 * (i - 1)
-        local row = { on = option(win, r, true, 227, t, 260, t + 11), off = option(win, r, false, 283, t, 321, t + 11) }
+        local t = R.top + R.step * (i - 1)
+        local row = { on = option(win, r, true, R.on[1], t, R.on[2], t + R.height),
+                      off = option(win, r, false, R.off[1], t, R.off[2], t + R.height) }
         if not S.Image("DLGOPT.EPF", 0, "NPAL8.PAL") then
             local caption = S.Text(win:CreateFontString(nil, "OVERLAY"), S.WHITE)
-            caption:SetPoint("TOPLEFT", win, "TOPLEFT", 84, -(t + 1))
+            caption:SetPoint("TOPLEFT", win, "TOPLEFT", R.captionX, -(t + 1))
             caption:SetText(r.name)
         end
         win.rows[i] = row
     end
-    local X = require("interfaces.5x.dialogs").X
-    win.x5 = true -- X.Image's focus mark asks the window
-    win.buttons = {}
-    for i, def in ipairs(BUTTONS) do
-        local b = CreateFrame("Button", "TK5xOptions" .. def.name, win)
-        b:RegisterForClicks("LeftButtonUp")
-        X.Image(win, b, def.id, 120, 258 + 19 * (i - 1), 289, 276 + 19 * (i - 1))
-        if def.action then TK.Actions:SetTable(b, def.action) end
-        b:SetScript("OnClick", function()
-            if def.run then def.run() else TK.Actions:RunFrozen() end
-        end)
-        win.buttons[i] = b
-    end
-    win.ok = CreateFrame("Button", "TK5xOptionsOK", win)
-    win.ok:RegisterForClicks("LeftButtonUp")
-    win.ok.x5focus = true -- OK has the focus (SetFocusedControl(1)): X.Image's 1-pixel frame in 0x80 round it
-    X.Image(win, win.ok, 14, 168, 360, 240, 376)
-    win.ok:SetScript("OnClick", function() win:Hide() end)
-    -- the server's answers (0x23, 0x08) change its options' state: an open window looks a few times a second
-    win:SetScript("OnUpdate", TK.Util.Throttled(0.2, function() C:Refresh() end))
-    -- s6-rules-dialogs' hook, as Modern's window: while the options show, the server's "saved" (S 0x21) is its alert
-    win:HookScript("OnShow", function() H:DialogOptionPageShown(true) C:Refresh() end)
-    win:HookScript("OnHide", function() H:DialogOptionPageShown(false) end)
-    TK.Escape:AddWindow(win, function() win:Hide() end) -- Escape closes it, as Modern's window
-    win:Hide()
+end
+
+--- A button of main.xml (its def: picture id, name, action) at its place in BUTTONS' column.
+function scripts.Button(b)
+    local win, def, B = b:GetParent(), b.def, L.BUTTONS
+    local i = #win.buttons -- its buttons[] key put it in the list as it was made
+    require("interfaces.5x.dialogs").X.Image(win, b, def.id, B.l, B.t + B.step * (i - 1), B.r, B.b + B.step * (i - 1))
+    if def.action then TK.Actions:SetTable(b, def.action) end
+    local run = OPENERS[def.name]
+    -- WIRE: the button's action, frozen at its press, run on its release (or its local opener: OPENERS); changing which
+    -- runs or when changes what the server sees
+    b:SetScript("OnClick", function()
+        if run then run() else TK.Actions:RunFrozen() end
+    end)
+end
+
+--- OK, its place and picture main.xml's: it closes the window.
+function scripts.Ok(b)
+    local win, r = b:GetParent(), b.def.rect
+    require("interfaces.5x.dialogs").X.Image(win, b, b.def.id, r[1], r[2], r[3], r[4])
+    b:SetScript("OnClick", function() win:Hide() end)
+end
+
+--- Its look at the options' state five times a second (a throttle of its own for each window built).
+function scripts.Ticker(win) win:SetScript("OnUpdate", TK.Util.Throttled(0.2, function() C:Refresh() end)) end
+
+function scripts.Shown() H:DialogOptionPageShown(true) C:Refresh() end
+function scripts.Hidden() H:DialogOptionPageShown(false) end
+
+function scripts.Escape(win) TK.Escape:AddWindow(win, function() win:Hide() end) end
+
+local function build()
+    local win = TK.Xml.Load("main.xml", { scripts = scripts, elements = E }).window
     C.window = win
     return win
 end
@@ -179,7 +195,8 @@ function C:Refresh()
         local state = r.on() and true or false
         for _, f in ipairs({ win.rows[i].on, win.rows[i].off }) do
             local chosen = f.isOn == state
-            local key, w, h = S.Image("RADIOBUT.EPF", chosen and 1 or 0, "NPAL8.PAL")
+            local R = L.ROWS
+            local key, w, h = S.Image(R.file, chosen and R.chosen or R.other, R.palette)
             if key then
                 -- the frame at the option's left, its top on the option's middle row - 5 (its drawn pixels from their place)
                 local ox, oy = TK.Art.Origin(key)
