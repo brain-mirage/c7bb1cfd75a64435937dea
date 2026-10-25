@@ -1,7 +1,64 @@
-# Experimental command availability
+# Experimental command metadata, availability, and named execution
 
-`--gateway 1` enables these answers for commands whose rules have moved to the gateway. Existing bindings and
-`TK.Actions` still execute commands in their current input. These calls only read information.
+`--gateway 1` enables these answers for commands whose rules have moved to the gateway. `Commands`, `Can`, and
+`OnCan` only read information; existing bindings and `TK.Actions` still execute commands in their current input.
+The separate experimental `TK.Game.Command` entry point can request a named command from an input owned by the UI.
+
+`TK.Game.Commands()` returns fresh plain metadata rows for the layered session, or an empty table without one.
+Each row has `kind`, `ruled`, `needsInput`, `inputExemption`, `cites` and `mode`. A base row has an empty mode;
+5.33's sound-mute override has mode `5.x`, selected by the existing version policy. There are no eligibility
+numbers or performing callbacks in this data. Editing a returned row changes only that Lua table.
+
+The list includes internal binding and native continuation kinds. It describes the command surface, not which
+commands are currently available or callable through a particular UI method. `needsInput` and `inputExemption`
+record the plan's provenance requirements. Native and direct-input checks for named execution are complete; the
+contract is below. An exemption describes a trusted engine continuation, not permission to invoke it from a timer:
+a named request for a ruled command still needs genuine input. Use `Can` for the live advisory answer on the routes
+that support it.
+
+## Named execution
+
+`TK.Game.Command(kind, slot, amount, text)` requests one command and returns nothing. `slot` defaults to 0 (none);
+lettered slots use the existing Lua 1-based convention. `amount` defaults to 0 and `text` defaults to the empty
+string. The request uses the existing connection action sink and engine, with actual source data only; it does not
+fabricate input. Availability questions do not reserve input.
+
+Connected requests are decided on the logic thread. Completion is reported through the existing
+`TK_ACTION_DONE(kind, result, reason)` event, where `result` is the actual `ok`, `refused`, or `unavailable` result.
+A ruled request outside genuine input is refused with `needs-input`; a spent input is refused with `input-spent`;
+and UI capture that already owns unspent input is refused with `input-claimed`. Named key repeat and key-up phases
+are refused with `input-phase`. An unknown kind is refused and logged with `unknown-command`.
+
+Native input keeps its frozen data first, and its first-command claim stays in place; native dialog values are kept
+as data. A named mouse-down and mouse-up for the same button are one named request. If there was no named
+mouse-down request, the normal `OnClick` mouse-up behavior still works.
+
+Metadata is not a performer registry or a promise that every listed kind is callable. Existing
+`RuleFamily`/`SessionActions` performers are used; an unsupported existing kind remains unavailable. No menu,
+audio, or lifecycle payload formats are added. The native input exemption is for engine continuation only. This
+entry point is for the client's own UI: the separate plugin sandbox API does not export `Command` (boundary
+question 136 is unchanged).
+
+With no session the request completes as unavailable with `not-connected`. With a session but the gateway flag
+off, the new entry point completes as unavailable with `gateway-off`. Existing bound-event behavior with the flag
+off is unchanged.
+
+For example, an own button can make a named request in its `OnClick`, without a bound action. Register the
+completion listener before the click:
+
+```lua
+TK.On("TK_ACTION_DONE", function(_, kind, result, reason)
+    if kind == "macro" then
+        -- Handle this named request's actual result.
+    end
+end)
+
+-- In the own button's OnClick script:
+TK.Game.Command("macro", 0, 0, "Hello")
+```
+
+Call this from the button's genuine input callback, not a timer. The completion listener reports the result; it
+does not make a timer call eligible for a ruled command.
 
 ```lua
 local allowed, reason, waitMs = TK.Game.Can("open")

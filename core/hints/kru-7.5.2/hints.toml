@@ -713,25 +713,22 @@ shape = "turning"
 [sobj.707-711]
 shape = "turning"
 
-# s6-reprojection-cloud-1 (run 24, head note 90; the 3D audit's group E): more wide props that stood as thin solids, a
-# sliver from the side and a blade from above, as turning cards too: the golden warrior statue (12253-12255: Kugnae and
-# 7 more maps), the wide statues (3236-3241, 3245-3247, 3254-3256: Kugnae, Buya, Kinung, Vale, Baek Shop, Tower Arena,
-# 45, 19 and 20 maps), the boats (1018-1021: Hausson and 12 more; 12837-12843: Nagnang's jetty and 4 more; 10822-10827:
-# Kinung's and 2 more), the tents (10543-10564 on 34 maps, 10788-10795 on 10: Kinung's and the camps'), the log piles
-# (7685-7688 on 27 maps, 7862-7863 on 8), the Wilderness's carved grey rock (16946-16954) and the gold heaps and chests
-# (13575-13590 on 18 maps: Kinung Crafters, the Bargain Market). Each shows its whole picture from every side, and
-# straight on it is drawn as before. The blocked ones the rule stood as walls are props in the reprojection module's
-# hints. Not the green hedge hill (797-800): it is on 108 maps, 7,489 cells, mostly as hedges.
+# s6-reprojection-cloud-1 (run 24, note 90; audit group E): wide props stood as thin solids, a side sliver
+# and an overhead blade; they get turning cards too. The golden warrior statue (12253-12255: Kugnae and
+# 7 more maps).
+# Original native art confirms four statue families in 3233-3256 and both mirrored three-strip forms.
+# Run 24 covered only some facings.
+# The boats (1018-1021: Hausson and 12 more; 12837-12843: Nagnang's jetty and 4 more;
+# 10822-10827: Kinung's and 2 more), the tents (10543-10564 on 34 maps, 10788-10795 on 10:
+# Kinung's and the camps'), the log piles (7685-7688 on 27 maps, 7862-7863 on 8), the Wilderness's
+# carved grey rock (16946-16954) and the gold heaps and chests (13575-13590 on 18 maps:
+# Kinung Crafters, the Bargain Market). Each shows its whole picture from every side, and straight on it is
+# drawn as before. The blocked ones the rule stood as walls are props in the reprojection module's hints.
+# Not the green hedge hill (797-800): it is on 108 maps, 7,489 cells, mostly as hedges.
 [sobj.12253-12255]
 shape = "turning"
 
-[sobj.3236-3241]
-shape = "turning"
-
-[sobj.3245-3247]
-shape = "turning"
-
-[sobj.3254-3256]
+[sobj.3233-3256]
 shape = "turning"
 
 [sobj.1018-1021]
@@ -1171,3 +1168,55 @@ wind = "none"
 [tile.24082]
 ground = "blocked"
 level = 2
+
+# s6-reprojection-cloud-3 (run 32): shared ground profiles selected only by the module's complete market-platform
+# virtual objects. Like grave-mound, plan paths resolve here beside the shared native hint assets. Loose paving
+# tiles keep their ordinary treatment; these groups add no global tile override.
+# Keep all six platform group heights and the plan generator's deck offset in step with the module's
+# vobj.market-platform-floor level and tile.25994-25996 level when changing the deck rise.
+[group.market-platform-short]
+ground = "flat"
+plan = "maps/plans/market-platform-short.png"
+height = 0.5
+
+[group.market-platform-tall]
+ground = "flat"
+plan = "maps/plans/market-platform-tall.png"
+height = 0.5
+
+
+[group.market-platform-w10-d9]
+ground = "flat"
+plan = "maps/plans/market-platform-w10-d9.png"
+height = 0.5
+
+[group.market-platform-w10-d11]
+ground = "flat"
+plan = "maps/plans/market-platform-w10-d11.png"
+height = 0.5
+
+[group.market-platform-w11-d9]
+ground = "flat"
+plan = "maps/plans/market-platform-w11-d9.png"
+height = 0.5
+
+[group.market-platform-w11-d11]
+ground = "flat"
+plan = "maps/plans/market-platform-w11-d11.png"
+height = 0.5
+
+# Visual cap profiles only: object grids do not add standing ground height. If later plateau fill gives the member
+# cells height L, keep them at 0 or set the relative cap height to 2-L; run 30 footing adds L to the cap.
+[group.mountain-cliff-cap-east]
+kind = "prop"
+plan = "maps/plans/mountain-cliff-cap-east.png"
+height = 2
+floor = 0
+wind = "none"
+
+[group.mountain-cliff-cap-west]
+kind = "prop"
+plan = "maps/plans/mountain-cliff-cap-west.png"
+height = 2
+floor = 0
+wind = "none"

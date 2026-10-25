@@ -1,7 +1,22 @@
--- The experimental gateway's advisory face. These questions and listeners cannot execute an action or reserve a
--- physical input. The command is checked again when its existing binding runs on the logic thread.
+-- The experimental gateway's own-UI entry and advisory face. Questions and listeners never reserve physical input;
+-- named requests use the same connection sink and are admitted again on the logic thread.
 TK.Game = TK.Game or {}
 local G, H = TK.Game, __tk
+
+--- Request one command on this input's own record; no input is fabricated. Completion is TK_ACTION_DONE
+--- (kind, result, reason), from the logic thread when connected. Slots use the same 1-based values as Can.
+--- Named key requests run on the first press only; repeat/release actions remain bound. The gateway must be on.
+--- Without a session the completion is unavailable/not-connected. Metadata rows are not a performer registry:
+--- a kind without an existing engine doer remains unavailable. This API belongs to the game's own UI, not plugins.
+function G.Command(kind, slot, amount, text)
+    H:GiveCommand(kind, slot or 0, amount or 0, text or "")
+end
+
+--- Fresh metadata rows: kind, ruled, needsInput, inputExemption, cites and mode (empty for a base row).
+--- Empty without a layered session. Reading or editing this returned data executes no command and changes no rule.
+function G.Commands()
+    return H:CommandTable()
+end
 
 --- Returns allowed (true/false, or nil when unknown), reason, and wait in milliseconds (nil for a state-dependent
 --- wait). route is "key" (default) or "button". Unmoved commands/routes answer nil, "engine-decides", nil.

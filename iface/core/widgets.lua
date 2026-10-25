@@ -572,6 +572,7 @@ end
 --- s6-ui-core (round 63; the owner's mock-up): sections = N or { { text, desc }, ... } uses N evenly spaced stops
 --- numbered 1–N, snaps through the same drag path, draws dividers and shows each divider's or handle's detailed tooltip.
 --- In sectioned mode, releasing a click on an unchanged stop also reports once, so its preset can be reapplied.
+--- onCommit(...values) runs after a physical release or an accepted Enter edit; cancelling a press does not commit.
 local SLIDER_INSET, STOP_W = 6, 30 -- the thumb's centre stays 6 in from each end, as the engine Slider's; the stop's room
 local AT_STOP = math.huge          -- a handle at the end stop, inside the control
 
@@ -797,6 +798,7 @@ function make.Slider(S, parent, label, min, max, step, width, onChange, opts)
             local r = f.handles[i].relative -- a box shown from another handle counts from it (Astra's r60-2 review)
             if r and shown[r] and vals[r] ~= AT_STOP then v = vals[r] + v end
             put(i, v, true)
+            if f.onCommit then f.onCommit(f:GetValue()) end
         end, function(b) b:SetText(text(i)) end)
     end
 
@@ -831,6 +833,7 @@ function make.Slider(S, parent, label, min, max, step, width, onChange, opts)
         local reapply = apply and f.reapply
         f.dragging, f.reapply, f.dragOffset, f.activePart = nil, nil, nil, nil
         if reapply and f.onChange then f.onChange(f:GetValue()) end
+        if apply and f.onCommit then f.onCommit(f:GetValue()) end
     end
 
     --- The handles' values, in order (a handle at the end stop: the stop's value).
@@ -880,7 +883,7 @@ function make.Slider(S, parent, label, min, max, step, width, onChange, opts)
     function f:Configure(label2, min2, max2, step2, onChange2, opts2)
         opts2 = opts2 or {}
         title:SetText(label2)
-        f.min, f.max, f.step, f.onChange = min2, max2, step2, onChange2
+        f.min, f.max, f.step, f.onChange, f.onCommit = min2, max2, step2, onChange2, opts2.onCommit
         -- Sectioned mode uses evenly spaced indices on this same slider and its ordinary snapping/drag path.
         -- Pass a count or { { text, desc }, ... }; Configure also clears the mode on a pooled slider's next use.
         f.originalControl = opts2.originalControl == true

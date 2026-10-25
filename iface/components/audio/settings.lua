@@ -31,7 +31,9 @@ function C:Sound()
 end
 
 local function volume(key, name)
-    return { type = "range", key = key, name = name, min = 0, max = 1, step = 0.05 }
+    local arg = { type = "range", key = key, name = name, min = 0, max = 1, step = 0.05 }
+    if key == "music" then arg.commit = function(_, v) C:CommitMusicSwitch(v) end end
+    return arg
 end
 
 local function notInWorld() return not TK.GameState:InWorld() end
@@ -112,7 +114,7 @@ C.tabs = {
         { type = "input", name = "Zone music or track number",
           set = function(_, text) local n = number(text); if n then A.PlayZoneMusic(n, n, 100) end end },
         { type = "input", name = "MIDI track (1-12, 0 stops)",
-          set = function(_, text) local n = number(text); if n then A.PlayMidi(n) end end },
+          set = function(_, text) local n = number(text); if n then A.TestMidi(n) end end },
         { type = "break" },
         { type = "execute", name = "Title music", func = function() A.PlayTitleMusic() end },
         { type = "execute", name = "Enter world", func = function() C:EnterWorld() end },

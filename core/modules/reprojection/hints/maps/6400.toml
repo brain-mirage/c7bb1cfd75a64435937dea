@@ -1,0 +1,11 @@
+# Gypsy Camp: the source-art terrace ends at its one-cell ledge. The three blocked rows behind it use the same
+# floor tiles (6985-6988) as the walked camp, so the generated floor rule leaves them below that ledge.
+# Run 23, the head's request to close run22's P3s: fill this map's plateau up to the cliff's three-cell top.
+# The global SOBJ5878-5890 terrace remains the default; a tile hint would raise unrelated common floors.
+# Drawing only: the native map's pass flags, objects and packets are unchanged.
+[check]
+size = "30x30"
+
+[cells."14,0-26,2"]
+ground = "block"
+level = 3

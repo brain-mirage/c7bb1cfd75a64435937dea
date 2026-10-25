@@ -391,7 +391,12 @@ function S:Reset(node, tabs)
                 local d = first[a]
                 if d == nil then d = defaultOf(node, a) end
                 if type(d) == "table" then d = U.Copy(d) end
-                if not same(argValue(node, a), d) then setArg(node, a, d) end
+                if not same(argValue(node, a), d) then
+                    setArg(node, a, d)
+                    -- Commit changed rows while Reset owns the click. Music's options toggle (4a 0x00541120) can
+                    -- draw from the shared RNG; moving that commit outside input changes what the server sees.
+                    if a.commit then a.commit(node, argValue(node, a)) end
+                end
                 -- s6-ui-core (round 54): a style choice's small choices under it (builders.stylechoice) go back too
                 for _, e in ipairs(a.extras or {}) do
                     local ed = node.defaults and (node.defaults() or {})[e.key]
@@ -640,6 +645,7 @@ function builders.range(node, arg, width)
     local s = acquire("range", function() return W.Slider(pageContent, "", 0, 1, 0, width) end)
     s:SetWidth(width)
     local opts, set = { gap = arg.gap, stop = arg.stop, togglesBeside = arg.togglesBeside,
+        onCommit = arg.commit and function(...) arg.commit(node, ...) end or nil,
         sections = type(arg.sections) == "function" and arg.sections(node) or arg.sections }, function(v) setArg(node, arg, v) end
     if arg.handles then
         opts.handles = {}

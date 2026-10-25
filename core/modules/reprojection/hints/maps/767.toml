@@ -1,0 +1,7 @@
+[check]
+size = "24x55"
+
+# The same ceiling-band art is reused against a different native wall family (1068-1075); keep that family's existing
+# brown backing instead of the haunted wallpaper default.
+[sobj.1318-1341]
+skin = "tile/2173"

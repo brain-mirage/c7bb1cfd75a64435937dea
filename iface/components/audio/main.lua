@@ -60,9 +60,10 @@ function C:OnEnable()
 end
 
 --- The Sound settings, applied. With a key, the player changed that option on the Sound page: the effects switch is
---- ApplySoundEffectEnabled (0x0052A2D0), and Music is also the options' Music row (0 is off; leaving 0 is on; a change
---- between two levels above 0 is the volume alone). Without one (start-up, a refresh), only the volumes and the bank:
---- the switches are the audio logic's, which F7, the window's focus and the server turn too.
+--- ApplySoundEffectEnabled (0x0052A2D0), and Music applies its volume here while CommitMusicSwitch handles the row's
+--- mute state on release/Enter (0 is off; leaving 0 is on; changes between levels above 0 are volume alone). Without one
+--- (start-up, a refresh), only the volumes and the bank: the switches are the audio logic's, which F7, the window's focus
+--- and the server turn too.
 function C:ApplySettings(key, value)
     local s = self:Sound()
     -- The playback volume is the original's MusicVolume, which it loads apart from the Music flag (SoundManager.cpp:127)
@@ -73,7 +74,10 @@ function C:ApplySettings(key, value)
     elseif not self.musicVolume then
         self.musicVolume = math.max(0, math.min(100, __tk:ClientSettingInt("sound", "music_volume"))) / 100
     end
-    A.Configure(s.master, self.musicVolume, s.effects, s.midi, s.backgroundMute, s.soundBank)
+    local volumeKey = key
+    -- Sound page 0's Music row is off; keep its last volume for reapplication and let MusicSwitch handle the player change.
+    if key == "music" and (s.music or 0) <= 0 then volumeKey = nil end
+    A.Configure(s.master, self.musicVolume, s.effects, s.midi, s.backgroundMute, s.soundBank, volumeKey)
     -- s6-audio round 23: our options; they change how effects are heard, never a draw or a send.
     A.SetMaxSoundEffects(math.floor(s.maxEffects + 0.5))
     A.SetIdleVolume(s.idle)
@@ -85,29 +89,41 @@ function C:ApplySettings(key, value)
     -- and ends the title track, with its draws on the session's random stream (AudioHost.SetTitleMusic), so nothing sent
     -- or timed changes with it.
     if s.loginMusic == true then A.SetTitleMusic(TK.Entering.TitleTrack()) else A.SetTitleMusic(0) end
-    local was = self.musicLevel
-    self.musicLevel = s.music
+    -- WIRE: NewOptionPane::ApplyEffectAndMusicOptions (0x00541120) leaves positive-volume edits alone after F7.
+    -- Keep the committed level during a drag; untagged reapplication refreshes it. Changing this can open a stream
+    -- and draw from the shared random sequence, changing what the server sees.
+    if key ~= "music" then self.musicLevel = s.music end
     if key == "effectsOn" then
         A.SetSoundEffectsEnabled(value == true)
-    elseif key == "music" then
-        if (value or 0) <= 0 then
-            A.SetMusicOn(false)
-        elseif was ~= nil and was <= 0 then
-            A.SetMusicOn(true)
-        end
     end
 end
 
+--- Commit the Sound page's Music mute state on its release or Enter input; positive volume still applies while dragging.
+--- The original's Music switch is NewOptionPane::ApplyEffectAndMusicOptions (0x00541120); its volume is
+--- NewOptionPane::ApplyVolumeChange (0x00540490). Only an accepted zero-crossing toggle may open the stream and draw on
+--- the session's shared random sequence; moving it outside physical input changes what the server sees.
+function C:CommitMusicSwitch(value)
+    local was = self.musicLevel
+    self.musicLevel = value or 0
+    if self.musicLevel <= 0 then A.SetMusicOn(false)
+    elseif was ~= nil and was <= 0 then A.SetMusicOn(true) end
+end
+
 --- s6-interface-7x-b (round 7; a marked addition for 7.x's options page, interfaces/7x/panels/side/options.lua): the
---- music's volume alone, 0 included, as 4a's slider sets it (ScrollVolumePane::NotifyValueChange -> NewOptionPane::
---- ApplyVolumeChange -> ApplyVolumeSettings, OptionPane.cpp:796-827: SoundManager::SetStreamVolume). Config's "Music"
---- flag is left as it is (the Music row's and F7's), so 0 is a silent stream, not the music off as on the Sound page.
---- Local: nothing is sent.
-function C:SetMusicVolume(v)
+--- The music's volume alone, 0 included, as 4a's slider sets it (ScrollVolumePane::NotifyValueChange -> NewOptionPane::
+--- ApplyVolumeChange 0x00540490 -> ApplyVolumeSettings, OptionPane.cpp:796-827: SoundManager::SetStreamVolume). Config's
+--- "Music" flag is left as it is (the Music row's and F7's), so 0 is a silent stream, not the music off as on the Sound
+--- page. There is no immediate packet or draw; its fade steps affect later C11 shared-RNG order, which the server sees.
+local function setMusicVolume(self, v, key)
     self:Sound().music = v
     self.musicVolume = v
-    self:ApplySettings() -- no key: the volumes only (above), the flag untouched
+    self:ApplySettings(key) -- no key: reapply volumes only; a keyed player edit still leaves the flag branch alone
 end
+
+function C:SetMusicVolume(v) setMusicVolume(self, v) end
+
+--- The in-game volume slider's player edit: keep its key on the existing ApplySettings path for AudioLogic.Run.
+function C:ChangeMusicVolume(v) setMusicVolume(self, v, "musicVolume") end
 
 --- The preview's world, without a server: the music fades out and starts again (RestartMusic(3000)) and the preview
 --- names its zone. With a server the game's session does both from its own events (the accepted login, packet 0x19

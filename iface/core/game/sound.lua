@@ -39,12 +39,13 @@ end
 --- muted or back, the volume kept. Local: nothing is sent. Wire: off, no stream opens (see the file's head).
 function S.SetMusicOn(on) A.SetMusicOn(on == true) end
 
---- The music's playback volume alone (0-1, 0 included), as 4a's options slider sets it (NewOptionPane::ApplyVolumeChange,
---- then ApplyVolumeSettings: SoundManager::SetStreamVolume): Config's Music flag is left as it is, so 0 is a silent
---- stream, not the music off. The audio component keeps it (C:SetMusicVolume). Local: nothing is sent, nothing drawn.
+--- The music's playback volume alone (0-1, 0 included), as 4a's options slider sets it (NewOptionPane::ApplyVolumeChange
+--- 0x00540490, then ApplyVolumeSettings: SoundManager::SetStreamVolume): Config's Music flag is left as it is, so 0 is
+--- a silent stream, not the music off. The audio component keeps it (C:ChangeMusicVolume). No immediate packet or draw;
+--- later fade steps and C11 shared-RNG order still follow the original volume control.
 function S.SetMusicVolume(v)
     local audio = TK.GetComponent("audio")
-    if audio then audio:SetMusicVolume(v) end
+    if audio then audio:ChangeMusicVolume(v) end
 end
 
 --- The End key (UserPane.cpp:1726-1735): the next track of the MP3 folder (a CD's next track in the original), the music

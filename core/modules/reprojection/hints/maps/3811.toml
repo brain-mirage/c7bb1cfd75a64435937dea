@@ -1,0 +1,249 @@
+# SourceMap 3811 Arctic: the native three-layer SOBJ1156-1187 faces stand two cells high.
+# Global tile-neighbor hints handle the snow next to those faces; this map-only override reaches the interiors
+# of their connected blocked-snow banks. It applies to 633 source cells before bank/model/coverage exclusions.
+# Eight zero-height entries retain unrelated snow and the pavilion's hidden-ice context at ground level.
+# The 89 flat level-two cells keep whole bank-connected trees, crystals, snow piles and the enclosed fence together.
+# Our 3D inverse uses drawn height to name the cell under the pointer, matching 4a MapPane 0x00507150's flat-map rule.
+# Changing drawn height can change that cell/command; native map words and packet encoding stay unchanged.
+
+[check]
+size = "72x72"
+
+[tile.859]
+ground = "blocked"
+level = 2
+skin = "tile/1418"
+
+[cells."0,19-0,19"]
+level = 0
+
+[cells."1,33-1,33"]
+level = 0
+
+[cells."26,10-26,10"]
+level = 0
+
+[cells."29,8-29,8"]
+level = 0
+
+[cells."36,4-55,4"]
+level = 0
+
+[cells."58,6-61,6"]
+level = 0
+
+[cells."20,12-23,12"]
+level = 0
+
+# The pavilion hides 1163 at (54-58,16) behind its doors/roof; that strip is not a visible ice bank.
+[cells."51,14-61,19"]
+level = 0
+
+[cells."25,0-30,0"]
+ground = "flat"
+level = 2
+
+[cells."17,2-17,2"]
+ground = "flat"
+level = 2
+
+[cells."19,2-21,2"]
+ground = "flat"
+level = 2
+
+# This native pine intentionally has only 1194/1195; both received pieces stand on the enclosed bank.
+[cells."24,2-25,2"]
+ground = "flat"
+level = 2
+
+[cells."12,3-14,3"]
+ground = "flat"
+level = 2
+
+[cells."20,3-21,3"]
+ground = "flat"
+level = 2
+
+[cells."20,4-21,4"]
+ground = "flat"
+level = 2
+
+[cells."19,6-21,6"]
+ground = "flat"
+level = 2
+
+[cells."32,7-32,7"]
+ground = "flat"
+level = 2
+
+[cells."20,13-20,13"]
+ground = "flat"
+level = 2
+
+[cells."28,13-29,13"]
+ground = "flat"
+level = 2
+
+[cells."25,14-26,14"]
+ground = "flat"
+level = 2
+
+[cells."18,16-18,16"]
+ground = "flat"
+level = 2
+
+[cells."11,20-13,20"]
+ground = "flat"
+level = 2
+
+[cells."19,23-19,23"]
+ground = "flat"
+level = 2
+
+[cells."0,30-0,30"]
+ground = "flat"
+level = 2
+
+[cells."8,30-10,30"]
+ground = "flat"
+level = 2
+
+[cells."39,30-41,30"]
+ground = "flat"
+level = 2
+
+[cells."6,31-6,31"]
+ground = "flat"
+level = 2
+
+[cells."1,32-2,32"]
+ground = "flat"
+level = 2
+
+[cells."2,33-2,33"]
+ground = "flat"
+level = 2
+
+[cells."8,33-8,33"]
+ground = "flat"
+level = 2
+
+[cells."41,33-43,33"]
+ground = "flat"
+level = 2
+
+[cells."1,34-1,34"]
+ground = "flat"
+level = 2
+
+[cells."2,35-2,35"]
+ground = "flat"
+level = 2
+
+[cells."10,35-12,35"]
+ground = "flat"
+level = 2
+
+[cells."3,36-4,36"]
+ground = "flat"
+level = 2
+
+[cells."9,36-9,36"]
+ground = "flat"
+level = 2
+
+[cells."11,36-11,36"]
+ground = "flat"
+level = 2
+
+[cells."3,38-3,38"]
+ground = "flat"
+level = 2
+
+[cells."16,38-16,38"]
+ground = "flat"
+level = 2
+
+[cells."6,39-7,39"]
+ground = "flat"
+level = 2
+
+[cells."13,39-15,39"]
+ground = "flat"
+level = 2
+
+[cells."0,40-1,40"]
+ground = "flat"
+level = 2
+
+[cells."4,40-4,40"]
+ground = "flat"
+level = 2
+
+[cells."7,40-8,40"]
+ground = "flat"
+level = 2
+
+[cells."7,41-8,41"]
+ground = "flat"
+level = 2
+
+[cells."13,41-13,41"]
+ground = "flat"
+level = 2
+
+[cells."15,41-15,41"]
+ground = "flat"
+level = 2
+
+[cells."20,41-20,41"]
+ground = "flat"
+level = 2
+
+[cells."22,41-22,41"]
+ground = "flat"
+level = 2
+
+[cells."13,44-13,44"]
+ground = "flat"
+level = 2
+
+[cells."17,45-18,45"]
+ground = "flat"
+level = 2
+
+[cells."25,60-25,60"]
+ground = "flat"
+level = 2
+
+[cells."55,60-55,60"]
+ground = "flat"
+level = 2
+
+[cells."57,60-57,60"]
+ground = "flat"
+level = 2
+
+[cells."53,61-53,61"]
+ground = "flat"
+level = 2
+
+[cells."52,62-52,62"]
+ground = "flat"
+level = 2
+
+[cells."55,62-55,62"]
+ground = "flat"
+level = 2
+
+[cells."53,63-55,63"]
+ground = "flat"
+level = 2
+
+[cells."2,67-2,67"]
+ground = "flat"
+level = 2
+
+[cells."4,68-4,68"]
+ground = "flat"
+level = 2

@@ -108,25 +108,27 @@ kind = "prop"
 shape = "thin"
 depth = 0.05
 
-# The haunted houses' rooms (s6-reprojection-cloud-3, run 20, head note 53; the owner: "the rooms in haunted house have
-# a ceiling that divides the rooms; those are not drawn correctly in 3d"). Buya's (451, 453-455, 457, 458) and Kugnae's
-# (122, 124-126, 128, 129) interiors part their rooms with walls two cells thick: a front three cells tall on the south
-# (1042-1066), and the ceiling's dark band over them, its pieces drawn two cells above their own (1318-1341). The rules
-# already lay the band on the fronts' tops, three cells up, and stand the blocked cells under it up to it. Two pieces
-# went wrong:
-# - Over each doorway the beam with its hanging moss (1054-1055) paints nothing in its bottom cell, the opening, so the
-#   rule took it for a top and laid it on the floor a cell up; and the band over the doorway, finding no front under it,
-#   lay a cell lower and a cell north of the band beside it. Standing upright in its row, as 1536 does, the beam is the
-#   doorway's lintel and the band over it lies at the others' height.
-# - Where a wall's end has no front south of it in its column, its block wears the band's own picture on its sides, a
-#   stack of dark stripes. The band's plain dark brown (ground tile 2173) is its side there instead.
+# Both haunted wall-front ranges (1042-1053 and 1056-1058) use plain wall art on hidden faces, including both doorway jambs.
+# Keep the painted front, doorway opening and the separate 1054-1055 header pictures as drawn.
+[sobj.1042-1053]
+skin = "sobj/1042"
+
+[sobj.1056-1058]
+skin = "sobj/1042"
+
+# Ceiling-band art 1318-1341 reaches 47 maps; haunted-style wall 1042 remains the global default.
+# A flat roof keeps the ceiling network at the computed wall support instead of adding a ridge.
+# The 1054-1055 beams retain their upright native row so the doorway band's support matches.
+# Plain native front 1042 supplies wallpaper and wainscot to exposed block ends where no nearby front can supply it;
+# map-style exceptions on 18 maps with three other wall families override only the skin, keeping their existing brown backing.
 [sobj.1054-1055]
 kind = "prop"
 shape = "thin"
 depth = 0.05
 
 [sobj.1318-1341]
-skin = "tile/2173"
+skin = "sobj/1042"
+roof = "flat"
 
 # This native upper-layer square stays upright on its own row; its empty base is not a roof.
 # Its semantic purpose is unknown: preserve the original pixels and transparent base gap.
@@ -236,10 +238,17 @@ painted_shadow = false
 # Winter Wonderland's snowy rocks (5437-5456). From the side they were cards or walls as tall as their pictures; as a
 # relief from the art (Grids' Relief) each column of the picture slopes back as it rises
 [sobj.8113-8124]
-footprint = "relief"
+group = "oasis-rock"
 
 # The oasis waterfall strip contains the same ridge, pool and rim as its neighboring rock pieces.
 [sobj.8134]
+group = "oasis-rock"
+
+# Run 24, classifier pattern59756 on map6400: these are one rock mass. Empty-base end strips otherwise become
+# roof tops without walls while the middle strips become separate walls, leaving detached edges around the pool.
+# Group the native touching strips and give the entire relief the same solid treatment; keep its painted shadows.
+[group.oasis-rock]
+kind = "prop"
 footprint = "relief"
 
 # s6-reprojection-cloud-1 (run 24, head note 90; the 3D audit's group Q): the waterfall (7626-7628, a picture nine rows
@@ -257,21 +266,16 @@ footprint = "relief"
 kind = "wall"
 height = 3
 
-# s6-reprojection-cloud-1 (run 24, the 3D audit's group E): the wide props the base hints turn (shape = "turning"),
-# where their cell is blocked, stood as the rule's walls (a block one cell deep, its front the picture) and so never
-# turned: here they are props wherever they stand. And the purple blossom tree (1875-1878, on 68 maps), which the rule
-# did not take for a tree (a thin dark bar from the side), is a tree, drawn as the player's Trees option draws the
-# others.
+# s6-reprojection-cloud-1 (run 24, audit group E): blocked wide props with base turning hints
+# otherwise become native one-cell-deep walls and ignore turning. Module `kind = "prop"` lets the global
+# `shape = "turning"` apply. The owner reported a thin-sided statue symptom, not IDs; native art confirms
+# both mirrored three-strip statue forms across 3233-3256.
+# The purple blossom tree (1875-1878, on 68 maps), which the rule did not take for a tree, appeared as a
+# thin dark bar from the side; it is a tree, drawn as the player's Trees option draws the others.
 [sobj.12253-12255]
 kind = "prop"
 
-[sobj.3236-3241]
-kind = "prop"
-
-[sobj.3245-3247]
-kind = "prop"
-
-[sobj.3254-3256]
+[sobj.3233-3256]
 kind = "prop"
 
 [sobj.1018-1021]
@@ -561,6 +565,50 @@ group = "red-table"
 [vobj.red-table.variant.three]
 sobj = ["563 564 565"]
 
+# Native inn-table artwork: bare wood (1567-1569), tea (1570-1572) and meal (1573-1575) are distinct exact 3x1 sequences.
+# Classifier pattern 24955 marks the native bare wood table on map 37 at (24,5) and (17,8).
+# Its exact 3x1 sequence is a global default with no map-specific override.
+# Global prop-group hints are reusable defaults; no map-specific overrides are needed.
+[sobj.1567-1569]
+group = "inn-bare-table"
+[group.inn-bare-table]
+kind = "prop"
+shape = "thin"
+depth = 0.1
+wind = "none"
+[sobj.1570-1572]
+group = "inn-tea-table"
+[group.inn-tea-table]
+kind = "prop"
+shape = "thin"
+depth = 0.1
+wind = "none"
+[sobj.1573-1575]
+group = "inn-meal-table"
+[group.inn-meal-table]
+kind = "prop"
+shape = "thin"
+depth = 0.1
+wind = "none"
+
+[vobj.inn-bare-table]
+label = "Bare table"
+group = "inn-bare-table"
+[vobj.inn-bare-table.variant.three]
+sobj = ["1567 1568 1569"]
+
+[vobj.inn-tea-table]
+label = "Tea table"
+group = "inn-tea-table"
+[vobj.inn-tea-table.variant.three]
+sobj = ["1570 1571 1572"]
+
+[vobj.inn-meal-table]
+label = "Meal table"
+group = "inn-meal-table"
+[vobj.inn-meal-table.variant.three]
+sobj = ["1573 1574 1575"]
+
 # s6-virtual-objects (round 5): the well as a virtual object, the second one shipped
 # (docs/user-related/research/2026-10-09-well-virtual-object.md): its two halves, 437 438 side by side, the stone
 # ring the base hints measure ([sobj.437-438] and [group.well] in project/hints/kru-7.5.2/hints.toml). A placement
@@ -651,10 +699,56 @@ group = "hall-roof"
 group = "hall-roof"
 [sobj.143-151]          # round 47: the green pagodas' eaves (Kugnae's green pagoda; maps 3922, 5330, 5331)
 group = "hall-roof"
+# Cloud-3 run46: a complete plain-thatch roof is its own object, even beside a shrine's upper heap.
+# Keep the shared strip defaults above: 467/468 also belong to a different native roof kind.
+[group.plain-thatch-roof]
+kind = "top"
+roof = "hip"
+wind = "none"
+[vobj.plain-thatch-roof]
+label = "Plain thatch roof"
+group = "plain-thatch-roof"
+roof = "hip"
+[vobj.plain-thatch-roof.variant.eight]
+sobj = ["464 465 466 467 468 469 470 471"]
+[vobj.plain-thatch-roof.variant.long]
+sobj = ["464 465 466 467 468 467 468 467 468 467 468 468 469 470 471"]
+# The pale stall uses the round hut's art in a long run. Its circle, fixed height and northward
+# offset belong to the small round huts, not this complete canopy over separate poles.
+[vobj.pale-thatch-roof]
+label = "Pale thatch roof"
+group = "plain-thatch-roof"
+roof = "hip"
+clear = ["footprint", "radius", "height", "offset"]
+[vobj.pale-thatch-roof.variant.ten]
+sobj = ["472 473 474 475 475 475 475 477 478 479"]
+[vobj.pale-thatch-roof.variant.long]
+sobj = ["472 473 474 475 475 475 475 475 475 475 475 476 476 476 476 477 478 479"]
+
 [group.hall-roof]
 kind = "top"
 roof = "hip"
 wind = "none"
+
+# The short blue hall's roof arrangement distinguishes it from the longer blue pavilion.
+# Background ice banks otherwise give this roof a false low support. Keep its native fallback height
+# (five empty base layers) in this layout only; the other hall-roof groups still infer their supports.
+[vobj.short-blue-hall]
+label = "Short blue hall"
+
+[vobj.short-blue-hall.sobj.230-240]
+height = 5
+
+[vobj.short-blue-hall.variant.native]
+sobj = [
+    "230 231 232 233 234 235 235 237 238 239 240"
+]
+
+# The edge-clipped roof row has one native empty right cell.
+[vobj.short-blue-hall.variant.edge]
+sobj = [
+    "230 231 232 233 235 235 236 237 238 0"
+]
 
 # Round 47 (the head's brief: the pagodas and the palace, whose pieces Kugnae's halls share): a tiered building's
 # storeys, painted over the roof under them in the game's view. The balcony bands (243-246) and their rails (287-289)
@@ -725,13 +819,17 @@ oval = 0.45
 # stay one card until a doorway can be kept. KaMing's gold tents (5485-5498) are cones, which a dome cut off at the peak.
 
 # cloud-1 run 27: six exact cap/rim/front layouts identify market platforms.
+# Floor-only fragments share the complete platforms' half-cell deck; their native blank cells still have no picture.
+# This drawn height feeds the click inverse (4a MapPane::HandlePointerOrMouseEvent, 0x00507150): changing it can
+# change the native cell a screen click names, and therefore what the server sees.
 [vobj.market-platform-floor]
 label = "Market platform floor"
-# The enclosure is one cell high; its interior per-piece override is flat at level 1.
+# The enclosure and its flat interior share the half-cell deck height.
 ground = "block"
+level = 0.5
 [vobj.market-platform-floor.tile.25994-25996]
 ground = "flat"
-level = 1
+level = 0.5
 [vobj.market-platform-floor.variant.7x5]
 tile = [
         "25920 25921 25922 25923 25922 25923 25925",
@@ -967,7 +1065,8 @@ tile = [
     "25958 25959 _"
 ]
 
-# run39 singleton: native-zero gaps distinguish this 3x3 market frame; only the 25995 floor gets flat/level 1.
+# run39 singleton: native-zero gaps distinguish this 3x3 market frame;
+# only the 25995 floor gets flat at the half-cell deck level.
 [vobj.market-platform-floor.variant.tk004601_47_23_3x3]
 tile = [
     "0 25923 0",
@@ -1178,12 +1277,28 @@ painted_shadow = false
 group = "brown-stone-face"
 
 [group.brown-stone-face]
+
 kind = "prop"
 depth = 1
 wind = "none"
 
-# One native pine has a left crown, two central trunk halves and a right crown. The ascending row-strip join keeps
-# both crowns and trunk pieces with the upright tree. Existing tree grouping keeps repeated pines separate.
+# Forest of Elders: purple shares the blue/red native anchors, alpha geometry and two roof-band boundaries.
+[sobj.14471-14477]
+group = "purple-forest-hall"
+
+[sobj.14613-14614]
+group = "purple-forest-hall"
+
+[group.purple-forest-hall]
+# Reuse the shared band split and its northward building depth, keeping the native door columns in this family.
+kind = "prop"
+roof = "hip"
+roof_bands = [1, 2, 2.5625]
+depth = 4
+wind = "none"
+
+# One native pine has a left crown, two central trunk halves and a right crown.
+# The ascending strip sequence keeps adjoining pines distinct when their crowns touch.
 [sobj.7106-7109]
 group = "four-part-pine"
 
@@ -1202,9 +1317,70 @@ kind = "prop"
 depth = 1
 wind = "none"
 
+# Run26, Mountain Range2966, classifier pattern29499: the straight brown cliff fronts have one native grass layer
+# over two rock layers. Lay the grass back as a one-cell ledge and stand the two-cell face on its native foot line.
+# The diagonal sides/corners outside these straight-front ranges need their own treatment.
+[sobj.5009-5012]
+kind = "top"
+height = 2
+roof = "flat"
+terrace = true
+
+# The same grass/rock front closes the straight runs before their corners (including2966:28,32).
+[sobj.5035-5036]
+kind = "top"
+height = 2
+roof = "flat"
+terrace = true
+
+# Arctic Land137, pattern773: one orange-tiled hall roof across sixteen native columns, including repeated middles.
+# Reuse the hall roof's hip and highest native wall contact; per-strip contact/K0 levels made a ring of separate slabs.
+[sobj.10330-10341]
+group = "hall-roof"
+
+# Kinung720's two-tier pavilion uses the related lower-roof strips in its south row;10345 also closes the upper row.
+# Their empty base layers identify roof art.11211 is a standing beam and keeps its own treatment.
+[sobj.10342-10353]
+group = "hall-roof"
+
+# s6-reprojection-cloud-3 (run 32; docs/user-related/research/2026-10-24-projection-sweep-run32-market-platforms.md): tile-only layouts match the complete north-cap,
+# floor, front-cap and stair rows in both native captures. Scenery can occupy any cell; transparent plan pixels leave
+# surrounding native grass at base height 0.
+[vobj.market-platform]
+label = "Market platform"
+
+
+[vobj.market-platform.variant.short]
+group = "market-platform-short"
+tile = [
+  "25920 25921 25922 25923 25922 25923 25925",
+  "25936 25995 25994 25995 25994 25995 25937",
+  "25936 25995 25994 25995 25994 25995 25937",
+  "25936 25995 25994 25995 25994 25995 25937",
+  "25958 25959 26014 14327 25945 14330 25963",
+  "25969 25970 14596 14600 14601 25972 25974",
+  "25689 25689 25981 25689 25982 25689 25689",
+]
+
+
+[vobj.market-platform.variant.tall]
+group = "market-platform-tall"
+tile = [
+  "25920 25921 25922 25923 25922 25923 25925",
+  "25936 25995 25994 25995 25994 25995 25937",
+  "25936 25995 25994 25995 25994 25995 25937",
+  "25936 25995 25994 25995 25994 25995 25937",
+  "25936 25995 25994 25995 25994 25995 25937",
+  "25936 25995 25994 25995 25994 25995 25937",
+  "25936 25995 25994 25995 25994 25995 25937",
+  "25958 25959 26014 14327 25945 14330 25963",
+  "25969 25970 14596 14600 14601 25972 25974",
+  "25689 25689 25981 25689 25982 25689 25689",
+]
+
 # Arctic Village's full fronts 1160-1164 and 1166 have two face layers below their painted ledge; these hints make
-# them two-cell, single-step cliffs. Interior cells vary, and how caps behind a stacked step should connect remains
-# open. Cap art 1165 and 1167-1187 has two empty bottom layers; lay its snow flat at height 2 without a terrace flag.
+# them two-cell, single-step cliffs. Interior cells and wider tier gaps remain separate work. Cap art 1165 and
+# 1167-1187 has two empty bottom layers: follow a directly touching finished ledge, or keep height 2 if none meets it.
 [sobj.1160-1164]
 kind = "top"
 roof = "flat"
@@ -1221,11 +1397,13 @@ terrace = true
 kind = "top"
 roof = "flat"
 height = 2
+terrace_cap = true
 
 [sobj.1167-1187]
 kind = "top"
 roof = "flat"
 height = 2
+terrace_cap = true
 
 # Common Arctic ice grounds use native blue/white tile 1418 on invented perimeter faces
 # to avoid stretching edge texels into streaks. Native top pictures and existing geometry/heights remain.
@@ -1249,6 +1427,117 @@ height = 2.0416667
 depth = 2
 wind = "none"
 
+
+# Inventory groups 8-11: retain the exact native ground-tile rows for complete 10- and 11-wide layouts.
+
+[vobj.market-platform.variant.w10-d9]
+group = "market-platform-w10-d9"
+tile = [
+  "25920 25921 25923 25922 25922 25923 25922 25923 25924 25925",
+  "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+  "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+  "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+  "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+  "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+  "25958 25959 25959 26014 14327 25945 14330 25961 25961 25963",
+  "25969 25970 25970 14596 14600 14601 25972 25972 25972 25974",
+  "25689 25689 25689 25981 25689 25982 25689 25689 25689 25689",
+]
+
+[vobj.market-platform.variant.w10-d11]
+group = "market-platform-w10-d11"
+tile = [
+  "25920 25921 25923 25922 25922 25923 25922 25923 25924 25925",
+  "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+  "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+  "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+  "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+  "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+  "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+  "25936 25995 25995 25994 25994 25995 25994 25995 25996 25937",
+  "25958 25959 25959 26014 14327 25945 14330 25961 25961 25963",
+  "25969 25970 25970 14596 14600 14601 25972 25972 25972 25974",
+  "25689 25689 25689 25981 25689 25982 25689 25689 25689 25689",
+]
+
+[vobj.market-platform.variant.w11-d9]
+group = "market-platform-w11-d9"
+tile = [
+  "25920 25921 25922 25923 25922 25922 25923 25922 25923 25924 25925",
+  "25936 25995 25994 25995 25994 25994 25995 25994 25995 25996 25937",
+  "25936 25995 25994 25995 25994 25994 25995 25994 25995 25996 25937",
+  "25936 25995 25994 25995 25994 25994 25995 25994 25995 25996 25937",
+  "25936 25995 25994 25995 25994 25994 25995 25994 25995 25996 25937",
+  "25936 25995 25994 25995 25994 25994 25995 25994 25995 25996 25937",
+  "25958 25959 25959 25959 26014 14327 25945 14330 25961 25961 25963",
+  "25969 25970 25970 25970 14596 14600 14601 25972 25972 25972 25974",
+  "25689 25689 25689 25689 25981 25689 25982 25689 25689 25689 25689",
+]
+
+[vobj.market-platform.variant.w11-d11]
+group = "market-platform-w11-d11"
+tile = [
+  "25920 25921 25922 25923 25922 25922 25923 25922 25923 25924 25925",
+  "25936 25995 25994 25995 25994 25994 25995 25994 25995 25996 25937",
+  "25936 25995 25994 25995 25994 25994 25995 25994 25995 25996 25937",
+  "25936 25995 25994 25995 25994 25994 25995 25994 25995 25996 25937",
+  "25936 25995 25994 25995 25994 25994 25995 25994 25995 25996 25937",
+  "25936 25995 25994 25995 25994 25994 25995 25994 25995 25996 25937",
+  "25936 25995 25994 25995 25994 25994 25995 25994 25995 25996 25937",
+  "25936 25995 25994 25995 25994 25994 25995 25994 25995 25996 25937",
+  "25958 25959 25959 25959 26014 14327 25945 14330 25961 25961 25963",
+  "25969 25970 25970 25970 14596 14600 14601 25972 25972 25972 25974",
+  "25689 25689 25689 25689 25981 25689 25982 25689 25689 25689 25689",
+]
+
+# Native patterns 453/1113 on map 2966: the complete east and west three-piece cliff-cap variants.
+[vobj.mountain-cliff-cap]
+label = "Mountain cliff cap"
+[vobj.mountain-cliff-cap.variant.east]
+sobj = ["5040 5041 5042"]
+group = "mountain-cliff-cap-east"
+[vobj.mountain-cliff-cap.variant.west]
+sobj = ["5043 5044 5045"]
+group = "mountain-cliff-cap-west"
+
+# Run36, Arctic3811: the straight three-layer ice fronts have one snow cap over a two-cell face.
+# Use the existing terrace treatment; curved faces and top-only pieces remain separate authoring work.
+[tile.859.when.north]
+# South of a full face is its foot, not its plateau. Only cap pieces raise this side globally.
+is = "sobj/1167-1187"
+ground = "blocked"
+level = 2
+skin = "tile/1418"
+
+[tile.859.when.east]
+is = "sobj/1156-1187"
+ground = "blocked"
+level = 2
+skin = "tile/1418"
+
+[tile.859.when.south]
+is = "sobj/1156-1187"
+ground = "blocked"
+level = 2
+skin = "tile/1418"
+
+[tile.859.when.west]
+is = "sobj/1156-1187"
+ground = "blocked"
+level = 2
+skin = "tile/1418"
+
+# Curved Arctic fronts follow their native foot line rather than inventing square pillars.
+# Single-cell traced walls retain finished low-side land; buried corners stay under that land.
+# Match the neighboring straight fronts' current two-cell treatment; stacked tiers remain a separate choice.
+# Native plain ice front 1160 supplies the invented north/east/west sides without sampling outside each original curved picture.
+[sobj.1156-1159]
+kind = "wall"
+footprint = "traced"
+back = 1
+height = 2
+skin = "sobj/1160"
+
 # The seven shed strips share foot 232. Shingles/fascia end at 127 and the timber wall starts at 128:
 # eaves (232 - 128) / 48 = 2.1666667. The inline roof keeps its depth north of the native front.
 [sobj.15656-15662]
@@ -1267,7 +1556,8 @@ wind = "none"
 upright = [29, -184, 12, 42]
 
 # Forest of Elders hall roofs: lower source rows 117-191, with wood rows 117-143 lifted full-width as an upright
-# on the lower-roof back; upper source rows 0-116 sit at physical top 1.5625 cells (1 + 2.5625 - 2).
+# on the lower-roof back; upper source rows 0-116 sit at physical eave 1.9375 cells (1 + 0.75/2 + 0.5625).
+# The 1-cell setback reaches half the lower hip's 0.75-cell rise above its 1-cell eave, then the native 0.5625-cell storey.
 # Depth 4 follows the painted roof's 3.44-cell reach; native pass flags do not define the closed hall's depth.
 # See decisions/2026-10-24-forest-hall-drawing-depth.md for the reversible drawing choice.
 [sobj.14464-14470]
@@ -1293,3 +1583,87 @@ roof = "hip"
 roof_bands = [1, 2, 2.5625]
 depth = 4
 wind = "none"
+
+
+# Christmas decorations: wreaths, stockings, bells, candy canes and garlands. Their three
+# empty bottom layers are intentional; lift the hanging art to its native three-cell height.
+# These are ornaments, not ice caps.
+[sobj.15298-15307]
+kind = "top"
+roof = "flat"
+height = 3
+floats = true
+wind = "none"
+upright = [0, -144, 48, 48]
+
+# Native skulls stand as fixed cutouts; the other bones lie as shallow closed solids.
+# Each global tile hint uses the original picture through models built beside the renderer for the same platform.
+# Keep the base bumps for NormalHeightShading.
+[tile.1007]
+model = "models/floor-bones.bundle:Bone1007"
+bump = 0
+
+[tile.1008]
+model = "models/floor-bones.bundle:Bone1008"
+bump = 0
+
+[tile.1009]
+model = "models/floor-bones.bundle:Skull1009"
+bump = 0
+
+[tile.1011]
+model = "models/floor-bones.bundle:Skull1011"
+bump = 0
+
+[tile.1012]
+model = "models/floor-bones.bundle:Bone1012"
+bump = 0
+
+# Shared categorizer definitions: whole three-strip guardians stay separate when adjacent.
+# Stone tiger patterns41781 and93225 use matching fixed native-art models, including their mirrored forms.
+[vobj.guardian-statue]
+kind = "prop"
+
+[vobj.guardian-statue.variant.3x1]
+sobj = ["3233 3234 3235"]
+
+[vobj.guardian-statue.variant.3x1-2]
+sobj = ["3236 3237 3238"]
+
+[vobj.guardian-statue.variant.3x1-3]
+sobj = ["3239 3240 3241"]
+
+[vobj.guardian-statue.variant.3x1-4]
+model = "models/tiger-statues.bundle:Tiger3242"
+sobj = ["3242 3243 3244"]
+
+[vobj.guardian-statue.variant.3x1-5]
+model = "models/tiger-statues.bundle:Tiger3245"
+sobj = ["3245 3246 3247"]
+
+[vobj.guardian-statue.variant.3x1-6]
+sobj = ["3248 3249 3250"]
+
+[vobj.guardian-statue.variant.3x1-7]
+sobj = ["3251 3252 3253"]
+
+[vobj.guardian-statue.variant.3x1-8]
+sobj = ["3254 3255 3256"]
+
+
+# This single-cell flower has stems and ground leaves, not a tree canopy.
+# Keep its native crossed upright picture without a floating horizontal crown cap.
+[sobj.898]
+shape = "crossed"
+
+# G64: native grass is a clean ground tile plus its alpha-cut drawing piece.
+# Original tile ids, map flags and walking remain the received cells.
+[tile.65]
+draw_tile = 43
+decoration = "art/grass65.png"
+decoration_shape = "crossed"
+
+[tile.66]
+draw_tile = 43
+decoration = "art/grass66.png"
+decoration_shape = "crossed"
