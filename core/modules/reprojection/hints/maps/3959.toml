@@ -1,0 +1,12 @@
+# Map 3959. cloud-3 run 61 (head note 127): the stone bridge (34-36, 13-21: paving 233-234, its edges blocked) over the
+# river lowered to -0.6 (run 59) stood at the land's 0 with a stone face down to the water, a dam. Its paving (234) is
+# also a quay and a floor elsewhere (1,282 cells on 23 maps), so no tile hint can say bridge: here a deck, the river
+# running on under it and only its edge showing over the water; its blocked edges lie with it. Drawing only: a deck is
+# flat ground in the click's grid (Solid's Cells) and the water under it is not kept as a water level (Water.Top's
+# keepLevel), so the cell a click names is unchanged. Native map words and packets are unchanged. The deck is the rows
+# over the water only (15-20; the river runs on both sides at 18-20, on the west from 15).
+[check]
+size = "70x70"
+
+[cells."34,15-36,20"]
+ground = "deck"

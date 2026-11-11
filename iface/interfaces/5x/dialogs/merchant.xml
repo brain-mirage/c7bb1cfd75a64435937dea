@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 5.x's look of the merchant menus (its XML twin's layout; merchant.lua draws with it), from 5.33's own constructors
      (merchant.lua's header). Every window in NPAL8.PAL; 5.33's image buttons, 72 x 16 (14 OK, 16 TOP, 15 QUIT, 22
-     CANCEL, 36 ADD). Format: core/xml.md; each dialog's attributes are its look entry's values (interfaces/original/entry.lua), its
+     CANCEL, 36 ADD). Format: core/xml.md; each dialog's attributes are its look entry's values (shared/original/entry.lua), its
      children where merchant.lua draws its parts: rectangles (left, top, right, bottom), lists (the rectangle and the
      cell's width and height), pictures and image buttons (BUTT001.EPF's image id first).
      WIRE: a control's rectangle is where a press on it lands; changing one changes which control a press reaches. -->

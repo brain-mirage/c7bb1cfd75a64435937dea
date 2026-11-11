@@ -3,7 +3,7 @@
      MessageDialog 0x00492430, MenuQuestionDialog 0x00492C40, TextDialog 0x00493830 and NexonclubRegistrationDialog
      0x0047C3C0. Each picks its picture by whether it has the text window and the portrait, in NPAL8.PAL (the small
      windows' pictures name none). Format: core/xml.md; each dialog's attributes are its look entry's values
-     (interfaces/original/entry.lua), its children where npc.lua draws its parts: rectangles (left, top, right, bottom), pictures
+     (shared/original/entry.lua), its children where npc.lua draws its parts: rectangles (left, top, right, bottom), pictures
      and image buttons (BUTT001.EPF's image id first).
      WIRE: a control's rectangle is where a press on it lands (DialogPane_HitTestControls 0x004215F0 gives a press to the
      last control whose rectangle holds it); changing one changes which control a press reaches, so what the client

@@ -19,7 +19,7 @@
 local C = TK.GetComponent("5x.status")
 local H = __tk
 local S = require("interfaces.5x.skin")
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 local Help = require("interfaces.5x.help") -- s6-interface-5x-b
 local E = require("interfaces.5x.elements")
 
@@ -64,6 +64,10 @@ function C:OnEnable()
     -- the whole world's, which changes each time another unit moves)
     f:SetScript("OnUpdate", function() self:Refresh() end)
     f:SetUpdateWhen("player", "position")
+    -- The replay host can change the presentation name without a player/position snapshot. The same unit-name
+    -- event used by the other interfaces refreshes this pane, without changing its packet-driven update epochs.
+    f:RegisterEvent("UNIT_NAME_UPDATE")
+    f:SetScript("OnEvent", function(_, _, unit) if unit == "player" then self:Refresh() end end)
     Help.OnRightPress(f, C.HelpAt) -- s6-interface-5x-b
 end
 

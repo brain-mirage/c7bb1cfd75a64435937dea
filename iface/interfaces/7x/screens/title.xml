@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 7.x's own title screen (the XML twin's only; title.lua makes it with the twins' shared script,
-     interfaces/original/title.lua, which takes its input and gives core/login.lua its controls): 7.5.2's MainMenuPane (constructor 0x004F6700, OnPaint 0x004F76D0) on its 1024 x 768 screen, scaled to fit the window and
+     shared/original/title.lua, which takes its input and gives core/global/login.lua its controls): 7.5.2's MainMenuPane (constructor 0x004F6700, OnPaint 0x004F76D0) on its 1024 x 768 screen, scaled to fit the window and
      letterboxed, and its Login entry's LoginDialogPane (constructor 0x004FA7A0). It shows in place of ours with Settings >
      Experimental's Original Login Screens and the XML interface on (decision 2026-10-12-original-pregame-screens).
      Format: core/xml.md.
      Wire: the rectangles below decide which entry a release or a key activates (MainMenuPane::MainMenuHitTest 0x004F8C10,
      ComputeMenuItemRect 0x004F8B90) and which control of the dialog a press reaches; changing them changes which input
-     opens the login or sends it. What the entries and OK send is core/login.lua's (interfaces/original/title.lua). -->
+     opens the login or sends it. What the entries and OK send is core/global/login.lua's (shared/original/title.lua). -->
 <ui>
   <data key="SCREEN" value="1024, 768"/>
   <!-- the version over the picture, "V%d.%d" of the exe's product version: 752 and 0 for 7.5.2 (Application's version

@@ -10,7 +10,7 @@
 --   server                 the login server's address (host, port), set on the login screen
 --   (ignored               before s6-layout round 5: each name's ignore list; it is the character's now, in its store
 --                          on its server, carried there once at the start: TK.Core.Settings.CharacterCarryOver)
---   plugins                s6-sandbox (round 10): the Plugins page's unsafe switch and disabled plugins (components/plugins)
+--   plugins                s6-sandbox (round 10): the Plugins page's unsafe switch and disabled plugins (core/global/components/plugins)
 --
 -- What the original kept in the registry and these pages show lives in settings.toml (plan 5.14, head note 17;
 -- imported once from the original): the last account name (login.account, the first recent account) and the sound
@@ -23,6 +23,10 @@ local V = TK.Validate
 
 local M = {}
 TK.Machine = M
+
+--- s6-ui-core round 153 (client review 4.11): raised at every change of the machine settings (a mark, a load), so a
+--- reader on the C# side (the peer driver's remote settings) reads them again only after one.
+M.changes = 0
 
 M.defaults = {
     version = 1,
@@ -139,6 +143,7 @@ function M:Load()
         H:LogWarning("machine settings: invalid " .. table.concat(problems, ", "))
     end
     self.store.data = data
+    self.changes = self.changes + 1
     self.fresh = fresh
     self:ReadClientSettings()
     if fresh or #problems > 0 then self.store:MarkDirty() end
@@ -182,7 +187,7 @@ function M:ReadClientSettings()
         else
             g.windowMode = "borderless"   -- the original's full screen is a 1024 x 768 mode change we do not make
         end
-        self.store:MarkDirty()
+        self:MarkDirty()
     end
 end
 
@@ -195,7 +200,7 @@ function M:WriteClientSettings(d)
     -- s6-audio hook: the saved switch is Config's "Music", the audio logic's flag (the music switch, and the MIDI
     -- player's Disable and Enable from F7 and the window's focus write it); the volume's without the audio component.
     local musicOn = (s.music or 0) > 0
-    local Sound = TK.Game and TK.Game.Sound -- (core/game/sound.lua: loaded after this file)
+    local Sound = TK.Game and TK.Game.Sound -- (shared/game/sound.lua: loaded after this file)
     if Sound then musicOn = Sound.MusicOn() end
     H:ClientSettingSetBool("sound", "music", musicOn)
     -- s6-audio hook: the volume saved is the audio logic's playback volume, kept while the slider shows the music off.
@@ -206,7 +211,7 @@ function M:WriteClientSettings(d)
 end
 
 function M:Get() return self.store.data end
-function M:MarkDirty() self.store:MarkDirty() end
+function M:MarkDirty() self.changes = self.changes + 1; self.store:MarkDirty() end
 
 --- The UI scale that fits the screen: 1.0 at 1080 pixels high, in proportion to the height, clamped.
 function M:AutoScale()
@@ -250,13 +255,17 @@ function M:ApplyGraphics()
     local width = self.seedWidth or 0
     self.seedWidth = nil
     H:ApplyGraphics(g.windowMode, g.vsync and true or false, math.floor(g.frameCap), math.floor(width))
-    self:ApplyGraphicsEngine()
 end
 
---- s6-reprojection (round 63; the graphics plan, section 7): Enable New Graphics Engine (Experimental > Misc), told to
---- the world renderers, which swap engines at once. Drawing only: nothing is sent.
-function M:ApplyGraphicsEngine()
-    CS.TK.Modular.Draw.WorldRenderers.SetNewEngine(self:Get().newGraphicsEngine == true)
+--- s6-reprojection-cloud-1 run 65 (the mega report's MC-MODES-01): the new engine's start-up warm-up, once the start-up
+--- settings are applied (Components:Boot, after TK.Startup:Apply) and before the login screen. Run 66 (CR-MODES-05): the
+--- saved Graphics Styles' modules are opened and started here too, not on the first world frames. Run 68 (head note 182,
+--- the owner): the old engine is retired, so there is no Use Old Engine to read first. Run 76 (steer 0bcf3acd): only asked for
+--- here; all of it goes a step a frame behind the login screen, so none of it holds the start-up frame. Drawing only: nothing
+--- is sent.
+function M:PrepareGraphicsEngine()
+    -- run 69: the new engine (today's 3D removed, head note 182) started, its shaders warmed before its first frame
+    CS.TK.Modular.Draw.WorldRenderers.PrepareEngine()
 end
 
 --- Remembers an account name for the login screen's recent list (most recent first). Never a password.

@@ -56,7 +56,7 @@ function CW:LayoutTabs()
     for i, def in ipairs(self.tabs) do
         local b = frame.tabButtons[def.id]
         if not b then
-            -- s6-ui-core (round 61): the shared tab (core/widgets.lua), an icon side tab (character.xml's SideTab)
+            -- s6-ui-core (round 61): the shared tab (shared/widgets/init.lua), an icon side tab (character.xml's SideTab)
             b = ui:New("SideTab", frame, "TKCharacterTab" .. def.id, nil, { def = def, icon = def.icon or "tk:circle" })
             frame.tabButtons[def.id] = b
         end
@@ -174,14 +174,14 @@ local function refreshOn(page, events, id)
     f:SetScript("OnEvent", function() if page:IsVisible() then TK.SafeCall(CW:Tab(id).refresh, page) end end)
 end
 
--- A character's drawing helpers (the gear slot, the figure box, the stat lines, the legend list) are the global widgets'
--- (TK.UI.Character, core/widgets/character.lua), as the Library draws with them too.
+-- A character's drawing helpers (the gear slot, the figure box, the stat lines, the legend list) are the shared widgets'
+-- (TK.UI.Character, shared/widgets/character.lua), as the Library draws with them too.
 local CH = W.Character
 
 -- ----- the self-look pane's switches (SelfLookPane::HandlePointerOrMouseEvent 0x00568CB0) -----
 --
 -- Each a switch control of the game layer's (TK.Game.SelfLook.SwitchControl: the option on the "selflook" path, run on
--- the left press; core/game/selflook.lua says what each sends). Their names: the original's keys for 8 and 2 are E and
+-- the left press; shared/game/selflook.lua says what each sends). Their names: the original's keys for 8 and 2 are E and
 -- G, and the servers name the four options Exchange, Group, Show Helmet and Show Necklace.
 
 local SelfLook = TK.Game.SelfLook
@@ -401,7 +401,7 @@ CW:AddTab({ id = "character", title = "Character", icon = "emoji:1f9cd", order =
 
 -- ----- Spell Book -----
 -- The Spell Book tab itself, Modern's table of the slots' spells, is spellbook.lua beside this file (s6-spellbook); its
--- cells are the game layer's (TK.Game.Spells, core/game/spells.lua: head note 38's input path).
+-- cells are the game layer's (TK.Game.Spells, shared/game/spells.lua: head note 38's input path).
 
 -- s6-spellbook: for the Spell Book tab (spellbook.lua): the page helpers. (s6-interface-5x round 15, the separation's
 -- step 9: the book cell's input path, its action and the click mode are the game layer's, TK.Game.Spells, which the tab
@@ -436,7 +436,7 @@ CW:AddTab({ id = "collection", title = "Collection", icon = "emoji:1f3c6", order
             local row = page.rows[i]
             if not row and i <= n then
                 -- Named TKCollectionVolume1, 2... for the gate's driver (s6-gate round 37, H-18: the double click on a
-                -- volume row); gate mode logs a named control's place while it shows (core/gatecontrols.lua).
+                -- volume row); gate mode logs a named control's place while it shows (core/global/gatecontrols.lua).
                 row = ui:New("Volume", page, "TKCollectionVolume" .. i, nil, { index = i })
                 page.rows[i] = row
             end

@@ -1,0 +1,12 @@
+# Map 3931. cloud-3 run 63 (head note 132, look-alikes; G-71): the water pieces of 30565's shore set (30677-30680,
+# 30682-30688), which hints.toml lays 0.6 down with that water, lie here by the blue water 628 at the rule's 0.2, so
+# they take its depth. Drawing only: like any water level it feeds the 3D click's grid, which names the cell drawn
+# under the pointer (the reprojection module's Water.Seen). Native map words and packets are unchanged.
+[check]
+size = "31x31"
+
+[tile.30677-30680]
+level = -0.2
+
+[tile.30682-30688]
+level = -0.2

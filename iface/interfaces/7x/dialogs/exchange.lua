@@ -1,4 +1,4 @@
--- s6-modular-g (interfaces, phase 4): 7.x's look of the trade window (components/dialogs/exchange.lua), 4a's
+-- s6-modular-g (interfaces, phase 4): 7.x's look of the trade window (shared/components/dialogs/exchange.lua), 4a's
 -- ExchangeDialog (0x004AC8A0, Source-5's class page): 451 x 371 on DLGEXC1.EPF in DLGEXC1.PAL, at placement slot 9
 -- (centred, as every slot but 13), sliding open. Its controls by their indexes: Accept (1, image 14) (84, 335)-(147, 359),
 -- Add (2, image 36) (188, 335)-(251, 359), Cancel (3, image 22) (292, 335)-(355, 359); the player's name (4,
@@ -16,7 +16,7 @@
 local S = require("interfaces.7x.skin")
 local K = TK.Dialogs
 local unpack = table.unpack
-local entry = require("interfaces.original.entry")
+local entry = require("shared.original.entry")
 local D = TK.Xml.Data("exchange.xml")
 
 return function(L, X)

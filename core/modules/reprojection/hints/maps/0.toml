@@ -4,3 +4,32 @@
 # now, so the global hints (the red-pavilion-roof and hall-roof groups) lay each roof on the storey it rests on.
 [check]
 size = "220x220"
+
+# cloud-3 run 60 (head note 120): the bank beside the two river stairs (42-43, 25-28 and 30-31, 27-30). The global
+# layout (hints.toml, vobj river-stairs; run 61: one slope from the bank's top down past the water line) lays the
+# stairs; the bank cell on each side of them slopes north by the canal bank's rule (hints/kru-7.5.2). Here the bank runs
+# on a second cell east of each flight (17782, not in that rule) before it turns north at an outer corner: that cell
+# slopes north too, and the corner slopes west to the river, else the generated rule, which reads the walked steps as
+# land at 0, turned them toward it (a vertical notch).
+# Drawing only, as the layout: flat and sloped cells add no water level, and the 3D pointer picks on the ground plane
+# outside water (engine/View.cs MapPoint), so the cell a click names is unchanged. Native map words and packets are
+# unchanged.
+[cells."45,26-45,26"]
+ground = "slope"
+rises = "n"
+level = 0
+
+[cells."46,24-46,25"]
+ground = "slope"
+rises = "w"
+level = 0
+
+[cells."33,28-33,28"]
+ground = "slope"
+rises = "n"
+level = 0
+
+[cells."34,27-34,27"]
+ground = "slope"
+rises = "w"
+level = 0

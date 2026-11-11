@@ -1,5 +1,5 @@
 -- s6-modular-g (interfaces, round 13): 7.x's look of the hired merchant, its price window, the clan bank, the power
--- dialog and the rankings (components/dialogs/shops.lua), from Source-5's class pages. Drawing only: the indexes, the
+-- dialog and the rankings (shared/components/dialogs/shops.lua), from Source-5's class pages. Drawing only: the indexes, the
 -- slots' presses, the fields and what is sent are the renderer's and the model's.
 --
 -- The hired merchant (EmployeeDialogPane 0x004A1D70): 307 x 350 at placement slot 18 (centred), sliding open; 4a's
@@ -20,7 +20,7 @@
 -- 414) in 0x8F; the items (4) (15, 95)-(415, 375) of 400 x 40 rows (ClanBankItemListPane::DrawListEntry 0x0048C040: the
 -- picture at its size centred on x 30 and the row's middle, the text from x 70 fitted to the row's right - 70 with "...",
 -- in 0x8F; the chosen row on a 0x80 bar to the right - 13); the count (5) (328, 62)-(388, 74) in 0x8F.
--- The power dialog (PowerDialogPane 0x00549C20): the shared layout (interfaces/power.lua, s6-interface-5x-b round 7: 5.x's
+-- The power dialog (PowerDialogPane 0x00549C20): the shared layout (shared/original/power.lua, s6-interface-5x-b round 7: 5.x's
 -- look draws the same window with 5.33's buttons) with 7.5.2's 63 x 24 buttons at y 307.
 -- The rankings (RankingDialog 0x00458610): 820 x 560 at (102, 74), sliding open; the web board's frame with an inner edge
 -- at 265 (OnPaint 0x00458B50); CLOSE (0, 30) (379, 528); the categories (1) (10, 44)-(265, 514): rows 222 x 43 from
@@ -39,7 +39,7 @@
 
 local S = require("interfaces.7x.skin")
 local unpack = table.unpack
-local entry = require("interfaces.original.entry")
+local entry = require("shared.original.entry")
 local D = TK.Xml.Data("shops.xml")
 
 return function(L, X)
@@ -240,8 +240,8 @@ return function(L, X)
 
     -- ----- the power dialog -----
 
-    -- s6-interface-5x-b (round 7): the shared layout with 7.5.2's 63 x 24 buttons at y 307 (interfaces/power.lua)
-    L.Power = require("interfaces.power").Entry(X, S, D.Power)
+    -- s6-interface-5x-b (round 7): the shared layout with 7.5.2's 63 x 24 buttons at y 307 (shared/original/power.lua)
+    L.Power = require("shared.original.power").Entry(X, S, D.Power)
 
     -- ----- the rankings and their rewards -----
 

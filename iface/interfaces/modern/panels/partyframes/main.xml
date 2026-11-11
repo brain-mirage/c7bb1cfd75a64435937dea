@@ -55,5 +55,6 @@
     <!-- the portraits' pictures come a moment after the group list: they are looked at a few times a second -->
     <run call="PortraitTicker"/>
     <on script="OnEvent" call="Changed"/>
+    <on script="OnShow" call="Shown"/>
   </frame>
 </ui>

@@ -47,8 +47,9 @@ end
 
 function scripts.Untip() GameTooltip:Hide() end
 
--- The original's dead sign, drawn through the map's palette (BARAM.PAL), else a skull.
-function scripts.DeadSign(dead) dead:SetTexture(TK.Art.Image("DEADSIGN.EPF", 0, "BARAM.PAL") or "emoji:2620") end
+-- The original's dead sign, drawn through the map's palette (BARAM.PAL), else a skull. s6-ui-core round 148: its key
+-- only (its size is the XML's); its picture is decoded off the main thread, not at the frame's start (98 ms).
+function scripts.DeadSign(dead) dead:SetTexture(TK.Art.ImageKey("DEADSIGN.EPF", 0, "BARAM.PAL") or "emoji:2620") end
 
 -- s6-ui-core (round 101, T11 step 4): its own frame's script, called only while a hit shows (ShowHit)
 function scripts.HitTimer(timer)
@@ -133,13 +134,11 @@ end
 
 --- s6-ui-core (round 43): the target's kind, "creature" or "player", for its filter; round 46: and its name (a player's
 --- shared effects are by name).
+--- s6-reprojection-cloud-1 (run 83, Astra 82-38): the one lookup, for a GetObjectInfo call on each object four times a second.
 function C:TargetKind()
-    local target = H:GetTargetId()
-    for i = 1, H:GetNumObjects() do
-        local _, id, kind, _, _, name = H:GetObjectInfo(i)
-        if id == target then return kind, name end
-    end
-    return "creature"
+    local found, kind, name = H:GetObjectTooltip(H:GetTargetId())
+    if not found then return "creature" end
+    return kind == "npc" and "creature" or kind, name
 end
 
 --- s6-library round 2: the target's buffs (estimates and shared ones; empty when nothing is known). s6-ui-core (round
@@ -163,21 +162,25 @@ function C:UpdateBuffs()
     end
     if not icons then Icons.Release(f.effects) end -- round 44: no stale tooltip once the row goes
     f.effects:SetShown(icons)
-    local parts = {}
-    for _, item in ipairs(list) do
-        local b = item.row
-        local t = E.Label(b)
-        if b.remaining >= 0 then
-            local lo = math.max(0, b.remainingMin)
-            t = t .. " " .. (b.remaining - lo >= 1 and (math.ceil(lo) .. "-") or "") .. math.ceil(b.remaining) .. "s"
+    -- s6-reprojection-cloud-1 (run 83, Astra 82-39): the line of text is written only while it shows (by default it doesn't)
+    local text = db.effectsText or not db.showEffects
+    if text then
+        local parts = {}
+        for _, item in ipairs(list) do
+            local b = item.row
+            local t = E.Label(b)
+            if b.remaining >= 0 then
+                local lo = math.max(0, b.remainingMin)
+                t = t .. " " .. (b.remaining - lo >= 1 and (math.ceil(lo) .. "-") or "") .. math.ceil(b.remaining) .. "s"
+            end
+            if b.estimate then t = "~" .. t .. " (est.)" elseif b.source == "peer" then t = t .. " (shared)" end
+            parts[#parts + 1] = t
         end
-        if b.estimate then t = "~" .. t .. " (est.)" elseif b.source == "peer" then t = t .. " (shared)" end
-        parts[#parts + 1] = t
+        f.buffs:SetText(#parts > 0 and table.concat(parts, "   ") or "")
+        f.buffs:ClearAllPoints()
+        if icons then f.buffs:SetPoint("TOPLEFT", f.effects, "BOTTOMLEFT", 2, -2) else f.buffs:SetPoint("TOPLEFT", f, "BOTTOMLEFT", 4, -3) end
     end
-    f.buffs:SetText(#parts > 0 and table.concat(parts, "   ") or "")
-    f.buffs:ClearAllPoints()
-    if icons then f.buffs:SetPoint("TOPLEFT", f.effects, "BOTTOMLEFT", 2, -2) else f.buffs:SetPoint("TOPLEFT", f, "BOTTOMLEFT", 4, -3) end
-    f.buffs:SetShown(db.effectsText or not db.showEffects)
+    f.buffs:SetShown(text)
 end
 
 --- s6-ui-core (round 32): the target's portrait (s6-characters' GetPortrait "object": its figure's upper body, cut to
@@ -210,7 +213,7 @@ function C:ApplySettings()
     self:ShowPortrait()
 end
 
--- s6-input (round 49, separation step 4b): the effect name lists changed (core/effecticons.lua): the row sorts again now,
+-- s6-input (round 49, separation step 4b): the effect name lists changed (shared/effecticons.lua): the row sorts again now,
 -- not at its next quarter-second refresh (round 46).
 TK.On("TK_EFFECT_LISTS_CHANGED", function()
     if C.frame then TK.SafeCall(C.UpdateBuffs, C) end

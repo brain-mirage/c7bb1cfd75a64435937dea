@@ -2,7 +2,7 @@
 -- is a frame of the effect animation it plays, which the client learns from the player's own casts on the server it plays
 -- on (the first effect the server plays on the cast's target), shown at its middle frame (frame count / 2, rounded
 -- down, from 0); or a picture, one of the packs' item icons, or the letter, chosen in the spell icon editor
--- (s6-spell-icons, core/spelliconeditor.lua).
+-- (s6-spell-icons, core/global/spelliconeditor.lua).
 --
 -- This table is ours: curated overrides shipped with the client and replaced by each build, by the spell's name as the
 -- server gives it. An entry is a spell_icons.toml entry as a table, for example

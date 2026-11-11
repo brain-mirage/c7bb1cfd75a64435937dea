@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 5.x's look of the profile, the paper and the music dialog (its XML twin's layout; misc.lua draws with it), 5.33's own
      windows by its own numbers (misc.lua's header). Format: core/xml.md; each dialog's attributes are its look entry's
-     values (interfaces/original/entry.lua), its children where misc.lua draws its parts: rectangles (left, top, right, bottom),
+     values (shared/original/entry.lua), its children where misc.lua draws its parts: rectangles (left, top, right, bottom),
      points (x, y), pictures and image buttons (BUTT001.EPF's image id first). The music dialog's controls are
      musiclayout.xml's.
      WIRE: a control's rectangle is where a press on it lands; changing one changes which control a press reaches. -->

@@ -1,0 +1,15 @@
+[check]
+size = "100x100"
+
+# s6-reprojection-cloud-1 run 58 (N's ice hut, 44-50,1-7, the "taller sides" item): the hut's upper tier stands on its
+# lower one (fronts at 45,3 and 45,7; the cap step in Solid's Terraces), and its two curved corners, 1156 at 44,3 and
+# 1158 at 46,4, stand with it, on what is painted below their foot (tier: the lower ledge or its cap), so they reach the
+# plateau behind them and no raised block's face shows above them. Only these two cells: globally the curved fronts
+# stand on the ground (Arctic Village's diagonal ridge, 3811, 1158 at 39,33-42,36, is one even wall in 2D, and there the
+# pieces' feet meet a ledge, a cap or nothing, row by row), and elsewhere on this map corners stand over other corners
+# (27,47 and 30,47 over row 50's), which a storey would stack by their whole picture.
+[cells."44,3-44,3"]
+tier = true
+
+[cells."46,4-46,4"]
+tier = true

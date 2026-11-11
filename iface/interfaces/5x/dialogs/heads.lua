@@ -1,5 +1,5 @@
 -- s6-interface-5x-b (round 6; the 5.x interface: docs/development/jobs/s6-interface-5x/PLAN.md, "The dialogs look"):
--- 5.x's look of the barber's head choice (components/dialogs/npc.lua's HeadSelectDialog, D-06), 5.33's own window.
+-- 5.x's look of the barber's head choice (shared/components/dialogs/npc.lua's HeadSelectDialog, D-06), 5.33's own window.
 -- Drawing only, but for where each control's press lands: the controls, their indexes and what is sent are the
 -- renderer's and the model's (nothing chosen is sent).
 --
@@ -18,7 +18,7 @@
 
 local S = require("interfaces.5x.skin")
 local unpack = table.unpack
-local entry = require("interfaces.original.entry")
+local entry = require("shared.original.entry")
 local D = TK.Xml.Data("heads.xml")
 
 return function(L, X)

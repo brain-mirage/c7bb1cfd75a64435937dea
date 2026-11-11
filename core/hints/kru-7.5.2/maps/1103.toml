@@ -7,3 +7,4 @@ size = "17x17"
 [map]
 indoor = true
 outdoor = 1002 # Wilderness, through its doors (the test server's warps)
+dark = true # painted dark (docs/user-related/research/2026-10-27-dark-maps.tsv): our lighting adds no light

@@ -23,7 +23,7 @@
 
 local C = TK.GetComponent("5x.parcel")
 local S = require("interfaces.5x.skin")
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 local E = require("interfaces.5x.elements")
 
 local L = TK.Xml.Data("main.xml")

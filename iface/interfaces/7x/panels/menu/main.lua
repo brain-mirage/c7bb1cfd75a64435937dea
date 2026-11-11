@@ -1,7 +1,7 @@
 -- s6-modular-g (interfaces, phase 5, round 13): 7.x's menu button, the original's MENU (MenuVarietyPane, constructor
 -- 0x005BC970) at (744, 727)-(805, 751) on the 7.x screen, in the frame layer: MENUVAR.EPF in MENUVAR.PAL, frame 0 while its
 -- popup is closed and frame 2 while it is open (OnPaint 0x005BC800; frame 1, a hover picture, is never drawn). Its place
--- follows the scaled screen (interfaces/screen.lua's Screen.Place) until the player moves it (edit mode, its Layout tab).
+-- follows the scaled screen (shared/original/screen.lua's Screen.Place) until the player moves it (edit mode, its Layout tab).
 -- s6-ui-core (round 85): the XML twin's scripts; its frame, place and pictures are main.xml's (core/xml.md).
 --
 -- Wire: MenuVarietyPane::HandlePointerOrMouseEvent (0x005BC690) opens the popup (MenuVarietySelectPane) on the left
@@ -11,7 +11,7 @@
 -- changes what the client does with it.
 
 local C = TK.GetComponent("7x.menu")
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 local S = require("interfaces.7x.skin")
 
 local L = TK.Xml.Data("main.xml")

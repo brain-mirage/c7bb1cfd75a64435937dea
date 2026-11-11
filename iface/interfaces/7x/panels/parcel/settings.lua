@@ -3,7 +3,7 @@
 -- reset is the original's place on the scaled screen).
 
 local C = TK.GetComponent("7x.parcel")
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 
 C.defaults = { parcel = { enabled = false, scale = 1 }, letter = { enabled = false, scale = 1 } }
 

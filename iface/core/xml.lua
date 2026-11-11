@@ -8,9 +8,23 @@
 -- Drawing only: building frames sends nothing. What a frame's scripts do is its Lua's.
 
 local H = __tk
+local designer = H.DesignerActive and H:DesignerActive() -- explicit offline authoring; other XML hosts need no bridge
 
 local X = {}
 TK.Xml = X
+local layout = require("core.xml_layout")
+X.LayoutCall, X.LayoutAuthored, X.ReleaseLayout = layout.Call, layout.Has, layout.Release
+if designer then
+    TK.ShellCalls = TK.ShellCalls or {}
+    -- The native bridge supplies a zero-based managed double array in UIParent-relative coordinates. Only the
+    -- explicit offline bridge installs this callback; normal clients retain their existing script/input path.
+    TK.ShellCalls["designer.geometry"] = function(id, bounds)
+        local obj = TK.Wrap(tonumber(id))
+        layout.Call(obj, "ClearAllPoints")
+        layout.Call(obj, "SetPoint", "TOPLEFT", UIParent, "TOPLEFT", bounds[0], -bounds[1])
+        layout.Call(obj, "SetSize", bounds[2], bounds[3])
+    end
+end
 
 local unpack = table.unpack or unpack
 local parsed = {} -- a file's path (from the Lua folder) -> its parse tree, read once per Lua state
@@ -121,8 +135,8 @@ end
 local function calls(obj, node, ctx)
     for _, attr in ipairs(node.order) do
         if attr:match("^%u") then
-            local method = obj[attr]
-            if type(method) ~= "function" then method = obj["Set" .. attr] end
+            local method = layout.Method(obj, attr)
+            if type(method) ~= "function" then method = layout.Method(obj, "Set" .. attr) end
             if type(method) ~= "function" then error(where(node, ctx) .. ": no method " .. attr .. " on a " .. node.tag, 0) end
             local a, n = args(node.attrs[attr], ctx, obj)
             method(obj, unpack(a, 1, n))
@@ -227,7 +241,12 @@ local function children(obj, node, ctx)
     for _, child in ipairs(node) do
         local tag = child.tag
         if tag == "do" then
-            calls(obj, child, ctx)
+            local instance = child.attrs.instance
+            if not instance or instance == tostring(ctx.instance or 1)
+                or type(obj.GetName) == "function" and instance == obj:GetName() then
+                calls(obj, child, ctx)
+                if child.attrs.authoredLayout == "true" then layout.Hold(obj) end
+            end
         elseif tag == "on" then
             -- hook="true": after the script the frame has (HookScript), else in its place (SetScript)
             if child.attrs.hook == "true" then
@@ -249,9 +268,29 @@ end
 
 local REGION = { texture = true, text = true }
 
+local function designed(obj, node, ctx)
+    if designer and type(obj) == "table" and obj.__h then
+        local description = X.Describe(node.tag, nil, node.attrs.type)
+        if description and description.placeable then H:DesignerElement(obj.__h, node.file or ctx.path, node.address or "", ctx.instance or 1) end
+    end
+end
+
 --- Builds one element under parent (nil: no parent), holder getting its key. Returns what it made.
 function build(node, parent, ctx, holder)
     local tag = node.tag
+    -- Named instances use their actual frame name. Unnamed template instances have a stable occurrence within
+    -- this layout load; counters reset with X.Load, so rebuilding or switching interfaces preserves selectors.
+    local original = node._prototype or node
+    local scoped = false
+    for _, child in ipairs(original) do
+        if child.tag == "do" and child.attrs.instance then scoped = true break end
+    end
+    local outerInstance = ctx.instance
+    if designer or scoped then
+        ctx.instances = ctx.instances or {}
+        ctx.instances[original] = (ctx.instances[original] or 0) + 1
+        ctx.instance = ctx.instances[original]
+    else ctx.instance = 1 end
     local chain = chainOf(node, ctx)
     local make = ctx.elements and ctx.elements[tag]
     local obj
@@ -283,6 +322,8 @@ function build(node, parent, ctx, holder)
             calls(obj, node, ctx)
             children(obj, node, ctx)
         end
+        designed(obj, node, ctx)
+        ctx.instance = outerInstance
         return obj
     else
         error(where(node, ctx) .. ": unknown element <" .. tostring(tag) .. ">", 0)
@@ -295,6 +336,8 @@ function build(node, parent, ctx, holder)
     end
     calls(obj, node, ctx)
     children(obj, node, ctx)
+    designed(obj, node, ctx)
+    ctx.instance = outerInstance
     return obj
 end
 
@@ -327,6 +370,60 @@ local function context(path, opts, depth)
 end
 
 -- ----- the API -----
+
+-- The same catalog is embedded by the desktop editor. Factories remain the existing opts.elements adapters;
+-- these records describe their parameters instead of maintaining a second palette/API parameter list.
+local descriptions
+local function describeControls()
+    if descriptions then return descriptions end
+    local tree = read("core/controls.xml")
+    local common, events = {}, {}
+    local function fields(node)
+        local result = {}
+        for _, child in ipairs(node) do
+            local a = child.attrs
+            local field = { name = a.name, kind = a.kind, description = a.description, default = a.default, values = {} }
+            if a.kind == "number" and a.default then field.default = tonumber(a.default) end
+            if a.kind == "boolean" and a.default then field.default = a.default == "true" end
+            for v in (a.choices or ""):gmatch("[^|]+") do field.values[#field.values + 1] = v end
+            result[#result + 1] = field
+        end
+        return result
+    end
+    for _, node in ipairs(tree) do
+        if node.tag == "common" then common = fields(node) elseif node.tag == "events" then events = fields(node) end
+    end
+    descriptions = {}
+    for _, node in ipairs(tree) do if node.tag == "control" then
+        local a = node.attrs
+        local d = { tag = a.tag, type = a.type, label = a.label, interface = a.interface, width = tonumber(a.width), height = tonumber(a.height),
+                    container = a.container == "true", named = a.named == "true", placeable = a.placeable ~= "false",
+                    adapter = a.adapter, parameters = {}, events = {} }
+        for _, field in ipairs(common) do d.parameters[#d.parameters + 1] = field end
+        for _, field in ipairs(fields(node)) do d.parameters[#d.parameters + 1] = field end
+        if a.scripts ~= "false" then d.events = events end
+        descriptions[#descriptions + 1] = d
+    end end
+    return descriptions
+end
+
+--- Existing visual control descriptions. An interface ID filters its own factories plus the common primitives.
+function X.Controls(interface)
+    local result = {}
+    for _, d in ipairs(describeControls()) do
+        if not interface or not d.interface or d.interface == interface then result[#result + 1] = d end
+    end
+    return result
+end
+
+--- A control's parameters, defaults, allowed values, events and existing build adapter, or nil.
+function X.Describe(tag, interface, frameType)
+    if frameType == "Frame" then frameType = nil end
+    for _, d in ipairs(describeControls()) do
+        if d.tag == tag and (d.type or "") == (frameType or "") and (not interface or not d.interface or d.interface == interface) then return d end
+    end
+    if frameType then return X.Describe(tag, interface) end
+end
 
 --- Builds a layout file: file is relative to the calling Lua file's folder ("main.xml", "../templates.xml"). opts:
 ---   scripts   the table the file's <on call="..."> names its functions in (the panel's Lua, usually its component)
@@ -381,7 +478,7 @@ function X.New(ctx, name, parent, frameName, holder, with)
         local attrs = {}
         for k, v in pairs(proto.attrs) do attrs[k] = v end
         attrs.name = frameName
-        node = setmetatable({ attrs = attrs }, { __index = proto })
+        node = setmetatable({ attrs = attrs, _prototype = proto }, { __index = proto })
         for i, child in ipairs(proto) do node[i] = child end
     end
     -- the instance is its own @root, and its with is @with; one made by a <run> while a build goes on gives that build its

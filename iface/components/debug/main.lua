@@ -1,6 +1,8 @@
 -- s6-devtools (round 3; the owner, 2026-10-05): the Debug page's readouts and world aids (settings.lua):
---   * the frame time and FPS (moved from Interface, the same readout at the same place), a graph of each frame's time, the
---     performance counters (C#'s LuaApi.Debug), and the map's line;
+--   * Performance Display (G-77, the owner, 2026-11-01): Basic is the frame time and FPS (moved from Interface, the same
+--     readout at the same place) and a graph of each frame's time, Full adds the performance counters (C#'s LuaApi.Debug);
+--   * Feature Costs: the 3D engine's table of what each part costs and what each option changed (FrameCosts);
+--   * the map's line;
 --   * the marks on the ground (C#'s WorldDebug, drawn in every mode) and the tile inspector's tooltip;
 --   * Detached Camera: the view leaves the player; while it is on every key is the UI's (C#'s Bootstrap.UiKeysNow, the
 --     wire's note there) and the hook below moves the view with them; a press on the world is on no map (UIHost.LiveClick)
@@ -16,6 +18,8 @@ local R = CS.TK.Modular.Draw.WorldRenderers
 local MARKS = { "grid", "coordinates", "blocked", "warps", "lights", "windows" }
 local BARS, BAR_W, GRAPH_H, GRAPH_MS = 90, 2, 48, 50
 local PAD = 6
+local COST_GAP = 10
+local COST_ALIGN = { "LEFT", "RIGHT", "RIGHT", "RIGHT", "LEFT" } -- part, ms, triangles, draws, budget
 
 local function inWorld() return TK.GameState:InWorld() end
 
@@ -24,8 +28,56 @@ local function inWorld() return TK.GameState:InWorld() end
 function C:ReloadWorldHints() H:ReloadWorldHints() end
 TK.Bindings:RegisterCommand("RELOADWORLDHINTS", "Reload World Hints", function() C:ReloadWorldHints() end)
 
+-- s6-reprojection-cloud-1 run 62 (G-68, head note 146): the owner switches an area's lights off by looking. Lights Area:
+-- Corner marks the cell under the pointer, twice for the area's two corners (once for one cell); Lights Area: Off and On
+-- switch that area's lights, saved as a map hint in the player's own hint folder (C#'s TK.Core.Map.LightAreas) and drawn
+-- at once, with Real Lights on as every light hint. Local only: no game action or packet is attached to these commands.
+-- Run 64: the marked cell or area is outlined on the map in every mode (C#'s WorldDebug.LightArea) until Off or On
+-- switches it; both keep it marked, so the other undoes it.
+local corner, area
+
+local function say(text)
+    TK.FireEvent("TK_CLIENT_MESSAGE", text, TK.Chat:PaletteRGB(143) or TK.Chat.colours.say, TK.Chat:PaletteRGB(1), true)
+end
+
+function C:LightsCorner()
+    local ok, x, y = H:GetDebugCellAtCursor()
+    if not ok then return say("Lights area: point at the map") end
+    if area or not corner then
+        corner, area = { x, y }, nil
+        H:ShowLightsArea(x, y, x, y)
+        return say(string.format("Lights area: %d,%d", x, y))
+    end
+    area = { math.min(corner[1], x), math.min(corner[2], y), math.max(corner[1], x), math.max(corner[2], y) }
+    H:ShowLightsArea(area[1], area[2], area[3], area[4])
+    say(string.format("Lights area: %d,%d-%d,%d", area[1], area[2], area[3], area[4]))
+end
+
+function C:LightsArea(on)
+    local a = area or corner and { corner[1], corner[2], corner[1], corner[2] }
+    if not a then return say("Lights area: mark a corner first") end
+    if not H:SwitchLightsArea(a[1], a[2], a[3], a[4], on) then return say("Lights area: not in the world") end
+    H:HideLightsArea()
+    -- run 64 (tried in the game): the hint shows only while Real Lights is in effect (Advanced Lighting, Real Lights and
+    -- the World View's Shadows); without it the switch changed nothing anyone could see, so the line says so
+    local seen = CS.TK.WorldView.AdvancedEffects.RealLights and "" or " (seen with Real Lights on)"
+    say(string.format("Lights %s: %d,%d-%d,%d%s", on and "on" or "off", a[1], a[2], a[3], a[4], seen))
+end
+
+TK.Bindings:RegisterCommand("LIGHTSAREACORNER", "Lights Area: Corner", function() C:LightsCorner() end)
+TK.Bindings:RegisterCommand("LIGHTSAREAOFF", "Lights Area: Off", function() C:LightsArea(false) end)
+TK.Bindings:RegisterCommand("LIGHTSAREAON", "Lights Area: On", function() C:LightsArea(true) end)
+
+-- the hint commands a key may run while the view is detached (TK.DebugKeyHook)
+local HINT_KEYS = {
+    RELOADWORLDHINTS = function() C:ReloadWorldHints() end,
+    LIGHTSAREACORNER = function() C:LightsCorner() end,
+    LIGHTSAREAOFF = function() C:LightsArea(false) end,
+    LIGHTSAREAON = function() C:LightsArea(true) end,
+}
+
 function C:OnEnable()
-    -- Show Frame Time, as Interface had it: the average over half a second, at the top right.
+    -- The frame time, as Interface had it: the average over half a second, at the top right.
     local ft = CreateFrame("Frame", "TKFrameTime", UIParent)
     ft:SetFrameStrata("TOOLTIP")
     ft:SetSize(220, 16)
@@ -67,6 +119,11 @@ function C:OnEnable()
     graph.label:SetPoint("TOPLEFT", graph, "TOPLEFT", 2, -1)
     panel.graph = graph
     panel.counters = W.Label(panel, "", 11, { 0.85, 0.95, 1 }, "LEFT")
+    -- s6-reprojection-cloud-3 (run 89, G-77): Feature Costs: the table's columns, and its notes under them
+    panel.costs = CreateFrame("Frame", "TKDebugCosts", panel)
+    panel.costs.columns = {}
+    for i, align in ipairs(COST_ALIGN) do panel.costs.columns[i] = W.Label(panel.costs, "", 11, { 0.85, 0.95, 1 }, align) end
+    panel.notes = W.Label(panel, "", 11, { 1, 0.95, 0.75 }, "LEFT")
     panel.map = W.Label(panel, "", 11, { 1, 0.95, 0.75 }, "LEFT")
 
     -- The tile inspector's tooltip, beside the pointer (GameTooltip's look; the world's own tooltip may show too).
@@ -81,7 +138,7 @@ function C:OnEnable()
     -- One clock for every readout: each frame's time (the graph's ring), and the readouts' own pace.
     local times, head = {}, 0
     for i = 1, BARS do times[i] = 0 end
-    local acc, frames, worst, graphWait, countersWait, mapWait, tipWait = 0, 0, 0, 0, 0, 0, 0
+    local acc, frames, worst, graphWait, countersWait, costsWait, mapWait, tipWait = 0, 0, 0, 0, 0, 0, 0, 0
     local watcher = CreateFrame("Frame", "TKDebugWatcher", UIParent)
     watcher:SetSize(1, 1)
     watcher:SetScript("OnUpdate", function(_, elapsed)
@@ -91,14 +148,15 @@ function C:OnEnable()
         times[head] = ms
         acc, frames, worst = acc + elapsed, frames + 1, math.max(worst, ms)
         if acc >= 0.5 then
-            if db.showFrameTime then
+            if db.perfDisplay ~= "off" then
                 ft.text:SetText(string.format("%s  %.1f ms  (%d fps)", graphicsName, acc / frames * 1000, math.floor(frames / acc + 0.5)))
             end
             graph.label:SetText(string.format("max %.1f ms", worst))
             acc, frames, worst = 0, 0, 0
         end
-        graphWait, countersWait, mapWait, tipWait = graphWait - elapsed, countersWait - elapsed, mapWait - elapsed, tipWait - elapsed
-        if db.showFrameGraph and graphWait <= 0 then
+        graphWait, countersWait, costsWait = graphWait - elapsed, countersWait - elapsed, costsWait - elapsed
+        mapWait, tipWait = mapWait - elapsed, tipWait - elapsed
+        if db.perfDisplay ~= "off" and graphWait <= 0 then
             graphWait = 0.1
             for i = 1, BARS do
                 local t = times[(head + i - 1) % BARS + 1]
@@ -109,9 +167,15 @@ function C:OnEnable()
                 else bar:SetColorTexture(1, 0.35, 0.3, 0.9) end
             end
         end
-        if db.showCounters and countersWait <= 0 then
+        if db.perfDisplay == "full" or db.featureCosts then H:TickFrameCosts() end
+        if db.perfDisplay == "full" and countersWait <= 0 then
             countersWait = 0.5
             panel.counters:SetText(H:GetDebugCounters())
+            self:Layout()
+        end
+        if db.featureCosts and costsWait <= 0 then
+            costsWait = 0.5
+            self:ShowCosts()
             self:Layout()
         end
         if db.showMapInfo and mapWait <= 0 then
@@ -144,16 +208,43 @@ function C:Layout()
         y = y - h - PAD
         width = math.max(width, w)
     end
-    place(p.graph, db.showFrameGraph, BARS * BAR_W, GRAPH_H)
-    place(p.counters, db.showCounters, p.counters:GetStringWidth(), p.counters:GetStringHeight())
+    place(p.graph, db.perfDisplay ~= "off", BARS * BAR_W, GRAPH_H)
+    place(p.counters, db.perfDisplay == "full", p.counters:GetStringWidth(), p.counters:GetStringHeight())
+    place(p.costs, db.featureCosts, p.costs:GetWidth(), p.costs:GetHeight())
+    place(p.notes, db.featureCosts, p.notes:GetStringWidth(), p.notes:GetStringHeight())
     place(p.map, db.showMapInfo, p.map:GetStringWidth(), p.map:GetStringHeight())
     -- left of the minimap where the interface has one at the top right (it hides none of it), else under the frame time
     p:ClearAllPoints()
     local minimap = TK.Game.Minimap.Frame() -- s6-input (round 49, separation step 4b): the interface's minimap, if any
     if minimap and minimap:IsShown() then p:SetPoint("TOPRIGHT", minimap, "TOPLEFT", -6, 0)
     else p:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -8, -22) end
-    p:SetShown(db.showFrameGraph or db.showCounters or db.showMapInfo)
+    p:SetShown(db.perfDisplay ~= "off" or db.featureCosts or db.showMapInfo)
     p:SetSize(math.max(BARS * BAR_W, width) + PAD * 2, -y)
+end
+
+--- Run 89 (G-77): Feature Costs' text, cut into the table's columns (C#'s Engine.CostsTable: tabs between a row's cells, a
+--- blank line before the notes); each column as wide as its longest cell. Debug drawing only.
+function C:ShowCosts()
+    local p, cells = self.panel, {}
+    for i = 1, #COST_ALIGN do cells[i] = {} end
+    local rows, notes = H:GetFeatureCosts():match("^(.-)\n\n(.*)$")
+    for row in (rows or ""):gmatch("[^\n]+") do
+        local i = 0
+        for cell in (row .. "\t"):gmatch("(.-)\t") do
+            i = i + 1
+            cells[i][#cells[i] + 1] = cell
+        end
+    end
+    p.notes:SetText(notes or "Costs are counted in the 3D modes")
+    local x, height = 0, 0
+    for i, column in ipairs(p.costs.columns) do
+        column:SetText(table.concat(cells[i], "\n"))
+        column:ClearAllPoints()
+        column:SetPoint("TOPLEFT", p.costs, "TOPLEFT", x, 0)
+        x = x + column:GetStringWidth() + COST_GAP
+        height = math.max(height, column:GetStringHeight())
+    end
+    p.costs:SetSize(x, height)
 end
 
 function C:ApplySettings()
@@ -162,11 +253,11 @@ function C:ApplySettings()
     -- profile from before carries its choice over once, and the old key goes.
     local old = TK.DB:Component("interface")
     if old and old.showFrameTime ~= nil then
-        if old.showFrameTime == true then db.showFrameTime = true end
+        if old.showFrameTime == true and db.perfDisplay == "off" then db.perfDisplay = "basic" end
         old.showFrameTime = nil
         TK.DB:MarkDirty()
     end
-    self.frame:SetShown(db.showFrameTime)
+    self.frame:SetShown(db.perfDisplay ~= "off")
     for _, name in ipairs(MARKS) do H:SetDebugMark(name, db[name] == true) end
     if not db.inspector then self.inspector:Hide() end
     self:Layout()
@@ -178,8 +269,10 @@ end
 --- Detached Camera is on (its frame-time ring then fills from that moment). Debug drawing only.
 function C:Watch()
     local db = self:DB()
-    TK.Util.Updating(self.watcher, db.showFrameTime or db.showFrameGraph or db.showCounters or db.showMapInfo
+    TK.Util.Updating(self.watcher, db.perfDisplay ~= "off" or db.featureCosts or db.showMapInfo
         or db.inspector or H:IsDetachedCamera())
+    -- run 89 (G-77): the engine counts only for what shows (C#'s FrameCosts): nothing runs while these are off
+    H:SetFrameCosts(db.perfDisplay == "full" or db.featureCosts == true)
 end
 
 -- ----- s6-effects (round 40): the Weather & Lighting tab (settings.lua) -----
@@ -314,10 +407,10 @@ function C:Drag()
     H:MoveDetachedCamera(-dx / tile, dy / tile)
 end
 
---- While the view is detached every key comes here first (core/bindings.lua): the movement keys (as bound, and the
+--- While the view is detached every key comes here first (shared/bindings.lua): the movement keys (as bound, and the
 --- arrows) and the view's keys (the wheel too: it is a key name while the keys are the UI's, InputHost.Wheel) are the
 --- camera's, and every other key-down does nothing (its binding does not run: an
---- action button's key would cast); a key-up still lets go of a binding held from before. Escape is core/escape.lua's
+--- action button's key would cast); a key-up still lets go of a binding held from before. Escape is core/global/escape.lua's
 --- (the cancel below ends it).
 --- WIRE: 4a has no detached view. Its keys walk, turn and act only through the rules (UserPane::HandleKeyOrTextEvent
 --- 0x005A5BD0: steps and turns through UserPane::ProcessMovement 0x005A2E00, Ctrl+arrow's 0x82, the spell and item keys),
@@ -336,11 +429,12 @@ function TK.DebugKeyHook(key, down)
         return true
     end
     local map = TK.Bindings:Map()
-    -- Hint editing also works while inspecting with the camera detached. This one command only reloads local drawing
-    -- hints; other bindings remain swallowed as above (4a UserPane::HandleKeyOrTextEvent 0x005A5BD0). Allowing a game
-    -- action here would change what the server sees.
-    if map[key] == "RELOADWORLDHINTS" then
-        if down then C:ReloadWorldHints() end
+    -- Hint editing also works while inspecting with the camera detached. These commands (HINT_KEYS) only edit and reload
+    -- local drawing hints; other bindings remain swallowed as above (4a UserPane::HandleKeyOrTextEvent 0x005A5BD0).
+    -- Allowing a game action here would change what the server sees.
+    local hint = HINT_KEYS[map[key]]
+    if hint then
+        if down then hint() end
         return true
     end
     local command = MOVES[map[key]] and map[key] or ARROWS[bare] or map[bare] -- a movement bound with a modifier first

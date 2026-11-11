@@ -7,8 +7,9 @@
 -- Each interface has its own profile (the profile records its interface), made from the interface's defaults on its first use: its
 -- own panels on, every other interface's off, its keys where free, its looks. A panel of another interface turned on adds its
 -- keys where they are free and records them; turned off it removes exactly those, and its commands' other keys are parked
--- (Mixing; the owner's hotfix of 2026-10-06: core/bindings.lua B:Park). Our tools (the settings window, edit mode, the game
--- menu and its menu button...) are no interface's and are in every one.
+-- (Mixing; the owner's hotfix of 2026-10-06: shared/bindings.lua B:Park). Our tools (the settings window, edit mode, the game
+-- menu and its menu button...) are no interface's and are in every one: the Global Interface's, whose panels (the world
+-- view's and the menu button's) core/global/interface.lua declares (T.global).
 --
 -- s6-interface-5x (round 13, the separation's step 11; the owner's answer to Q52): only the panels in use are loaded
 -- (T:InUse; core/components.lua loads and unloads their code).
@@ -17,7 +18,8 @@
 
 local H = __tk
 
-local T = { list = {}, byId = {}, panelsOf = {}, switches = {} }
+--- global: the Global Interface's panels (s6-ui-core, the five parts' step 2a), shared, after T:Load.
+local T = { list = {}, byId = {}, panelsOf = {}, switches = {}, global = {} }
 TK.Interfaces = T
 
 --- s6-protocol rounds 68-69 (the owner's screenshot, 2026-10-04: a built client offered "5.x (test stand-in)"): whether
@@ -48,25 +50,31 @@ function T:Load()
         if (a.default == true) ~= (b.default == true) then return a.default == true end
         return a.id < b.id
     end)
+    -- s6-ui-core (the five parts' step 2a): the Global Interface's panels, shared and no installed interface's; their
+    -- interface is "global", which names none (T:Get finds nothing by it), for the fields that key a panel by it
+    self.global = require("core.global.interface").panels
+    for _, panel in ipairs(self.global) do panel.interface = "global" end
     -- s6-optimize (round 28): the panels found once, in the list's order (the lists are fixed from here on): each
     -- component's (T:PanelsOf: T:InUse and T:Dormant, asked for every bound key through TK.Bindings:Inert, and the
     -- components' sync) and each switch's (node id, then key: T:Blocks and T:SettingChanged, asked on every setting change)
     self.panelsOf, self.switches = {}, {}
-    for _, interface in ipairs(self.list) do
-        for _, panel in ipairs(interface.panels) do
-            if panel.component then
-                local of = self.panelsOf[panel.component] or {}
-                of[#of + 1] = panel
-                self.panelsOf[panel.component] = of
-            end
-            if panel.node and panel.switch then
-                local node = self.switches[panel.node] or {}
-                local at = node[panel.switch] or {}
-                at[#at + 1] = panel
-                node[panel.switch], self.switches[panel.node] = at, node
-            end
+    local function index(panel)
+        if panel.component then
+            local of = self.panelsOf[panel.component] or {}
+            of[#of + 1] = panel
+            self.panelsOf[panel.component] = of
+        end
+        if panel.node and panel.switch then
+            local node = self.switches[panel.node] or {}
+            local at = node[panel.switch] or {}
+            at[#at + 1] = panel
+            node[panel.switch], self.switches[panel.node] = at, node
         end
     end
+    for _, interface in ipairs(self.list) do
+        for _, panel in ipairs(interface.panels) do index(panel) end
+    end
+    for _, panel in ipairs(self.global) do index(panel) end
     local chosen = TK.Machine:Get().interface
     self.active = self.byId[chosen] and chosen or self:Default()
 end
@@ -134,7 +142,7 @@ function T:SwitchTo(id, byKey)
     return true
 end
 
---- Whether a command switches interfaces (components/interfaces/main.lua registers them).
+--- Whether a command switches interfaces (core/global/components/interfaces/main.lua registers them).
 function T.SwitchCommand(command)
     return command == "INTERFACENEXT" or command:sub(1, 10) == "INTERFACE_"
 end
@@ -242,7 +250,7 @@ function T:PanelInUse(panel)
     return TK.Panels:IsOn(nil, panel)
 end
 
---- Whether a component is in use: one of its panels is, or it has none (the global ones and the tools).
+--- Whether a component is in use: one of its panels is, or it has none (those outside the interfaces).
 function T:InUse(name)
     local found = false
     for _, panel in ipairs(self:PanelsOf(name)) do
@@ -282,7 +290,7 @@ end
 --- After the profile is loaded at the start: it is recorded as the one this interface uses (and again on every switch).
 function T:Loaded()
     self:Remember()
-    -- the owner's hotfix (core/bindings.lua): the global keys, then each key in the map its command belongs in
+    -- the owner's hotfix (shared/bindings.lua): the global keys, then each key in the map its command belongs in
     TK.Bindings:ApplyGlobals()
     TK.Bindings:Park()
 end
@@ -310,7 +318,7 @@ TK.On("PLAYER_ENTERING_WORLD", function() if T.active then T:BindCarried() end e
 --- are on in Modern and off in 7.x and 5.x): a migrate entry's set, { component = { key = value } }: settings given the
 --- interface's own value, in its first profiles (T:ApplyDefaults) and once in those made before (T:Migrate), as the menu
 --- button's switch is; the player's choice is kept after that, and a page's reset puts back the interface's value (as a
---- first profile has it: core/settings.lua's firstValues). Drawing only: nothing is sent.
+--- first profile has it: core/global/settings.lua's firstValues). Drawing only: nothing is sent.
 local function setValues(m)
     for name, values in pairs(m.set or {}) do
         local c = TK.GetComponent(name)
@@ -343,6 +351,13 @@ function T:ApplyDefaults()
             if on then own[#own + 1] = panel else self:DropKeys(panel) end
         end
     end
+    -- s6-ui-core (the five parts' step 2a): the Global Interface's panels, shared, so on (as when they were in the
+    -- default interface's list)
+    for _, panel in ipairs(self.global) do
+        local on = panel.on ~= false
+        self:SetSwitch(panel, on)
+        if on then own[#own + 1] = panel else self:DropKeys(panel) end
+    end
     if interface.defaults then interface.defaults(p) end
     for _, panel in ipairs(own) do self:AddKeys(panel) end
     for _, m in ipairs(interface.migrate or {}) do -- a first profile needs no carry-over, only the set values
@@ -372,17 +387,22 @@ function T:Migrate()
             local off, on = {}, {}
             for _, id in ipairs(m.off or {}) do off[id] = true end
             for _, id in ipairs(m.on or {}) do on[id] = true end -- s6-ui-core (round 60)
-            for _, other in ipairs(self.list) do
-                for _, panel in ipairs(other.panels) do
-                    if other.id ~= interface.id and off[panel.id] then
-                        self:SetSwitch(panel, false)
-                        self:DropKeys(panel)
-                    elseif other.id ~= interface.id and on[panel.id] then
-                        self:SetSwitch(panel, true)
-                        self:AddKeys(panel)
-                    end
+            local function carry(panel)
+                if off[panel.id] then
+                    self:SetSwitch(panel, false)
+                    self:DropKeys(panel)
+                elseif on[panel.id] then
+                    self:SetSwitch(panel, true)
+                    self:AddKeys(panel)
                 end
             end
+            for _, other in ipairs(self.list) do
+                if other.id ~= interface.id then
+                    for _, panel in ipairs(other.panels) do carry(panel) end
+                end
+            end
+            -- s6-ui-core (the five parts' step 2a): and the Global Interface's (the menu button's "menuButtonOn")
+            for _, panel in ipairs(self.global) do carry(panel) end
             setValues(m) -- s6-ui-core (round 61)
             TK.DB.migrated = true
         end
@@ -423,7 +443,7 @@ end
 --- are in a different interface anymore, unless you specifically have turned them on in addition"): whether a component
 --- is an interface's panel (its folder under interfaces/) with no panel in use in this profile (T:InUse; round 13: a
 --- switchless one only in its own interface), for the active interface's panels too. Its commands are then inert
---- (TK.Bindings:Inert) and its frames get no mover in edit mode (core/editmode.lua); since round 13 its code is not loaded
+--- (TK.Bindings:Inert) and its frames get no mover in edit mode (core/global/editmode.lua); since round 13 its code is not loaded
 --- either.
 function T:Dormant(name)
     -- Wire: a dormant component's commands are inert (TK.Bindings:Inert), so their keys send nothing, as a key 4a's
@@ -608,7 +628,7 @@ function T:RemoveKeys(panel)
 end
 
 --- The owner's hotfix (2026-10-06): the keys a panel turned on would bring that are in use: its commands' parked keys
---- (core/bindings.lua) and the keys its interface gives it (T:KeysOf), each { key, command, holder }.
+--- (shared/bindings.lua) and the keys its interface gives it (T:KeysOf), each { key, command, holder }.
 function T:Clashes(panel)
     local B, live, out, seen = TK.Bindings, TK.Bindings:Map(), {}, {}
     local function add(key, command)
@@ -627,7 +647,7 @@ end
 --- The owner's hotfix (2026-10-06: "if you enable a interface panel for another interface ... that shares a hotkey it
 --- should prevent you from enabling that interface and popup saying there is a conflict ... Cancel, Unbind X Y Z <its>
 --- keybinds, Unbind X Y Z <these> keybinds ... clicking unbind will unbind it for that interface and then enable the
---- panel"): whether a panel's switch turned on waits for the player (core/settings.lua asks before it changes anything).
+--- panel"): whether a panel's switch turned on waits for the player (core/global/settings.lua asks before it changes anything).
 --- With clashes it asks: Cancel leaves the panel off; unbinding the panel's keys turns it on without them; unbinding
 --- this interface's turns it on with them. Nothing is sent.
 function T:Blocks(node, key, value)
@@ -723,7 +743,7 @@ function T:AskClashes(node, panel, clashes)
 end
 
 --- The owner's hotfix (2026-10-06): for a command whose keys go to every interface (made global, or a global's new key:
---- core/bindings.lua B:GlobalUses), the other interfaces' profiles where one of its keys runs another command:
+--- shared/bindings.lua B:GlobalUses), the other interfaces' profiles where one of its keys runs another command:
 --- { key, holder, name (the interface's), profile }. Every profile of each other installed interface (Astra's hotfix
 --- review, P2 1: each one's last used alone missed a character's own), by the interface it is recorded as (one recorded
 --- as none is the default interface's, Modern's, as T:IsActiveProfile counts it; the guard keeps the literal out),
@@ -752,7 +772,7 @@ function T:GlobalClashes(command, keys)
     return out
 end
 
---- A setting changed on a page (core/settings.lua): a panel's switch adds or removes the keys its panel brings, parks
+--- A setting changed on a page (core/global/settings.lua): a panel's switch adds or removes the keys its panel brings, parks
 --- or unparks its commands' keys (the owner's hotfix), and loads or unloads the panel (s6-interface-5x round 13, step
 --- 11: TK.Components:Sync).
 function T:SettingChanged(node, key, value)
@@ -789,7 +809,7 @@ function T.NormalizePanelKeys(v, bindings)
     return out
 end
 
---- The owner's hotfix (2026-10-06; core/bindings.lua): the inert commands' keys as saved, component -> { key -> command },
+--- The owner's hotfix (2026-10-06; shared/bindings.lua): the inert commands' keys as saved, component -> { key -> command },
 --- each kept while it names a command a binding may name.
 function T.NormalizeParked(v, knownCommands)
     local out = {}

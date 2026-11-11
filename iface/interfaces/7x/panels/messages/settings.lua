@@ -3,7 +3,7 @@
 -- The divider's height is the client's own setting (settings.toml chat.system_message_height), moved by dragging it.
 
 local C = TK.GetComponent("7x.messages")
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 
 C.defaults = { enabled = false, scale = 1 }
 

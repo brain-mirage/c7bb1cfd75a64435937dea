@@ -1,0 +1,20 @@
+# Map 4510. cloud-3 run 63 (G-71, head note 131): the one-column river stairs (12,32-35; hints.toml, vobj river-stairs,
+# variant column) end on a floor of the blue water 628 under 699-700 (12-15,36-37), out in the river lowered to -0.6.
+# 628 is a pond's or a sea's water elsewhere, at the rule's depth (its tile hint), so here, in the river, its walkable
+# cells stood 0.4 over the river's water: a map entry lays the floor with the stairs' ford, 0.15 under the river's water
+# (HintFlood), the 699-700 water lying on it. Those pieces are two cells tall and lie flat, so the river cells under
+# their north halves (13-15,35) stood up as a strip of water beside the flight's foot; they are laid with the floor.
+# As on the river stairs' fords, a flat cell adds no water level: the 3D pointer picks it on the ground plane
+# (reprojection's Inverse.MapPoint), not at the water drawn over it. That decides the cell a 3D press names, which the
+# server sees (4a MapPane::HandlePointerOrMouseEvent 0x00507150); the floor was picked so on main too, at the land's
+# level. Native map words and packets are unchanged.
+[check]
+size = "31x41"
+
+[cells."12,36-15,37"]
+ground = "flat"
+level = -0.75
+
+[cells."13,35-15,35"]
+ground = "flat"
+level = -0.75

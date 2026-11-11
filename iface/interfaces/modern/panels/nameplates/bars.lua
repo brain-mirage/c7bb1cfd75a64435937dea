@@ -18,6 +18,7 @@ local COLOURS = { player = { 0.15, 0.75, 0.15 }, creature = { 0.8, 0.18, 0.12 } 
 
 C.unitBars = {}   -- the bars shown, by object id
 local spare, made = {}, 0
+local NONE = {}   -- s6-ui-core (round 121, CR-UI-08): RefreshBars' lists while the bars are off; never written to
 
 local function newBar()
     made = made + 1
@@ -75,16 +76,30 @@ end
 --- (C:Members()): their bars show points, or the original's group bars replace them while those are on.
 function C:RefreshBars(view, scale, w, h, hover, target, group)
     local db = self:DB()
-    local keep, space = {}, {}
-    if view and (db.playerBars ~= "off" or db.npcBars ~= "off") then
+    local on = view and (db.playerBars ~= "off" or db.npcBars ~= "off")
+    -- s6-ui-core (round 121, CR-UI-08): no new tables a frame while the bars are off (the default); NONE is never written.
+    -- Round 154 (the client review's 4.27): nor while they are on: the frame's two lists are kept and emptied
+    local keep, space = NONE, NONE
+    if on then
+        keep, space = self.barKeep, self.barSpaceKept
+        if not keep then
+            keep, space = {}, {}
+            self.barKeep, self.barSpaceKept = keep, space
+        end
+        for id in pairs(keep) do keep[id] = nil end
+        for id in pairs(space) do space[id] = nil end
+    end
+    if on then
         local self_ = H:GetPlayerObjectId()
         local ox, oy = H:GetTileOrigin()
-        for i = 1, H:GetNumObjects() do
-            local _, id, kind, x, y = H:GetObjectInfo(i)
-            local prefix = kind == "player" and "player" or kind == "creature" and "npc" or nil
-            local vx, vy = x - ox, y - oy
-            if prefix and id ~= self_ and vx >= 0 and vx < 17 and vy >= 0 and vy < 15
-                and not (group[id] and db.groupBars) and self.Shows(db[prefix .. "Bars"], id, target, hover) then
+        -- s6-reprojection-cloud-1 (run 83, Astra 82-30): one query over the view's cells, as the enemy icons (GetObjectsIn:
+        -- creatures and players only), for GetObjectInfo on every object every frame with strings these bars never read
+        local objects = H:GetObjectsIn(ox, oy, 17, 15)
+        for i = 0, objects.n - 1 do
+            local b = i * 5
+            local id, kind, x, y = objects[b + 1], objects[b + 2], objects[b + 3], objects[b + 4]
+            local prefix = kind == "player" and "player" or "npc"
+            if id ~= self_ and not (group[id] and db.groupBars) and self.Shows(db[prefix .. "Bars"], id, target, hover) then
                 local ok, ax, nameY = H:GetUnitAnchor(id)
                 local px, py
                 if ok then
@@ -112,7 +127,7 @@ function C:RefreshBars(view, scale, w, h, hover, target, group)
     self.barSpace = space
 end
 
--- The hovered spell (TK.ManaPreview, core/tooltip.lua: its name, nil on leaving): what it would heal or take (V.SpellEffect)
+-- The hovered spell (TK.ManaPreview, shared/widgets/tooltip.lua: its name, nil on leaving): what it would heal or take (V.SpellEffect)
 TK.On("TK_MANA_PREVIEW", function(_, _, name)
     local amount, kind = V.SpellEffect(name)
     C.preview = amount and { amount = amount, kind = kind } or nil

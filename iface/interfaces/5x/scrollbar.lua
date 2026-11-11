@@ -308,7 +308,7 @@ end
 --- track and its 13-pixel thumb. It stands in for the kit's bar (styleBar's 4a look, hidden: sf.barStyle) and takes the
 --- bar's presses, on the drawn list's rows; a bar that does not scroll takes none (Bar:Refresh). Its parts scroll the
 --- drawn list as 5.33's do (drawing only). The list's own position is 4a's (the kit's list.logicalRow,
---- components/dialogs/kit.lua K.List): the thumb is 4a's thumb and the arrows and track 4a's track on their side (4a's
+--- shared/components/dialogs/kit.lua K.List): the thumb is 4a's thumb and the arrows and track 4a's track on their side (4a's
 --- EPF bar has no arrows), the pointer on 4a's bar by the bars' travels (list:BarPress; decision
 --- 2026-10-04-paging-lists-pointer-on-752s-view), as the kit moves them; a list the look draws at 4a's size scrolls
 --- with that position. WIRE: the press after 4a's part acted, the moves while it is held and its release then go to the

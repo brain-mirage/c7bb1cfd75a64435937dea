@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 7.x's options tab (side panel tab 6; its XML twin's layout; options.lua is its scripts), 4a's NewOptionPane. Format:
      core/xml.md.
-     WIRE: each row's number decides the action a press on it runs (Modern's window's optionrow for the rows marked send:
+     WIRE: each row's number decides the action a press on it runs (the game layer's optionrow for the rows marked send:
      1B 01 and its option, by 4a's row: NewOptionPane::HandlePointerOrMouseEvent 0x00540910), and its rectangle (from
      its corner, the label's width + 18 wide and 18 high: InitOptionRow 0x005411B0) where that press lands. Changing a
      row's number, its place or its send changes what the server sees. -->
 <ui>
   <!-- the rows (BuildOptionRows 0x00541240): 4a's row number, its label, its rectangle's corner, its kind (3 a box, 4 a
-       radio) and page; send: it runs Modern's window's row action (options.lua's header), else its local switch -->
+       radio) and page; send: it runs the game layer's row action (options.lua's header), else its local switch -->
   <data key="ROWS">
     <row row="14" label="Simple Click" x="8" y="16" kind="3" page="0" send="true"/>
     <row row="9" label="Use enter to talk" x="8" y="34" kind="3" page="0"/>

@@ -1,4 +1,4 @@
--- s6-modular-g (interfaces, phase 4): 7.x's look of the merchant menus (components/dialogs/merchant.lua), from
+-- s6-modular-g (interfaces, phase 4): 7.x's look of the merchant menus (shared/components/dialogs/merchant.lua), from
 -- Source-5's class pages (each class's EPF layout, which this build always takes). Drawing only: the indexes, the keys
 -- and the 39 replies are the renderer's and the model's.
 --
@@ -31,7 +31,7 @@
 
 local S = require("interfaces.7x.skin")
 local unpack = table.unpack
-local entry = require("interfaces.original.entry")
+local entry = require("shared.original.entry")
 local D = TK.Xml.Data("merchant.xml")
 
 return function(L, X)

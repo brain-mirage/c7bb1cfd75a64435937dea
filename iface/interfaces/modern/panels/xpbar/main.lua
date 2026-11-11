@@ -13,7 +13,17 @@ function scripts.Enter(f) f.hover = true; C:Update() end
 
 function scripts.Leave(f) f.hover = false; C:Update() end
 
-function scripts.Changed() C:Update() end
+-- s6-reprojection-cloud-1 (run 83, Astra 82-50; the owner: nothing runs unseen): nothing is drawn under a bar its Visibility
+-- hides; shown again it draws as things are. Drawing only.
+function scripts.Changed(f)
+    if f:IsVisible() then C:Update() else C.behind = true end
+end
+
+function scripts.Shown()
+    if not C.behind then return end
+    C.behind = false
+    C:Update()
+end
 
 function C:OnEnable()
     local f = TK.Xml.Load("main.xml", { scripts = scripts, elements = E }).frame

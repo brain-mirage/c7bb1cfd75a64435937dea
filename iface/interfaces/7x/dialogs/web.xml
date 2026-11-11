@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 7.x's look of the web board and the browser dialog (its XML twin's layout; web.lua draws with it), from Source-5's
-     class pages. Format: core/xml.md; each dialog's attributes are its look entry's values (interfaces/original/entry.lua), its
+     class pages. Format: core/xml.md; each dialog's attributes are its look entry's values (shared/original/entry.lua), its
      children its windows: the size, the button's place (its image's 63 x 24 from there) and the browser's area (left,
      top, right, bottom), where the page's text, its address and Open in browser go.
      WIRE: the button's rectangle is where a press on it lands (the close, the 73 request and the 62 page are the

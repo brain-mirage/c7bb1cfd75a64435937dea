@@ -128,7 +128,7 @@ function V.Actions(value, problems)
                 -- s6-ui-bars: a spell keeps its name (it follows the spell in the book)
                 name = a.kind == "spell" and type(a.name) == "string" and a.name ~= "" and a.name or nil }
         elseif key and a.kind == "item" and type(a.item) == "string" and a.item ~= "" and #a.item <= 255 then
-            -- s6-ui-bars: an item by its kind (core/cursor.lua), with the name and picture it had when placed
+            -- s6-ui-bars: an item by its kind (shared/cursor.lua), with the name and picture it had when placed
             out[key] = { kind = "item", item = a.item, name = type(a.name) == "string" and a.name or a.item,
                 icon = finite(a.icon) and math.floor(a.icon) or -1 }
         elseif key and a.kind == "macro" and type(a.id) == "number" and a.id == math.floor(a.id) and a.id >= 0

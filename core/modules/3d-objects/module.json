@@ -3,7 +3,7 @@
   "name": "3D",
   "kind": "draw",
   "version": "0.1.0",
-  "contract": 4,
+  "contract": 5,
   "assembly": "3d-objects.dll",
   "entry": "TK.Modules.Objects3d.Module",
   "serves": ["map-objects"],
@@ -12,7 +12,8 @@
   "over": "others",
   "custom": "3d",
   "options": [
-    { "key": "others", "name": "Objects Without a 3D Model", "values": "2d-7x=Modern (7.x);2d-5x=Retro (5.x)" }
+    { "key": "others", "name": "Objects Without a 3D Model", "values": "2d-7x=Modern (7.x);2d-5x=Retro (5.x)" },
+    { "key": "model-quality", "name": "3D model quality", "page": "graphics", "values": "normal=Normal;low=Low;high=High" }
   ],
   "models": [
     { "name": "notice-board", "source": "notice-board", "objects": [1619, 1620] },

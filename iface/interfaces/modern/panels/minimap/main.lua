@@ -6,8 +6,8 @@
 --
 -- The owner's revision (plan D26, 2026-10-01; s6-world-view round 17): the picture is zoomed in (8 pixels a cell at
 -- first) and a map that fits the box is scaled up to fill it; + and - (and the wheel) zoom in and out, 2 to 16 pixels a
--- cell, and send nothing. M opens the map window (core/mapwindow.lua), as does the Map button (the original's minimap button: 7C).
--- The plugins' markers (core/mapmarkers.lua) are drawn over it, one off the picture at its edge, dimmed.
+-- cell, and send nothing. M opens the map window (core/global/mapwindow.lua), as does the Map button (the original's minimap button: 7C).
+-- The plugins' markers (shared/mapmarkers.lua) are drawn over it, one off the picture at its edge, dimmed.
 --
 -- The border icons (the owner, 2026-10-02; border.lua): outside the box, each dragged along its border in edit mode.
 -- - The time and the weather, in place of round 15's clock picture (coverage G-39): the game
@@ -31,7 +31,7 @@
 local C = TK.GetComponent("minimap")
 local U = TK.Util
 local H = __tk
-local Markers = require("core.mapmarkers")
+local Markers = require("shared.mapmarkers")
 local Border = require("interfaces.modern.panels.minimap.border")
 
 local DATA = TK.Xml.Data("main.xml")
@@ -193,11 +193,17 @@ end
 
 function scripts.Ticker(f) f:SetScript("OnUpdate", U.Throttled(0.1, function() C:Refresh() end)) end
 
+-- s6-reprojection-cloud-1 (run 83, Astra 82-29; CLAUDE.md, the owner 2026-10-22: nothing runs unseen): the live picture is
+-- drawn only while this box shows (MinimapPicture.Show). Drawing only: nothing is sent.
+function scripts.PictureShown() H:ShowLive(MINIMAP, true) end
+function scripts.PictureHidden() H:ShowLive(MINIMAP, false) end
+
 function C:OnEnable()
     local f = TK.Xml.Load("main.xml", { scripts = scripts, elements = elements }).frame
     self.frame = f
     TK.Visibility:Attach(f, function() return self:DB() end)
     TK.EditMode:Register(f, "minimap", "Minimap", C.defaultPosition, "minimap")
+    H:ShowLive(MINIMAP, f:IsShown()) -- a new frame stands shown without an OnShow
 end
 
 --- Where the location label goes, the box measured (Border.Measure): "box", centred above it; or "inside", under its

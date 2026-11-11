@@ -16,7 +16,7 @@ C.defaults = {
     timeText = false,     -- question 32: no time under the icons; the tooltip says it, or "time unknown"
     showUnknown = true,   -- "???" effects
     -- The owner's two name lists (head note, 2026-10-03) are the profile's effectLists since s6-input round 49
-    -- (core/effecticons.lua; edited on the Effect Names tab below). Round 43's text, "A, B", saved here is still carried
+    -- (shared/effecticons.lua; edited on the Effect Names tab below). Round 43's text, "A, B", saved here is still carried
     -- over by C:Migrate, then moved there as the profile loads (Modern's movedSaved, core/db.lua).
     creatureMode = "all",
     playerMode = "all",

@@ -1,0 +1,10 @@
+# Map 4981. cloud-3 run 63 (head note 132, look-alikes; G-71): the river water's decorated tiles 30567-30583
+# (lily pads, a rock, a log, ripples, reeds), which hints.toml lays 0.6 down with the river, lie here in a pond of
+# the blue water 628 at the rule's 0.2, so they take its depth: at the river's they sank as holes in the pond.
+# Drawing only: like any water level it feeds the 3D click's grid, which names the cell drawn under the pointer
+# (the reprojection module's Water.Seen). Native map words and packets are unchanged.
+[check]
+size = "34x36"
+
+[tile.30567-30583]
+level = -0.2

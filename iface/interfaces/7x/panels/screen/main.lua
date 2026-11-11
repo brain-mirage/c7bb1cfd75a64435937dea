@@ -12,7 +12,7 @@
 
 local C = TK.GetComponent("7x.screen")
 local H = __tk
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 
 local L = TK.Xml.Data("main.xml")
 local SCREEN_W, SCREEN_H = L.SCREEN[1], L.SCREEN[2]
@@ -89,7 +89,7 @@ function C:Layout()
     TK.EditMode:UpdateMovers()
     Screen.Bars(self.bars, inWorld and TK.Interfaces.active == "7x", SCREEN_W, SCREEN_H)
     if db.mapPane then
-        -- the screen's scale, left and bottom in the window (interfaces/screen.lua's fit; s6-interface-5x round 15, the
+        -- the screen's scale, left and bottom in the window (shared/original/screen.lua's fit; s6-interface-5x round 15, the
         -- separation's step 9: C.Letterbox, its forwarder, went)
         local h = GetScreenHeight()
         local s, l, top = Screen.Fit(SCREEN_W, SCREEN_H, GetScreenWidth(), h)

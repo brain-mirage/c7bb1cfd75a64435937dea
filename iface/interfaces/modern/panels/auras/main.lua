@@ -5,7 +5,7 @@
 -- Icon: s6-modular-g round 16) gives each an emoji icon; a name the first does not know goes to the buffs,
 -- marked unclassified, and is logged once. Right-clicking an icon moves the effect to the other frame by putting its
 -- name on the other of the profile's two name lists (s6-ui-core round 43: Buffs and Debuffs, on Effects on Others'
--- page, which decide first; core/effecticons.lua). Choices kept for this computer before (TK.Machine effectOverrides)
+-- page, which decide first; shared/effecticons.lua). Choices kept for this computer before (TK.Machine effectOverrides)
 -- still count for names on neither list.
 --
 -- The aether list is an optional frame with the running aethers (cooldowns), shortest first. The action buttons
@@ -82,7 +82,10 @@ end
 
 local function styleIcon(b, e)
     b.effect = e
-    b.icon:SetTexture(e.icon)
+    -- a picture-less effect shows its letter on the slot's dark ground, as on the units' icons (Icons.Icon)
+    b.icon:SetShown(e.icon ~= nil)
+    if e.icon then b.icon:SetTexture(e.icon) end
+    b.letter:SetText(e.icon and "" or Icons.Letter(e.name))
     b.mark:SetShown(e.unclassified)
     if e.unclassified then
         b.border:SetVertexColor(1, 0.6, 0.2, 1)
@@ -124,6 +127,7 @@ function C:LayoutIcons(key)
             if db.growH == "LEFT" then c = per - 1 - c end
             if db.growV == "UP" then r = rows - 1 - r end
             b:SetSize(db.size, db.size)
+            b.letter:SetFont(Icons.LetterSize(db.size), "OUTLINE")
             b:ClearAllPoints()
             b:SetPoint("TOPLEFT", f, "TOPLEFT", c * cellW, -r * cellH)
             styleIcon(b, e)
@@ -243,7 +247,7 @@ function C:LayoutAethers()
             W.ActionIcon(r.icon, r.glyph, r.box, e.action, ROW - 4)
             r.name:SetText(e.name)
             r.bar:SetShown(db.showBars)
-            r.entry, r.timeKey = e, nil
+            r.entry, r.timeKey, r.barShown = e, nil, db.showBars
             r:Show()
         elseif r then
             r:Hide()
@@ -267,7 +271,8 @@ function C:TickAethers()
                 r.timeKey = k
                 r.time:SetText(math.floor(k / 4) .. units[k % 4])
             end
-            if e.duration > 0 then r.bar:SetValue(left / e.duration) end
+            -- s6-reprojection-cloud-1 (run 83, Astra 82-40): no fill for a bar Show Bars has hidden
+            if r.barShown and e.duration > 0 then r.bar:SetValue(left / e.duration) end
         end
     end
 end
@@ -330,7 +335,7 @@ function C:OnSettingChanged(node, key)
     if key == "enabled" then TK.EditMode:UpdateMovers() end
 end
 
--- s6-input (round 49, separation step 4b): the effect name lists changed (core/effecticons.lua): our effects sort again.
+-- s6-input (round 49, separation step 4b): the effect name lists changed (shared/effecticons.lua): our effects sort again.
 TK.On("TK_EFFECT_LISTS_CHANGED", function()
     if C.frames and C.frames.buffs and C.frames.debuffs then TK.SafeCall(C.Refresh, C) end
 end)

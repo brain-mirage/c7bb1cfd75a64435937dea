@@ -1,7 +1,7 @@
 -- s6-interface-7x-b (round 5; the owner, 2026-10-05: "The 7x theme is supposed to match the functionality of the
 -- original"): 7.x's options tab (side panel tab 6), 7.5.2's own options page, 4a's NewOptionPane (ui/OptionPane.cpp,
--- constructor 0x0053FF90), drawn in the side panel's pane in place of Modern's Game Options window, whose rows' actions it
--- runs (s6-play-modes round 8, interface-separation step 4: through the game layer's TK.Game.Options, core/game/options.lua).
+-- constructor 0x0053FF90), drawn in the side panel's pane; its rows run the game layer's row actions (s6-play-modes
+-- round 8, interface-separation step 4: TK.Game.Options, shared/game/options.lua), as Modern's Game Options window's do.
 --
 -- Drawing (OnPaint 0x00540600, BuildOptionRows 0x00541240, DrawOptionButtonItem 0x005416D0): OPTION.EPF frame 0 in
 -- OPTION.PAL; two pages (field_12B8 = 2); page 0's headings "Show Effects" (2, 64), "Listen to" (2, 154), "Semi-trans"
@@ -22,7 +22,7 @@
 --          differ from it, or nothing (SendLowHighDisplayModeOption 0x00541040)
 --   local  2 Map, 18 Shadow, 19 Chat (balloon fill), each also the radio to Manual; 22 Manual; 14 Simple Click; 13 Snore
 --          and its line; 23 Orb / spell target share; 24 the F1 / Shift+F1 swap
---   these 17 rows run Modern's window's action for the same row (TK.Actions' optionrow with the row number, frozen at
+--   these 17 rows run the game layer's action for the same row (TK.Actions' optionrow with the row number, frozen at
 --   the press, run by the rules after the dispatcher's gates: TK-Core OptionRules.Row, through s6-rules-items' option
 --   sender for the packets; offline the game layer's LocalRow), so a press here sends exactly what a press on Modern's
 --   row sends, at the same moment. Changing a row's number, which press runs it, or the action sends something else.
@@ -49,7 +49,7 @@ local Elements = require("interfaces.7x.panels.side.elements") -- the kit as lay
 
 local O = {}
 
--- s6-play-modes (round 8, step 4): the game layer's options and sound (core/game/options.lua, core/game/sound.lua)
+-- s6-play-modes (round 8, step 4): the game layer's options and sound (shared/game/options.lua, shared/game/sound.lua)
 local GameOptions, Sound = TK.Game.Options, TK.Game.Sound
 
 --- The server's option by its name in the game layer's state (1 on); off without a session.
@@ -208,10 +208,10 @@ function scripts.Rows(p)
         b.def, b.rect = def, r
         b.box = b:CreateTexture(nil, "ARTWORK")
         b.shadow, b.label = K.Text(p), K.Text(p)
-        -- WIRE: which press acts on a row is the game layer's row rule (GameOptions.RowPress, core/game/options.lua:
+        -- WIRE: which press acts on a row is the game layer's row rule (GameOptions.RowPress, shared/game/options.lua:
         -- NewOptionPane 0x00540910's single left press; s6-gateway-research round 38 moved it there)
         if def.send then
-            -- WIRE: Modern's window's row action, run by the rules (the header); the press, not the release
+            -- WIRE: the game layer's row action (optionrow), run by the rules (the header); the press, not the release
             TK.Actions:Set(b, "optionrow", nil, def.row)
             b:SetScript("OnMouseDown", function(_, button, double)
                 if not GameOptions.RowPress(button, double) then return end

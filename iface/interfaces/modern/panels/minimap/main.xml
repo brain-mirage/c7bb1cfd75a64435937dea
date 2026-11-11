@@ -19,6 +19,9 @@
   <frame name="TKMinimap" key="frame" parent="UIParent">
     <!-- s6-input (round 49, separation step 4b): the interface's minimap, for the Debug page -->
     <run call="SetFrame"/>
+    <!-- s6-reprojection-cloud-1 (run 83, Astra 82-29): the live picture is drawn only while this box shows -->
+    <on script="OnShow" call="PictureShown"/>
+    <on script="OnHide" call="PictureHidden"/>
     <backdrop bg="0.12, 0.2, 0.12, 0.9" edge="0.7, 0.62, 0.42, 1"/>
     <!-- s6-ui-settings (round 4): the shared panel style; s6-ui-core (round 53): or its own -->
     <run call="HudPanel"/>
@@ -55,7 +58,7 @@
     </frame>
 
     <!-- The original's minimap button (MiniMapButtonPane, coverage G-40 and H-24): m's action (7C, by the rules), which
-         the map window follows (core/mapwindow.lua). Wire: its click and its action path are main.lua's MapPress and
+         the map window follows (core/global/mapwindow.lua). Wire: its click and its action path are main.lua's MapPress and
          MapAction (the game layer's one minimap press). -->
     <button key="mapButton" text="Map" width="34" height="18" click="MapPress">
       <run call="OverBox"/>
@@ -81,7 +84,7 @@
       <on script="OnLeave" call="Untip"/>
       <do Point="BOTTOM, @zoomIn, TOP, 0, 2"/>
     </button>
-    <!-- s6-gate round 19: named, so the gate's driver can click them (core/gatecontrols.lua logs the shown TK globals) -->
+    <!-- s6-gate round 19: named, so the gate's driver can click them (core/global/gatecontrols.lua logs the shown TK globals) -->
     <run call="GateNames"/>
     <do EnableMouseWheel="true"/>
     <on script="OnMouseWheel" call="Wheel"/>

@@ -8,9 +8,9 @@
 -- As WoW's bars (the owner, 2026-10-01; plan 5.11): only bar 1, across the bottom, is on by default; the others are
 -- turned on in the settings, and keep their buttons while off. A character starts with empty bars, and a spell it has
 -- not had before goes onto the first empty button of the bars that are on (never an item). An item on a bar is the item,
--- not its bag slot (core/cursor.lua): it shows the total count, is darkened at 0 and then does nothing (its press sends
+-- not its bag slot (shared/cursor.lua): it shows the total count, is darkened at 0 and then does nothing (its press sends
 -- nothing), and comes back when the item is in the bag again; its press uses the item's first slot (1C, as 4a's use of
--- that slot). A spell on a bar is the spell, not its book slot (the owner, 2026-10-02; core/cursor.lua's
+-- that slot). A spell on a bar is the spell, not its book slot (the owner, 2026-10-02; shared/cursor.lua's
 -- TK.FollowSpells): rearranging the book moves nothing on the bars, and a spell the book has lost is darkened and
 -- silent until it is back.
 --
@@ -170,6 +170,38 @@ local function makeButton(bar, index)
     return b
 end
 
+-- s6-ui-core round 147 (steer d130e190, the start-up's long frame): a bar's buttons are made when the bar is first on
+-- (C:ApplyBar) or first reached while it is off (C:Reach), not all ten bars' at the start (only bar 1 is on by
+-- default). This file's loops go over the buttons made (made(bar)); a reach from elsewhere, by a button's name or
+-- through bar.buttons, makes them first.
+local NONE = {}
+local function made(bar) return bar.made and bar.buttons or NONE end
+
+--- Makes a bar's buttons, owned by this panel's component as at its start (TK.Components:MakeAsOwn), so they go when it
+--- is turned off, whichever code reached the bar first.
+function C:MakeButtons(bar)
+    if bar.made then return end
+    bar.made = true
+    setmetatable(bar.buttons, nil)
+    TK.Components:MakeAsOwn(self, function()
+        for j = 1, C.BUTTONS do bar.buttons[j] = makeButton(bar, j) end
+    end)
+end
+
+--- A bar's buttons made on their first reach while it is off: by a key bound to one (the key layer and runCommand
+--- look its frame up by name: shared/bindings.lua), by a name, or through bar.buttons. They are left as the bar's
+--- apply leaves a bar that is off: laid out, and each carrying what a press of it runs (UpdateButton's K.Attach).
+--- Wire: a key bound to a button of a bar that is off runs its slot as before (TK.Game.Hotkeys, 4a's
+--- UserPane::ExecuteHotkeyAction 0x005A3AE0); without this reach it would find no frame and run nothing, which
+--- changes what the server sees.
+function C:Reach(bar)
+    if bar.made or not self.bars or self.bars[bar.id] ~= bar then return end
+    self:MakeButtons(bar)
+    self:LayoutBar(bar)
+    local keys = TK.Bindings:PrimaryKeys()
+    for _, b in ipairs(bar.buttons) do self:UpdateButton(b, keys) end
+end
+
 -- Head note 44: with spell icons animating, each shown button holding a spell draws its icon's frame showing now.
 -- s6-optimize (round 10): the action (a Lua lookup) is looked at first, so only spell buttons ask C# whether they show.
 -- s6-modular-g (round 16): registered by name (TK.SetSpellIconAnimator), not written into the global table.
@@ -177,7 +209,7 @@ end
 TK.SetSpellIconAnimator("actionbars", function()
     for _, bar in ipairs(C.bars or {}) do
         if C:BarDB(bar.id).enabled then
-            for _, b in ipairs(bar.buttons) do
+            for _, b in ipairs(made(bar)) do
                 local action = TK.ActionAt(b.action)
                 if action and action.kind == "spell" and b:IsVisible() then
                     local _, art, missing = TK.UI.ActionIcon(b.icon, b.glyph, b, action, C.BUTTON_SIZE - 6, 3)
@@ -256,7 +288,7 @@ function C:UpdateAllButtons()
     -- s6-optimize: the bindings' first keys once for every button, not a scan of all bindings per button.
     local keys = TK.Bindings:PrimaryKeys()
     for _, bar in ipairs(self.bars) do
-        for _, b in ipairs(bar.buttons) do self:UpdateButton(b, keys) end
+        for _, b in ipairs(made(bar)) do self:UpdateButton(b, keys) end
     end
 end
 
@@ -286,11 +318,21 @@ function C:UpdateMark(b, kind, slot, cooling)
     Mark.Draw(b, b.border, Mark.Unusable(kind, slot, cooling, self:BarDB(b.bar.id)), W.slotActionEdge)
 end
 
+--- s6-reprojection-cloud-1 (run 83, Astra 82-46; the owner: nothing runs unseen): a bar an event draws on: on, and not hidden
+--- by its Visibility. Shown again, it draws as things are (C:BarShown). Drawing only.
+function C:BarDrawn(bar) return self:BarDB(bar.id).enabled and bar.frame:IsVisible() end
+
+--- A bar's sweeps, numbers and marks as things are, as it comes back.
+function C:BarShown(bar)
+    if not self:BarDB(bar.id).enabled then return end
+    for _, b in ipairs(made(bar)) do self:UpdateAether(b, self:ShownAction(b)) end
+end
+
 --- s6-ui-core (round 82): the marks again as the mana changes, on the bars that are on.
 function C:UpdateMarks()
     for _, bar in ipairs(self.bars) do
-        if self:BarDB(bar.id).enabled then
-            for _, b in ipairs(bar.buttons) do
+        if self:BarDrawn(bar) then
+            for _, b in ipairs(made(bar)) do
                 local kind, slot = self:ShownAction(b)
                 self:UpdateMark(b, kind, slot, b.cooling)
             end
@@ -302,8 +344,8 @@ end
 --- bar turned on draws its own: ApplyBar).
 function C:UpdateCooldowns()
     for _, bar in ipairs(self.bars) do
-        if self:BarDB(bar.id).enabled then
-            for _, b in ipairs(bar.buttons) do self:UpdateAether(b, self:ShownAction(b)) end
+        if self:BarDrawn(bar) then
+            for _, b in ipairs(made(bar)) do self:UpdateAether(b, self:ShownAction(b)) end
         end
     end
 end
@@ -338,7 +380,7 @@ function C:LayoutBar(bar)
     local w = cols * size + (cols - 1) * pad
     local h = rows * size + (rows - 1) * pad
     bar.frame:SetSize(math.max(w, 1), math.max(h, 1))
-    for i, b in ipairs(bar.buttons) do
+    for i, b in ipairs(made(bar)) do
         b:ClearAllPoints()
         if i <= n then
             local r, c = math.floor((i - 1) / cols), (i - 1) % cols
@@ -350,8 +392,9 @@ function C:LayoutBar(bar)
 end
 
 function C:ApplyBar(bar)
+    if self:BarDB(bar.id).enabled then self:MakeButtons(bar) end -- s6-ui-core round 147: a bar first on
     self:LayoutBar(bar)
-    for _, b in ipairs(bar.buttons) do self:UpdateButton(b) end
+    for _, b in ipairs(made(bar)) do self:UpdateButton(b) end
     TK.Visibility:Apply(bar.frame)
 end
 
@@ -359,16 +402,29 @@ function C:OnEnable()
     buttons = TK.Xml.Load("bars.xml", { scripts = scripts, elements = require("interfaces.modern.elements") })
     for i = 1, C.MAX_BARS do
         local frame = buttons:New("ActionBar", nil, "TKActionBar" .. i)
-        local bar = { id = i, frame = frame, buttons = {} }
+        -- s6-ui-core round 147: the buttons of a bar that is off are made on their first reach (C:Reach)
+        local bar = { id = i, frame = frame }
+        bar.buttons = setmetatable({}, { __index = function(_, j)
+            C:Reach(bar)
+            return rawget(bar.buttons, j)
+        end })
         frame.bar = bar
-        for j = 1, C.BUTTONS do bar.buttons[j] = makeButton(bar, j) end
+        if self:BarDB(i).enabled then self:MakeButtons(bar) end
         self.bars[i] = bar
         TK.Visibility:Attach(frame, function() return self:BarDB(i) end)
+        frame:HookScript("OnShow", function() self:BarShown(bar) end)
         TK.EditMode:Register(frame, "bar" .. i, "Bar " .. i, C.defaultPositions[i], "bar" .. i,
             function() return self:BarDB(i).enabled end)
     end
 
     K.SetPlacer(function() return self:FirstEmptyButton() end)
+    -- s6-ui-core round 147: a button's name (TKActionBar<N>Button<M>, its parts' too) reached before its bar's buttons
+    -- are made makes them (C:Reach; core/frame.lua's TK.MakeOnReach). Wire: see C:Reach.
+    TK.MakeOnReach("TKActionBar", function(name)
+        local id = name:match("^TKActionBar(%d+)Button")
+        local bar = id and self.bars and self.bars[tonumber(id)]
+        if bar then self:Reach(bar) end
+    end)
 
     -- the events, after the bars (main.xml's note: wire)
     TK.Xml.Load("main.xml", { scripts = scripts })
@@ -388,7 +444,7 @@ function scripts.Changed(_, event, unit)
     if event == "TK_PANEL_STYLE_CHANGED" then
         for _, bar in ipairs(C.bars) do
             if C:BarDB(bar.id).enabled then
-                for _, b in ipairs(bar.buttons) do C:ColourSlot(b) end
+                for _, b in ipairs(made(bar)) do C:ColourSlot(b) end
             end
         end
         return

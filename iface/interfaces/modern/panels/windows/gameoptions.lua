@@ -1,7 +1,7 @@
 -- Modern's Game Options window (s6-modular-g round 17, separation step 7's last part; docs/development/
 -- interface-separation.md, sections 4.3 and 5.8): the original's options tab (NewOptionPane, tab 6, opened by F10) as a
--- window of the tab's rows, moved unchanged from the Game Options component (components/gameoptions/main.lua), which
--- stays global with its settings page, F10 and the option keys. It is the game layer's fallback window
+-- window of the tab's rows, moved unchanged from the Game Options component (core/global/components/gameoptions/main.lua), which
+-- stays Global with its settings page, F10 and the option keys. It is the game layer's fallback window
 -- (TK.Game.Options.SetWindow): the opener shows it when no interface's own options page or window takes it, in every
 -- interface while its switch is on (round 18: the Game Options Window page, settings.lua; off in 7.x's and 5.x's first
 -- profiles, whose own pages draw the options). The rows' logic and their wire are the game layer's
@@ -110,7 +110,18 @@ end
 function scripts.SystemRows(w)
     w.system = {}
     for mode, text in ipairs({ "Low", "High", "Manual" }) do
-        w.system[mode - 1] = row(w.first, text, 19 + mode, 18 + (mode - 1) * 110, -346)
+        local c = row(w.first, text, 19 + mode, 18 + (mode - 1) * 110, -346)
+        -- s6-ui-core round 155 (the client review's 8.25): one choice of three, so round marks (a ring, a gold dot when
+        -- chosen), as 7.x's Option tab shows them, not three tick boxes that read as three switches. Their rows, presses
+        -- and keys are as before. Drawing only.
+        c.box:SetTexture("tk:ring")
+        c.box:SetVertexColor(0.75, 0.75, 0.75, 1)
+        c.check:SetTexture("tk:circle")
+        c.check:SetVertexColor(1, 0.85, 0.1, 1)
+        c.check:SetSize(10, 10)
+        c.check:ClearAllPoints()
+        c.check:SetPoint("CENTER", c.box, "CENTER", 0, 0)
+        w.system[mode - 1] = c
     end
 end
 

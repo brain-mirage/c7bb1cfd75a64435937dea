@@ -1,5 +1,5 @@
 -- s6-interface-5x-b (round 6; the 5.x interface: docs/development/jobs/s6-interface-5x/PLAN.md, "The dialogs look"):
--- 5.x's look of the server's timer (components/dialogs/panes.lua, D-71), 5.33's own pane. Drawing only: the timer takes
+-- 5.x's look of the server's timer (shared/components/dialogs/panes.lua, D-71), 5.33's own pane. Drawing only: the timer takes
 -- no input and sends nothing.
 --
 -- 5.33's TimerPane (HandleTimerPanePacket 0x0046AE00, TimerPane__Constructor 0x004CAB60, its paint 0x004CAE20; 4a's
@@ -13,7 +13,7 @@
 -- s6-ui-core (round 85): the XML twin's; its place, cells and digits are panes.xml's (core/xml.md).
 
 local S = require("interfaces.5x.skin")
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 local T = TK.Xml.Data("panes.xml").Timer
 
 return function(L, X)

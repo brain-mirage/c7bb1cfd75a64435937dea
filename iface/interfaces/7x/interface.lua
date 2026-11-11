@@ -51,22 +51,24 @@ local MIGRATE = {
 
 return {
     id = "7x", name = "7.x", profileName = "7.x",
+    -- s6-gateway-research (round 71): the launch option -emulate's values that pick this interface (core/startup.lua)
+    emulate = { "7", "7x", "7.x", "7.5", "7.5.2" },
     order = 2, -- s6-interface-5x (round 11): its place among the interfaces as the player sees them (TK.Interfaces:InOrder)
-    -- s6-ui-core (round 79): its button on Graphics > General's Quick Settings (core/quicksettings.lua), the mock-up's label
+    -- s6-ui-core (round 79): its button on Graphics > General's Quick Settings (core/global/quicksettings.lua), the mock-up's label
     quick = { text = "V 7.x", desc = "The 7.x interface (2013)." },
     -- 7.x's dialogs look (interfaces/7x/dialogs/, phase 4: the dialogs drawn so far; the others Modern's until theirs are)
     looks = { dialogs = "7x", cursors = "original" },
-    -- s6-interface-5x-b (round 7): 4a's cursor rule off the map (core/cursor.lua): the last cursor stays over the frame and
+    -- s6-interface-5x-b (round 7): 4a's cursor rule off the map (shared/cursor.lua): the last cursor stays over the frame and
     -- the panes, a new dialog shows the normal one
     keepsCursorOffMap = true,
     -- s6-modular-g round 22: NewInventoryPane 0x004ECB50 drops on its whole 19x17 map pane.
     -- The shared world/inventory seam reads this; changing it changes the server's 08 packets.
     inventoryDropPane = true,
-    -- s6-ui-login: the login's presentation (core/entering.lua): the original's title music, and the login screen until
+    -- s6-ui-login: the login's presentation (core/global/entering.lua): the original's title music, and the login screen until
     -- the world, with no loading screen (4a draws no loading text: MapPane::RenderMapView only skips the map's objects
     -- while it waits for the player's status, MapPane.cpp:2062).
     -- s6-ui-core (round 86): screens, its own login screen (7.5.2's title and login dialog)
-    -- (interfaces/7x/screens/title.lua), with Experimental's Original Login Screens (core/login.lua)
+    -- (interfaces/7x/screens/title.lua), with Experimental's Original Login Screens (core/global/login.lua)
     login = { titleMusic = true, loadingScreen = false, screens = "interfaces.7x.screens.title" },
     enable = ENABLE,
     migrate = MIGRATE,

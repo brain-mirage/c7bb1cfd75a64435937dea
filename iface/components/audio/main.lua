@@ -1,7 +1,7 @@
 -- The sound's side of the UI: passes the Sound settings to C#, plays the title music on the login screen and the
 -- zone music in the world, and keeps the music's playback volume. The login screen stands for the original's main menu.
 -- s6-play-modes (round 8, interface-separation step 4): the click, the effects, the music switch and the End key's next
--- track are the game layer's (core/game/sound.lua, TK.Game.Sound).
+-- track are the game layer's (shared/game/sound.lua, TK.Game.Sound).
 
 local C = TK.GetComponent("audio")
 local A = CS.TK.Unity.Audio.AudioHost
@@ -85,7 +85,7 @@ function C:ApplySettings(key, value)
     -- s6-ui-core (round 54): Sound > Advanced's Positional Lightning Sounds, the thunder's side only (s6-effects' Thunder)
     CS.TK.WorldView.AdvancedEffects.SetPositionalThunder(s.positionalThunder ~= false)
     -- s6-ui-core (build 41; the owner, 2026-10-05): Play Login Music decides whether the login screen's title is heard,
-    -- the active interface which title (core/entering.lua). Only what is heard changes: the audio logic still opens, fades
+    -- the active interface which title (core/global/entering.lua). Only what is heard changes: the audio logic still opens, fades
     -- and ends the title track, with its draws on the session's random stream (AudioHost.SetTitleMusic), so nothing sent
     -- or timed changes with it.
     if s.loginMusic == true then A.SetTitleMusic(TK.Entering.TitleTrack()) else A.SetTitleMusic(0) end
@@ -150,7 +150,7 @@ TK.On("PLAYER_ENTERING_WORLD", function() C:EnterWorld() end)
 TK.On("PLAYER_LEAVING_WORLD", function() A.PlayMidi(0) end)
 
 TK.On("TK_GAME_STATE", function(_, state, was)
-    -- s6-audio (round 27): the title an interface leaves silent (core/entering.lua) is the login's; in the world the music
+    -- s6-audio (round 27): the title an interface leaves silent (core/global/entering.lua) is the login's; in the world the music
     -- is heard, the title going on there as the world's music included (AudioHost.SetInWorld). Only what is heard.
     A.SetInWorld(state == "world")
     if state == "login" and was == "world" then

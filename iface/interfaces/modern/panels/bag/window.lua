@@ -7,7 +7,7 @@
 --   the wheel            scrolls a view that has more than it shows (HandlePointerOrMouseEvent 0x004ECB50, case 7)
 --   Mix                  the mixing dialog, as the original's button 5 and Shift+I (UserPane::OpenMixItemDialog)
 --
---   the slots            each a slot control of the game layer's (TK.Game.Inventory, core/game/inventory.lua: 4a's
+--   the slots            each a slot control of the game layer's (TK.Game.Inventory, shared/game/inventory.lua: 4a's
 --                        press, drag, double press and Simple Click), with the item menu and the tooltip
 --   Drop Gold, Give Gold the gold commands, with the amount asked first
 --

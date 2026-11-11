@@ -36,7 +36,7 @@ local C = TK.GetComponent("7x.parcel")
 local H = __tk
 local S = require("interfaces.7x.skin")
 local Hud = require("interfaces.7x.hud")
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 
 -- each side (main.xml's SIDES): its panel (settings key and place), its part of the strip, its button's rectangle in the
 -- strip, its control, its blink's first frame and the frame it starts from. Its state: state (0-3), anim (the blink's
@@ -164,12 +164,15 @@ end
 -- once, and a side whose count went to 0 rests (SetParcelSlotData). Drawing only.
 local wait
 function scripts.Tick(_, elapsed)
-    if not (SIDES[1].panel:IsShown() or SIDES[2].panel:IsShown()) then return end
+    -- Each side's shown state is read once per tick (side.on): Layout and the Screen show and hide the sides, so no value
+    -- is kept from one tick to the next, and nothing in this tick changes it.
+    for _, side in ipairs(SIDES) do side.on = side.panel:IsShown() end
+    if not (SIDES[1].on or SIDES[2].on) then return end
     moved()
     local changed = false
     -- s6-interface-5x (round 13's hotfix, a marked edit): a side turned off is neither read nor stepped
     for _, side in ipairs(SIDES) do
-        if side.panel:IsShown() then
+        if side.on then
             local count = model(side)
             if count ~= side.seen then
                 side.seen, changed = count, true
@@ -181,7 +184,7 @@ function scripts.Tick(_, elapsed)
     if wait <= 0 then
         wait = 0.2
         for _, side in ipairs(SIDES) do
-            if side.panel:IsShown() then
+            if side.on then
                 local count, acknowledged = model(side)
                 if count > 0 and not acknowledged then advance(side) end
             end

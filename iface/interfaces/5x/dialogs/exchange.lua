@@ -1,5 +1,5 @@
 -- s6-interface-5x (the 5.x interface: docs/development/jobs/s6-interface-5x/PLAN.md, "The dialogs look"): 5.x's look of
--- the trade and the mixing (components/dialogs/exchange.lua), from 5.33's own constructors. Every window is in
+-- the trade and the mixing (shared/components/dialogs/exchange.lua), from 5.33's own constructors. Every window is in
 -- NPAL8.PAL, at placement slot 8 (centred on (320, 240): L.Place), sliding open as 5.33's (the trade when it is filled,
 -- the pickers and the mixing through their entry: X.SlideOpen); its buttons are 5.33's image buttons, 72 x 16 (X.Image); its texts and edits 5.33's, in 0x80; its control
 -- indexes 7.5.2's, so the renderer is unchanged.
@@ -25,7 +25,7 @@
 local S = require("interfaces.5x.skin")
 local K = TK.GetComponent("dialogs").kit
 local unpack = table.unpack
-local entry = require("interfaces.original.entry")
+local entry = require("shared.original.entry")
 local D = TK.Xml.Data("exchange.xml")
 
 return function(L, X)

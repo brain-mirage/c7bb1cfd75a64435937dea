@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 7.x's look of the barber's head choice (its XML twin's layout; heads.lua draws with it), 4a's HeadSelectDialog
      (PursuitMessageDialogCreator.cpp:1552-1631, the EPF branch). Format: core/xml.md; the dialog's attributes are its
-     look entry's values (interfaces/original/entry.lua), its children where heads.lua draws its parts: rectangles (left, top, right,
+     look entry's values (shared/original/entry.lua), its children where heads.lua draws its parts: rectangles (left, top, right,
      bottom), pictures (file, palette) and image buttons (BUTT001.EPF's image id first).
      WIRE: a control's rectangle is where a press on it lands; changing one changes which control a press reaches. -->
 <ui>

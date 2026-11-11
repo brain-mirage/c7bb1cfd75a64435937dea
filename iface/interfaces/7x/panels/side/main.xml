@@ -138,7 +138,8 @@
     <frame>
       <data key="events" value="BAG_UPDATE, SPELLS_CHANGED, CURSOR_CHANGED, UNIT_NAME_UPDATE, GROUP_ROSTER_UPDATE, TK_GROUP_UPDATE, UNIT_HEALTH, UNIT_POWER, UNIT_STATS, TK_CHARACTER_SHEET, TK_COLLECTION_UPDATE"/>
       <run call="RegisterEvents"/>
-      <on script="OnEvent" call="Refresh"/>
+      <!-- s6-ui-core round 153 (4.14): each page drawn again on the events it reads (main.lua's READS) -->
+      <on script="OnEvent" call="Changed"/>
     </frame>
     <on script="OnShow" call="Refresh"/>
   </frame>

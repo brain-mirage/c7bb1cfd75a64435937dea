@@ -1,8 +1,8 @@
 -- s6-modular-g (interfaces, phase 5, round 14): 7.x's side panel, the original's GeneralPurposePanel (constructor
 -- 0x004B83D0) with its tab strip (TabPane, constructor at (808, 79)-(831, 365)): one tab pane at a time at (832, 79)-(1021,
 -- 367) of the 7.x screen (SwitchActiveTab 0x004B8650), no tab when the game screen is built. The active tab, its rule and
--- its event are the game layer's (core/game/sidepanel.lua: one tab for the session, s6-interface-5x round 12, step 1),
--- the openers its views (core/game/views.lua); this panel shows the active tab's page and provides its pages to the
+-- its event are the game layer's (shared/game/sidepanel.lua: one tab for the session, s6-interface-5x round 12, step 1),
+-- the openers its views (shared/game/views.lua); this panel shows the active tab's page and provides its pages to the
 -- openers. The header over the strip is the screen's (TABS.EPF, interfaces/7x/panels/screen). Drawn from Source-5's
 -- class pages:
 --   items       NewInventoryPane (OnPaint 0x004EBB20): ITEMINV.EPF in ITEMINV.PAL, the list (frame 1, the default: 13 rows
@@ -44,7 +44,7 @@
 local C = TK.GetComponent("7x.side")
 local H = __tk
 local S = require("interfaces.7x.skin")
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 local SP = TK.Game.SidePanel
 local ItemBox = require("interfaces.7x.itembox")
 local Hud = require("interfaces.7x.hud") -- s6-interface-5x round 16: the inventory owns server help.
@@ -54,7 +54,7 @@ local Elements = require("interfaces.7x.panels.side.elements") -- the kit as lay
 local Self = require("interfaces.7x.panels.side.selflook")
 local Look = require("interfaces.7x.panels.side.look")
 local Options = require("interfaces.7x.panels.side.options")
-local DragLabel = require("interfaces.original.draglabel")
+local DragLabel = require("shared.original.draglabel")
 
 local L = TK.Xml.Data("main.xml")
 local PLACE = L.PLACE
@@ -585,11 +585,35 @@ local ACTIVATE = {
     group = function(p) p.first = 0 end,
 }
 
-function C:Refresh()
+--- s6-ui-core round 153 (the client review's 4.14): the panel's events each page reads (main.xml's list), as 5.x's
+--- C.NotShown: another event leaves the shown page as it is (health and mana change all through a fight; they drew the
+--- Items page again each time). A page not listed (the self look, the look, the options) is drawn again on every one of
+--- them, as before. Wire: the events come before any input that follows their packets (UIHost.CatchUp, main.xml's note),
+--- so a press lands on the slot, spell, member or volume 4a's pane had then (NewInventoryPane 0x004ECB50,
+--- NewSpellInventoryPane 0x0057D9C0, NewGroupPane 0x0056CB80, CollectionPane::HandlePointerOrMouseEvent) and sends it:
+--- each page is still drawn again at once on every event that changes what it shows (showItems: the bag, the carry and
+--- the slot count; showSpells: the spells and the cursor; showGroup: the members, their names, health and mana;
+--- showCollection: the volumes). Leaving out an event a page reads changes what a press sends. The slot count arrives
+--- with the status packet (flag 0x40, 4a UserStatusPane::ApplyStatusPayload 0x005BA4A0); round 154: a change of it alone
+--- is a BAG_UPDATE (the world's snapshot follows the rules' count, SnapshotChanges.Compare), so the items page has its new
+--- rows before the next press (a drop on a row past the old count sends a move in 4a).
+local READS = {
+    items = { BAG_UPDATE = true, CURSOR_CHANGED = true },
+    spells = { SPELLS_CHANGED = true, CURSOR_CHANGED = true },
+    group = { GROUP_ROSTER_UPDATE = true, TK_GROUP_UPDATE = true, UNIT_NAME_UPDATE = true, UNIT_HEALTH = true, UNIT_POWER = true },
+    collection = { TK_COLLECTION_UPDATE = true },
+}
+
+--- Draws the active tab's page again; e: the event that asked (nil: always, as a show or a switch).
+function C:Refresh(e)
     local f = self.frame
     if not (f and f:IsShown()) then return end
     local tab = SP.TABS[SP.Active()]
+    local reads = e and READS[tab]
     local page = tab and f.pages[tab]
+    if reads and not reads[e] then
+        return
+    end
     if page and page:IsShown() then TK.SafeCall(SHOW[tab], page) end
 end
 
@@ -775,6 +799,8 @@ function scripts.RegisterEvents(events)
 end
 
 function scripts.Refresh() C:Refresh() end
+
+function scripts.Changed(_, e) C:Refresh(e) end -- round 153 (4.14): an event, which the shown page may not read
 
 function C:OnEnable()
     TK.Xml.Load("main.xml", { scripts = scripts, elements = Elements })

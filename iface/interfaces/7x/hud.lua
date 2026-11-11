@@ -1,13 +1,13 @@
 -- s6-interface-7x-b: what 7.x's HUD panels share (interfaces/7x/panels/*; their places are the interfaces' root's
--- interfaces/screen.lua): the pointer in a pane's own pixels, 4a's scrolling text lists (the messages pane's, the chat
+-- shared/original/screen.lua): the pointer in a pane's own pixels, 4a's scrolling text lists (the messages pane's, the chat
 -- log), and the original's plain tooltip (SimpleHelpPane: the original client's help line since the separation's step
--- 5, interfaces/original/helppane.lua). Drawing only: nothing here is sent (the lists' press routing is wire:
+-- 5, shared/original/helppane.lua). Drawing only: nothing here is sent (the lists' press routing is wire:
 -- Hud.Lines; so is the tooltip's, which uses up the next press: the help line's).
 
 local S = require("interfaces.7x.skin")
 
 -- the original client's help line (SimpleHelpPane), on 7.x's skin and its 1024 x 768 screen
-local Help = require("interfaces.original.helppane")({ skin = S, screen = { width = S.WIDTH, height = S.HEIGHT } })
+local Help = require("shared.original.helppane")({ skin = S, screen = { width = S.WIDTH, height = S.HEIGHT } })
 
 local Hud = {}
 
@@ -119,12 +119,27 @@ function Hud.Lines(parent, rowHeight, paint)
         self:SetCount(self.count)
     end
 
-    --- n lines; the position kept where it can be.
-    function L:SetCount(n)
+    --- n lines; the position kept where it can be, or (toEnd) at the newest; and the bar with them, but not the rows
+    --- (stale until Redraw: a caller that paints them later, once for several lines, the chat log's). The scroll keys and
+    --- the wheel clamp to the new range at once.
+    --- WIRE: the bar is set as the line comes, as 4a's ChattingPane::AddIncomingMessage (0x0047F370) sets its scroll bar:
+    --- whether a left press on the bar is its own or goes on to the map under it (a step, a target) follows its range
+    --- (barStyle, above). Leaving the bar to the paint changes what the server sees for a press in that frame.
+    function L:Count(n, toEnd)
         self.count = n
         self.range = math.max(0, n - self.visible)
         sf.content:SetSize(1, sf:GetHeight() + self.range * rowHeight)
-        self:SetPos(self.pos)
+        self.pos = math.max(0, math.min(self.range, toEnd and self.range or self.pos))
+        sf:SetVerticalScroll(self.pos * rowHeight)
+        sf.Refresh()
+        self.stale = true
+    end
+
+    --- Count, then the rows painted. GA-3 (client round 4, the client review's 4.29): toEnd in place of a second call
+    --- (End), so a new line paints the rows once.
+    function L:SetCount(n, toEnd)
+        self:Count(n, toEnd)
+        self:Redraw()
     end
 
     --- The position (clamped to 0..range), the bar and the rows.
@@ -148,6 +163,7 @@ function Hud.Lines(parent, rowHeight, paint)
         -- Empty previously painted rows that a smaller text area no longer reaches.
         for k = rows, (self.painted or 0) - 1 do paint(k, nil, k * self.row) end
         self.painted = rows
+        self.stale = false
     end
 
     return L

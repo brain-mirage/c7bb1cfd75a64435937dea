@@ -47,7 +47,7 @@ C.defaults = TK.Visibility.Defaults({
 C.defaultPosition = { "CENTER", "CENTER", 0, 40 }
 
 -- s6-ui-core (round 54; the owner's rule for every settings page, 2026-10-05): what a setting needs to have an effect,
--- shown by its (!) while it is on (core/settings.lua, TK.Needs); it stays usable and keeps its value (these were the
+-- shown by its (!) while it is on (core/global/settings.lua, TK.Needs); it stays usable and keeps its value (these were the
 -- page's disabled conditions, s6-world-view's).
 local remembering = TK.Needs("Remember Items", function(db) return db.farViewRememberItems end) -- s6-world-view
 local notExtending = TK.Needs("Auto Extend Outer Area off", function(db) return not db.autoExtend end) -- round 29
@@ -170,7 +170,7 @@ C.upscalingTabs = {
 
 --- The component's pages (s6-ui-core round 83): the pane's on the Interface tab ("worldview", the shared panel's page:
 --- interfaces/modern/interface.lua), and the game world's graphics under General's Graphics title ("worldviewgraphics",
---- core/settings.lua's GENERAL_ORDER), both on the component's settings, so saved profiles, resets and the interfaces'
+--- core/global/settings.lua's GENERAL_ORDER), both on the component's settings, so saved profiles, resets and the interfaces'
 --- first values stay as they were. Run 20 (head note 69): and the Upscaling rows on the Experimental tab
 --- ("worldviewupscaling"), on the same settings.
 function C:SettingsNodes()
@@ -189,21 +189,22 @@ end
 -- have places to change this in multiple areas?"): Retro World View (the Retro module's old-version view, its option's
 -- manifest "page"), moved from Asset Styles to this page, after the Smoothing: the old view's size and 0.79 shrink are set
 -- nowhere else. Its key stays Asset Styles' (saved profiles keep it); added once every component is loaded. Round 83: on
--- the graphics page, with the Scaling it sizes.
+-- the graphics page, with the Scaling it sizes; s6-gateway-research (round 71): the manifest's "page" names that page's
+-- node, worldviewgraphics, as the other modules' pages name theirs (TK.Settings:SetOption finds the row there).
 TK.On("PLAYER_LOGIN", function()
     local styles, args = TK.GetComponent("graphicsstyles"), C.graphicsTabs[1].args
     if not styles or not styles.OptionsFor or args.moduleOptions then return end
     args.moduleOptions = true
     for i, a in ipairs(args) do
         if a.key == "smoothing" then -- after the Smoothing and its description (run 20: the Upscaling rows went to Experimental)
-            for j, o in ipairs(styles:OptionsFor("worldview")) do table.insert(args, i + 1 + j, o) end
+            for j, o in ipairs(styles:OptionsFor("worldviewgraphics")) do table.insert(args, i + 1 + j, o) end
             break
         end
     end
 end)
 
 -- s6-ui-core (build 41; the owner, 2026-10-05: they could not find it on this page): Original 16-bit Colour on the
--- Experimental tab's Misc page (core/settings.lua, TK.MiscNode), the same key and behaviour.
+-- Experimental tab's Misc page (core/global/settings.lua, TK.MiscNode), the same key and behaviour.
 local misc = TK.MiscNode.tabs[1].args
 misc[#misc + 1] = { type = "toggle", name = "Original 16-bit Colour", default = true,
     desc = "The map in the original's 16-bit colours. Off: the full 8-bit palette colours.", -- a tooltip (short text on the page)

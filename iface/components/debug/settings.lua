@@ -2,7 +2,7 @@ local C = TK.GetComponent("debug")
 
 -- s6-devtools (round 3; the owner, 2026-10-05: "add a debug panel to the settings menu at the bottom"; the head's note:
 -- "have all of that added"): the Debug page, the last entry of the settings window (the Experimental tab's, after the core
--- pages: core/settings.lua's `last`), in the game and at the login screen. Every switch is off by default (s6-effects round
+-- pages: core/global/settings.lua's `last`), in the game and at the login screen. Every switch is off by default (s6-effects round
 -- 40: but the Weather & Lighting tab's Transitions, below, as the owner asked). Show Frame Time
 -- moved here from Interface's Diagnostics (the owner: "If we have those settings elsewhere please move them here"; main.lua
 -- carries a profile's choice over). Detached Camera is never kept: it is off at every start. Drawing and reading only:
@@ -11,9 +11,8 @@ C.atLogin = true
 C.category = "experimental"
 
 C.defaults = {
-    showFrameTime = false,
-    showFrameGraph = false,
-    showCounters = false,
+    perfDisplay = "off",
+    featureCosts = false,
     showMapInfo = false,
     grid = false,
     coordinates = false,
@@ -27,10 +26,15 @@ C.defaults = {
 C.tabs = {
     { name = "Debug", args = {
         { type = "header", name = "Performance" },
-        { type = "toggle", key = "showFrameTime", name = "Show Frame Time" },
-        { type = "toggle", key = "showFrameGraph", name = "Show Frame-Time Graph" },
-        { type = "toggle", key = "showCounters", name = "Show Performance Counters",
-          desc = "Memory, collections, draw calls and the map's sprites." },
+        -- s6-reprojection-cloud-3 (run 89, G-77; the owner, 2026-11-01: "Merge it into 2-3 options at most"): these two
+        -- replace Show Frame Time, Show Frame-Time Graph and Show Performance Counters, whose saved values are left unread
+        { type = "select", key = "perfDisplay", name = "Performance Display",
+          values = { { value = "off", text = "Off" }, { value = "basic", text = "Basic" }, { value = "full", text = "Full" } },
+          desc = "Basic: the frame time and its graph. Full: also CPU and GPU time, triangles, draw calls, lights, "
+              .. "shadows and memory. Frame numbers count everything drawn, 3D numbers the 3D engine's own draws." },
+        { type = "toggle", key = "featureCosts", name = "Feature Costs",
+          desc = "In the 3D modes: each part's CPU time and triangles against its budget, the options set, and what "
+              .. "each option you change does to the frame." },
         { type = "header", name = "World" },
         { type = "toggle", key = "showMapInfo", name = "Show Map Info", desc = "The map's number, name, size and indoor flag, and your cell." },
         { type = "execute", name = "Reload World Hints", func = function() C:ReloadWorldHints() end,
@@ -100,7 +104,7 @@ C.tabs[#C.tabs + 1] = { name = "Weather & Lighting", args = {
       desc = "Every row of this tab back to its default and Override off: the server's weather and hour again." },
 } }
 
---- The page's node, marked last: it ends the settings window's list (core/settings.lua).
+--- The page's node, marked last: it ends the settings window's list (core/global/settings.lua).
 function C:SettingsNodes()
     -- round 40: the Weather & Lighting tab's needs, the Weather page's master switch made by advancedeffects' settings.lua
     local effects = TK.GetComponent("advancedeffects")

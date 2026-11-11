@@ -8,3 +8,4 @@ size = "30x20"
 [map]
 indoor = true
 outdoor = 0 # Kugnae, through its doors (the test server's warps)
+dark = true # painted dark (docs/user-related/research/2026-10-27-dark-maps.tsv): our lighting adds no light

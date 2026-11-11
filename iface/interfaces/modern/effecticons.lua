@@ -1,6 +1,6 @@
 -- Modern's effect icons (s6-modular-g round 16, separation step 7; docs/development/interface-separation.md 4.1 and 4.2):
 -- the icon group the icons on units (panels/enemyicons) and the target frame's row (panels/targetframe) share, with
--- the effects' pictures (data/effects.lua beside this file), moved unchanged from core/effecticons.lua (s6-ui-core
+-- the effects' pictures (data/effects.lua beside this file), moved unchanged from shared/effecticons.lua (s6-ui-core
 -- round 43), whose logic stays every interface's (TK.EffectIcons: the names and kinds, the player's two name lists,
 -- the filters, the peers' words, the times as text).
 --
@@ -29,10 +29,22 @@ function G.ColumnWidth(size, timeText)
     return timeText and math.max(size, G.style.timeWidth) or size
 end
 
---- An effect's icon key by the name the server gave it (Modern's buffs and debuffs, panels/auras), the unknown one's
---- when Modern's data names none (it was TK.EffectIcons.Classify's second result).
+--- An effect's icon key by the name the server gave it (Modern's buffs and debuffs, panels/auras), or nil when Modern's
+--- data names none: then its letter is drawn instead (G.Letter), as on the units' icons. s6-ui-core (round 142, head note
+--- 172): one look for a picture-less effect in both places; 4a lists durations as text, so it has no rule of its own.
 function G.Icon(name)
-    return "emoji:" .. (art.icons[name] or art.unknownIcon)
+    local icon = art.icons[name]
+    return icon and ("emoji:" .. icon) or nil
+end
+
+--- What a picture-less effect's square shows: its name's first letter, or "?" for one nothing names ("???").
+function G.Letter(label)
+    return label == "???" and "?" or label:sub(1, 1):upper()
+end
+
+--- The letter's font size for an icon of that size.
+function G.LetterSize(size)
+    return math.max(7, math.floor(size * 0.6))
 end
 
 --- The picture for it (an emoji key), when Modern's data has one for its name or first candidate (" (Caster)" left
@@ -135,6 +147,14 @@ function G.NewGroup(parent, name, mouse)
     return g
 end
 
+--- The values an icon or a group was last given (its .last table, made on first use): G.Show sets each only when it changed,
+--- since each call crosses into C# and a refresh four times a second mostly repeats the last one. Nothing else sets them.
+local function lastOf(frame)
+    local last = frame.last or {}
+    frame.last = last
+    return last
+end
+
 --- Shows the arranged rows (E.Arrange) as icons: opts.size, opts.perRow, opts.max ("+n" past it) and opts.timeText;
 --- round 44: opts.ownSize, the size of our own casts' effects (row.own), larger as WoW draws the player's own auras (the
 --- report's section 5.2). The group takes the rows' size; its owner anchors it. Returns how many icons show.
@@ -153,49 +173,75 @@ function G.Show(g, list, opts)
     for i = 1, n do
         local item = list[i]
         local f = icon(g, i)
+        local last = lastOf(f)
         local b, kind = item.row, item.kind
         local s = b.own and own or size
-        local fontSize = math.max(7, math.floor(s * 0.6))
+        local fontSize = G.LetterSize(s)
         f.row = b
-        f:SetSize(s, s)
-        f:ClearAllPoints()
-        f:SetPoint("TOPLEFT", g, "TOPLEFT", ((i - 1) % perRow) * (colW + gap) + math.floor((colW - s) / 2),
-            -math.floor((i - 1) / perRow) * rowH - (largest - s))
-        local fill, edge = G.style.fill[kind], G.style.edge[kind]
-        f.fill:SetColorTexture(fill[1], fill[2], fill[3], fill[4])
-        for k = 1, 4 do
-            f.edge[k]:SetColorTexture(edge[1], edge[2], edge[3], edge[4])
-            if k <= 2 then f.edge[k]:SetHeight(1) else f.edge[k]:SetWidth(1) end
+        if last.size ~= s then last.size = s f:SetSize(s, s) end
+        local x = ((i - 1) % perRow) * (colW + gap) + math.floor((colW - s) / 2)
+        local y = -math.floor((i - 1) / perRow) * rowH - (largest - s)
+        if last.x ~= x or last.y ~= y then
+            last.x, last.y = x, y
+            f:ClearAllPoints()
+            f:SetPoint("TOPLEFT", g, "TOPLEFT", x, y)
+        end
+        -- the edges' thickness is the same for every kind, set with the colours (a kind's change)
+        if last.kind ~= kind then
+            last.kind = kind
+            local fill, edge = G.style.fill[kind], G.style.edge[kind]
+            f.fill:SetColorTexture(fill[1], fill[2], fill[3], fill[4])
+            for k = 1, 4 do
+                f.edge[k]:SetColorTexture(edge[1], edge[2], edge[3], edge[4])
+                if k <= 2 then f.edge[k]:SetHeight(1) else f.edge[k]:SetWidth(1) end
+            end
         end
         local picture = G.Picture(b)
-        f.picture:SetShown(picture ~= nil)
-        if picture then f.picture:SetTexture(picture) end
+        if last.picture ~= (picture or false) then
+            last.picture = picture or false
+            f.picture:SetShown(picture ~= nil)
+            if picture then f.picture:SetTexture(picture) end
+        end
         local label = E.Label(b)
-        f.letter:SetText(picture and "" or (label == "???" and "?" or label:sub(1, 1):upper()))
-        f.letter:SetFont(fontSize, "OUTLINE")
+        local letter = picture and "" or G.Letter(label)
+        if last.letter ~= letter then last.letter = letter f.letter:SetText(letter) end
+        if last.font ~= fontSize then last.font = fontSize f.letter:SetFont(fontSize, "OUTLINE") end
         local t = text and E.ShortTime(b) or nil
-        f.time:SetText(t or "")
-        f.time:SetShown(t ~= nil)
-        f:SetAlpha(b.estimate and not b.exact and G.style.estimateAlpha or 1)
-        f:Show()
+        if last.time ~= (t or false) then
+            last.time = t or false
+            f.time:SetText(t or "")
+            f.time:SetShown(t ~= nil)
+        end
+        local alpha = b.estimate and not b.exact and G.style.estimateAlpha or 1
+        if last.alpha ~= alpha then last.alpha = alpha f:SetAlpha(alpha) end
+        if last.shown ~= true then last.shown = true f:Show() end
         -- Round 44 (Astra P2): an icon's tooltip follows its row as it is replaced (its time counts down, and a new
         -- target's effect in that place is shown, not the last one's).
         if GameTooltip:IsShown() and GameTooltip:GetOwner() == f then G.ShowTooltip(f, b) end
     end
     for i = n + 1, #g.icons do
-        g.icons[i].row = nil
-        g.icons[i]:Hide()
-        if GameTooltip:GetOwner() == g.icons[i] then GameTooltip:Hide() end
+        local f = g.icons[i]
+        local last = lastOf(f)
+        f.row = nil
+        if last.shown ~= false then last.shown = false f:Hide() end
+        if GameTooltip:GetOwner() == f then GameTooltip:Hide() end
     end
     local cols = math.min(math.max(n, 1), perRow)
     local rows = math.max(1, math.ceil(n / perRow))
-    g.more:SetShown(#list > n)
-    if #list > n then
-        g.more:SetText("+" .. (#list - n))
-        g.more:ClearAllPoints()
-        g.more:SetPoint("LEFT", g, "TOPLEFT", cols * (colW + gap), -(rows - 1) * rowH - largest / 2)
+    local more = #list > n
+    local gl = lastOf(g)
+    if gl.more ~= more then gl.more = more g.more:SetShown(more) end
+    if more then
+        local moreText, mx, my = "+" .. (#list - n), cols * (colW + gap), -(rows - 1) * rowH - largest / 2
+        if gl.moreText ~= moreText then gl.moreText = moreText g.more:SetText(moreText) end
+        if gl.mx ~= mx or gl.my ~= my then
+            gl.mx, gl.my = mx, my
+            g.more:ClearAllPoints()
+            g.more:SetPoint("LEFT", g, "TOPLEFT", mx, my)
+        end
     end
-    g:SetSize(cols * (colW + gap) - gap + (#list > n and 18 or 0), rows * rowH - gap)
+    local w, h = cols * (colW + gap) - gap + (more and 18 or 0), rows * rowH - gap
+    if gl.w ~= w or gl.h ~= h then gl.w, gl.h = w, h g:SetSize(w, h) end
     return n
 end
 

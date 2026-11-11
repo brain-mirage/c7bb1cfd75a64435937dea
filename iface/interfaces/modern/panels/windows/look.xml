@@ -66,7 +66,7 @@
         <do Point="TOPLEFT, @trade, BOTTOMLEFT, 0, -6"/>
       </button>
       <!-- Named for the gate's driver (s6-gate round 37, H-17): gate mode logs a named control's place while it shows
-           (core/gatecontrols.lua), so the gate can click these as it clicks the original's look page. Names only. -->
+           (core/global/gatecontrols.lua), so the gate can click these as it clicks the original's look page. Names only. -->
       <run call="GateNames"/>
 
       <!-- The four views, as tabs (s6-ui-core round 61: the shared tab), each with its page. -->

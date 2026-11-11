@@ -7,7 +7,7 @@
 -- 13 lower. A text's lines end at a CR, an LF or a tab.
 --
 -- s6-interface-5x-b (round 9, the interface separation's step 5): the box is the original client's
--- (interfaces/original/helppane.lua, Help.Show, Help.PlaceBox, Help.PointIn), made with 5.x's skin and screen; this file
+-- (shared/original/helppane.lua, Help.Show, Help.PlaceBox, Help.PointIn), made with 5.x's skin and screen; this file
 -- keeps what is 5.x's: its panes' texts and their right press. The box's input rules are the kit's, W9's (WIRE there): a
 -- press while it shows is used up, and a move, a key-down, a release or a wheel turn closes it and goes on, so a right
 -- press's line lasts while that button is held. 5.x's own box before closed at a move and a key-down only.
@@ -30,7 +30,7 @@ local Tips = TK.Game.Tips
 -- create local help only on a type-4 single-right press; SelfLookPane 0x00568CB0 tests the bow before help hit-testing.
 -- Shared Tips.ForPress receives the button, double-click flag and bow-first input. Changing which press shows a tip
 -- changes which next press its catcher consumes and what the server sees.
-local Help = require("interfaces.original.helppane")({ skin = S, screen = { width = S.WIDTH, height = S.HEIGHT }, roundOwner = true })
+local Help = require("shared.original.helppane")({ skin = S, screen = { width = S.WIDTH, height = S.HEIGHT }, roundOwner = true })
 
 --- 7.5.2's string id's text (its line breaks as LF), or nil without the string table.
 function Help.String(id)

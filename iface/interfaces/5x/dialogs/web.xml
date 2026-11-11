@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 5.x's look of the browser dialog (its XML twin's layout; web.lua draws with it), 5.33's BrowserDialog (constructor
      0x00406F90): the whole 640 x 480 screen on 5.33's standard window, the page's text, its address and Open in browser;
-     no OK button. Format: core/xml.md; the dialog's attributes are its look entry's values (interfaces/original/entry.lua), its
+     no OK button. Format: core/xml.md; the dialog's attributes are its look entry's values (shared/original/entry.lua), its
      children where web.lua draws its parts: rectangles (left, top, right, bottom) and points (x, y). Drawing only. -->
 <ui>
   <data key="Browser" width="640" height="480" button="72" openButton="140" buttonHeight="24">

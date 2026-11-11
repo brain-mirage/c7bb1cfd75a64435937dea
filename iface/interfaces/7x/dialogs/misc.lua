@@ -1,4 +1,4 @@
--- s6-interface-7x-b (round 7): 7.x's look of the music dialog and the paper (components/dialogs/misc.lua), 4a's own
+-- s6-interface-7x-b (round 7): 7.x's look of the music dialog and the paper (shared/components/dialogs/misc.lua), 4a's own
 -- windows. Drawing only, but for where each control's press lands (its rectangle): the controls, their indexes, the keys
 -- and what is sent are the renderer's and the model's, the same in every look.
 --
@@ -21,11 +21,11 @@
 -- existing EPF reader/export and named image keys; a pack with those nine tiles supplies the paper art (X.Frame).
 -- s6-ui-core (round 85): the XML twin's; the windows' pictures, options, buttons and the inputs' rectangles are
 -- misc.xml's (core/xml.md).
--- s6-ui-core (round 99): the world map (components/dialogs/misc.lua, drawn there as 4a's OnPaint): its names in font 0,
+-- s6-ui-core (round 99): the world map (shared/components/dialogs/misc.lua, drawn there as 4a's OnPaint): its names in font 0,
 -- measured by its advances; with an entry of its own, no "At ..." line (4a draws no text but the names). Drawing only.
 
 local unpack = table.unpack
-local entry = require("interfaces.original.entry")
+local entry = require("shared.original.entry")
 local S = require("interfaces.7x.skin")
 local D = TK.Xml.Data("misc.xml")
 

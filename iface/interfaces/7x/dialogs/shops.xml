@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 7.x's look of the hired merchant, its price window, the clan bank, the power dialog and the rankings (its XML twin's
      layout; shops.lua draws with it), from Source-5's class pages. Format: core/xml.md; each dialog's attributes are
-     its look entry's values (interfaces/original/entry.lua), its children where shops.lua draws its parts: rectangles (left, top,
+     its look entry's values (shared/original/entry.lua), its children where shops.lua draws its parts: rectangles (left, top,
      right, bottom), points (x, y), pictures (file, palette) and image buttons (BUTT001.EPF's image id first); a text's
      pen is (x, its line).
      WIRE: a control's rectangle is where a press on it lands (DialogPane::HitTestControls 0x0049FB10; the merchant's
@@ -68,7 +68,7 @@
     <data key="action" withdraw="53" send="23" rect="340, 397, 403, 421"/>
   </data>
 
-  <!-- The power dialog (PowerDialogPane 0x00549C20): the shared layout (interfaces/power.lua) with 7.5.2's 63 x 24
+  <!-- The power dialog (PowerDialogPane 0x00549C20): the shared layout (shared/original/power.lua) with 7.5.2's 63 x 24
        buttons at y 307 -->
   <data key="Power" width="63" height="24" top="307"/>
 

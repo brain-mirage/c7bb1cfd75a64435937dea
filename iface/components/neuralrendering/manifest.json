@@ -1,0 +1,9 @@
+{
+  "name": "neuralrendering",
+  "title": "Neural Rendering (DLSS 5)",
+  "version": "0.2.0",
+  "order": 919,
+  "description": "s6-dlss (round 1), s6-reprojection-cloud-3 (run 78, register G-35; the owner, 2026-10-04: \"a joke feature, I mean really add it in but we arnt serious about it\"): the Experimental tab's Neural Rendering (DLSS 5) section, About and Controls. Off by default; saved in the profile. It cannot run until NVIDIA releases DLSS 5 to developers (docs/user-related/decisions/2026-10-30-dlss5-joke-section.md), so the switch does nothing and Controls says why. Drawing only: nothing is sent. The host's side is C# (TK.Modular.Draw.NeuralRendering).",
+  "settings": "settings.lua",
+  "main": "main.lua"
+}

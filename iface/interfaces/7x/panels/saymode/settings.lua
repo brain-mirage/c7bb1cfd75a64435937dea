@@ -3,7 +3,7 @@
 -- scaled screen).
 
 local C = TK.GetComponent("7x.saymode")
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 
 C.defaults = { enabled = false, scale = 1 }
 

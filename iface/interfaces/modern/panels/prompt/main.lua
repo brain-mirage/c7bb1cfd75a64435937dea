@@ -1,5 +1,5 @@
 -- Modern's prompt line (s6-modular-g round 16, separation step 7; docs/development/interface-separation.md 4.3): the
--- two lines a prompt is drawn on, moved unchanged from Classic Commands (components/classic), which keeps the prompts'
+-- two lines a prompt is drawn on, moved unchanged from Classic Commands (shared/components/classic), which keeps the prompts'
 -- logic:
 --   TKRulesPrompt   live: the logic's line while it is a prompt's ("Drop what?") that no interface's chat draws
 --                   (TK.Game.Prompts.Drawn: Modern's chat frame and 5.x's chat draw a Text prompt's line, 7.x's chat

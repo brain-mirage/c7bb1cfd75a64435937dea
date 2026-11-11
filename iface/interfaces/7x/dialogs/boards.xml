@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 7.x's look of the boards and mail (its XML twin's layout; boards.lua draws with it), from Source-5's class pages
-     (the EPF layout). Format: core/xml.md; each dialog's attributes are its look entry's values (interfaces/original/entry.lua), its
+     (the EPF layout). Format: core/xml.md; each dialog's attributes are its look entry's values (shared/original/entry.lua), its
      children where boards.lua draws its parts: rectangles (left, top, right, bottom), lists (the rectangle, the cell's
      width and height), the window's picture (DLGBBSnn.EPF, its palette the same name's .PAL) and its image buttons (the
      control's index, BUTT001.EPF's image id, the top left: 63 x 24 each).

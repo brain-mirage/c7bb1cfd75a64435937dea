@@ -3,7 +3,7 @@
   "name": "3D (v1)",
   "kind": "draw",
   "version": "0.2.1",
-  "contract": 4,
+  "contract": 5,
   "assembly": "3d-v1.dll",
   "entry": "TK.Modules.Draw3d.Module",
   "serves": ["characters"],

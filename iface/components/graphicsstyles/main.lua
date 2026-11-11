@@ -37,6 +37,12 @@ end
 --- s6-ui-core (round 54): a category saved as a module that is not a style (3D map objects', from s6-reprojection's round
 --- 29 and its carry-over of the old 3D Map Objects toggle) is Custom 3D, over the style that module drew over.
 function C:CarryOver(db)
+    -- The 3D Objects manifest uses normal/low/high; map an older HD value to its declared default on load.
+    local qualityKey = "option:3d-objects:model-quality"
+    if db[qualityKey] == "hd" then
+        db[qualityKey] = "normal"
+        TK.DB:MarkDirty()
+    end
     for _, c in ipairs(self.categories) do
         local id = db[c.key]
         if id and id ~= "custom" and not self.isStyle[id] then

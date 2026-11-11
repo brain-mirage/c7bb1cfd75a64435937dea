@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 7.x's look of the target options and the profile (its XML twin's layout; options.lua draws with it), 4a's
      ui/OptionPane.cpp from Source-5's class pages (the EPF layout). Format: core/xml.md; each dialog's attributes are
-     its look entry's values (interfaces/original/entry.lua), its children where options.lua draws its parts: rectangles (left, top,
+     its look entry's values (shared/original/entry.lua), its children where options.lua draws its parts: rectangles (left, top,
      right, bottom), pictures (file, palette) and image buttons (BUTT001.EPF's image id first).
      WIRE: a switch takes a press only on its 20 x 20 part (TargetOptionEditControlPane's GetPartRect 0x00499810,
      HitTestPoint 0x00499870); the switches choose what the arrow keys step through while a spell's target is picked, so

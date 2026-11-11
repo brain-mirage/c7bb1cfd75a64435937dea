@@ -5,13 +5,16 @@
 -- keeps to the original's map view.
 
 local C = TK.GetComponent("7x.screen")
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 
 --- A piece's settings: its switch and its own scale (its place is the profile's positions["7x.<id>"], edit mode's).
 local function piece() return { enabled = false, scale = 1 } end
 
 C.defaults = { backdrop = piece(), border = piece(), tabHeader = piece(), divider = piece(), chatBackdrop = piece(),
-               mapPane = false }
+               mapPane = false, wholeScale = false }
+
+-- GA-3 (2026-11-10, the client review's 8.10): the screen at a whole-number scale while its page says so (Screen.Fit)
+Screen.whole[1024] = function() return C:DB().wholeScale == true end
 
 -- The pieces' pages: the panel id (interface.lua), its settings' key, title and order in the Decoration list.
 C.PAGES = {
@@ -34,6 +37,8 @@ function C:SettingsNodes()
           defaults = function() return C.defaults end,
           tabs = { { name = "General Settings", args = {
               { type = "description", name = "7.5.2's screen, 1024 x 768, scaled to fit the window; while 7.x is the interface in use, the window's sides it does not fill are black." },
+              { type = "toggle", key = "wholeScale", name = "Whole-Number Scale", changed = Screen.WholeChanged,
+                desc = "The largest whole-number scale that fits, for sharp letters and edges. Off: the screen fills the window's height." },
               { type = "toggle", key = "mapPane", name = "World View in the Map Pane" },
               { type = "description", name = "The world view where the original draws its map, (0, 0)-(816, 720) on the screen, following the window's size. Moving or resizing the world view turns this off." },
           } } } },

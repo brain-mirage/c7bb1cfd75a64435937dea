@@ -1,5 +1,5 @@
 -- s6-interface-5x (the 5.x interface: docs/development/jobs/s6-interface-5x/PLAN.md, "The dialogs look"): 5.x's look of
--- the NPC dialogs (components/dialogs/npc.lua), from 5.33's own constructors: MessageDialog 0x00492430,
+-- the NPC dialogs (shared/components/dialogs/npc.lua), from 5.33's own constructors: MessageDialog 0x00492430,
 -- MenuQuestionDialog 0x00492C40 and TextDialog 0x00493830; and (s6-interface-5x-b, round 8) the Nexonclub registration,
 -- NexonclubRegistrationDialog 0x0047C3C0 (L.Nexonclub, below). 5.33 has no larger windows: each picks its picture by
 -- whether it has the text window (contents.textWindow) and the portrait (portrait kinds 1, 2, 3, 5 and 6:
@@ -12,7 +12,7 @@
 -- s6-ui-core (round 85): the XML twin's; the windows' sizes, pictures and the parts' places are npc.xml's (core/xml.md).
 
 local unpack = table.unpack
-local entry = require("interfaces.original.entry")
+local entry = require("shared.original.entry")
 local D = TK.Xml.Data("npc.xml")
 
 return function(L, X)

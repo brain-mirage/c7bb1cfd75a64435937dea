@@ -13,7 +13,7 @@ local C = TK.GetComponent("7x.clock")
 local H = __tk
 local S = require("interfaces.7x.skin")
 local Hud = require("interfaces.7x.hud")
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 
 local L = TK.Xml.Data("main.xml")
 
@@ -27,7 +27,7 @@ end
 local scripts = {}
 
 -- the hour's tip on the right press. WIRE: which press shows it, and its life, are the game layer's tip rule
--- (TK.Game.Tips, core/game/tips.lua: HourPane::HandlePointerOrMouseEvent 0x004CEF30; s6-gateway-research round 37 moved
+-- (TK.Game.Tips, shared/game/tips.lua: HourPane::HandlePointerOrMouseEvent 0x004CEF30; s6-gateway-research round 37 moved
 -- it there); the tip uses up the next press (Hud.HelpLine.Show), so this frame shows it only when the rule says so
 function scripts.Press(f, button, double)
     local life = TK.Game.Tips.ForPress(button, double)

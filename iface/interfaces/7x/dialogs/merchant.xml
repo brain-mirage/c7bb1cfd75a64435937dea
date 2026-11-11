@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 7.x's look of the merchant menus (its XML twin's layout; merchant.lua draws with it), from Source-5's class pages
      (each class's EPF layout). Format: core/xml.md; each dialog's attributes are its look entry's values
-     (interfaces/original/entry.lua), its children where merchant.lua draws its parts: rectangles (left, top, right, bottom), points
+     (shared/original/entry.lua), its children where merchant.lua draws its parts: rectangles (left, top, right, bottom), points
      (x, y), pictures (file, palette) and image buttons (BUTT001.EPF's image id first).
      WIRE: a control's rectangle is where a press on it lands (DialogPane::HitTestControls 0x0049FB10); changing one
      changes which control a press reaches, so what the client sends. -->

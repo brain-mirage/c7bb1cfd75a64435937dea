@@ -7,3 +7,4 @@ size = "20x20"
 
 [map]
 indoor = true
+dark = true # painted dark (docs/user-related/research/2026-10-27-dark-maps.tsv): our lighting adds no light

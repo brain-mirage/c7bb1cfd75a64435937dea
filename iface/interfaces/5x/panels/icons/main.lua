@@ -24,7 +24,7 @@
 
 local C = TK.GetComponent("5x.icons")
 local S = require("interfaces.5x.skin")
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 local Help = require("interfaces.5x.help") -- s6-interface-5x-b
 local E = require("interfaces.5x.elements")
 

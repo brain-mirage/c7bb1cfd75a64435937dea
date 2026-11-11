@@ -10,7 +10,7 @@
 --             The action bars' slots. A "macro" is one of the original's text macros, by its id in the character's
 --             imported macros, which only the host reads (review r4 finding 1). A character's first entry takes the
 --             layout profile's bars. s6-ui-bars: an item may be { kind = "item", item, name, icon } (by its kind,
---             core/cursor.lua); spells lists the spells the character has had, so only a new one goes onto a bar.
+--             shared/cursor.lua); spells lists the spells the character has had, so only a new one goes onto a bar.
 --   layout    { version = 1, profile = name, interfaces = { [interface] = name } }: the layout profile the character uses.
 --             Entering the world switches to it; picking another profile in the world records it. s6-modular-g
 --             (interfaces): kept per interface, as the profiles are: profile is Modern's (as every layout from before

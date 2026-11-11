@@ -17,6 +17,12 @@
       <label key="back[]" text="" size="12" colour="white"/>
       <label key="back[]" text="" size="12" colour="white"/>
       <label key="name" text="" size="12" colour="white"/>
+      <!-- Optional editor replay goal, below the ordinary name; same font and four-pixel outline. -->
+      <label key="goalBack[]" text="" size="12" colour="white"/>
+      <label key="goalBack[]" text="" size="12" colour="white"/>
+      <label key="goalBack[]" text="" size="12" colour="white"/>
+      <label key="goalBack[]" text="" size="12" colour="white"/>
+      <label key="goal" text="" size="12" colour="white"/>
       <!-- the carnage box: 12 x 10, its border in the fill colour and its inside in the outline colour -->
       <texture key="box" from="Rect" layer="ARTWORK"/>
       <texture key="boxInside" from="Rect" layer="OVERLAY"/>

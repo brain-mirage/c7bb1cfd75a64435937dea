@@ -78,7 +78,7 @@ local function addOptions(args, page)
                 if kind == "toggle" then return v == "true" end
                 return v
             end
-            local arg = { type = kind, name = name, desc = desc ~= "" and desc or nil,
+            local arg = { type = kind, name = name, desc = desc ~= "" and desc or nil, rendererKey = key,
                           get = function() return read(R.Option(module, key)) end,
                           set = function(_, v) R.SetOption(module, key, tostring(v)) end,
                           default = function() return read(R.OptionDefault(module, key)) end }
@@ -129,7 +129,7 @@ function C:SettingsNodes()
     -- s6-reprojection (round 34; the owner, 2026-10-06: "For graphics general if there is a view/draw distance move it here.
     -- I want a seperator on this page that seperate the existing stuff thiss seperateor is labeled 3D"): Graphics >
     -- General's 3D section, the renderer's options that name the page "graphics" under a "3D" separator, after the page's
-    -- own (core/settings.lua's TK.GraphicsNode); made again here each time the pages are listed, as the renderer chosen
+    -- own (core/global/settings.lua's TK.GraphicsNode); made again here each time the pages are listed, as the renderer chosen
     -- may have changed (none with Normal)
     local general = TK.GraphicsNode.tabs[1].args
     for i = #general, 1, -1 do
@@ -140,7 +140,23 @@ function C:SettingsNodes()
     if #three > 0 then table.insert(three, 1, { type = "header", name = "3D" }) end
     for _, a in ipairs(three) do
         a.renderer = true
-        general[#general + 1] = a
+        if a.rendererKey == "3d-model-style" then
+            -- G-72: Model style sits beside model quality; other 3D settings retain their existing section.
+            local display
+            for i, node in ipairs(general) do
+                if node.type == "header" and node.name == "Display" then
+                    display = i
+                    break
+                end
+            end
+            if display then
+                table.insert(general, display, a)
+            else
+                general[#general + 1] = a
+            end
+        else
+            general[#general + 1] = a
+        end
     end
     return { {
         id = "worldrenderer", title = "World Renderer", order = self.order, category = "experimental", atLogin = true,

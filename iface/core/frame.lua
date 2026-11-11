@@ -49,16 +49,35 @@ local classes = {
 }
 TK.FrameClasses = classes
 
-local function wrap(h)
+-- objectType: the C# object's type when the caller knows it (s6-ui-core round 148, steer d130e190: the start asked C#
+-- for each of its some 1,300 new objects' types, which their makers know)
+local function wrap(h, objectType)
     if h == nil or h == 0 then return nil end
     local o = objects[h]
     if o then return o end
-    local class = classes[H:GetObjectType(h)] or Frame
+    local class = classes[objectType or H:GetObjectType(h)] or Frame
     o = setmetatable({ __h = h }, class)
     objects[h] = o
     return o
 end
 TK.Wrap = wrap
+
+--- s6-ui-core (round 124): a C# shell button's proxy (Runtime/Shell), with its label, so the proxy's SetText and GetText use
+--- that label (Button:GetFontString makes one only when it has none). Nil for no button (handle 0).
+function TK.WrapShellButton(h)
+    if h == 0 then return nil end
+    local b = wrap(h)
+    if not b.__label then b.__label = wrap(H:ShellButtonLabel(h)) end
+    return b
+end
+
+--- s6-ui-core (round 133): gives a wrapped C# shell frame (Runtime/Shell) the name CreateFrame gives one, its global
+--- and GetName, for the tests, the live checks, the gate's driver and the plugins that know it by that name.
+function TK.NameShellFrame(f, name)
+    f.__name = name
+    _G[name] = f
+    return f
+end
 
 local function handleOf(x)
     if x == nil then return 0 end
@@ -93,10 +112,19 @@ end
 
 -- ----- global functions -----
 
+-- the object type C# makes for each type CreateFrame names (always the same for a name), asked once
+local madeType = {}
+
 function CreateFrame(frameType, name, parent, template)
     local ph = handleOf(parent)
-    local h = H:CreateFrame(frameType or "Frame", name or "", ph)
-    local f = wrap(h)
+    frameType = frameType or "Frame"
+    local h = H:CreateFrame(frameType, name or "", ph)
+    local made = madeType[frameType]
+    if not made and h ~= 0 then
+        made = H:GetObjectType(h)
+        madeType[frameType] = made
+    end
+    local f = wrap(h, made)
     f.__name = name
     if name and name ~= "" then _G[name] = f end
     -- s6-interface-5x (round 13, the separation's step 11): an interface panel making it owns it, so the frame goes when
@@ -106,6 +134,25 @@ function CreateFrame(frameType, name, parent, template)
     applyTemplates(f, template)
     return f
 end
+
+-- s6-ui-core round 147 (steer d130e190, the start-up's long frame): frames a panel makes on their first reach by name
+-- rather than at its start (Modern's action bars: the buttons of a bar that is off). A global read before it is set,
+-- whose name starts with a registered prefix, is passed to that prefix's maker and then looked up again.
+local reach = {}
+
+--- Registers make(name) for the globals whose names start with prefix (one maker for each prefix: a panel started
+--- again registers again).
+function TK.MakeOnReach(prefix, make) reach[prefix] = make end
+
+setmetatable(_G, { __index = function(g, name)
+    if type(name) ~= "string" then return nil end
+    for prefix, make in pairs(reach) do
+        if name:find(prefix, 1, true) == 1 then
+            safe(make, name)
+            return rawget(g, name)
+        end
+    end
+end })
 
 function GetTime() return H:GetTime() end
 function GetCursorPosition() return H:GetCursorPosition() end
@@ -141,8 +188,38 @@ function TK.DispatchScript(h, script, a1, a2)
     if fn then safe(fn, o, a1, a2) end
 end
 
-local eventFrames = {}      -- event -> { frame = true }
+-- The frames registered for each event, in registration order (WoW's: a frame's OnEvent runs in the order the frames
+-- registered). A list is replaced, never changed in place, when a frame registers or unregisters, so a dispatch walks
+-- the list it began with, without copying it, while a handler registers or unregisters others.
+local eventFrames = {}      -- event -> { frame, ... }
+local eventSets = {}        -- event -> { frame = true }: whether a frame is in eventFrames[event]
 local listeners = {}        -- event -> { { fn, __owner, __panel }, ... } for framework code (TK.Mark)
+
+local function addEventFrame(event, f)
+    local set = eventSets[event]
+    if not set then
+        set = {}
+        eventSets[event] = set
+    end
+    if set[f] then return end
+    set[f] = true
+    local old, list = eventFrames[event], {}
+    local n = old and #old or 0
+    for i = 1, n do list[i] = old[i] end
+    list[n + 1] = f
+    eventFrames[event] = list
+end
+
+local function removeEventFrame(event, f)
+    local set = eventSets[event]
+    if not (set and set[f]) then return end
+    set[f] = nil
+    local list = {}
+    for _, g in ipairs(eventFrames[event]) do
+        if g ~= f then list[#list + 1] = g end
+    end
+    eventFrames[event] = list
+end
 
 --- Framework-level event listener (not tied to a frame). s6-interface-5x (round 13, the separation's step 11): an
 --- interface panel's own (TK.Components:Owner, marked as a registry's entry: TK.Mark) is withdrawn when the panel is
@@ -160,12 +237,12 @@ function TK.DispatchEvent(event, ...)
             if not l.gone then safe(l.fn, event, ...) end
         end
     end
-    local set = eventFrames[event]
-    if not set then return end
-    -- Copy first: handlers may register or unregister.
-    local frames = {}
-    for f in pairs(set) do frames[#frames + 1] = f end
-    for _, f in ipairs(frames) do
+    -- the frames registered when the dispatch began, in registration order (a handler that registers or unregisters
+    -- replaces the list, not this one)
+    local frames = eventFrames[event]
+    if not frames then return end
+    for i = 1, #frames do
+        local f = frames[i]
         local fn = f.__scripts and f.__scripts.OnEvent
         if fn then safe(fn, f, event, ...) end
     end
@@ -187,13 +264,14 @@ function TK.DeliverTo(owner, panel, event, ...)
     for _, l in ipairs(listeners[event] or {}) do
         if not l.gone and TK.OwnedBy(l, owner, panel) then safe(l.fn, event, ...) end
     end
-    local frames = {}
-    for f in pairs(eventFrames[event] or {}) do
-        if TK.OwnedBy(f, owner, panel) then frames[#frames + 1] = f end
-    end
-    for _, f in ipairs(frames) do
-        local fn = f.__scripts and f.__scripts.OnEvent
-        if fn then safe(fn, f, event, ...) end
+    local frames = eventFrames[event]
+    if not frames then return end
+    for i = 1, #frames do
+        local f = frames[i]
+        if TK.OwnedBy(f, owner, panel) then
+            local fn = f.__scripts and f.__scripts.OnEvent
+            if fn then safe(fn, f, event, ...) end
+        end
     end
 end
 
@@ -202,7 +280,7 @@ function TK.Listens(owner, panel, event)
     for _, l in ipairs(listeners[event] or {}) do
         if not l.gone and TK.OwnedBy(l, owner, panel) then return true end
     end
-    for f in pairs(eventFrames[event] or {}) do
+    for _, f in ipairs(eventFrames[event] or {}) do
         if TK.OwnedBy(f, owner, panel) then return true end
     end
     return false
@@ -238,7 +316,7 @@ function TK.DestroyFrame(f)
         if o then
             objects[h] = nil
             if o.__name and o.__name ~= "" and _G[o.__name] == o then _G[o.__name] = nil end
-            for _, set in pairs(eventFrames) do set[o] = nil end
+            for event in pairs(eventSets) do removeEventFrame(event, o) end
             o.__scripts, o.__h, o.__dead = nil, nil, true
             setmetatable(o, Dead)
         end
@@ -275,14 +353,16 @@ function TK.OwnedBy(entry, name, panel)
 end
 
 --- Drops from an array, in place, the entries that owner gave (TK.OwnedBy) and, with frameKey, those whose frame is
---- destroyed.
-function TK.DropOwned(list, name, panel, frameKey)
+--- destroyed. dropped(entry), when given, is told of each one dropped (s6-ui-core round 127: Esc's ids in the C# shell).
+function TK.DropOwned(list, name, panel, frameKey, dropped)
     local j = 0
     for i = 1, #list do
         local e = list[i]
         if not TK.OwnedBy(e, name, panel) and not (frameKey and TK.IsDead(e[frameKey])) then
             j = j + 1
             list[j] = e
+        elseif dropped then
+            dropped(e)
         end
     end
     for i = #list, j + 1, -1 do list[i] = nil end
@@ -557,24 +637,24 @@ function Frame:HookScript(script, fn)
 end
 
 function Frame:RegisterEvent(event)
-    eventFrames[event] = eventFrames[event] or {}
-    eventFrames[event][self] = true
+    addEventFrame(event, self)
 end
 
 function Frame:UnregisterEvent(event)
-    if eventFrames[event] then eventFrames[event][self] = nil end
+    removeEventFrame(event, self)
 end
 
 function Frame:UnregisterAllEvents()
-    for _, set in pairs(eventFrames) do set[self] = nil end
+    for event in pairs(eventSets) do removeEventFrame(event, self) end
 end
 
 function Frame:IsEventRegistered(event)
-    return eventFrames[event] ~= nil and eventFrames[event][self] == true
+    local set = eventSets[event]
+    return set ~= nil and set[self] == true
 end
 
 function Frame:CreateTexture(name, layer, template, sub)
-    local t = wrap(H:CreateTexture(self.__h, name or "", layer or "ARTWORK", sub or 0))
+    local t = wrap(H:CreateTexture(self.__h, name or "", layer or "ARTWORK", sub or 0), "Texture")
     t.__name = name
     if name and name ~= "" then _G[name] = t end
     applyTemplates(t, template)
@@ -582,7 +662,7 @@ function Frame:CreateTexture(name, layer, template, sub)
 end
 
 function Frame:CreateFontString(name, layer, template, sub)
-    local fs = wrap(H:CreateFontString(self.__h, name or "", layer or "OVERLAY", sub or 0))
+    local fs = wrap(H:CreateFontString(self.__h, name or "", layer or "OVERLAY", sub or 0), "FontString")
     fs.__name = name
     if name and name ~= "" then _G[name] = fs end
     if template and TK.Fonts[template] then

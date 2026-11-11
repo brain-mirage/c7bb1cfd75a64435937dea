@@ -5,12 +5,10 @@
 --
 --   [name] = a Twemoji code point: assets/emoji/twemoji/72x72/<icon>.png, pinned with its SHA-256 in vendor.lock.json
 --
--- A name with no picture is drawn as a small square with its first letter (the icons on units) or with unknownIcon
--- (the buffs and debuffs).
+-- A name with no picture is drawn as a small square with its first letter, on the units, in the target frame and in
+-- the buffs and debuffs alike (s6-ui-core round 142).
 
 return {
-    unknownIcon = "2753",
-
     icons = {
         ["Shield"]       = "1f6e1",
         ["Blessing"]     = "2728",

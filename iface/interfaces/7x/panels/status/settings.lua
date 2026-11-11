@@ -3,7 +3,7 @@
 -- place; its reset is the original's place on the scaled screen).
 
 local C = TK.GetComponent("7x.status")
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 
 local function pane() return { enabled = false, scale = 1 } end
 

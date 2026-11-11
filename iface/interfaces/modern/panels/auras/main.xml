@@ -14,6 +14,8 @@
       <!-- an effect the effects table does not know -->
       <label key="mark" text="?" size="12" colour="1, 0.6, 0.2" Font="12, OUTLINE"
              Point="TOPRIGHT, @parent, TOPRIGHT, -2, -1"/>
+      <!-- s6-ui-core (round 142): a picture-less effect's letter (main.lua's styleIcon), as on the units' icons -->
+      <label key="letter" text="" size="14" colour="white" Font="14, OUTLINE" Point="CENTER, @parent, CENTER, 0, 0"/>
       <label key="time" text="" size="11" colour="white" Font="11, OUTLINE" Point="TOP, @parent, BOTTOM, 0, -1"/>
       <!-- a right-click moves the effect to the other frame -->
       <do RegisterForClicks="RightButtonUp"/>

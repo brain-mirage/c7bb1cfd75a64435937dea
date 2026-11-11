@@ -58,7 +58,9 @@ function C:OnEnable()
     shade:SetAllPoints(noArt)
     shade:SetColorTexture(0.05, 0.05, 0.06, 1)
     noArt.text = W.Label(noArt, TK.Art.NO_PACKS_TEXT, 16, { 1, 0.7, 0.3 })
-    noArt.text:SetPoint("CENTER", noArt, "CENTER", 0, 0)
+    -- GA-3 (client round 4, the client review's 8.22): near the view's top, where no window opens (windows open at the
+    -- centre and let a quarter of the world through, so the line ran through their labels there)
+    noArt.text:SetPoint("TOP", noArt, "TOP", 0, -120)
     noArt:Hide()
     local function checkArt() noArt:SetShown(__tk:IsOnline() and not TK.Art.Available()) end
     TK.On("TK_GAME_STATE", checkArt)
@@ -77,7 +79,7 @@ function C:OnEnable()
     -- that drag's release over the map, 08 slot 00 for any slot without asking, and its press is no map press (no walk).
     -- s6-modular-g (round 21, the owner's research on presses reaching the wrong place): while the cursor holds any other
     -- action (a spell, a macro, an action button's) and no mouse button is down, the world takes no press: a click there
-    -- is a click on nothing, which puts the action down (core/cursor.lua's GLOBAL_MOUSE_DOWN), as a click outside every
+    -- is a click on nothing, which puts the action down (shared/cursor.lua's GLOBAL_MOUSE_DOWN), as a click outside every
     -- frame does. It walked, talked (43 01) or looked and kept the action before. WIRE: the original has no such cursor, so
     -- with none held, and with a bag item (the drop above), the map's presses are as before; and while a button is down
     -- (the drag that picked the action up, from a spell list or a bar) the map keeps its presses and the drag's release, as
@@ -117,6 +119,9 @@ function C:OnEnable()
     -- The map picture names the map it shows (head note 13).
     f:SetScript("OnMapTitleChanged", function() self:UpdateLabel() end)
     TK.On("TK_EDIT_MODE", function() self:UpdateLabel() end)
+    -- T-92 (gateway round 107): the editor's Replays page zooms this client out (ReplayViewBridge: only with --replay on
+    -- the page's feed, so no other client registers this). Drawing only (ReplayZoom).
+    if __tk:ReplayViewActive() then TK.On("TK_REPLAY_VIEW", function(_, cols, rows) self:ReplayZoom(cols, rows) end) end
     TK.Visibility:Attach(f, function() return self:DB() end)
     self.entry = TK.EditMode:Register(f, "worldview", "World View", C.defaultPosition, "worldview", nil, {
         minWidth = 240,
@@ -297,6 +302,21 @@ function C:SetMapEffects(on) self:Set("mapEffects", on and true or false) end
 function C:SetShadows(on) self:Set("shadows", on and true or false) end
 
 -- ----- an interface's screen puts the view at its map view (s6-input round 49, separation step 4b) -----
+
+--- T-92 (gateway round 107): the Replays page's zoom (OnEnable). cols x rows cells drawn, the outer area included and
+--- fitted to the window (Auto Extend off, Include Outer Area, Scale Auto), with Objects Beyond Range, which the page's
+--- feed sends, and the outer area drawn as the live one (no darkness, its own colours: in a replay it is all what was
+--- there); 0 x 0 puts the defaults back. The page's client has a settings folder of its own, so no player's settings
+--- change. Drawing only: what the client asks a server for is the live area's (Session.ClampedVisibleBounds), whatever
+--- these are.
+function C:ReplayZoom(cols, rows)
+    local db, d, wide = self:DB(), C.defaults, cols > 0
+    db.autoExtend, db.includeOuter = not wide and d.autoExtend, wide or d.includeOuter
+    db.cols, db.rows = wide and cols or d.cols, wide and rows or d.rows
+    db.worldScale, db.farViewObjects = wide and "auto" or d.worldScale, wide or d.farViewObjects
+    db.outerDim, db.outerSaturation = wide and 0 or d.outerDim, wide and 1 or d.outerSaturation
+    self:ApplySettings()
+end
 
 local function near(a, b) return type(a) == "number" and math.abs(a - b) < 0.01 end
 

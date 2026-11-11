@@ -9,7 +9,7 @@
 local S = require("interfaces.5x.skin")
 local Bar = require("interfaces.5x.scrollbar")
 local unpack = table.unpack
-local entry = require("interfaces.original.entry")
+local entry = require("shared.original.entry")
 local F = TK.Xml.Data("folder.xml").FolderSelect
 
 return function(L, X)
@@ -96,7 +96,15 @@ return function(L, X)
                         row.folderText = win.list.content:CreateFontString(nil, "ARTWORK")
                         row.folderSelection = X.Solid(win.list.content, "BACKGROUND", ROWS.selected)
                         row.folderSelection:SetAllPoints(row)
-                        row:HookScript("OnUpdate", function(b) b.folderSelection:SetShown(b.selected == true) end)
+                        -- The selection texture follows the row where its selection changes (SetSelected: a click in the
+                        -- picker, and each refresh) and when it shows again, not on every frame. It is shown only while the
+                        -- row is shown, as the row's own update did.
+                        local setSelected = row.SetSelected
+                        function row:SetSelected(on)
+                            setSelected(self, on)
+                            self.folderSelection:SetShown(self.selected == true and self:IsVisible())
+                        end
+                        row:HookScript("OnShow", function(b) b.folderSelection:SetShown(b.selected == true) end)
                         row:HookScript("OnHide", function(b) b.folderText:Hide() b.folderSelection:Hide() end)
                     end
                     X.Text(row.folderText, row, unpack(F.rowText))

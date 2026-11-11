@@ -2,7 +2,7 @@
 -- magic animations at the side panel's origin, gated at start by Shadow & Lighting.
 -- The shared side-panel event owns activation; this file owns only native art/layout.
 local S = require("interfaces.5x.skin")
-local Animation = require("interfaces.original.spriteanimation")
+local Animation = require("shared.original.spriteanimation")
 local NATIVE = { char = "CHREFX.EPF", item = "ITEMEFX.EPF", magic = "MAGEFX.EPF" }
 local TAB = { [0] = "char", [1] = "char", [2] = "item", [3] = "magic" }
 

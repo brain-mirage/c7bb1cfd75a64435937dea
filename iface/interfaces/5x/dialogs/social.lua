@@ -1,5 +1,5 @@
 -- s6-interface-5x-b (the 5.x interface: docs/development/jobs/s6-interface-5x/PLAN.md, "The dialogs look"): 5.x's look
--- of the user list and the friend list (components/dialogs/social.lua), 5.33's own windows by its own numbers. Drawing
+-- of the user list and the friend list (shared/components/dialogs/social.lua), 5.33's own windows by its own numbers. Drawing
 -- only, but for where each control's press lands (its rectangle): the controls, their indexes, the keys, the 85 and 84
 -- requests, the whisper and the friend list's OK are the renderers' and the model's, 7.5.2's, the same in every look.
 --
@@ -27,7 +27,7 @@
 
 local S = require("interfaces.5x.skin")
 local unpack = table.unpack
-local entry = require("interfaces.original.entry")
+local entry = require("shared.original.entry")
 local D = TK.Xml.Data("social.xml")
 
 return function(L, X)

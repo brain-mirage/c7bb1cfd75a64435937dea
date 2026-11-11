@@ -179,7 +179,7 @@ function C:OnEnable()
     -- s6-ui-bars: while the wheel is open, an item's count (darkened at 0) follows the bag, the spells follow the book,
     -- and their pictures follow a drawing style.
     -- s6-modular-g (round 21, the owner's research on presses reaching the wrong place; Astra's self-review 21-2): and a
-    -- slot or the cursor changed (core/cursor.lua's Cursor:Set fires ACTIONBAR_SLOT_CHANGED on every change). While the
+    -- slot or the cursor changed (shared/cursor.lua's Cursor:Set fires ACTIONBAR_SLOT_CHANGED on every change). While the
     -- cursor holds an action the segments carry nothing (TK.Game.Hotkeys.Attach), and they carry their actions again when
     -- it is put down. WIRE: a segment left empty after a right click cancelled the held action sent nothing for a pick
     -- that runs its action (UserPane::ExecuteHotkeyAction 0x005A3AE0's run, as a hotkey's); changing this changes what

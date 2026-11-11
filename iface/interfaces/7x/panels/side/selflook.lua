@@ -128,7 +128,7 @@ function scripts.Switches(p)
         SelfLook.SwitchControl(b, def.option)
         if def.help then
             -- WIRE: which press shows the help, and its life, are the game layer's tip rule with SelfLookPane's bow test
-            -- first (TK.Game.Tips, core/game/tips.lua: SelfLookPane::HandlePointerOrMouseEvent 0x00568CB0;
+            -- first (TK.Game.Tips, shared/game/tips.lua: SelfLookPane::HandlePointerOrMouseEvent 0x00568CB0;
             -- s6-gateway-research round 37 moved it there); the tip uses up the next press (Hud.HelpLine.Show), so the
             -- switch shows it only when the rule says so
             b:HookScript("OnMouseDown", function(_, button, double)

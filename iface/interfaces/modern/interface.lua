@@ -9,11 +9,12 @@
 --   border      true for an icon on the minimap's border, whose Layout tab places it along that border
 -- Modern's panels are components: their code is under interfaces/modern/panels/<component>/ with its manifest.json
 -- (s6-modular-g round 15 moved them there from components/<name>/; round 16, the separation's step 7, its windows from
--- core/ and its prompt line from Classic Commands). The world view (shared) and Classic Commands stay at the root
--- (components/), as other interfaces use them too (docs/development/interfaces.md, "Where a new file goes"); Game
--- Options stays there too (its settings page, F10 and the option keys), while its window is Modern's (panels/windows,
--- round 17).
--- This list names them all; their defaults (places and settings) are the components' own.
+-- core/ and its prompt line from Classic Commands). Classic Commands stays at the root (components/), as other
+-- interfaces use it too (docs/development/interfaces.md, "Where a new file goes"); Game Options stays there too (its
+-- settings page, F10 and the option keys), while its window is Modern's (panels/windows, round 17). s6-ui-core (the five
+-- parts' step 2a): the world view's and the menu button's panels, every interface's, are the Global Interface's
+-- (core/global/interface.lua), no longer in this list.
+-- This list names Modern's panels; their defaults (places and settings) are the components' own.
 -- Phase 2 (core/interfaces.lua): the interface's first profile is today's default profile ("Default"); its looks are its own
 -- dialogs look (interfaces/modern/dialogs/) and the original's cursors. A panel may also give:
 --   on          false: off in its interface's first profile (on by default)
@@ -23,11 +24,10 @@
 --               another interface's profile, and a new profile there where it is off is made without them
 --   hotkeys     s6-modular-g (round 19, the separation's step 8): the original's hotkey slots its buttons show, whose
 --               default bindings name the game layer's carriers (TK.Game.Hotkeys): keys it brings as clicks' do
---   shared      true: every interface's (the world view: each interface gives it a default place), on in every first profile and
---               listed with the active interface's panels
+--   shared      true: every interface's (the Global Interface's panels, core/global/interface.lua), on in every first
+--               profile and listed with the active interface's panels
 
 local panels = {
-    { id = "worldview", name = "World View", category = "World", component = "worldview", node = "worldview", switch = "enabled", place = "worldview", shared = true },
     { id = "minimap", name = "Minimap", category = "World", component = "minimap", node = "minimap", switch = "enabled", place = "minimap" },
 
     { id = "playerframe", name = "Player Frame", category = "Character", component = "playerframe", node = "playerframe", switch = "enabled", place = "playerframe" },
@@ -43,7 +43,7 @@ local panels = {
     -- interface's page takes (TK.Game.Views), in every interface while their switch is on; 7.x's and 5.x's first
     -- profiles leave them off (build 46). Game Options' window (panels/windows/gameoptions.lua since step 7, s6-modular-g
     -- round 17) is the options' fallback (TK.Game.Options.SetWindow), with its switch on the windows' page since round 18;
-    -- the Game Options page itself (components/gameoptions) is global, no panel's.
+    -- the Game Options page itself (core/global/components/gameoptions) is the Global Interface's, no panel's.
     { id = "character", name = "Character Window", category = "Pages", component = "windows", node = "character", switch = "enabled" },
     { id = "bag", name = "Bag", category = "Pages", component = "bag", node = "bag", switch = "enabled" },
     { id = "look", name = "Look Window", category = "Pages", component = "windows", node = "look", switch = "enabled" },
@@ -58,7 +58,7 @@ local panels = {
     { id = "chatframe", name = "Chat Frame", category = "Chat", component = "chatframe", node = "chatframe", switch = "enabled", place = "chatframe" },
     { id = "classic", name = "Classic Commands", category = "Chat", component = "classic", node = "classic", switch = "enabled" },
     -- s6-modular-g (round 16, separation step 7): the line Classic Commands' prompts and the rules' are drawn on where
-    -- no chat draws them (moved from components/classic); off in 7.x's and 5.x's first profiles, whose chats draw them.
+    -- no chat draws them (moved from shared/components/classic); off in 7.x's and 5.x's first profiles, whose chats draw them.
     { id = "prompt", name = "Prompt Line", category = "Chat", component = "prompt", node = "prompt", switch = "enabled" },
 
     { id = "bar1", name = "Bar 1", category = "Buttons", component = "actionbars", node = "bar1", switch = "enabled", place = "bar1", clicks = "TKActionBar1Button", hotkeys = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 } },
@@ -77,11 +77,6 @@ local panels = {
     -- (X and Shift+X: a new profile where it is off is made without them)
     { id = "actionwheel", name = "Action Wheel", category = "Buttons", component = "actionwheel", node = "actionwheel", switch = "enabled",
       keys = { { command = "ACTIONWHEEL", key = "X" }, { command = "ACTIONWHEEL_MULTI", key = "SHIFT-X" } } },
-    -- s6-ui-core (round 60; the owner, 2026-10-06: "an interface item that is used/can be used on all interfaces so it
-    -- should be under All interfaces in ui as a subpage Menu"): the menu button (components/menubutton), every
-    -- interface's: on in 7.x's and 5.x's first profiles, off in Modern's (its component's default)
-    { id = "menubutton", name = "Menu", category = "Buttons", component = "menubutton", node = "menubutton", switch = "enabled",
-      place = "menubutton", shared = true },
 
     { id = "minimapclock", name = "Clock and Weather", category = "Indicators", component = "minimap", node = "minimapclock", switch = "showClock", border = true },
     { id = "minimapmail", name = "Mail Icon", category = "Indicators", component = "minimap", node = "minimapmail", switch = "showMail", border = true },
@@ -92,7 +87,7 @@ local panels = {
 -- s6-modular-g (round 19, the separation's step 8; interface-separation.md 7.1): the original's 30 hotkeys were bindings
 -- to bars 1-3's buttons 1-10 until step 8; a saved one is carried over to its carrier once (core/db.lua), old -> new.
 -- The new command is the carrier's own (TK.Game.Hotkeys.Command, loaded before the interfaces: core/init.lua), so the
--- carried key keeps a click's input path (core/game/hotkeys.lua's wire note); changing it changes what the server sees.
+-- carried key keeps a click's input path (shared/game/hotkeys.lua's wire note); changing it changes what the server sees.
 local renamedCommands = {}
 for b = 1, 3 do
     for i = 1, 10 do renamedCommands["CLICK TKActionBar" .. b .. "Button" .. i] = TK.Game.Hotkeys.Command((b - 1) * 12 + i) end
@@ -100,15 +95,17 @@ end
 
 return { id = "modern", name = "Modern", profileName = "Default", looks = { dialogs = "modern", cursors = "original" },
          order = 1, -- s6-interface-5x (round 11): its place among the interfaces as the player sees them (TK.Interfaces:InOrder)
-         -- s6-ui-core (round 79): its button on Graphics > General's Quick Settings (core/quicksettings.lua)
+         -- s6-ui-core (round 79): its button on Graphics > General's Quick Settings (core/global/quicksettings.lua)
          quick = { text = "Modern", desc = "The Modern interface." },
-         -- s6-ui-login: the login's presentation (core/entering.lua): from the accepted login a black screen under the
+         -- s6-gateway-research (round 71): the launch option -emulate's value that picks this interface (core/startup.lua)
+         emulate = { "modern" },
+         -- s6-ui-login: the login's presentation (core/global/entering.lua): from the accepted login a black screen under the
          -- interface with a "Loading..." popup until the world has loaded (the owner, 2026-10-04). s6-ui-core (build 41;
          -- the owner, 2026-10-05): the original's title music, heard only with the Sound page's Play Login Music on (off
          -- by default), as in every interface (it was none here before that switch).
          login = { titleMusic = true, loadingScreen = true },
          -- s6-input (round 49, separation step 4b; interface-separation.md 5.13): the default interface (TK.Interfaces:Default),
-         -- and the saved values its components held that are now global: Effects on Others' name lists, the profile's
+         -- and the saved values its components held that are now shared: Effects on Others' name lists, the profile's
          -- effectLists since (core/db.lua's MoveSaved moves them once).
          default = true,
          movedSaved = { ["components.enemyicons.buffNames"] = "effectLists.buffNames",

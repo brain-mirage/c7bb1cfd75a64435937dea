@@ -27,7 +27,7 @@
   <frame name="TK5xOptions" key="window" parent="UIParent">
     <!-- the component's root (Astra's review of round 1): a replaced component keeps it hidden (TK.ReplaceComponent) -->
     <run call="Own"/>
-    <!-- HIGH, the macro window's strata (core/widgets.lua make.Window), so SAY MACRO and SPELL MACRO show it over this
+    <!-- HIGH, the macro window's strata (shared/widgets/init.lua make.Window), so SAY MACRO and SPELL MACRO show it over this
          window, as 5.33 opens its MACRO dialog over OPTION (round 93: in DIALOG it opened behind); the model's dialogs
          (FRIENDS, PROFILE) still open over it -->
     <do FrameStrata="HIGH" Size="407, 410" EnableMouse="true"/>

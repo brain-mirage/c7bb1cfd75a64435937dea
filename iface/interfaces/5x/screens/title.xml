@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 5.x's own title screen (the XML twin's only; title.lua makes it with the twins' shared script,
-     interfaces/original/title.lua): 5.33's MainMenuPane (constructor 0x457250, OnPaint 0x4591E0) on its 640 x 480 screen,
+     shared/original/title.lua): 5.33's MainMenuPane (constructor 0x457250, OnPaint 0x4591E0) on its 640 x 480 screen,
      scaled to fit the window and letterboxed, and its Login entry's LoginDialogPane (constructor 0x45A0C0). It shows in
      place of ours with Settings > Experimental's Original Login Screens and the XML interface on (decision
      2026-10-12-original-pregame-screens). Format: core/xml.md.
      Wire: the rectangles below decide which entry a release or a key activates and which control of the dialog a press
      reaches; changing them changes which input opens the login or sends it. What the entries and OK send is
-     core/login.lua's (interfaces/original/title.lua). -->
+     core/global/login.lua's (shared/original/title.lua). -->
 <ui>
   <data key="SCREEN" value="640, 480"/>
   <!-- the version over the picture, "V%d.%d" in colour 9 with the pen at (10, 20): 5.33's own, from its exe's product

@@ -1,6 +1,6 @@
 -- s6-interface-5x (the 5.x interface: docs/development/jobs/s6-interface-5x/PLAN.md; docs/development/interfaces.md,
 -- "The dialogs: geometry is the look's, behaviour is shared"): 5.x's look of the dialogs, 5.33's own windows. A
--- renderer (components/dialogs/) makes its window's parts with their control indexes, fills them from the dialog model
+-- renderer (shared/components/dialogs/) makes its window's parts with their control indexes, fills them from the dialog model
 -- and passes the player's input on; a look only sizes, places and draws them: nothing in it reaches the model or the
 -- server.
 --
@@ -8,7 +8,7 @@
 -- are 7.5.2's to the pixel (the message's width clamped to 160-240 with two buttons, 74-240 with one, + 48; its lines +
 -- 80; the 74 x 20 text buttons at (W - 184, H - 44) and (W - 98, H - 44); TextButtonControlPane::OnPaint 0x00418C40's
 -- face and bevels; DialogPane's Enter frame in 0x84), so the original client's alerts draw it
--- (interfaces/original/alerts.lua) with what is 5.33's own here: the standard window (DLGFRAME.EPF in NPAL8.PAL,
+-- (shared/original/alerts.lua) with what is 5.33's own here: the standard window (DLGFRAME.EPF in NPAL8.PAL,
 -- 16-pixel tiles: DialogPane::DrawBackground 0x00420FC0 and DrawBorder 0x00421050), the 640 x 480 screen and its
 -- centre. Round 2: the NPC dialogs, 5.33's own windows by its own numbers (dialogs/npc.lua) with its pictures and image
 -- buttons (X.Image below). s6-interface-5x-b: the user list and the friend list (dialogs/social.lua).
@@ -17,26 +17,26 @@
 -- s6-interface-5x round 15, step 9: they were Modern's look's before).
 --
 -- s6-interface-5x-b (round 9, the interface separation's step 5: docs/development/interface-separation.md, section 6):
--- the helpers are the original client's kit (interfaces/original/dialogkit.lua), made with 5.x's skin (5.33's font 0
+-- the helpers are the original client's kit (shared/original/dialogkit.lua), made with 5.x's skin (5.33's font 0
 -- and its measures), its 640 x 480 screen and L.Place; they were 7.x's look's before. What is 5.33's own (its frames,
 -- image buttons, radios, portrait, item rows, default button, no slide) overrides them below.
 --
 -- s6-ui-core (round 85): the XML twin's; what every window shares (the standard window's tiles, the image buttons'
 -- and radios' pictures, the quit's line, the open sound) is look.xml's and each family's windows are its own XML file's
 -- (npc.xml...), read as data (core/xml.md; the windows themselves are the dialogs component's, made by its renderers);
--- interfaces/original/entry.lua makes a family's entries from them.
+-- shared/original/entry.lua makes a family's entries from them.
 
 local fallback = TK.Dialogs.DefaultLook()
 local S = require("interfaces.5x.skin")
 local Bar = require("interfaces.5x.scrollbar")
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 local D = TK.Xml.Data("look.xml")
 
 local L = {} -- the entries 5.x has not are resolved by the dialogs component, over its default look
 -- Wire policy consumed by shared K.Edit: 4a Activate 0x00498ED0 selects all, then OnMouseEvent 0x00590DE0 places
 -- the native caret in the same pointer event. Changing this changes the text a later command sends to the server.
 L.NativePointerCaret = true
-local X = require("interfaces.original.dialogkit")({
+local X = require("shared.original.dialogkit")({
     skin = S,
     screen = { width = S.WIDTH, height = S.HEIGHT },
     place = function(win) L.Place(win) end,
@@ -329,10 +329,10 @@ function L.FocusEdge(frame, win)
     return mark
 end
 
--- The families drawn so far: the alerts, by the original client's (interfaces/original/alerts.lua) with this look's X;
+-- The families drawn so far: the alerts, by the original client's (shared/original/alerts.lua) with this look's X;
 -- the NPC dialogs (round 2), the merchants, the trade and the boards and mail (round 4), by 5.33's numbers. Where the
 -- 5.33 set is not, they keep the default look's windows, readable.
-require("interfaces.original.alerts")(L, X)
+require("shared.original.alerts")(L, X)
 
 -- s6-interface-5x-b (round 7, s6-interface-5x's Y3): the quit as 5.33 asks it. 5.33 has no quit window: QuitInputPane
 -- (constructor 0x004DA830), a LineInputPane, asks on the input line where every prompt is drawn ((14, 456)-(422, 468),
@@ -378,7 +378,7 @@ if S.Image("USERLIST.EPF", 0, "NPAL8.PAL") then
         require("interfaces.5x.dialogs." .. family)(L, X)
     end
     -- s6-interface-5x-b (round 6): with them, this look is drawn from the old art, so the rules open 4a's legacy branch of
-    -- a dialog that has one (components/dialogs/main.lua, C:ApplySettings: the profile's CANCEL, which L.Profile draws)
+    -- a dialog that has one (shared/components/dialogs/main.lua, C:ApplySettings: the profile's CANCEL, which L.Profile draws)
     L.LegacyLayouts = true
 end
 

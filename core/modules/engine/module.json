@@ -3,7 +3,7 @@
   "name": "New Graphics Engine",
   "kind": "render",
   "version": "0.1.0",
-  "contract": 4,
+  "contract": 5,
   "assembly": "engine.dll",
   "entry": "TK.Modules.Engine.Engine",
   "bundle": "engine.bundle",

@@ -48,13 +48,13 @@
 local C = TK.GetComponent("5x.side")
 local H = __tk
 local S = require("interfaces.5x.skin")
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 local Inv, Spells, SelfLook = TK.Game.Inventory, TK.Game.Spells, TK.Game.SelfLook
 local Bar = require("interfaces.5x.scrollbar") -- s6-interface-5x-b
 local Help = require("interfaces.5x.help") -- s6-interface-5x-b
 local ItemBox = require("interfaces.5x.itembox")
 local Effects = require("interfaces.5x.sideeffects")
-local DragLabel = require("interfaces.original.draglabel")
+local DragLabel = require("shared.original.draglabel")
 local E = require("interfaces.5x.elements")
 
 local L = TK.Xml.Data("main.xml")
@@ -688,7 +688,7 @@ end
 function C:StatusKey()
     local f = self.frame
     -- s6-interface-5x (round 12; Astra's review of the round 11 fix, P1): only while 4a's tab 0 is the active tab (the game
-    -- layer's, core/game/selflook.lua), not while this page merely still shows it: after F (the group, tab 4, in Modern's
+    -- layer's, shared/game/selflook.lua), not while this page merely still shows it: after F (the group, tab 4, in Modern's
     -- window) 4a's self pane no longer has the key, so UserPane's S sends 2D 00 (UserPane.cpp:1546).
     if not f or self.page ~= "self" or not TK.Game.SelfLook.Showing() then return false end
     local p = f.pages.self

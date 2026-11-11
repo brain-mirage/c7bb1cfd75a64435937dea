@@ -64,6 +64,8 @@
         <do RegisterEvent="TK_SPELL_ICONS_CHANGED"/>
         <do RegisterEvent="TK_DRAWING_STYLE_CHANGED"/>
         <do RegisterEvent="TK_SPELLINFO_CHANGED"/>
+        <!-- s6-ui-core (round 120): Classic turned on or off, the rows' slot letters with it -->
+        <do RegisterEvent="TK_CLASSIC_CHANGED"/>
         <on script="OnEvent" call="Changed"/>
       </frame>
       <!-- Head note 44: with spell icons animating, the page's spells draw their icons' frame showing now -->

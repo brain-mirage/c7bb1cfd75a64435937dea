@@ -1,4 +1,4 @@
--- The Sound settings page. It fills the UI's Sound node (core/settings.lua, TK.SoundNode): the values belong to this
+-- The Sound settings page. It fills the UI's Sound node (core/global/settings.lua, TK.SoundNode): the values belong to this
 -- computer (TK.Machine, "sound"), and the page is listed on the login screen too. A missing or mistyped value takes
 -- its default.
 -- s6-ui-core (round 54; the owner, 2026-10-05: "Sound should also have a general and extra pages like graphics will have.
@@ -44,6 +44,18 @@ local function saveClientSetting(kind, key, value)
     __tk:ClientSettingsSave()
 end
 
+-- The client settings the music dialog remembers (RememberMusicDialog), in its order: the getter and setter for each kind
+-- (built once; the names are __tk's), and the key. Their values are REMEMBERED_VALUES' (reused from paint to paint).
+local REMEMBERED = {
+    { "ClientSettingInt", "ClientSettingSetInt", "music_frequency" },
+    { "ClientSettingInt", "ClientSettingSetInt", "music_source" },
+    { "ClientSettingString", "ClientSettingSetString", "music_folder" },
+    { "ClientSettingString", "ClientSettingSetString", "music_cd_drive" },
+    { "ClientSettingBool", "ClientSettingSetBool", "play_random" },
+    { "ClientSettingBool", "ClientSettingSetBool", "play_repeat" },
+}
+local REMEMBERED_VALUES = {}
+
 -- s6-ui-core r66: remember changes made by the existing music dialog's model, through the same machine
 -- table/client keys as Sound. This is saving/volume presentation only: never call source/folder/order setters here,
 -- because FolderPathSelected 0x00529EE0 scans once in the Choose release and shares the wire's random stream.
@@ -57,11 +69,13 @@ function C:RememberMusicDialog(state)
     local changed = false
     -- 4a 0x0052A310 saves SoundFreq separately from Off; persisting the displayed 0 changes its next alert/unmute
     -- boundary and later wire-shared draws. RememberMusicDialog only copies Config; it never commands playback.
-    for _, item in ipairs({ { "Int", "music_frequency", state.frequency }, { "Int", "music_source", state.source }, { "String", "music_folder", state.folder }, { "String", "music_cd_drive", state.cd or "" },
-        { "Bool", "play_random", state.order ~= 0 }, { "Bool", "play_repeat", state.repeatMode == 0 } }) do
-        local kind, key, value = table.unpack(item)
-        if __tk["ClientSetting" .. kind](__tk, "sound", key) ~= value then
-            __tk["ClientSettingSet" .. kind](__tk, "sound", key, value) changed = true
+    local values = REMEMBERED_VALUES
+    values[1], values[2], values[3], values[4] = state.frequency, state.source, state.folder, state.cd or ""
+    values[5], values[6] = state.order ~= 0, state.repeatMode == 0
+    for i, item in ipairs(REMEMBERED) do
+        local getter, setter, key = item[1], item[2], item[3]
+        if __tk[getter](__tk, "sound", key) ~= values[i] then
+            __tk[setter](__tk, "sound", key, values[i]) changed = true
         end
     end
     if changed then __tk:ClientSettingsSave() end
@@ -87,7 +101,7 @@ C.tabs = {
           desc = "As the original. Off, the music track playing goes on." },
         -- s6-ui-next hook: the original's sound-effects switch (MusicControlDialog::OnControlCommand 0x00529790,
         -- control 1): its press and release go to the dialog model's music dialog, which sends 1B 01 0D and turns the
-        -- effects on or off (core/settings.lua, S:MusicSwitch). It lives in the world, as the original's music dialog.
+        -- effects on or off (core/global/settings.lua, S:MusicSwitch). It lives in the world, as the original's music dialog.
         -- s6-audio: it shows the audio logic's effects state, as the original's dialog shows SoundManager's
         -- (MusicControlDialog.cpp:104), so it reads Off after F7. (s6-world-view, merging main with the integration:
         -- the integration's press route, which replaced the option:soundeffects action, with s6-audio's state.)
@@ -220,7 +234,7 @@ local function setSound(node, key, value)
     C:ApplySettings()
 end
 
--- s6-ui-core (round 54): what the Advanced page's controls need to have an effect, their (!) (core/settings.lua)
+-- s6-ui-core (round 54): what the Advanced page's controls need to have an effect, their (!) (core/global/settings.lua)
 local positional = TK.Needs("Positional Audio", function() return C:Sound().positional end)
 
 -- s6-ui-core (round 54; the owner, 2026-10-05: "you should be able to toggle Lightning Sounds to be positional here as
@@ -256,7 +270,7 @@ function C:SettingsNodes()
     local effects = TK.GetComponent("advancedeffects")
     positionalThunder.requires = effects and { effects.weatherNeed, effects.lightningNeed } or nil
     --- A subpage of Sound: the machine's sound settings, at the login screen too, and the music dialog's page (its
-    --- request, open:music, as General's: core/settings.lua, S:LeavesMusicFor).
+    --- request, open:music, as General's: core/global/settings.lua, S:LeavesMusicFor).
     local function sub(id, title, order, args)
         return { id = id, title = title, parent = "Sound", order = order, category = "general", atLogin = true,
                  machine = true, request = "open:music",

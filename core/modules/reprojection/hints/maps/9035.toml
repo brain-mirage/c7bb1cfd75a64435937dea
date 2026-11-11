@@ -1,0 +1,13 @@
+[check]
+size = "28x28"
+
+# s6-reprojection-cloud-1 run 64: the two snow caps over the ice wall's stub at 1,24 (1169 at 1,23 and 1187 at 2,22) stay
+# on their own tier (height 2). CapStep lifts a cap beside a higher terrace to that terrace's height, which here left an
+# L-shaped slab floating over the notch, seen at orbits 30 to 60. A map exception: the pieces stay terrace caps everywhere
+# else they stand, and changing CapStep's scope in both Solids is a larger, global change (the audit groups hint report,
+# run 64).
+[cells."1,23-1,23"]
+terrace_cap = false
+
+[cells."2,22-2,22"]
+terrace_cap = false

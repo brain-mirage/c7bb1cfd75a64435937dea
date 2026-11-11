@@ -3,7 +3,7 @@
 -- (434, 12) on the scaled 5.x screen.
 
 local C = TK.GetComponent("5x.side")
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 
 C.defaults = { enabled = false, scale = 1 }
 

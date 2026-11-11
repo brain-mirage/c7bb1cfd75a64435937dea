@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 7.x's look of the user list, the hunters-list settings and the friend list (its XML twin's layout; social.lua draws
      with it), from Source-5's class pages (the EPF layout). Format: core/xml.md; each dialog's attributes are its look
-     entry's values (interfaces/original/entry.lua), its children where social.lua draws its parts: rectangles (left, top, right,
+     entry's values (shared/original/entry.lua), its children where social.lua draws its parts: rectangles (left, top, right,
      bottom), points (x, y), pictures (file, palette) and image buttons (BUTT001.EPF's image id first).
      WIRE: a control's rectangle is where a press on it lands (DialogPane::HitTestControls 0x0049FB10); changing one
      changes which control a press reaches, so what the client sends (the 85 and 84 requests, the whisper). -->

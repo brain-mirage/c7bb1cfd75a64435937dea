@@ -12,7 +12,7 @@
 --
 -- s6-ui-core (round 52; s6-optimize's chat review, H5): this file is Modern's view of the Terminal now. What every
 -- interface shares (the rules' Terminal state, makegm, the console's output and the lines entered) is
--- core/terminal.lua's (TK.Terminal), moved there unchanged; Modern's chat frame tells it about its tab. The tabs' logic is
+-- shared/terminal.lua's (TK.Terminal), moved there unchanged; Modern's chat frame tells it about its tab. The tabs' logic is
 -- tabs.lua's (the Terminal's kind and its tab), the menu tabbar.lua's.
 
 local C = TK.GetComponent("chatframe")

@@ -6,13 +6,13 @@
 --
 -- s6-interface-7x-b (round 8, the interface separation's step 5: docs/development/interface-separation.md, the row for
 -- this file): the colours, the palette's indexes, Fill, Digit and Number are the original client's palette
--- (interfaces/original/palette.lua, moved there from here by s6-devtools), which this skin inherits; the font, the
+-- (shared/original/palette.lua, moved there from here by s6-devtools), which this skin inherits; the font, the
 -- pictures, the bars and the item pictures stay 7.x's.
 -- s6-ui-core (round 85): the XML twin's; the screen's size and the font are skin.xml's (core/xml.md).
 
 local H = __tk
 
-local S = setmetatable({}, { __index = require("interfaces.original.palette") })
+local S = setmetatable({}, { __index = require("shared.original.palette") })
 local D = TK.Xml.Data("skin.xml")
 local FONT = D.FONT
 
@@ -81,7 +81,7 @@ end
 --- Item picture iconId (ITEM.EPF's frame) in tex, its whole frame centred on (cx, cy) of parent at scale (1, or 0.5 for a
 --- list's half-size picture), as the original centres it (GetItemGlyphBounds' frame, not the drawn pixels); hidden
 --- without it. Returns the frame's drawn width and height.
-S.Item = require("interfaces.original.itempicture")
+S.Item = require("shared.original.itempicture")
 
 --- A bar of BAR.EPF in BAR.PAL as the original fills it (UserStatusPane2::OnPaint, NewGroupPane's): w pixels ending at
 --- right, the middle frame's last w pixels (frames { middle, left cap, right cap }), its 3-pixel caps outside both ends,

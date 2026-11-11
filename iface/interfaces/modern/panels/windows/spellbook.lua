@@ -6,7 +6,7 @@
 -- names when they fit, else a mark each, with the names in the row's tooltip). There is no level column: nothing the
 -- client receives says a spell's required level.
 --
--- The values are TK.SpellInfo's (core/spellinfo.lua, s6-spellbook-data): numbers, the newest seen, nil (shown ???) while
+-- The values are TK.SpellInfo's (shared/spellinfo.lua, s6-spellbook-data): numbers, the newest seen, nil (shown ???) while
 -- unknown. Where the values seen differed, the row's tooltip gives their range ("seen 100 to 130"). They redraw on
 -- TK_SPELLINFO_CHANGED and whenever the spell list changes.
 --
@@ -264,16 +264,22 @@ local function fillAuras(row, cell, c, auras)
     end
 end
 
+--- A row's aether now: its sweep and its mark.
+local function showAether(row)
+    local cd, start, duration = H:GetSlotCooldown("spell", row.slot)
+    if row.named and cd then row.cooldown:SetCooldown(start, duration) else row.cooldown:Clear() end
+    markRow(row, row.named and cd or false)
+end
+
 --- A row's spell (name nil: an empty slot, shown while a book spell is moved) and its values in the columns shown.
 local function fillRow(row, name, info, classic)
     local ok = name ~= nil
+    row.named = ok
     row.name:SetText(ok and name or "Empty")
     W.Color(row.name, ok and W.white or UNKNOWN)
     W.ActionIcon(row.icon, row.glyph, row.box, ok and row.spell or nil, ICON, 2)
     row.letter:SetShown(classic and true or false)
-    local cd, start, duration = H:GetSlotCooldown("spell", row.slot)
-    if ok and cd then row.cooldown:SetCooldown(start, duration) else row.cooldown:Clear() end
-    markRow(row, ok and cd or false)
+    showAether(row)
     for _, c in ipairs(COLUMNS) do
         local cell = row.cells[c.key] -- none for the spell's own column, drawn above
         if cell then
@@ -481,9 +487,16 @@ function scripts.BookPage(page) bookPage = page end
 
 function scripts.PowerChanged(_, _, unit) if unit == "player" then markShown() end end
 
-function scripts.Changed(f)
+function scripts.Changed(f, event)
     local page = f:GetParent()
-    if page:IsVisible() then TK.SafeCall(CW:Tab("spellbook").refresh, page) end
+    if not page:IsVisible() then return end
+    -- s6-reprojection-cloud-1 (run 83, Astra 82-45): an aether moves the rows' sweeps and marks: the book's 52 slots aren't
+    -- scanned, sorted and laid out again. The order and the rows' actions (what a cast sends) are as refresh left them.
+    if event == "ACTIONBAR_UPDATE_COOLDOWN" then
+        for _, row in ipairs(page.shown) do showAether(row) end
+        return
+    end
+    TK.SafeCall(CW:Tab("spellbook").refresh, page)
 end
 
 -- s6-optimize (round 11): the rows the page shows are the ones refresh last showed (page.shown; nothing else shows or hides

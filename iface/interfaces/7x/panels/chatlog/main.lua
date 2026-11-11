@@ -13,7 +13,7 @@
 --     (OnPaint 0x00480BB0); dragged with the left button (HandlePointerOrMouseEvent 0x00480890), it follows the pointer
 --     (y 50 to 650) and on its release the log takes max(4, (710 - y) / 13) rows, saved.
 -- With the chat switched off (the chat bar's switch, settings.toml chat.secondary) the log, its bar, the backdrop and the
--- handle are gone; lines still come in. The lines are the game layer's (TK_CHAT_LINE, core/game/chat.lua: its colours
+-- handle are gone; lines still come in. The lines are the game layer's (TK_CHAT_LINE, shared/game/chat.lua: its colours
 -- worked out as 4a's: Config::m_chatColorPairs, the packets' own colours) but the system lines 4a puts in the messages
 -- pane (0x0A kinds 2 and 3, the rules' notices: panels/messages) and the server's message pane (0x58). Its place follows the scaled screen until the player moves it (edit
 -- mode, its Layout tab); the area is the backdrop's at 8 rows, and the log grows upwards from its bottom.
@@ -34,7 +34,7 @@ local C = TK.GetComponent("7x.chatlog")
 local H = __tk
 local S = require("interfaces.7x.skin")
 local Hud = require("interfaces.7x.hud")
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 local E = require("interfaces.7x.elements")
 
 local D = TK.Xml.Data("main.xml")
@@ -63,10 +63,7 @@ local function own(y) return y - PLACE[2] end
 function C:Reset()
     C.lines = {}
     for i = 1, BLANKS do C.lines[i] = BLANK end
-    if self.list then
-        self.list:SetCount(#C.lines)
-        self.list:End()
-    end
+    if self.list then self.list:SetCount(#C.lines, true) end
 end
 
 --- A line of the chat frame's into the log, the oldest dropped past 1000; to the newest unless Shift is held (show: the
@@ -81,8 +78,15 @@ function C:Add(entry, show)
     -- s6-interface-5x (round 13's hotfix, a marked edit): the game screen's lines given at a late start are drawn once
     -- after them (TK_CHAT_REPLAYED, OnEnable)
     if not L or TK.Game.Chat.replaying then return end
-    L:SetCount(#list)
-    if (show or not IsShiftKeyDown()) and not L.dragging then L:End() else L:Redraw() end
+    -- the client review's 4.29: the count, the place and the bar now (Hud.Lines' Count, whose WIRE comment says why the
+    -- bar goes with the line); the rows are painted once at the next frame, for all of that frame's lines, by the frame's
+    -- own script (scripts.Follow), and while the log is hidden (the panel, or the chat switched off) when it shows. A
+    -- scroll before then paints them at once. Drawing only.
+    local asked = L.stale
+    L:Count(#list, (show or not IsShiftKeyDown()) and not L.dragging)
+    if not asked and self.frame then
+        self.frame:SetUpdateWhen("settings") -- the value it watches already; this asks for one call on the next frame shown
+    end
 end
 
 --- Scrolls n lines towards the older (negative: the newer), or a page (dir 1 older, -1 newer: the rows less one), as
@@ -179,10 +183,13 @@ function scripts.HandleUpdate(handle)
     handle:SetPoint("TOPLEFT", C.frame, "TOPLEFT", HANDLE.x - PLACE[1], -(own(dragY()) - C.grab))
 end
 
--- the chat bar's buttons change the mode and the switch (settings.toml): followed as they change
+-- the chat bar's buttons change the mode and the switch (settings.toml): followed as they change; and the rows painted
+-- once for the lines that came since the last frame (C:Add)
 function scripts.Follow()
     local rowsNow, mode, on = C.Settings()
     if rowsNow ~= C.rows or mode ~= C.mode or on ~= C.on then C:Arrange(rowsNow ~= C.rows) end
+    -- with the chat switched off the log's rows wait; turning it on is a settings change, which calls this again
+    if C.list.stale and C.on then C.list:Redraw() end
 end
 
 function scripts.Register(f)
@@ -195,10 +202,7 @@ function C:OnEnable()
     -- the chat's lines, and its scroll keys while this log shows (the game layer's; s6-interface-5x round 12: they were
     -- Modern's chat frame's hooks before)
     TK.On("TK_CHAT_LINE", function(_, entry, show) self:Add(entry, show) end)
-    TK.On("TK_CHAT_REPLAYED", function()
-        self.list:SetCount(#C.lines)
-        self.list:End()
-    end)
+    TK.On("TK_CHAT_REPLAYED", function() self.list:SetCount(#C.lines, true) end)
     TK.Game.Chat.ProvideLog("7x.chatlog", { shown = function() return self:Shown() end,
                                             scroll = function(n) self:Scroll(n) end, page = function(dir) self:Page(dir) end })
     self:Reset()

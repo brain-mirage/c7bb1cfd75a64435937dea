@@ -14,7 +14,7 @@
 local C = TK.GetComponent("7x.mapname")
 local H = __tk
 local S = require("interfaces.7x.skin")
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 -- 7.x's drawing helpers (X.Bold; s6-interface-7x-b round 8, the separation's step 5: interfaces/7x/draw.lua, the
 -- dialogs look's file's before)
 local X = require("interfaces.7x.draw")

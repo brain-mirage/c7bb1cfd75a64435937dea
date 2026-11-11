@@ -1,5 +1,5 @@
 -- s6-interface-7x (round 1): 7.x's look of two windows the Menu popup opens (its Target and Profile rows), 4a's
--- ui/OptionPane.cpp, from Source-5's class pages (the EPF layout): components/dialogs/panes.lua's TargetOptionDialog and
+-- ui/OptionPane.cpp, from Source-5's class pages (the EPF layout): shared/components/dialogs/panes.lua's TargetOptionDialog and
 -- misc.lua's ProfileDialog. Drawing only, but for the switches' press areas (below): the indexes, the parts, the keys and
 -- what OK does are the renderers' and the model's.
 --
@@ -16,7 +16,7 @@
 
 local S = require("interfaces.7x.skin")
 local unpack = table.unpack
-local entry = require("interfaces.original.entry")
+local entry = require("shared.original.entry")
 local D = TK.Xml.Data("options.xml")
 
 return function(L, X)

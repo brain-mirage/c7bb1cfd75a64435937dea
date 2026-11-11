@@ -31,8 +31,8 @@ local C = TK.GetComponent("7x.messages")
 local H = __tk
 local S = require("interfaces.7x.skin")
 local Hud = require("interfaces.7x.hud")
-local Screen = require("interfaces.screen")
-local Wrap = require("interfaces.original.wrap")
+local Screen = require("shared.original.screen")
+local Wrap = require("shared.original.wrap")
 
 local L = TK.Xml.Data("main.xml")
 local LOW, HIGH = L.DIVIDER.low, L.DIVIDER.high -- the divider's range
@@ -48,7 +48,7 @@ C.messages = {}
 --- AddWrappedText (0x00586B00): text cut into messages of at most 160 pixels: a tab ends one; otherwise a message ends
 --- when the next character would pass 160 pixels, after the last character on it that is not a letter or digit (none:
 --- before the character that passed), and a space or a mark that passes stays on its message. s6-interface-7x-b (round
---- 8, the separation's step 5): the original client's wrap (interfaces/original/wrap.lua: Wrap.Lines, 4a's
+--- 8, the separation's step 5): the original client's wrap (shared/original/wrap.lua: Wrap.Lines, 4a's
 --- SystemMessagePane.cpp:556-646 line by line), which this file read on its own before; toward 4a, an empty text and
 --- what follows a text's last tab make no message (this made an empty one). Drawing only.
 function C.Wrap(text) return Wrap.Lines(text, WRAP, S.TextWidth) end

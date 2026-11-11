@@ -32,9 +32,26 @@ local LOSS = ui.LOSS
 V.LOSS_ON_RED = ui.LOSS_ON_RED
 local HEAL, HIT = ui.HEAL, ui.HIT
 
---- A vital bar (W.VitalBar) that keeps its text size, for the second row.
+--- A plain bar of the player, party and target frames: the fill in its colour over a dark one (a fifth of it), and an
+--- outlined value text in the middle, in Modern's skin. s6-ui-core (the five parts' step 2c): Modern's alone, so moved
+--- here unchanged from the shared widget kit (shared/widgets/init.lua's make.VitalBar, which s6-optimize had made of three).
+function V.VitalBar(parent, height, r, g, b, textSize, name)
+    local s = CreateFrame("StatusBar", name, parent)
+    s:SetHeight(height)
+    s:SetStatusBarTexture("tk:bar")
+    s:SetStatusBarColor(r, g, b, 1)
+    local bg = s:CreateTexture(nil, "BACKGROUND")
+    bg:SetAllPoints(s)
+    bg:SetColorTexture(r * 0.2, g * 0.2, b * 0.2, 0.85)
+    s.text = W.Label(s, "", textSize, W.white)
+    s.text:SetFont(textSize, "OUTLINE")
+    s.text:SetPoint("CENTER", s, "CENTER", 0, 0)
+    return s
+end
+
+--- A vital bar (V.VitalBar) that keeps its text size, for the second row.
 function V.Bar(parent, height, r, g, b, textSize, name)
-    local bar = W.VitalBar(parent, height, r, g, b, textSize, name)
+    local bar = V.VitalBar(parent, height, r, g, b, textSize, name)
     bar.textSize = textSize
     return bar
 end
@@ -53,14 +70,32 @@ function V.Parts(cur, max, form)
     return c .. " / " .. m .. " (" .. p .. ")", c .. " / " .. m, p, c .. " (" .. p .. ")", "/ " .. m
 end
 
+--- A bar's width: bar.w, read once by a frame drawing its bars (V.ReadWidths), else read now. s6-ui-core round 147
+--- (steer d130e190, the start-up's long frame): a width read after a text or a place changed lays the UI out again
+--- there and then (UIHost.EnsureLayout); read before them, it lays nothing out again.
+local function width(bar) return bar.w or bar:GetWidth() end
+
+--- Reads the bars' widths once for what follows (V.Numbers, V.Span, V.Mark), before their frame changes any text or
+--- place; V.ForgetWidths ends it. The bars' widths do not change with their texts.
+function V.ReadWidths(...)
+    for i = 1, select("#", ...) do
+        local bar = select(i, ...)
+        bar.w = bar:GetWidth()
+    end
+end
+
+function V.ForgetWidths(...)
+    for i = 1, select("#", ...) do select(i, ...).w = nil end
+end
+
 --- Writes the numbers on a bar (form nil: none). One line while it fits the bar, else two rows over it, centred on it as
 --- one block. Returns the rows shown (0, 1 or 2): a frame gives a bar of two rows the height for them (V.Height).
 function V.Numbers(bar, cur, max, form)
     local text = bar.text
     local line, top, bottom, narrowTop, narrowBottom
     if form then line, top, bottom, narrowTop, narrowBottom = V.Parts(cur, max, form) end
+    local w = width(bar) -- s6-ui-core round 147: before its text changes (the bar's width does not change with it)
     text:SetText(line or "")
-    local w = bar:GetWidth()
     local rows = not line and 0 or (bottom and w > 0 and text:GetStringWidth() > w - 4) and 2 or 1
     if rows == 2 then
         if not bar.text2 then
@@ -96,7 +131,7 @@ end
 
 --- A part of the bar, from and to in its values (cut to 0..max), drawn by tex; hidden when empty.
 function V.Span(tex, bar, from, to, max)
-    local w = bar:GetWidth()
+    local w = width(bar)
     from, to = math.max(0, math.min(from, max)), math.max(0, math.min(to, max))
     if max <= 0 or w <= 0 or to <= from then return tex:Hide() end
     tex:ClearAllPoints()
@@ -180,7 +215,7 @@ function V.Mark(bar, value, max)
         bar.mark = m
     end
     m:ClearAllPoints()
-    m:SetPoint("TOP", bar, "BOTTOMLEFT", bar:GetWidth() * math.min(value, max) / max, 0)
+    m:SetPoint("TOP", bar, "BOTTOMLEFT", width(bar) * math.min(value, max) / max, 0)
     m:Show()
 end
 

@@ -1,5 +1,5 @@
--- s6-modular-g (interfaces, round 13): 7.x's look of the collection album (components/dialogs/collection.lua) and the
--- chat colour dialog (components/dialogs/chatcolor.lua), from Source-5's class pages. Drawing only: the indexes, the
+-- s6-modular-g (interfaces, round 13): 7.x's look of the collection album (shared/components/dialogs/collection.lua) and the
+-- chat colour dialog (shared/components/dialogs/chatcolor.lua), from Source-5's class pages. Drawing only: the indexes, the
 -- paging and what is kept are the renderers' and the model's.
 --
 -- The album (CollectionDialogPane 0x0048C640): 668 x 468 on DLGCLT.EPF in DLGCLT.PAL, at placement slot 17 (centred),
@@ -25,7 +25,7 @@
 
 local S = require("interfaces.7x.skin")
 local unpack = table.unpack
-local entry = require("interfaces.original.entry")
+local entry = require("shared.original.entry")
 local D = TK.Xml.Data("album.xml")
 
 return function(L, X)

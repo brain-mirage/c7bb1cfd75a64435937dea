@@ -9,7 +9,7 @@
 --
 -- Wire: the line, its keys and what Enter sends are the chat rules' (TK.Core.Rules.Chat.ChatRules: 0E, 19), as with
 -- Modern's chat bar; this only draws the line and passes the presses on through the game layer's chat (TK.Game.Chat,
--- core/game/chat.lua; s6-interface-5x round 12, separation step 3): a left press on the typing area while no line or
+-- shared/game/chat.lua; s6-interface-5x round 12, separation step 3): a left press on the typing area while no line or
 -- prompt is open runs the rules' chat:current (the say mode's line, or Talk's with Back to Talk:
 -- UserPane::OpenInputPaneForCurrentSayMode), in the press's own record (TypingPress); Back to Talk turns over on its
 -- release over it (ChattingHandlePane::HandlePointerOrMouseEvent) and goes to the rules (SetBackToTalk). Changing which
@@ -21,7 +21,7 @@
 local C = TK.GetComponent("7x.chatbar")
 local H = __tk
 local S = require("interfaces.7x.skin")
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 local G = TK.Game.Chat
 
 local L = TK.Xml.Data("main.xml")

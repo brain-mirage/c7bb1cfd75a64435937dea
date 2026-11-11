@@ -20,8 +20,8 @@
 
 local C = TK.GetComponent("5x.board")
 local S = require("interfaces.5x.skin")
-local Screen = require("interfaces.screen")
-local Wrap = require("interfaces.original.wrap") -- s6-interface-5x-b (round 9, the separation's step 5)
+local Screen = require("shared.original.screen")
+local Wrap = require("shared.original.wrap") -- s6-interface-5x-b (round 9, the separation's step 5)
 local E = require("interfaces.5x.elements")
 
 local L = TK.Xml.Data("main.xml")
@@ -35,7 +35,7 @@ function C:Clear()
 end
 
 --- Adds a text's lines as messages (the oldest go past 200) and shows the newest (ScrollToLatest). The lines are
---- AddWrappedText's at the legacy branch's 184 in 5.33's font 0 (the original client's wrap, interfaces/original/wrap.lua;
+--- AddWrappedText's at the legacy branch's 184 in 5.33's font 0 (the original client's wrap, shared/original/wrap.lua;
 --- s6-interface-5x-b, round 9: this panel's C.Cut before, moved there as it was).
 function C:Add(text)
     for _, line in ipairs(Wrap.Lines(text, LINES.width, S.TextWidth)) do self.messages[#self.messages + 1] = line end

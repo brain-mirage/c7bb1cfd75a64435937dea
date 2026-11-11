@@ -54,7 +54,7 @@
   <template name="TK7xLookItem">
     <texture key="items[]" layer="ARTWORK"/>
   </template>
-  <!-- an action button: Modern's look window's action on its left press (look.lua's ActionButton); its help on the right
+  <!-- an action button: the game layer's look action on its left press (look.lua's ActionButton); its help on the right
        press (look.lua's Help) -->
   <template name="TK7xLookButton">
     <frame type="Button" key="buttons[]" Size="36, 36"/>

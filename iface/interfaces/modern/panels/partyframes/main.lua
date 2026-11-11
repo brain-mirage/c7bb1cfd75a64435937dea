@@ -64,7 +64,13 @@ function scripts.PortraitTicker(f)
     end))
 end
 
-function scripts.Changed(_, event, unit)
+function scripts.Changed(f, event, unit)
+    -- s6-reprojection-cloud-1 (run 83, Astra 82-46; the owner: nothing runs unseen): nothing is drawn under a frame its
+    -- Visibility hides; shown again it lays out as things are (scripts.Shown). Drawing only.
+    if not f:IsVisible() then
+        C.behind = true
+        return
+    end
     if event == "UNIT_HEALTH" or event == "UNIT_POWER" or event == "UNIT_NAME_UPDATE" then
         local p = C.byUnit and C.byUnit[unit]
         if p then
@@ -76,6 +82,12 @@ function scripts.Changed(_, event, unit)
     else
         C:Layout()
     end
+end
+
+function scripts.Shown()
+    if not C.behind then return end
+    C.behind = false
+    C:Layout()
 end
 
 function C:OnEnable()
@@ -130,12 +142,20 @@ function C:Layout()
             elseif db.growth == "RIGHT" then p:SetPoint("TOPLEFT", f, "TOPLEFT", k * (w + gap), 0)
             else p:SetPoint("TOPRIGHT", f, "TOPRIGHT", -k * (w + gap), 0) end
             self.byUnit[unit] = p
-            self:UpdatePlate(p, unit)
+        end
+    end
+    -- s6-ui-core round 147 (steer d130e190): the plates placed first, so their bars' widths are read once
+    -- (V.ReadWidths), not each after the plate before it changed its texts
+    for _, p in pairs(self.byUnit) do V.ReadWidths(p.hp) end
+    for i, p in ipairs(self.plates) do
+        if units[i] then
+            self:UpdatePlate(p, units[i])
             p:Show()
         else
             p:Hide()
         end
     end
+    for _, p in pairs(self.byUnit) do V.ForgetWidths(p.hp) end
     self:FitRows()
 end
 
@@ -156,6 +176,8 @@ function C:UpdatePlate(p, unit)
     if not ok then return end
     p.unit = unit
     local _, hp, hpMax, mp, mpMax = H:GetUnitVitals(unit)
+    local read = not p.hp.w -- s6-ui-core round 147: its bar's width before its texts change, unless Layout read it
+    if read then V.ReadWidths(p.hp) end
     p.name:SetText(name)
     p.info:SetText(level .. " " .. path)
     V.Set(p.hp, hp, hpMax)
@@ -164,6 +186,7 @@ function C:UpdatePlate(p, unit)
     V.Numbers(p.hp, hp, hpMax, db.showNumbers and db.numberFormat)
     self:ShowPreview(p, unit)
     self:ShowPortrait(p, unit)
+    if read then V.ForgetWidths(p.hp) end
 end
 
 --- s6-ui-core (round 82; the owner, 2026-10-09): a hovered spell's healing or damage (the Library's, from the player's
@@ -179,7 +202,7 @@ function C:ShowPreviews()
     for unit, p in pairs(self.byUnit or {}) do self:ShowPreview(p, unit) end
 end
 
--- s6-ui-core (round 82): the hovered spell (TK.ManaPreview, core/tooltip.lua: its name, nil on leaving)
+-- s6-ui-core (round 82): the hovered spell (TK.ManaPreview, shared/widgets/tooltip.lua: its name, nil on leaving)
 TK.On("TK_MANA_PREVIEW", function(_, _, name)
     if not C.frame then return end
     local amount, kind = V.SpellEffect(name)

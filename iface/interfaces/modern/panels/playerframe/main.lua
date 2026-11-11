@@ -49,7 +49,7 @@ end
 
 function scripts.Untip() GameTooltip:Hide() end
 
--- s6-ui-core (after build 41; s6-optimize's audit): the player chose their own picture (core/profilepicture.lua's Save)
+-- s6-ui-core (after build 41; s6-optimize's audit): the player chose their own picture (core/global/profilepicture.lua's Save)
 -- to be their portrait, so its switch goes on and the portrait shows it.
 function scripts.ProfilePicture()
     TK.On("TK_PROFILE_PICTURE_SAVED", function()
@@ -126,6 +126,7 @@ function C:Update()
     local _, name, level, path = H:GetUnitInfo("player")
     local _, hp, hpMax, mp, mpMax = H:GetUnitVitals("player")
     local _, xp, xpMax = H:GetPlayerXP()
+    V.ReadWidths(f.hp, f.mp) -- s6-ui-core round 147: once, before the texts below change (their Layout keeps them)
     f.name:SetText(name or "")
     f.level:SetText(tostring(level or ""))
     f.path:SetText(path or "")
@@ -143,6 +144,7 @@ function C:Update()
     -- snap to whole pixels and made every vitals event lay the frame out again.
     if V.Height(f.hp, HP_HEIGHT) ~= self.hpHeight or V.Height(f.mp, MP_HEIGHT) ~= self.mpHeight then self:Layout() end
     if self.cost or self.costName then self:ShowCost(self.cost, self.costName) end
+    V.ForgetWidths(f.hp, f.mp)
 end
 
 --- s6-characters seam (the owner, 2026-10-01): the portrait: the character's profile image when the setting asks for it and
@@ -186,7 +188,7 @@ function C:ApplySettings()
     TK.Visibility:Apply(self.frame)
 end
 
--- s6-input (round 49, separation step 4b): a hovered spell's learned cost, or nil (TK.ManaPreview, core/tooltip.lua);
+-- s6-input (round 49, separation step 4b): a hovered spell's learned cost, or nil (TK.ManaPreview, shared/widgets/tooltip.lua);
 -- s6-ui-core (round 82): and its name, nil on leaving.
 TK.On("TK_MANA_PREVIEW", function(_, cost, name)
     if C.frame then C:ShowCost(cost, name) end

@@ -1,4 +1,4 @@
--- s6-modular-g (interfaces, round 12): 7.x's look of the boards and mail (components/dialogs/bulletin.lua), from
+-- s6-modular-g (interfaces, round 12): 7.x's look of the boards and mail (shared/components/dialogs/bulletin.lua), from
 -- Source-5's class pages (the EPF layout, which this build always takes). Drawing only: the indexes, the keys, the 3B
 -- requests and the replies are the renderer's and the model's.
 --
@@ -44,12 +44,12 @@
 
 local S = require("interfaces.7x.skin")
 local unpack = table.unpack
-local entry = require("interfaces.original.entry")
+local entry = require("shared.original.entry")
 local D = TK.Xml.Data("boards.xml")
 
 return function(L, X)
-    -- what 5.x's look draws alike: interfaces/original/boards.lua
-    local B = require("interfaces.original.boards")(X)
+    -- what 5.x's look draws alike: shared/original/boards.lua
+    local B = require("shared.original.boards")(X)
     local first = B.First
     local EDIT = D.EDIT
 

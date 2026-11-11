@@ -2,7 +2,7 @@
 <!-- 5.x's look of the boards and mail (its XML twin's layout; boards.lua draws with it), from 5.33's own constructors,
      7.5.2's older layout to the pixel but for the rows' columns and the form's entries (boards.lua's header). Every
      window but the form 446 x 366 on its DLGBBSnn.EPF frame 0 in NPAL8.PAL. Format: core/xml.md; each dialog's attributes
-     are its look entry's values (interfaces/original/entry.lua), its children where boards.lua draws its parts: rectangles (left, top,
+     are its look entry's values (shared/original/entry.lua), its children where boards.lua draws its parts: rectangles (left, top,
      right, bottom) and the window's frame: its picture, its image buttons ({ control index, image, left, top }, 72 x 16)
      and its default button's index.
      WIRE: a control's rectangle is where a press on it lands (changing one changes which control a press reaches); the

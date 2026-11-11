@@ -1,10 +1,10 @@
 -- Nameplates (plan 5.11; K-076, O-07, O-22, O-23): the names over the figures the world view draws, from the drawing
--- (__tk:GetNameplate), as the original's ObjectInfoObjectPane draws them (ObjectPane.cpp:1142-1170): outlined in the
+-- (__tk:GetNameplates), as the original's ObjectInfoObjectPane draws them (ObjectPane.cpp:1142-1170): outlined in the
 -- back colour one pixel around; with the carnage dye in the status's two colours with a bordered box under the name;
 -- none while the figure's balloon shows. With Display names off only the figures whose name follows the pointer (info
 -- types 1-3) show anything: a small down arrow, or the name once the pointer is on a human's figure (MapPane.cpp:1706),
 -- 20 pixels lower and in the normal colours. N (none, Ctrl or Alt; not Shift, MapPane.cpp:1420) turns the names on or
--- off: Display names is the game layer's global setting (TK.Game.Options.ShowNames, core/game/options.lua; s6-play-modes
+-- off: Display names is the game layer's global setting (TK.Game.Options.ShowNames, shared/game/options.lua; s6-play-modes
 -- round 8, W6), which the drawing's own names follow too. Group members get their HP and MP bars from what the server
 -- sends (0x63), speaking or not, at the bars' own place over the figure (not the name's); the drawing leaves their
 -- ordinary hit bars out meanwhile, as the original. Local display only: nothing is sent.
@@ -18,6 +18,11 @@ local U = TK.Util
 require("interfaces.modern.panels.nameplates.bars") -- s6-ui-core (round 82): C:RefreshBars
 
 C.pool = {}
+
+-- s6-ui-core (round 121, CR-UI-08): the empty member lists, shared by every frame without a group; never written to.
+local NONE = {}
+-- s6-ui-core (round 154, the client review's 4.27): the group's unit names, "party1".."partyN", each made once
+local PARTY = setmetatable({}, { __index = function(t, i) local unit = "party" .. i t[i] = unit return unit end })
 
 -- DrawOutlinedTextAt: the text in the back colour one pixel up, down, left and right, then in the text colour.
 local AROUND = { { 0, 1 }, { 0, -1 }, { -1, 0 }, { 1, 0 } }
@@ -46,16 +51,33 @@ function C:Style(p)
     local size = self:DB().size
     for _, fs in ipairs(p.back) do fs:SetFont("classic", size, "") end
     p.name:SetFont("classic", size, "")
+    p.goal:SetFont("classic", size, "")
+    for _, fs in ipairs(p.goalBack) do fs:SetFont("classic", size, "") end
+    p.goalSize = nil
     p.shown = nil
+end
+
+-- The two labels share text/colour caching; their anchors and visibility remain independent.
+local function setOutlinedText(p, goal, text, colour, outline)
+    local front, back = goal and p.goal or p.name, goal and p.goalBack or p.back
+    local textKey = goal and "goalText" or "shown"
+    local colourKey, outlineKey = goal and "goalColour" or "colour", goal and "goalOutline" or "outline"
+    if p[textKey] ~= text then
+        front:SetText(text)
+        for _, fs in ipairs(back) do fs:SetText(text) end
+        p[textKey] = text
+    end
+    if p[colourKey] ~= colour or p[outlineKey] ~= outline then
+        front:SetTextColor(rgb(colour))
+        local r, g, b = rgb(outline)
+        for _, fs in ipairs(back) do fs:SetTextColor(r, g, b) end
+        p[colourKey], p[outlineKey] = colour, outline
+    end
 end
 
 function C:SetName(p, text, colour, outline)
     local k = self:DB().size / 12
-    if p.shown ~= text then
-        p.name:SetText(text)
-        for _, fs in ipairs(p.back) do fs:SetText(text) end
-        p.shown = text
-    end
+    setOutlinedText(p, false, text, colour, outline)
     if p.k ~= k then
         p.name:ClearAllPoints()
         p.name:SetPoint("BOTTOM", p, "BOTTOM", 0, 0)
@@ -65,12 +87,27 @@ function C:SetName(p, text, colour, outline)
         end
         p.k = k
     end
-    if p.colour ~= colour or p.outline ~= outline then
-        p.name:SetTextColor(rgb(colour))
-        local r, g, b = rgb(outline)
-        for _, fs in ipairs(p.back) do fs:SetTextColor(r, g, b) end
-        p.colour, p.outline = colour, outline
+end
+
+--- An optional recorded goal under this figure's name, in the same style. Only the private replay bridge supplies it.
+function C:SetGoal(p, text, colour, outline)
+    local on = text ~= nil and text ~= ""
+    if p.goalShown ~= on then
+        p.goal:SetShown(on)
+        for _, fs in ipairs(p.goalBack) do fs:SetShown(on) end
+        p.goalShown = on
     end
+    if not on then return end
+    local size = self:DB().size
+    if p.goalSize ~= size then
+        local k = size / 12
+        p.goal:SetPoint("TOP", p.name, "BOTTOM", 0, -2 * k)
+        for j, fs in ipairs(p.goalBack) do
+            fs:SetPoint("TOP", p.name, "BOTTOM", AROUND[j][1] * k, (-2 + AROUND[j][2]) * k)
+        end
+        p.goalSize = size
+    end
+    setOutlinedText(p, true, text, colour, outline)
 end
 
 -- A plate is this component's own: it keeps what it shows (nameOn, boxOn, arrowOn, barsOn, visible and where it is
@@ -144,23 +181,48 @@ end
 --- s6-optimize (round 10): a member's HP and MP are read where its bars are drawn (PlaceBars), not every member's every
 --- frame; a member is a unit with an id (GetUnitId is 0 exactly when GetUnitVitals has no unit). s6-ui-core (round 83;
 --- the head's review of round 82): one list a frame, for the group bars (C:Party) and the bars over heads (RefreshBars).
+--- s6-ui-core (round 121, CR-UI-08): with no group (playing alone), the same empty lists every frame (NONE).
+--- s6-ui-core (round 154, the client review's 4.27): in a group the two lists are kept, and made again only when a
+--- member's id differs from when they were made (one joined or left, or its unit came or went), so a frame makes none.
+--- Nothing writes to them once made.
 function C:Members()
-    local units, ids = {}, {}
-    for i = 1, H:GetNumPartyMembers() do
-        local unit = "party" .. i
-        local id = H:GetUnitId(unit)
-        if id ~= 0 then
-            units[id] = unit
-            ids[#ids + 1] = string.format("%d", id)
+    local count = H:GetNumPartyMembers()
+    if count == 0 then return NONE, NONE end
+    local seen = self.memberSeen -- each member's id when the lists were made, in the group's order (0: no unit)
+    local same = seen ~= nil and seen.n == count
+    if same then
+        for i = 1, count do
+            if H:GetUnitId(PARTY[i]) ~= seen[i] then
+                same = false
+                break
+            end
         end
     end
-    return units, ids
+    if not same then
+        local units, ids = {}, {}
+        seen = { n = count }
+        for i = 1, count do
+            local unit = PARTY[i]
+            local id = H:GetUnitId(unit)
+            seen[i] = id
+            if id ~= 0 then
+                units[id] = unit
+                ids[#ids + 1] = string.format("%d", id)
+            end
+        end
+        self.memberSeen, self.memberUnits, self.memberIdList = seen, units, ids
+    end
+    return self.memberUnits, self.memberIdList
 end
 
 --- The members who have the group bars (C:Members()'s, none while the bars are off); tells the drawing who they are.
 function C:Party(units, ids)
-    if not self:DB().groupBars then units, ids = {}, {} end
-    self:SetGroupBarMembers(table.concat(ids, ","))
+    if not self:DB().groupBars then units, ids = NONE, NONE end
+    -- round 154 (4.27): the ids' text made again only for another list (C:Members keeps its lists while they hold)
+    if ids ~= self.partyIdList then
+        self.partyIdList = ids
+        self:SetGroupBarMembers(table.concat(ids, ","))
+    end
     return units
 end
 
@@ -192,9 +254,14 @@ function C:Piece(t, view, x, y, w, h, scale, hw, hh)
         t:Hide()
         return false
     end
-    t:ClearAllPoints()
-    t:SetPoint("TOPLEFT", view.frame, "CENTER", left * scale, -top * scale)
-    t:SetSize((right - left) * scale, (bottom - top) * scale)
+    -- run 86 (Astra 82-79): set only when it moved, as a plate's own anchor is. The same rectangle as before either way
+    local px, py, pw, ph = left * scale, -top * scale, (right - left) * scale, (bottom - top) * scale
+    if t.anchor ~= view.frame or t.px ~= px or t.py ~= py or t.pw ~= pw or t.ph ~= ph then
+        t:ClearAllPoints()
+        t:SetPoint("TOPLEFT", view.frame, "CENTER", px, py)
+        t:SetSize(pw, ph)
+        t.anchor, t.px, t.py, t.pw, t.ph = view.frame, px, py, pw, ph
+    end
     t:Show()
     return true
 end
@@ -220,13 +287,23 @@ end
 function C:PlaceBars(p, view, x, y, scale, hw, hh, outline, unit)
     local _, health, maxHealth, mana, maxMana = H:GetUnitVitals(unit)
     local hp, mp = filled(health, maxHealth), filled(mana, maxMana)
-    local r, g, b = rgb(outline)
-    p.bars:SetColorTexture(r, g, b, 0.5)
-    p.hpIndex = hp < 15 and 248 or hp < 29 and 251 or 10
-    r, g, b = rgb(paletteColour(p.hpIndex))
-    p.hp:SetColorTexture(r, g, b, 0.5)
-    r, g, b = rgb(paletteColour(9))
-    p.mp:SetColorTexture(r, g, b, 0.5)
+    -- run 86 (Astra 82-79): each colour set when it changes, not every frame
+    if p.barsColour ~= outline then
+        local r, g, b = rgb(outline)
+        p.bars:SetColorTexture(r, g, b, 0.5)
+        p.barsColour = outline
+    end
+    local hpIndex = hp < 15 and 248 or hp < 29 and 251 or 10
+    if p.hpIndex ~= hpIndex then
+        local r, g, b = rgb(paletteColour(hpIndex))
+        p.hp:SetColorTexture(r, g, b, 0.5)
+        p.hpIndex = hpIndex
+    end
+    if not p.mpColoured then
+        local r, g, b = rgb(paletteColour(9))
+        p.mp:SetColorTexture(r, g, b, 0.5)
+        p.mpColoured = true
+    end
     local left, top, k = barBox(view, x, y) -- s6-modular-d (rule 17)
     self:Piece(p.bars, view, left, top, 60 * k, 19 * k, scale, hw, hh)
     self:Piece(p.hp, view, left + k, top + k, hp * k, 8 * k, scale, hw, hh)
@@ -263,9 +340,11 @@ function C:Refresh()
         local members, memberIds = self:Members() -- s6-ui-core (round 83)
         local hover, target, party = self:Hovered(view), H:GetTargetId(), self:Party(members, memberIds) -- s6-world-view (round 31)
         local showNames = TK.Game.Options.ShowNames()
-        for i = 1, H:GetNumNameplates() do
-            local _, id, name, x, y, colour, outline, carnage, carnageOutline, offY, speaking, tracks, human, barX, barY =
-                H:GetNameplate(i)
+        -- s6-ui-core (round 121, the client report's CR-UI-08): all of them in one call a frame (14 values a name)
+        local rows = H:GetNameplates()
+        for i = 1, rows.n do
+            local id, name, x, y, colour, outline, carnage, carnageOutline, offY, speaking, tracks, human, barX, barY =
+                table.unpack(rows, (i - 1) * 14 + 1, i * 14)
             local member = party[id]
             local text, arrow, box, ty, fg, bg = nil, false, false, y, colour, outline
             if speaking then
@@ -297,6 +376,7 @@ function C:Refresh()
                 if not nameIn then text, arrow, box = nil, false, false end
                 if text then self:SetName(p, text, fg, bg) end
                 self:ShowName(p, text ~= nil)
+                self:SetGoal(p, text and rows.goals and rows.goals[i] or nil, fg, bg)
                 self:SetBoxShown(p, box)
                 if box then self:ShowBox(p, carnageOutline, carnage) end
                 self:ShowArrow(p, arrow, colour, outline)
@@ -311,6 +391,7 @@ function C:Refresh()
         self:RefreshBars(view, scale, w, h, hover, target, members) -- s6-ui-core (round 82; round 83: the same members)
     else
         self:SetGroupBarMembers("")
+        self.partyIdList = nil -- round 154 (4.27): so C:Party gives the members' list again once the view shows
         self:RefreshBars(nil)
     end
     for i = used + 1, #self.pool do showPlate(self.pool[i], false) end
@@ -334,6 +415,7 @@ function C:ApplySettings()
     if not db.enabled then
         H:SetNamesShownElsewhere(false)
         self:SetGroupBarMembers("")
+        self.partyIdList = nil -- round 154 (4.27): so C:Party gives the members' list again once enabled
         H:SetDamageNumbersShown(true, true) -- s6-ui-core (round 82): every floating number again, as the original
     end
     TK.Visibility:Apply(self.frame)

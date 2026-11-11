@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 5.x's look of the user list and the friend list (its XML twin's layout; social.lua draws with it), 5.33's own windows
      by its own numbers (social.lua's header). Format: core/xml.md; each dialog's attributes are its look entry's values
-     (interfaces/original/entry.lua), its children where social.lua draws its parts: rectangles (left, top, right, bottom), pictures
+     (shared/original/entry.lua), its children where social.lua draws its parts: rectangles (left, top, right, bottom), pictures
      and image buttons (BUTT001.EPF's image id first).
      WIRE: a control's rectangle is where a press on it lands; changing one changes which control a press reaches. -->
 <ui>

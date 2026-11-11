@@ -42,5 +42,6 @@ function C:ApplySettings()
     CS.TK.WorldView.AdvancedEffects.SetDoorLight(on("door_light"))
     -- s6-effects (rounds 3-4): Advanced Weather's own extras: the mist, the wet ground's gloss and puddle reflections
     CS.TK.WorldView.AdvancedEffects.SetWeatherExtras(on("fog"), on("wet_gloss"), on("puddle_reflections"),
-        on("rain_ripples")) -- s6-effects (round 6): the rain's ripples
+        on("rain_ripples"), -- s6-effects (round 6): the rain's ripples
+        on("wet_darkening"), on("puddles")) -- s6-reprojection-cloud-3 (run 76, G-56): Wet Ground's darkening and puddles
 end

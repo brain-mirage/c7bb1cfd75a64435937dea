@@ -1,6 +1,6 @@
 -- s6-interface-5x-b (the 5.x interface: docs/development/jobs/s6-interface-5x/PLAN.md): 5.33's options window,
 -- OptionPane (constructor 0x00487BD0, F10: UserPane_HandleKeyOrTextEvent 0x004D5090), the look of 5.x's options. While
--- this panel is on, the game layer's opener (F10, TK.Game.Options.Toggle, core/game/options.lua) shows it in place of
+-- this panel is on, the game layer's opener (F10, TK.Game.Options.Toggle, shared/game/options.lua) shows it in place of
 -- Modern's window (s6-play-modes round 8, interface-separation step 4: by TK.Game.Options.ProvideWindow).
 --
 -- 5.33's window: DLGOPT.EPF in NPAL8.PAL (407 x 410), at its placement slot 3 (centred on (320, 240) by 5.33's defaults);
@@ -43,13 +43,13 @@
 local C = TK.GetComponent("5x.options")
 local H = __tk
 local S = require("interfaces.5x.skin")
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 local E = require("interfaces.5x.elements")
 
 local L = TK.Xml.Data("main.xml")
 local WIDTH, HEIGHT = L.SIZE[1], L.SIZE[2]
 
--- s6-play-modes (round 8, step 4): the game layer's options and sound (core/game/options.lua, core/game/sound.lua)
+-- s6-play-modes (round 8, step 4): the game layer's options and sound (shared/game/options.lua, shared/game/sound.lua)
 local O, Sound = TK.Game.Options, TK.Game.Sound
 
 --- The server's option by its name in the game layer's state (1 on), or nil offline.
@@ -125,8 +125,9 @@ end
 -- the scripts main.xml names
 local scripts = {}
 
---- The component's root (Astra's review of round 1): a replaced component keeps it hidden (TK.ReplaceComponent).
-function scripts.Own(win) C:Own(win) end
+--- The component's root (Astra's review of round 1): a replaced component keeps it hidden (TK.ReplaceComponent). GA-3 (the
+--- client review's 8.12 and 8.15): counted as a window, so the Macros window that SAY MACRO opens over it is drawn solid.
+function scripts.Own(win) C:Own(win) TK.UI.CountAsWindow(win) end
 
 --- Without the 5.33 set, a plain panel so the window stays usable.
 function scripts.Plain(win)

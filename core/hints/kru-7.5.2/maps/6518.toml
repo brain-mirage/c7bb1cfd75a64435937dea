@@ -1,0 +1,9 @@
+# Buya Library Caverns (map 6518) on the test server: painted dark (cloud-3 run 62's list, run 63 marks it). With Real
+# Lights on, our lighting adds no light here (cloud-1's [map] dark); its own LIGHT.TBL lights and the
+# player's carried light stay. Applies only when the map the server sends passes the check (3.5).
+
+[check]
+size = "30x30"
+
+[map]
+dark = true # painted dark (docs/user-related/research/2026-10-27-dark-maps.tsv): our lighting adds no light

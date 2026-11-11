@@ -1,6 +1,6 @@
 -- s6-ui-core (round 85): the elements Modern's XML twin gives its layout files beside the loader's own (core/xml.md,
 -- "An interface's own elements"): each makes what the original's Lua makes with Modern's widgets (its skin's UI:
--- core/widgets.lua bound to interfaces/modern/skin.lua), with the same call, so a layout file can say it where the
+-- shared/widgets/init.lua bound to interfaces/modern/skin.lua), with the same call, so a layout file can say it where the
 -- original's code said it. Drawing only.
 --   <label text size colour justify parent/>        a plain label (W.Label), on parent when given
 --   <button text width height style click/>         a push button; click: the script its OnClick is (W.Button)
@@ -22,7 +22,7 @@
 --   <portrait size point x y colour/>               a unit portrait at point + (x, y) of its frame, its disc in colour
 --                                                   (portrait.lua's New)
 --   <bar height colour textsize name/>              a health or mana bar (vitals.lua's Bar)
---   <vitalbar height colour textsize name/>         a plain bar with its value text (W.VitalBar)
+--   <vitalbar height colour textsize name/>         a plain bar with its value text (vitals.lua's VitalBar)
 --   <iconrow name mouse/>                           a group of effect icons (effecticons.lua's NewGroup)
 --   <legendlist parent width height/>               a legend's list of marks (W.Character.LegendList); its scroll
 --                                                   frame is its .sf
@@ -151,7 +151,7 @@ end
 
 function E.vitalbar(parent, a)
     local c = colour(a.colour)
-    return W.VitalBar(parent, a.height, c[1], c[2], c[3], a.textsize, a.name)
+    return require("interfaces.modern.vitals").VitalBar(parent, a.height, c[1], c[2], c[3], a.textsize, a.name)
 end
 
 function E.legendlist(parent, a)

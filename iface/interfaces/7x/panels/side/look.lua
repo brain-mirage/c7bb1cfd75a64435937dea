@@ -22,7 +22,7 @@
 -- WIRE (HandlePointerOrMouseEvent 0x005A1580, a single left press, event type 1; the releases and a double click's second
 -- press do nothing): button 0 at (146, 112)-(182, 148) sends 4A 00 and the player's id (SendUserLookTargetActionPacket
 -- 0x005A2280), button 1 at (146, 148)-(182, 184) sends 2E and the name (SendUserLookNameCommandPacket 0x005A2190); both
--- refused while the look's first state byte is 0xFF, the press still taken. They are Modern's look window's actions
+-- refused while the look's first state byte is 0xFF, the press still taken. They are the game layer's look actions
 -- (look:trade, look:group: TK.Game.Look.ActionButton runs them on the press), sent by TK-Core LookRules, so a press here
 -- sends what a press on Modern's buttons sends, at the same moment. The buttons exist in view 0 only (GetActionButtonRect
 -- 0x005A1A70: -1 in the others), so a press where they were sends nothing in the other views. Changing their place,
@@ -64,11 +64,11 @@ end
 -- the scripts look.xml names
 local scripts = {}
 
--- WIRE: Modern's look window's action on the button's left press (the header)
+-- WIRE: the game layer's look action (TK.Game.Look.ActionButton) on the button's left press (the header)
 function scripts.ActionButton(b) TK.Game.Look.ActionButton(b, b.action) end
 
 -- its help on the right press. WIRE: which press shows it, and its life, are the game layer's tip rule (TK.Game.Tips,
--- core/game/tips.lua: UserLookPane::HandlePointerOrMouseEvent 0x005A1580; s6-gateway-research round 37 moved it there);
+-- shared/game/tips.lua: UserLookPane::HandlePointerOrMouseEvent 0x005A1580; s6-gateway-research round 37 moved it there);
 -- the tip uses up the next press (Hud.HelpLine.Show), so the button shows it only when the rule says so (Trade's 4A 00)
 function scripts.Help(b)
     b:HookScript("OnMouseDown", function(_, button, double)

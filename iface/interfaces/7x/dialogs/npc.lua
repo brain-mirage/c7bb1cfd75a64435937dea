@@ -1,4 +1,4 @@
--- s6-modular-g (interfaces, phase 4): 7.x's look of the NPC dialogs (components/dialogs/npc.lua), from Source-5's
+-- s6-modular-g (interfaces, phase 4): 7.x's look of the NPC dialogs (shared/components/dialogs/npc.lua), from Source-5's
 -- class pages: MessageDialog 0x0054CE10 and MessageDialogLarger 0x0054DB90, MenuQuestionDialog and its Larger,
 -- TextDialog 0x00552110. Each picks its picture and its controls' rectangles by 4a's flags (contents.textWindow: 1 the
 -- text window, 0 the small one), its size bit (contents.larger) and whether it has the portrait (portrait kinds 1, 2,
@@ -7,7 +7,7 @@
 -- s6-ui-core (round 85): the XML twin's; the windows' sizes, pictures and the parts' places are npc.xml's (core/xml.md).
 
 local unpack = table.unpack
-local entry = require("interfaces.original.entry")
+local entry = require("shared.original.entry")
 local D = TK.Xml.Data("npc.xml")
 
 return function(L, X)

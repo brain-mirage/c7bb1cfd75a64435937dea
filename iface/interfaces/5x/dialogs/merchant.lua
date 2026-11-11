@@ -1,5 +1,5 @@
 -- s6-interface-5x (the 5.x interface: docs/development/jobs/s6-interface-5x/PLAN.md, "The dialogs look"): 5.x's look of
--- the merchant menus (components/dialogs/merchant.lua), from 5.33's own constructors (server 0x2F's kinds:
+-- the merchant menus (shared/components/dialogs/merchant.lua), from 5.33's own constructors (server 0x2F's kinds:
 -- MerchantDialogCreator_CreateMerchantMenuDialog 0x0046DDF0). Every window is in NPAL8.PAL, opens at placement slot 1,
 -- centred on (320, 240) (L.Place), and does not slide, but for the inputs, which slide open as 5.33's (NumberInputDialog
 -- 0x0047CDD0 and AddItemWithCountDialog 0x0042D150 call 0x004208F0: L.Input's fit); its buttons are 5.33's image buttons, 72 x 16 (X.Image: 14 OK,
@@ -30,7 +30,7 @@
 
 local S = require("interfaces.5x.skin")
 local unpack = table.unpack
-local entry = require("interfaces.original.entry")
+local entry = require("shared.original.entry")
 local D = TK.Xml.Data("merchant.xml")
 
 return function(L, X)

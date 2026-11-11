@@ -4,7 +4,7 @@
 -- changed by its handle and the chat bar's buttons, as the original's.
 
 local C = TK.GetComponent("7x.chatlog")
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 
 C.defaults = { enabled = false, scale = 1 }
 

@@ -43,14 +43,16 @@ local MIGRATE = {
 
 return {
     id = "5x", name = "5.x", profileName = "5.x",
+    -- s6-gateway-research (round 71): the launch option -emulate's values that pick this interface (core/startup.lua)
+    emulate = { "5", "5x", "5.x", "5.3", "5.33" },
     order = 3, -- s6-interface-5x (round 11): its place among the interfaces as the player sees them (TK.Interfaces:InOrder)
-    -- s6-ui-core (round 79): its button on Graphics > General's Quick Settings (core/quicksettings.lua), the mock-up's label
+    -- s6-ui-core (round 79): its button on Graphics > General's Quick Settings (core/global/quicksettings.lua), the mock-up's label
     quick = { text = "V 5.x", desc = "The 5.x interface (2003)." },
     -- 5.x's dialogs look (dialogs/: the common dialog frame so far, Modern's for every other dialog until theirs are);
     -- its cursors 5.33's own (s6-interface-5x-b: CURSOR01.EPF, the world view's MouseCursors; the original's without the
     -- 5.33 set)
     looks = { dialogs = "5x", cursors = "533" },
-    -- the login's presentation (core/entering.lua), as 5.33's: its main menu plays the title track (MainMenuPane
+    -- the login's presentation (core/global/entering.lua), as 5.33's: its main menu plays the title track (MainMenuPane
     -- 0x00457250), faded over 3 s at the first map (MapPane_ChangeMap 0x00464D60), and the accepted login builds the game
     -- screen at once with no loading text (InitializeMainUiGraph 0x00457530).
     -- What is heard: 5.33's own. Its title starts its own track 999 (StartMusic(999, 100, 1) at 0x457311, push 0x3E7;
@@ -60,7 +62,7 @@ return {
     -- other track stands in. Only what is heard: the audio logic still plays 7.5.2's 999, so its draws and every packet
     -- stay 7.5.2's.
     -- s6-ui-core (round 86): screens, its own login screen (5.33's title and login dialog)
-    -- (interfaces/5x/screens/title.lua), with Experimental's Original Login Screens (core/login.lua)
+    -- (interfaces/5x/screens/title.lua), with Experimental's Original Login Screens (core/global/login.lua)
     login = { titleMusic = "nexustk-5.33", loadingScreen = false, screens = "interfaces.5x.screens.title" },
     enable = ENABLE,
     migrate = MIGRATE,

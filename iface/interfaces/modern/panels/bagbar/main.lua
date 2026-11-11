@@ -8,7 +8,7 @@ local E = require("interfaces.modern.elements")
 
 local SLOTS = 52
 
--- The B key (TOGGLEBAG) opens the bag too: the game layer's (core/game/views.lua).
+-- The B key (TOGGLEBAG) opens the bag too: the game layer's (shared/game/views.lua).
 
 local function freeSlots()
     local used = 0

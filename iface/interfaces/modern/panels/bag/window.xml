@@ -69,7 +69,7 @@
               Point="BOTTOMLEFT, @parent, BOTTOMLEFT, 16, 14"/>
       <button key="giveGold" text="Give Gold" width="110" height="24" click="GiveGold" Point="LEFT, @dropGold, RIGHT, 8, 0"/>
       <!-- The original's four buttons (GetButtonRect 2-5): List, Grid, Expand and Mix. Mix runs the dialog model's
-           opener, the action Shift+I runs (components/originalkeys), through the game layer's (TK.Game.Inventory.MixControl;
+           opener, the action Shift+I runs (shared/components/originalkeys), through the game layer's (TK.Game.Inventory.MixControl;
            wire, window.lua's Mix and MixControl). -->
       <button key="mix" text="Mix" width="56" height="24" click="Mix" Point="BOTTOMRIGHT, @parent, BOTTOMRIGHT, -16, 14">
         <run call="MixControl"/>
@@ -77,7 +77,8 @@
       <button key="expand" text="Compact" width="76" height="24" click="ToggleExpanded" Point="RIGHT, @mix, LEFT, -6, 0"/>
       <button key="list" text="List" width="56" height="24" click="ListView" Point="RIGHT, @expand, LEFT, -6, 0"/>
       <button key="grid" text="Grid" width="56" height="24" click="GridView" Point="RIGHT, @list, LEFT, -6, 0"/>
-      <label key="hint" text="Right-click an item for its commands." size="11" colour="0.6, 0.6, 0.6" justify="RIGHT"
+      <!-- s6-ui-core round 155 (the client review's 8.23): 0.75, not 0.6, so the hint reads clearly against the panel -->
+      <label key="hint" text="Right-click an item for its commands." size="11" colour="0.75, 0.75, 0.75" justify="RIGHT"
              Point="BOTTOMRIGHT, @parent, BOTTOMRIGHT, -18, 50"/>
       <do EnableMouseWheel="true"/>
       <on script="OnMouseWheel" call="Wheel"/>

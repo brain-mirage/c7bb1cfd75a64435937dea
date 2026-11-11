@@ -1,7 +1,7 @@
 -- s6-ui-core (round 86; decision 2026-10-12-original-pregame-screens): 5.x's own title screen, 5.33's MainMenuPane
 -- (0x457250, OnPaint 0x4591E0), its Login entry's LoginDialogPane (0x45A0C0) and (round 88) its new account entry's
 -- NewCreateUserDialogPane (0x47A0E0). Its layout is title.xml's; its script
--- is the twins' shared one (interfaces/original/title.lua: the menu, the dialog, and the WIRE note on OK and the wait), made
+-- is the twins' shared one (shared/original/title.lua: the menu, the dialog, and the WIRE note on OK and the wait), made
 -- with 5.x's kit. 5.x is a look over 7.5.2, so what it sends is 7.5.2's, as on 7.x's title. Only the XML twin has it,
 -- and only with the 5.33 set (its pictures): without it ours shows.
 
@@ -9,7 +9,7 @@ local S = require("interfaces.5x.skin")
 
 local data = TK.Xml.Data("title.xml")
 
-return require("interfaces.original.title")({
+return require("shared.original.title")({
     data = data,
     load = function(opts)
         local ui = TK.Xml.Load("title.xml", opts) -- (not a tail call: the loader finds title.xml beside this file)

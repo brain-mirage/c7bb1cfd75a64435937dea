@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 7.x's look of the trade window, the item pickers and the mixing window (its XML twin's layout; exchange.lua draws
      with it), from Source-5's class pages. Format: core/xml.md; each dialog's attributes are its look entry's values
-     (interfaces/original/entry.lua), its children where exchange.lua draws its parts: rectangles (left, top, right, bottom),
+     (shared/original/entry.lua), its children where exchange.lua draws its parts: rectangles (left, top, right, bottom),
      pictures (file, palette), image buttons (BUTT001.EPF's image id first) and lists (the rectangle, the cell's width and
      height).
      WIRE: a control's rectangle is where a press on it lands (DialogPane::HitTestControls 0x0049FB10); changing one

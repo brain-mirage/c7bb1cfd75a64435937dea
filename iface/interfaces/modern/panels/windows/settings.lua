@@ -15,7 +15,7 @@ C.WINDOWS = {
     { id = "look", title = "Look Window", text = "Another player's look." },
     { id = "social", title = "Social Window", text = "The group and the ignore list." },
     { id = "emotes", title = "Emotes", text = "The expressions." },
-    -- s6-modular-g (round 18): the global Game Options page is "gameoptions", so this window's page has its own id
+    -- s6-modular-g (round 18): the Global Game Options page is "gameoptions", so this window's page has its own id
     { id = "gameoptionswindow", title = "Game Options Window", text = "The game's options (F10)." },
 }
 

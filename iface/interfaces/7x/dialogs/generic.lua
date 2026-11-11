@@ -1,4 +1,4 @@
--- s6-interface-7x-b (round 7): 7.x's look of the window of a dialog without one of its own (components/dialogs/generic.lua:
+-- s6-interface-7x-b (round 7): 7.x's look of the window of a dialog without one of its own (shared/components/dialogs/generic.lua:
 -- the classes no renderer draws yet). 4a has no such window: each of those classes has its own, not drawn here. This is
 -- 4a's standard dialog in their stead, as the alerts draw it (alerts.lua): the standard window (X.DIALOG_FRAME), its
 -- texts in font 0, colour 0x80, from (24, 24), and its buttons 4a's 74 x 20 text buttons along the bottom from (W - 98,
@@ -7,7 +7,7 @@
 -- s6-ui-core (round 85): the XML twin's; the window's size, text and buttons' places are generic.xml's (core/xml.md).
 
 local S = require("interfaces.7x.skin")
-local entry = require("interfaces.original.entry")
+local entry = require("shared.original.entry")
 local D = TK.Xml.Data("generic.xml")
 
 return function(L, X)

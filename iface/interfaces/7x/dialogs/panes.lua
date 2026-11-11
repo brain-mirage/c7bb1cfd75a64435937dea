@@ -1,4 +1,4 @@
--- s6-modular-g (interfaces, round 12): 7.x's look of the popups (components/dialogs/panes.lua), from Source-5's class
+-- s6-modular-g (interfaces, round 12): 7.x's look of the popups (shared/components/dialogs/panes.lua), from Source-5's class
 -- pages: the player menu (RightButtonMenuPane: OnPaint 0x00554FC0, DrawBorder 0x00555370, GetRightButtonMenuItemRect
 -- 0x005556A0) and the Menu popup (MenuVarietySelectPane: OnPaint 0x005BD3C0, DrawFrame 0x005BD630, GetItemRect
 -- 0x005BD960). Each is a 79-pixel framed popup (SUBWIN.EPF in SUBWIN.PAL, 7-pixel tiles) whose texts are drawn twice a

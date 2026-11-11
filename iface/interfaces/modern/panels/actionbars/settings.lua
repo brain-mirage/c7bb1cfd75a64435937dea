@@ -26,7 +26,7 @@ end
 -- the original, Shift+digit types the symbols that start commands (! shout, " whisper). No default actions: the
 -- character's spells fill bar 1 as it gets them (TK.Game.Hotkeys.PlaceNewSpells). s6-modular-g (round 19, step 8): here,
 -- before the profile loads, whether the bars are loaded or not. Wire: 1-0 with Ctrl and Alt are bound to the carriers,
--- CLICK bindings that keep a click's input path (core/game/hotkeys.lua); changing what they name changes what the server
+-- CLICK bindings that keep a click's input path (shared/game/hotkeys.lua); changing what they name changes what the server
 -- sees.
 do
     local keys = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=" }

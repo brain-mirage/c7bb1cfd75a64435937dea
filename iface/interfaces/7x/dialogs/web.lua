@@ -1,4 +1,4 @@
--- s6-modular-g (interfaces, round 13): 7.x's look of the web board and the browser dialog (components/dialogs/web.lua),
+-- s6-modular-g (interfaces, round 13): 7.x's look of the web board and the browser dialog (shared/components/dialogs/web.lua),
 -- from Source-5's class pages. Drawing only: the close, the 73 request and the 62 page are the renderer's and the
 -- model's.
 --
@@ -15,7 +15,7 @@
 
 local S = require("interfaces.7x.skin")
 local unpack = table.unpack
-local entry = require("interfaces.original.entry")
+local entry = require("shared.original.entry")
 local D = TK.Xml.Data("web.xml")
 
 return function(L, X)

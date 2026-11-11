@@ -1,5 +1,5 @@
 -- s6-interface-5x-b (round 6; the 5.x interface: docs/development/jobs/s6-interface-5x/PLAN.md, "The dialogs look"):
--- 5.x's look of the profile, the paper and the music dialog (components/dialogs/misc.lua), 5.33's own windows by its own
+-- 5.x's look of the profile, the paper and the music dialog (shared/components/dialogs/misc.lua), 5.33's own windows by its own
 -- numbers. Drawing only, but for where each control's press lands (its rectangle): the controls, their indexes, the keys
 -- and what is sent are the renderers' and the model's, 7.5.2's, the same in every look.
 --
@@ -30,7 +30,7 @@
 -- musiclayout.xml's (core/xml.md).
 
 local unpack = table.unpack
-local entry = require("interfaces.original.entry")
+local entry = require("shared.original.entry")
 local D = TK.Xml.Data("misc.xml")
 
 return function(L, X)

@@ -2,7 +2,7 @@
 <!-- 7.x's look of the NPC dialogs (its XML twin's layout; npc.lua draws with it), from Source-5's class pages:
      MessageDialog 0x0054CE10 and MessageDialogLarger 0x0054DB90, MenuQuestionDialog and its Larger, TextDialog 0x00552110,
      NexonclubRegistrationDialog. Format: core/xml.md; each dialog's attributes are its look entry's values
-     (interfaces/original/entry.lua), its children where npc.lua draws its parts: rectangles (left, top, right, bottom), points (x, y),
+     (shared/original/entry.lua), its children where npc.lua draws its parts: rectangles (left, top, right, bottom), points (x, y),
      pictures and image buttons (BUTT001.EPF's image id first).
      WIRE: a control's rectangle is where a press on it lands (DialogPane::HitTestControls 0x0049FB10 gives a press to the
      last control whose rectangle holds it); changing one changes which control a press reaches, so what the client

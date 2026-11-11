@@ -57,32 +57,52 @@ function C:UnitUnderIcons()
     return nil
 end
 
---- Which objects get icons and what they show; a few times a second (the countdowns are whole seconds).
+--- Shows or hides a group when that changed since it was last set here (the minimap's rule): Place asks every frame, and a
+--- group is also hidden by Collect. Nothing else shows or hides a group.
+local function showGroup(g, on)
+    if g.shownSet ~= on then
+        g.shownSet = on
+        if on then g:Show() else g:Hide() end
+    end
+end
+
+--- Which objects get icons and what they show; a few times a second (the countdowns are whole seconds). One query
+--- (GetObjectsIn) gives the creatures and players in the view's 17 x 15 cells; the entries of self.wanted are kept between
+--- collects, and a group whose entry was not made this collect is hidden.
 function C:Collect()
     local db, view = self:DB(), TK.GetComponent("worldview")
-    local wanted = {}
+    local wanted, count = self.wanted, 0
     if db.enabled and view and view.frame and view.frame:IsVisible() then
         local ox, oy = H:GetTileOrigin()
         local self_ = H:GetPlayerObjectId()
         local target = H:GetTargetId()
         local cx, cy = view:CentrePoint()
         local hover = self:UnitUnderIcons() or (cx and H:GetFigureAt(cx, cy)) or 0
-        for i = 1, H:GetNumObjects() do
-            local _, id, kind, x, y, name = H:GetObjectInfo(i)
-            local vx, vy = x - ox, y - oy
-            if (kind == "creature" or kind == "player") and id ~= self_ and vx >= 0 and vx < 17 and vy >= 0 and vy < 15
-                and self:Wanted(id, kind, target, hover) then
+        local objects = H:GetObjectsIn(ox, oy, 17, 15)
+        for i = 0, objects.n - 1 do
+            local b = i * 5
+            local id, kind, x, y, name = objects[b + 1], objects[b + 2], objects[b + 3], objects[b + 4], objects[b + 5]
+            if id ~= self_ and self:Wanted(id, kind, target, hover) then
                 local filter = kind == "player" and "player" or "creature"
                 local list = E.Arrange(rowsOf(id, kind, name), db[filter .. "Mode"], db.showUnknown)
                 -- s6-world-view (round 39; Astra's round 38 review, P2): the map cell, so Place puts it where this frame
                 -- draws that cell
-                if #list > 0 then wanted[#wanted + 1] = { id = id, x = x, y = y, list = list } end
+                if #list > 0 then
+                    count = count + 1
+                    local w = wanted[count] or {}
+                    wanted[count] = w
+                    w.id, w.x, w.y, w.list = id, x, y, list
+                end
             end
         end
     end
-    self.wanted = wanted
-    local keep = {}
-    for _, w in ipairs(wanted) do
+    for i = #wanted, count + 1, -1 do wanted[i] = nil end
+    self.collects = (self.collects or 0) + 1
+    local showOpts = self.showOpts or {}
+    self.showOpts = showOpts
+    showOpts.size, showOpts.perRow, showOpts.max, showOpts.timeText = db.size, db.perRow, db.max, db.timeText
+    for i = 1, count do
+        local w = wanted[i]
         local g = self.groups[w.id]
         if not g then
             g = table.remove(self.spare) or G.NewGroup(self.frame, "TKEffectsOn" .. (#self.all + 1), false)
@@ -93,13 +113,12 @@ function C:Collect()
             end
             self.groups[w.id] = g
         end
-        g.unit = w
-        G.Show(g, w.list, { size = db.size, perRow = db.perRow, max = db.max, timeText = db.timeText })
-        keep[w.id] = true
+        g.unit, g.collect = w, self.collects
+        G.Show(g, w.list, showOpts)
     end
     for id, g in pairs(self.groups) do
-        if not keep[id] then
-            g:Hide()
+        if g.collect ~= self.collects then
+            showGroup(g, false)
             g.unit = nil
             self.groups[id] = nil
             self.spare[#self.spare + 1] = g
@@ -137,9 +156,9 @@ function C:Place()
                 g:SetPoint(point, view.frame, "CENTER", px, py)
                 g.point, g.px, g.py = point, px, py
             end
-            g:Show()
+            showGroup(g, true)
         else
-            g:Hide()
+            showGroup(g, false)
         end
     end
 end

@@ -3,7 +3,7 @@
 -- FRMPART.PAL, frame 1 while a press made on it is held over it, frame 0 otherwise (OnPaint 0x00503650,
 -- HandlePointerOrMouseEvent 0x005036A0). Its place follows the scaled screen until the player moves it (edit mode, its
 -- Layout tab). The minimap dialog the server's 70 opens is a dialog of the dialogs' look (the model's MiniMapDialog; Modern's
--- map window stands in for it, core/mapwindow.lua).
+-- map window stands in for it, core/global/mapwindow.lua).
 -- s6-ui-core (round 85): the XML twin's scripts; its frame, its claims, place and pictures are main.xml's (core/xml.md).
 --
 -- Wire: 4a's button is a push button whose click sends what m sends (UserPane::SendOpcode7CPacket: 7C while no minimap
@@ -17,12 +17,12 @@
 -- round 2, Astra's review of round 1: a double press had re-armed it for a second 7C) and takes no mouse otherwise. While the model's minimap dialog is
 -- open nothing is run: that dialog is modal, and the original's button gets no press then. Changing which press or
 -- release runs it, which button it takes, or when, changes what the server sees. s6-input (round 49, separation step 4b):
--- the click runs through the game layer's one minimap press (TK.Game.Minimap.Press, core/game/minimap.lua), which keeps
+-- the click runs through the game layer's one minimap press (TK.Game.Minimap.Press, shared/game/minimap.lua), which keeps
 -- that gate.
 
 local C = TK.GetComponent("7x.minimapbutton")
 local S = require("interfaces.7x.skin")
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 
 local L = TK.Xml.Data("main.xml")
 

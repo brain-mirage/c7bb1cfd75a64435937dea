@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 7.x's look of the music dialog and the paper (its XML twin's layout; misc.lua draws with it), 4a's own windows.
-     Format: core/xml.md; each dialog's attributes are its look entry's values (interfaces/original/entry.lua), its children where
+     Format: core/xml.md; each dialog's attributes are its look entry's values (shared/original/entry.lua), its children where
      misc.lua draws its parts: rectangles (left, top, right, bottom), pictures (file, palette) and image buttons
      (BUTT001.EPF's image id first).
      WIRE: a control's rectangle is where a press on it lands (the controls, their indexes, the keys and what is sent are

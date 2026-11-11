@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 7.x's look of the original's Macro Setup (its XML twin's layout; macros.lua draws with it), IntegrateMacroDialog
      0x00541B30 (ui/OptionPane.cpp; Source-5's class pages). Format: core/xml.md; the dialog's attributes are its look
-     entry's values (interfaces/original/entry.lua), its children where macros.lua draws its parts: rectangles (left, top, right,
+     entry's values (shared/original/entry.lua), its children where macros.lua draws its parts: rectangles (left, top, right,
      bottom), pictures (file, palette) and image buttons (BUTT001.EPF's image id first). Nothing in it is sent. -->
 <ui>
   <!-- 289 x 449 at placement slot 6 (centred), sliding open, with the open sound; DLGMAC2.EPF frame 0 in DLGMACRO.PAL,

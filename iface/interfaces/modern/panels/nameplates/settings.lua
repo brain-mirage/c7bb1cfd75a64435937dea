@@ -120,7 +120,7 @@ local function kindArgs(prefix, kind, first, after, text)
     return args
 end
 
---- The kind pages' rows, made once (the settings window keeps a row's view by the row: core/settings.lua's groups):
+--- The kind pages' rows, made once (the settings window keeps a row's view by the row: core/global/settings.lua's groups):
 --- Players has the original's group bars (GroupBar), drawn by main.lua.
 local function kindPages()
     local players = kindArgs("player", "player", {

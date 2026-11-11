@@ -1,0 +1,10 @@
+# Map 4031, a staff map beside Weaver of Dreams: indoors (s6-reprojection-cloud-3 run 57, after the owner's note on
+# Weaver of Dreams, map 4023): a hall with a stage, a long bench and lanterns on a wooden floor. The test server's map
+# table has no row for it, so it has no MapIndoor flag; the flag is set by looking. No sky, so no rain, clouds, wind,
+# lightning or cloud ring past its edges. Applies only when the map the server sends passes the check (3.5).
+
+[check]
+size = "20x20"
+
+[map]
+indoor = true

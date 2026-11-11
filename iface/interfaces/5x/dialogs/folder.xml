@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 5.x's look of the folder choice (its XML twin's layout; folder.lua draws with it), 5.33's folder dialog (constructor
      0x0042EF20) over the shared X8 enumeration and navigation renderer. Format: core/xml.md; the dialog's attributes are
-     its look entry's values (interfaces/original/entry.lua), its children where folder.lua draws its parts: rectangles (left, top,
+     its look entry's values (shared/original/entry.lua), its children where folder.lua draws its parts: rectangles (left, top,
      right, bottom), pictures and image buttons (BUTT001.EPF's image id first).
      WIRE: a control's rectangle is where a press on it lands; the shared Choose/Cancel ids and matched releases stay
      FolderSelectDialog 0x004B1920's (changing those routes changes what the server sees through C12 0x0057A890). -->

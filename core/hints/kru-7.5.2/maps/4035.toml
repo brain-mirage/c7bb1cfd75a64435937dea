@@ -1,0 +1,11 @@
+# Brunhilde's Loft (map 4035) on the test server: indoors (s6-reprojection-cloud-3 run 57, after the owner's note on
+# Weaver of Dreams, map 4023): a staff loft: a wooden room with shelves, a carpet and a statue. The test server's
+# MapIndoor flag says 0 here, as for the rest of the staff maps 4015-4035, so the flag is set by looking. No sky, so
+# no rain, clouds, wind, lightning or cloud ring past its edges. Applies only when the map the server sends passes the
+# check (3.5).
+
+[check]
+size = "17x15"
+
+[map]
+indoor = true

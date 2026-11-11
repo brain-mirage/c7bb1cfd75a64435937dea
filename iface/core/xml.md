@@ -99,11 +99,29 @@ what it made; its capitalised attributes are then calls on that, and its childre
 - The dialogs' windows are the dialogs component's (its renderers make them, the same for every look); an interface's
   look only sizes and places their parts. The look takes each family's sizes, pictures and places from the
   family's XML data (`dialogs/npc.xml`... beside `npc.lua`; `dialogs/look.xml` what every window shares;
-  `interfaces/original/entry.lua`, shared by 7.x and 5.x, makes an entry from a dialog's data: its attributes are the
+  `shared/original/entry.lua`, shared by 7.x and 5.x, makes an entry from a dialog's data: its attributes are the
   entry's values, its children the places, so a value that is not the entry's sits in a child).
 - The skin's screen, font and standard window are `skin.xml`'s.
 - An interface's own login screen (`interfaces/<id>/screens/`, round 86: 7.x's and 5.x's `title.xml`, made by their
-  shared `interfaces/original/title.lua`) shows with Experimental's Original Login Screens (`core/login.lua`, "an
+  shared `shared/original/title.lua`) shows with Experimental's Original Login Screens (`core/global/login.lua`, "an
   interface's own login screen").
 - Wire: the scripts are the hand-written forms' code, unchanged; where a layout file holds what decides an input's path
   (a control's rectangle, which presses a frame claims), the file's header says so, as the Lua's comments do.
+
+## Control descriptions and offline visual authoring
+
+`TK.Xml.Controls(interface)` lists existing control descriptions; omit the interface to list all. `TK.Xml.Describe(tag, interface)` returns one description or nil. Each has `parameters` (name, kind, description, default, values), `events`, dimensions, container/named flags and its existing `adapter`. The data is `core/controls.xml`, also embedded by the desktop designer; the existing element factories still build controls.
+
+The Code page may explicitly start an offline client with `--ui-designer <scratch-folder>`. That client reports XML source identities and actual UIHost rectangles to `layout.json`; drag commands use the same frame placement methods. Both that argument and `--offline` are required. Ordinary clients create no bridge and poll no files. Source addresses count XML element children from the ui root; comments and whitespace do not change them. A fresh Lua state has a new session, so a prior state's pending command cannot act on a reused handle.
+
+Native controls use `tag="frame"` plus their registered `type` (Button, CheckButton, EditBox, Slider, StatusBar, ScrollFrame or Cooldown). `TK.Xml.Describe("frame", interface, type)` selects that description; the default Frame description also covers custom registered types. The designer's palette IDs distinguish these controls while saved XML remains the existing native frame format.
+
+## Authored geometry
+
+A `<do>` node may set `authoredLayout="true"` after its `Point`/`Size` calls to hold the frame's authored geometry. While held, later Lua `ClearAllPoints`, `SetPoint`, `SetAllPoints`, `SetSize`, `SetWidth` and `SetHeight` calls do not replace it. Later XML calls still execute in XML order; unmarked XML is unchanged.
+
+`TK.Xml.LayoutCall(frame, method, ...)` invokes the normal geometry method explicitly; `TK.Xml.LayoutAuthored(frame)` reports the hold; `TK.Xml.ReleaseLayout(frame)` restores ordinary setters.
+
+Registered Edit Mode panels treat XML geometry as their default, with the player's saved placement taking precedence. `LegendList` retains `Fill`/rows and now exposes its `sf` frame API/native identity.
+
+A template may contain an instance-specific override, for example `<do instance="TKActionBar2" ClearAllPoints="" Point="TOPLEFT, @parent, TOPLEFT, 40, -60" Size="300, 40" authoredLayout="true"/>`. It runs only for the frame with that actual name. An unnamed control uses its occurrence number within that prototype's layout load (`instance="2"`); a new load resets the counters. Unscoped calls still apply to every instance. The designer displays each reported instance, writes position and size for the selected instance, and keeps other properties and deletion on the shared definition.

@@ -803,6 +803,13 @@ is = ["tile/28448", "tile/28518"]
 height = 0
 roof = "flat"
 
+# The pits (tiles 18490-18521, s6-reprojection-cloud-3 run 57, the review's fourth and fifth passes): a dark round
+# hole with tusks round its rim, painted on the ground in six rows of four and six tiles. The rule stood its blocked
+# tiles up as a block with stepped sides, so from 0 and 30 each pit rose instead of sinking. Flat, it lies as Normal
+# draws it. 13 maps, 1,171 cells, most on EarthWorks (59) and the maps beside it (381, 61, 62, 382, 377, 57).
+[tile.18490-18521]
+ground = "flat"
+
 # The crypts' grave mounds (tiles 18004-18007, round 4: the nine mudum crypts, 2201-2209): blocked earth tiles painted as
 # mounds with a headstone; the rules stood each as a block a cell high, so the mounds were square boxes. Flat, they are as
 # Normal draws them. The complete 18004/18005 over 18006/18007 assembly uses one shared plan, discovered by the
@@ -822,6 +829,364 @@ height = 0.55
 light_radius = 2
 light_colour = "#ffd8a0"
 flicker = "candle"
+light_at = [25, 61]  # paper standing lantern
+
+# s6-reprojection-cloud-1 run 63 (head note 160): the shrines' roof corners with a string of three red lanterns (Kinung,
+# 720), whose light the original anchors beside the string, between its top two lanterns. With Real Lights the light
+# comes from the middle lantern, and its halo spans the string.
+[sobj.10523]
+light_at = [19, 249]
+glow = 1.5
+
+# s6-reprojection-cloud-3 run 62 (G-68): where each light-giving object's light comes from with Real Lights, the
+# emitter's pixel on its picture (light_at = [x, up]: x from the cell's left edge, up from the foot line). Found from
+# SOBJ.TBL's light rows: every placed lantern, torch, brazier, lamp, candle and fire kind on 20 or more cells, and every
+# fire the art hints (flicker = "fire"). A flame or lit pane's centre; a candelabra's flames; a lantern's body where its
+# pane is unlit in the art. Glows (crystals, water, skulls, trees, gold) keep the original's place. The ones whose
+# section already exists carry the line there. Drawing only: no map word, packet or timing depends on it.
+
+[sobj.539]
+light_at = [4, 110]  # lantern pole
+
+[sobj.541]
+light_at = [42, 110]  # lantern pole
+
+[sobj.542]
+light_at = [4, 110]  # lantern pole
+
+[sobj.545]
+light_at = [42, 110]  # lantern pole
+
+[sobj.546]
+light_at = [23, 120]  # lantern pole
+
+[sobj.549]
+light_at = [30, 99]  # candle on a rock pile
+
+[sobj.556]
+light_at = [9, 92]  # table candle
+
+[sobj.557]
+light_at = [32, 92]  # table candle
+
+[sobj.611]
+light_at = [25, 46]  # candle on a stand
+
+[sobj.697]
+light_at = [10, 32]  # furnace fire
+
+[sobj.2742]
+light_at = [47, 72]  # stone garden lantern
+
+[sobj.2743]
+light_at = [1, 72]  # stone garden lantern
+
+[sobj.5751]
+light_at = [35, 20]  # forge fire
+
+[sobj.5752]
+light_at = [13, 18]  # forge fire
+
+[sobj.6895]
+light_at = [18, 106]  # paper globe lamp
+
+[sobj.6896]
+light_at = [16, 61]  # paper lamp
+
+[sobj.6931]
+light_at = [31, 43]  # fire in a pavilion
+
+[sobj.6932]
+light_at = [5, 45]  # fire in a pavilion
+
+[sobj.6933]
+light_at = [42, 62]  # lantern sign
+
+[sobj.6934]
+light_at = [9, 63]  # lantern sign
+
+[sobj.6935]
+light_at = [42, 62]  # lantern sign
+
+[sobj.6936]
+light_at = [9, 63]  # lantern sign
+
+[sobj.7596]
+light_at = [22, 138]  # table candle
+
+[sobj.8013]
+light_at = [24, 64]  # stone lantern
+
+[sobj.8725]
+light_at = [18, 84]  # altar candles
+
+[sobj.8726]
+light_at = [35, 54]  # altar candles
+
+[sobj.9435]
+light_at = [8, 177]  # hanging lantern on a wall
+
+[sobj.9441]
+light_at = [3, 118]  # hanging lantern on a wall
+
+[sobj.9442]
+light_at = [41, 118]  # hanging lantern on a wall
+
+[sobj.9448]
+light_at = [40, 173]  # hanging lantern on a wall
+
+[sobj.9493]
+light_at = [10, 181]  # hanging lantern on a wall
+
+[sobj.9494]
+light_at = [24, 183]  # hanging lantern on a wall
+
+[sobj.9517]
+light_at = [22, 157]  # hanging lantern on a wall
+
+[sobj.9520]
+light_at = [22, 157]  # hanging lantern on a wall
+
+[sobj.9564]
+light_at = [4, 132]  # hanging lantern on a wall
+
+[sobj.9618]
+light_at = [22, 221]  # globe lantern pole
+
+[sobj.9621]
+light_at = [22, 221]  # globe lantern pole
+
+[sobj.9630]
+light_at = [24, 199]  # hanging lantern on a pole
+
+[sobj.9643]
+light_at = [22, 182]  # globe lantern pole
+
+[sobj.9648]
+light_at = [22, 182]  # globe lantern pole
+
+[sobj.10820]
+light_at = [33, 27]  # campfire
+
+[sobj.10821]
+light_at = [13, 27]  # campfire
+
+[sobj.10974]
+light_at = [22, 214]  # red paper lantern
+
+[sobj.11123]
+light_at = [22, 197]  # hanging lantern
+
+[sobj.11125]
+light_at = [1, 196]  # hanging lantern
+
+[sobj.11126]
+light_at = [23, 200]  # hanging globe lantern
+
+[sobj.11693]
+light_at = [3, 74]  # wall torch
+
+[sobj.11694]
+light_at = [44, 74]  # wall torch
+
+[sobj.12011]
+light_at = [46, 54]  # wall candelabra
+
+[sobj.12012]
+light_at = [2, 54]  # wall candelabra
+
+# cloud-3 run 63 (head note 132, look-alikes): the same pictures in another palette or a near copy, by their colours mapping
+# one to one onto a hinted emitter's (g68alike.py), take its emitter. None stands on the test server's maps.
+[sobj.9602]
+light_at = [22, 182]  # globe lantern pole: 9643's copy
+
+[sobj.9607]
+light_at = [22, 182]  # globe lantern pole: 9648's copy
+
+[sobj.11849]
+light_at = [3, 74]  # wall torch: 11693 in purple
+
+[sobj.11850]
+light_at = [44, 74]  # wall torch: 11694 in purple
+
+[sobj.12161]
+light_at = [46, 54]  # wall candelabra: 12011 in gold
+
+[sobj.12162]
+light_at = [2, 54]  # wall candelabra: 12012 in gold
+
+[sobj.12329]
+light_at = [22, 90]  # candlestick
+
+[sobj.12330]
+light_at = [22, 108]  # candelabra
+
+[sobj.12331]
+light_at = [40, 122]  # candelabra
+
+[sobj.12332]
+light_at = [28, 122]  # candelabra
+
+[sobj.12333]
+light_at = [10, 122]  # candelabra
+
+[sobj.12334]
+light_at = [2, 23]  # candle
+
+[sobj.12335]
+light_at = [44, 23]  # candle
+
+[sobj.12507]
+light_at = [24, 79]  # wall candle
+
+[sobj.12637]
+light_at = [37, 75]  # hanging lantern
+
+[sobj.12639]
+light_at = [10, 75]  # hanging lantern
+
+[sobj.12907]
+light_at = [34, 46]  # stove fire
+
+[sobj.12908]
+light_at = [7, 42]  # stove fire
+
+[sobj.12918]
+light_at = [40, 56]  # cooking fire
+
+[sobj.12919]
+light_at = [10, 55]  # cooking fire
+
+[sobj.13529]
+light_at = [23, 71]  # lantern on a pedestal
+
+[sobj.13836]
+light_at = [22, 92]  # candlestick
+
+[sobj.13837]
+light_at = [22, 110]  # candelabra
+
+[sobj.13838]
+light_at = [40, 124]  # candelabra
+
+[sobj.13839]
+light_at = [28, 124]  # candelabra
+
+[sobj.13840]
+light_at = [10, 124]  # candelabra
+
+[sobj.14315]
+light_at = [16, 32]  # candle
+
+[sobj.14316]
+light_at = [31, 32]  # candle
+
+[sobj.14317]
+light_at = [6, 35]  # candle
+
+[sobj.14324]
+light_at = [34, 94]  # candle on a rock pile
+
+[sobj.14906]
+light_at = [23, 66]  # candle on a stand
+
+[sobj.14909]
+light_at = [23, 75]  # candlestick
+
+[sobj.14910]
+light_at = [24, 80]  # candelabra
+
+[sobj.14913-14915]
+light_at = [24, 62]  # paper standing lantern
+
+[sobj.14933]
+light_at = [25, 85]  # stone lantern
+
+[sobj.14934]
+light_at = [25, 94]  # stone lantern
+
+[sobj.15302]
+light_at = [24, 177]  # candle on a wreath
+
+[sobj.15303]
+light_at = [27, 173]  # string of lights
+
+[sobj.15304]
+light_at = [25, 164]  # string of lights
+
+[sobj.15305]
+light_at = [21, 170]  # string of lights
+
+[sobj.15306]
+light_at = [16, 169]  # string of lights
+
+[sobj.15307]
+light_at = [26, 172]  # string of lights
+
+[sobj.15580]
+light_at = [23, 52]  # brazier
+
+[sobj.15583]
+light_at = [23, 61]  # brazier
+
+[sobj.15611]
+light_at = [10, 106]  # burning wreckage
+
+[sobj.15612]
+light_at = [15, 91]  # burning wreckage
+
+[sobj.15613]
+light_at = [30, 57]  # burning wreckage
+
+[sobj.15614]
+light_at = [13, 89]  # burning wreckage
+
+[sobj.15615]
+light_at = [18, 125]  # burning wreckage
+
+[sobj.15617]
+light_at = [16, 9]  # fire
+
+[sobj.15618]
+light_at = [31, 12]  # burning debris
+
+[sobj.15619]
+light_at = [33, 12]  # burning debris
+
+[sobj.15621]
+light_at = [17, 7]  # burning debris
+
+[sobj.15622]
+light_at = [18, 11]  # burning debris
+
+[sobj.16485]
+light_at = [40, 20]  # fire
+
+[sobj.16486]
+light_at = [7, 20]  # fire
+
+# s6-reprojection-cloud-1 run 66 (head note 170: look-alikes get the same treatment): the lantern strings' look-alikes, lit
+# from their lanterns as 10523 is. No other tile draws the strings in another colour. 10524 is the same shrines' single
+# big red lantern (Kinung 48,37; LIGHT.TBL row 16, five cells up): its light from the lantern, the halo as large as one.
+[sobj.10524]
+light_at = [22, 270]
+
+# 9611 and 9613: the same three-lantern strings, two to a piece, under the eaves of a house front (9611 on 37 maps: Red
+# Bull, Rice Fields, Oxen Pull and the like; 9613 on three; 9612 and 9614 are the fronts' unlit halves). The original
+# lights them one cell up (row 44), under the strings: the light comes from between the two strings' middle lanterns, its
+# halo spanning both. 9613's left string is the one on its seam with 9612.
+[sobj.9611]
+light_at = [24, 172]
+glow = 2
+
+[sobj.9613]
+light_at = [17, 172]
+glow = 2
+
+# 9432: a white paper lantern with ribbons, hung on a string (the same kind of piece in another set; row 9, five cells
+# up): its light from the lantern.
+[sobj.9432]
+light_at = [24, 270]
 
 # s6-effects-c (round 3): the art's fires, for Advanced Lighting's Embers and Smoke and a fire's light (a deeper orange,
 # breathing as a fire does). Picked by eye from every lit object's pictures: a colour rule cannot tell flames from gold,
@@ -838,9 +1203,11 @@ flicker = "fire"
 # 697 its right) and its pipe straddles them, so the point is given once, on the left half: the pipe's mouth. Drawing only.
 [sobj.696]            # a kiln's left half: the mouth of its pipe, two cells up
 chimney = [43, -94]
+light_at = [34, 33]  # furnace fire
 
 [sobj.5559]           # a tall brazier
 flicker = "fire"
+light_at = [27, 110]  # brazier
 
 [sobj.5751-5752]      # iron braziers
 flicker = "fire"
@@ -850,72 +1217,94 @@ flicker = "fire"
 
 [sobj.7674]           # cauldrons over a fire
 flicker = "fire"
+light_at = [12, 57]  # furnace fire
 
 [sobj.7678]
 flicker = "fire"
+light_at = [10, 56]  # furnace fire
 
 [sobj.7742]           # coal braziers
 flicker = "fire"
+light_at = [16, 25]  # coal pit
 
 [sobj.7744]
 flicker = "fire"
+light_at = [23, 29]  # fire
 
 [sobj.7746]           # a campfire
 flicker = "fire"
+light_at = [2, 15]  # small fire
 
 [sobj.7764]           # a basin over a fire
 flicker = "fire"
+light_at = [8, 18]  # fire
 
 [sobj.8029]           # a stove
 flicker = "fire"
+light_at = [20, 9]  # stove fire
 
 [sobj.10567]          # a tripod brazier
 flicker = "fire"
+light_at = [26, 166]  # brazier
 
 [sobj.10818]          # a tall torch
 flicker = "fire"
+light_at = [27, 175]  # torch
 
 [sobj.10820-10821]    # a campfire under a tripod
 flicker = "fire"
 
 [sobj.10877]          # rocks with a fire on top
 flicker = "fire"
+light_at = [6, 110]  # fire on a rock
 
 [sobj.10879]
 flicker = "fire"
+light_at = [33, 64]  # fire on a rock
 
 [sobj.10881]
 flicker = "fire"
+light_at = [30, 121]  # fire
 
 [sobj.10884]
 flicker = "fire"
+light_at = [32, 80]  # fire
 
 [sobj.11732]          # wall torches
 flicker = "fire"
+light_at = [24, 63]  # wall torch
 
 [sobj.11745]
 flicker = "fire"
+light_at = [24, 62]  # wall torch
 
 [sobj.11776]
 flicker = "fire"
+light_at = [31, 88]  # fire
 
 [sobj.11782]
 flicker = "fire"
+light_at = [18, 88]  # fire
 
 [sobj.11888]
 flicker = "fire"
+light_at = [24, 58]  # fire
 
 [sobj.11901]
 flicker = "fire"
+light_at = [24, 62]  # fire
 
 [sobj.11934]
 flicker = "fire"
+light_at = [31, 88]  # fire
 
 [sobj.11940]
 flicker = "fire"
+light_at = [18, 88]  # fire
 
 [sobj.12825]          # a fire pot
 flicker = "fire"
+light_at = [25, 114]  # fire pot
 
 [sobj.12907-12908]    # forges
 flicker = "fire"
@@ -925,9 +1314,16 @@ flicker = "fire"
 
 [sobj.13580]          # a fire bowl
 flicker = "fire"
+light_at = [16, 34]  # fire bowl
 
 [sobj.15580-15583]    # brazier stands
 flicker = "fire"
+
+[sobj.15581]          # one stand's flame across two cells: each half lights at its own part
+light_at = [42, 62]  # brazier stand
+
+[sobj.15582]
+light_at = [6, 62]  # brazier stand
 
 [sobj.15611-15615]    # burning ruins and logs
 flicker = "fire"
@@ -940,26 +1336,34 @@ flicker = "fire"
 
 [sobj.15632]
 flicker = "fire"
+light_at = [38, 108]  # fire
 
 [sobj.15635]
 flicker = "fire"
+light_at = [10, 59]  # fire
 
 [sobj.15642]          # burning trees
 flicker = "fire"
+light_at = [20, 101]  # burning tree
 
 [sobj.15645]
 flicker = "fire"
+light_at = [19, 76]  # burning tree
 
 [sobj.15697]          # a tripod brazier
 flicker = "fire"
+light_at = [24, 84]  # brazier
 
 [sobj.16080]          # wall torches
 flicker = "fire"
+light_at = [28, 86]  # wall torch
 
 [sobj.16082]
 flicker = "fire"
+light_at = [14, 86]  # fire
 
 [sobj.16367]          # an iron brazier stand
+light_at = [23, 107]  # run 76 (G-68): biggest blob (15 of 34 px)
 flicker = "fire"
 
 [sobj.16482-16483]    # cauldrons over a fire
@@ -970,6 +1374,7 @@ flicker = "fire"
 
 [sobj.16496]
 flicker = "fire"
+light_at = [23, 21]  # fire
 
 [sobj.16504-16513]    # flames
 flicker = "fire"
@@ -1220,3 +1625,677 @@ plan = "maps/plans/mountain-cliff-cap-west.png"
 height = 2
 floor = 0
 wind = "none"
+
+# s6-reprojection-cloud-3 (run 76; register G-68, head note of 2026-10-30): the emitters run 62 left at the
+# original's anchor (kinds on fewer than 20 cells), each light moved onto its flame or lamp: a run-62 kind's point
+# where the picture is its look-alike (the same size, the drawn pixels' mask 90 % the same, plain or mirrored),
+# else the one flame the colour pass found. Kept only where the point lies on a lit part and passed by eye
+# (docs/user-related/research/2026-10-30-reprojection-run76-register-graphics-rows.md). Drawing only.
+[sobj.6908]
+light_at = [24, 84]  # one blob (8 px)
+
+[sobj.7600]
+light_at = [25, 138]  # like 7596 (table candle at iou 0.93, mirrored)
+
+[sobj.8737]
+light_at = [24, 79]  # like 12507 (wall candle at iou 1.00)
+
+[sobj.8742]
+light_at = [24, 79]  # like 12507 (wall candle at iou 1.00)
+
+[sobj.8868]
+light_at = [22, 199]  # one blob (306 px)
+
+[sobj.8881]
+light_at = [1, 226]  # one blob (20 px)
+
+[sobj.9446]
+light_at = [8, 177]  # like 9435 (hanging lantern on a wall at iou 1.00)
+
+[sobj.9467]
+light_at = [4, 132]  # like 9564 (hanging lantern on a wall at iou 1.00)
+
+[sobj.9496]
+light_at = [8, 177]  # like 9435 (hanging lantern on a wall at iou 1.00)
+
+[sobj.9501]
+light_at = [8, 177]  # like 9435 (hanging lantern on a wall at iou 1.00)
+
+[sobj.10005]
+light_at = [8, 177]  # like 9435 (hanging lantern on a wall at iou 1.00)
+
+[sobj.10008]
+light_at = [8, 177]  # like 9435 (hanging lantern on a wall at iou 1.00)
+
+[sobj.11128]
+light_at = [12, 202]  # one blob (8 px)
+
+[sobj.11264]
+light_at = [22, 78]  # one blob (96 px)
+
+[sobj.11340]
+light_at = [8, 20]  # one blob (8 px)
+
+[sobj.12503]
+light_at = [24, 79]  # like 12507 (wall candle at iou 1.00)
+
+[sobj.12528]
+light_at = [24, 79]  # like 12507 (wall candle at iou 1.00)
+
+[sobj.12824]
+light_at = [18, 106]  # one blob (12 px)
+
+[sobj.12826]
+light_at = [28, 106]  # one blob (12 px)
+
+[sobj.13524]
+light_at = [22, 78]  # one blob (8 px)
+
+[sobj.13572]
+light_at = [37, 39]  # one blob (248 px)
+
+[sobj.13901]
+light_at = [22, 110]  # like 13837 (candelabra at iou 0.96)
+
+[sobj.14907]
+light_at = [29, 64]  # one blob (6 px)
+
+[sobj.15561]
+light_at = [11, 61]  # one blob (11 px)
+
+[sobj.15562]
+light_at = [36, 61]  # one blob (11 px)
+
+[sobj.16101-16103]
+light_at = [24, 79]  # like 12507 (wall candle at iou 0.94)
+
+[sobj.16109]
+light_at = [24, 79]  # like 12507 (wall candle at iou 0.94)
+
+[sobj.16112]
+light_at = [24, 79]  # like 12507 (wall candle at iou 0.94)
+
+[sobj.16115]
+light_at = [24, 79]  # like 12507 (wall candle at iou 0.94)
+
+[sobj.16135]
+light_at = [24, 79]  # like 12507 (wall candle at iou 0.94)
+
+[sobj.16217]
+light_at = [24, 62]  # like 11745 (wall torch at iou 1.00)
+
+[sobj.16605]
+light_at = [23, 83]  # one blob (106 px)
+
+[sobj.16606]
+light_at = [23, 84]  # one blob (133 px)
+
+[sobj.16607]
+light_at = [23, 85]  # one blob (141 px)
+
+# run 76 (G-68), second pass: the rest of the emitters with a flame, a lamp, a lantern or a lit string, the
+# biggest flame or lit pane the colour pass found (run 62's "c1") or a look-alike's point, each passed by eye. The
+# glows (crystals, gold, chests, signs, waterfalls, trees) keep the original's place, as run 62 left them.
+[sobj.8858]
+light_at = [25, 171]  # biggest blob (367 of 370 px)
+
+[sobj.8860]
+light_at = [42, 248]  # biggest blob (112 of 151 px)
+
+[sobj.8861]
+light_at = [6, 315]  # biggest blob (143 of 337 px)
+
+[sobj.8862]
+light_at = [45, 271]  # biggest blob (64 of 72 px)
+
+[sobj.8863]
+light_at = [6, 267]  # biggest blob (152 of 201 px)
+
+[sobj.8864]
+light_at = [38, 196]  # biggest blob (243 of 291 px)
+
+[sobj.8865]
+light_at = [2, 194]  # biggest blob (52 of 80 px)
+
+[sobj.8871]
+light_at = [40, 285]  # biggest blob (144 of 199 px)
+
+[sobj.8872]
+light_at = [5, 291]  # biggest blob (99 of 115 px)
+
+[sobj.8874]
+light_at = [38, 186]  # biggest blob (112 of 136 px)
+
+[sobj.8875]
+light_at = [6, 189]  # biggest blob (20 of 48 px)
+
+[sobj.8877]
+light_at = [45, 92]  # biggest blob (23 of 43 px)
+
+[sobj.8878]
+light_at = [13, 88]  # biggest blob (283 of 351 px)
+
+[sobj.8880]
+light_at = [39, 226]  # biggest blob (147 of 277 px)
+
+[sobj.8883]
+light_at = [18, 143]  # biggest blob (267 of 342 px)
+
+[sobj.8886]
+light_at = [41, 144]  # biggest blob (135 of 151 px)
+
+[sobj.8887]
+light_at = [6, 142]  # biggest blob (108 of 176 px)
+
+[sobj.8891]
+light_at = [41, 141]  # biggest blob (140 of 194 px)
+
+[sobj.8892]
+light_at = [5, 148]  # biggest blob (98 of 122 px)
+
+[sobj.8893]
+light_at = [42, 100]  # biggest blob (98 of 122 px)
+
+[sobj.8894]
+light_at = [6, 93]  # biggest blob (140 of 194 px)
+
+[sobj.8897]
+light_at = [22, 52]  # biggest blob (350 of 362 px)
+
+[sobj.8900]
+light_at = [25, 52]  # biggest blob (350 of 362 px)
+
+[sobj.8911]
+light_at = [14, 11]  # biggest blob (224 of 327 px)
+
+[sobj.8912]
+light_at = [11, 94]  # biggest blob (24 of 36 px)
+
+[sobj.8914]
+light_at = [21, 77]  # biggest blob (452 of 472 px)
+
+[sobj.9437]
+light_at = [8, 177]  # like 9435 (hanging lantern on a wall at iou 1.00)
+
+[sobj.9497]
+light_at = [4, 132]  # like 9564 (hanging lantern on a wall at iou 1.00)
+
+[sobj.9504]
+light_at = [14, 120]  # biggest blob (8 of 16 px)
+
+[sobj.9507]
+light_at = [32, 120]  # biggest blob (8 of 32 px)
+
+[sobj.9603-9606]
+light_at = [25, 164]  # biggest blob (88 of 212 px)
+
+[sobj.9653]
+light_at = [27, 146]  # biggest blob (88 of 172 px)
+
+[sobj.9655]
+light_at = [17, 148]  # biggest blob (88 of 172 px)
+
+[sobj.9660]
+light_at = [29, 124]  # biggest blob (88 of 236 px)
+
+[sobj.9665]
+light_at = [21, 124]  # biggest blob (88 of 220 px)
+
+[sobj.9673]
+light_at = [29, 124]  # biggest blob (88 of 236 px)
+
+[sobj.9678]
+light_at = [21, 124]  # biggest blob (88 of 220 px)
+
+[sobj.10973]
+light_at = [22, 208]  # biggest blob (8 of 24 px)
+
+[sobj.11149]
+light_at = [39, 85]  # biggest blob (31 of 135 px)
+
+[sobj.11150]
+light_at = [28, 70]  # biggest blob (252 of 356 px)
+
+[sobj.11384]
+light_at = [7, 26]  # biggest blob (11 of 35 px)
+
+[sobj.11386]
+light_at = [40, 64]  # biggest blob (8 of 48 px)
+
+[sobj.12122]
+light_at = [21, 78]  # biggest blob (199 of 811 px)
+
+[sobj.12343]
+light_at = [34, 74]  # biggest blob (16 of 62 px)
+
+[sobj.13789]
+light_at = [22, 138]  # biggest blob (8 of 12 px)
+
+[sobj.14908]
+light_at = [23, 64]  # run 76 (G-68), third pass: the candle's flame (Astra 76-1: the second pass had it on the foot)
+
+[sobj.16019]
+light_at = [24, 181]  # biggest blob (78 of 114 px)
+
+[sobj.16020]
+light_at = [23, 181]  # biggest blob (78 of 114 px)
+
+[sobj.16108]
+light_at = [24, 79]  # like 12507 (wall candle at iou 0.94)
+
+[sobj.16111]
+light_at = [24, 79]  # like 12507 (wall candle at iou 0.94)
+
+[sobj.16113-16114]
+light_at = [24, 79]  # like 12507 (wall candle at iou 0.94)
+
+[sobj.16116]
+light_at = [24, 79]  # like 12507 (wall candle at iou 0.94)
+
+[sobj.16118]
+light_at = [24, 79]  # like 12507 (wall candle at iou 0.94)
+
+[sobj.16136]
+light_at = [24, 79]  # like 12507 (wall candle at iou 0.94)
+
+[sobj.16175]
+light_at = [25, 56]  # biggest blob (11 of 14 px)
+
+[sobj.16176]
+light_at = [24, 151]  # biggest blob (10 of 19 px)
+
+[sobj.16181]
+light_at = [24, 151]  # biggest blob (10 of 19 px)
+
+[sobj.16182]
+light_at = [25, 56]  # biggest blob (11 of 33 px)
+
+[sobj.16190]
+light_at = [24, 151]  # biggest blob (10 of 19 px)
+
+[sobj.16216]
+light_at = [24, 107]  # biggest blob (10 of 27 px)
+
+[sobj.16227]
+light_at = [20, 69]  # biggest blob (11 of 32 px)
+
+[sobj.16228]
+light_at = [25, 84]  # biggest blob (12 of 21 px)
+
+[sobj.16482]
+light_at = [35, 26]  # biggest blob (503 of 532 px)
+flicker = "fire"  # as [sobj.16482-16483] (kept here too, whichever table the loader reads)
+
+[sobj.16483]
+light_at = [15, 27]  # biggest blob (650 of 681 px)
+flicker = "fire"  # as [sobj.16482-16483] (kept here too, whichever table the loader reads)
+
+[sobj.16487]
+light_at = [45, 98]  # biggest blob (12 of 23 px)
+
+[sobj.16488]
+light_at = [33, 87]  # biggest blob (377 of 726 px)
+
+[sobj.16489]
+light_at = [4, 92]  # biggest blob (62 of 70 px)
+
+[sobj.16490]
+light_at = [33, 46]  # biggest blob (79 of 167 px)
+
+[sobj.16491]
+light_at = [6, 42]  # biggest blob (77 of 127 px)
+
+[sobj.16492]
+light_at = [41, 19]  # biggest blob (45 of 95 px)
+
+[sobj.16493]
+light_at = [12, 19]  # biggest blob (60 of 115 px)
+
+[sobj.16494]
+light_at = [14, 17]  # biggest blob (25 of 105 px)
+
+[sobj.16504]
+light_at = [23, 53]  # biggest blob (648 of 674 px)
+flicker = "fire"  # as [sobj.16504-16513] (kept here too, whichever table the loader reads)
+
+[sobj.16505]
+light_at = [22, 60]  # biggest blob (1888 of 1924 px)
+flicker = "fire"  # as [sobj.16504-16513] (kept here too, whichever table the loader reads)
+
+[sobj.16506]
+light_at = [23, 53]  # biggest blob (1967 of 2001 px)
+flicker = "fire"  # as [sobj.16504-16513] (kept here too, whichever table the loader reads)
+
+[sobj.16507]
+light_at = [22, 49]  # biggest blob (2457 of 2499 px)
+flicker = "fire"  # as [sobj.16504-16513] (kept here too, whichever table the loader reads)
+
+[sobj.16508]
+light_at = [27, 48]  # biggest blob (2431 of 2630 px)
+flicker = "fire"  # as [sobj.16504-16513] (kept here too, whichever table the loader reads)
+
+[sobj.16509]
+light_at = [29, 43]  # biggest blob (512 of 882 px)
+flicker = "fire"  # as [sobj.16504-16513] (kept here too, whichever table the loader reads)
+
+[sobj.16510]
+light_at = [22, 36]  # biggest blob (905 of 1107 px)
+flicker = "fire"  # as [sobj.16504-16513] (kept here too, whichever table the loader reads)
+
+[sobj.16511]
+light_at = [25, 45]  # biggest blob (2182 of 2217 px)
+flicker = "fire"  # as [sobj.16504-16513] (kept here too, whichever table the loader reads)
+
+[sobj.16512]
+light_at = [19, 43]  # biggest blob (602 of 1481 px)
+flicker = "fire"  # as [sobj.16504-16513] (kept here too, whichever table the loader reads)
+
+[sobj.16513]
+light_at = [21, 34]  # biggest blob (344 of 400 px)
+flicker = "fire"  # as [sobj.16504-16513] (kept here too, whichever table the loader reads)
+
+[sobj.16563]
+light_at = [40, 32]  # biggest blob (44 of 167 px)
+
+[sobj.16564]
+light_at = [24, 48]  # biggest blob (44 of 330 px)
+
+[sobj.16615]
+light_at = [10, 18]  # biggest blob (28 of 219 px)
+flicker = "fire"  # as [sobj.16615-16617] (kept here too, whichever table the loader reads)
+
+[sobj.16616]
+light_at = [45, 46]  # biggest blob (67 of 76 px)
+flicker = "fire"  # as [sobj.16615-16617] (kept here too, whichever table the loader reads)
+
+[sobj.16617]
+light_at = [2, 47]  # biggest blob (51 of 108 px)
+flicker = "fire"  # as [sobj.16615-16617] (kept here too, whichever table the loader reads)
+
+[sobj.16793]
+light_at = [35, 26]  # biggest blob (503 of 532 px)
+flicker = "fire"  # as [sobj.16793-16794] (kept here too, whichever table the loader reads)
+
+[sobj.16794]
+light_at = [15, 27]  # biggest blob (650 of 681 px)
+flicker = "fire"  # as [sobj.16793-16794] (kept here too, whichever table the loader reads)
+
+# run 76 (G-68), third pass (Astra 76-1): the emitters the first two passes left, each kind classified by eye
+# (G:/w/c3/run76/g68-rest/rest-*.png) and its light put on its flame, lamp, hung lantern, lit tree or a skull's
+# glowing bowl (third-check-*.png). The glows (crystals, gold, chests, rocks, fountains, signs, bare trees, stoves
+# with no fire, a skeleton in a niche, pieces with nothing drawn) keep the original's place.
+[sobj.7892]
+light_at = [38, 12]  # read off the grid
+
+[sobj.8721]
+light_at = [33, 114]  # read off the grid
+
+[sobj.8723]
+light_at = [24, 114]  # read off the grid
+
+[sobj.8755]
+light_at = [8, 108]  # read off the grid
+
+[sobj.8757]
+light_at = [3, 110]  # read off the grid
+
+[sobj.8857]
+light_at = [27, 153]  # the hung lantern's middle
+
+[sobj.8859]
+light_at = [27, 218]  # the hung lantern's middle
+
+[sobj.8866]
+light_at = [23, 152]  # the hung lantern's middle
+
+[sobj.8869]
+light_at = [25, 220]  # the hung lantern's middle
+
+[sobj.8870]
+light_at = [22, 239]  # the hung lantern's middle
+
+[sobj.8873]
+light_at = [24, 330]  # the hung lantern's middle
+
+[sobj.8876]
+light_at = [14, 118]  # the hung lantern's middle
+
+[sobj.8879]
+light_at = [20, 156]  # the hung lantern's middle
+
+[sobj.8882]
+light_at = [34, 176]  # the hung lantern's middle
+
+[sobj.8884]
+light_at = [13, 114]  # the hung lantern's middle
+
+[sobj.8885]
+light_at = [22, 184]  # the hung lantern's middle
+
+[sobj.8888]
+light_at = [23, 95]  # the hung lantern's middle
+
+[sobj.8889]
+light_at = [21, 37]  # the hung lantern's middle
+
+[sobj.8890]
+light_at = [22, 95]  # the hung lantern's middle
+
+[sobj.8895]
+light_at = [25, 47]  # the hung lantern's middle
+
+[sobj.8896]
+light_at = [23, 41]  # the hung lantern's middle
+
+[sobj.8898]
+light_at = [25, 77]  # the hung lantern's middle
+
+[sobj.8899]
+light_at = [22, 77]  # the hung lantern's middle
+
+[sobj.8901]
+light_at = [24, 41]  # the hung lantern's middle
+
+[sobj.8902]
+light_at = [22, 30]  # the hung lantern's middle
+
+[sobj.8903]
+light_at = [22, 31]  # the hung lantern's middle
+
+[sobj.8909]
+light_at = [22, 78]  # the hung lantern's middle
+
+[sobj.8910]
+light_at = [21, 34]  # read off the grid
+
+[sobj.8913]
+light_at = [22, 79]  # the hung lantern's middle
+
+[sobj.8915]
+light_at = [22, 126]  # the hung lantern's middle
+
+[sobj.9468]
+light_at = [42, 120]  # read off the grid
+
+[sobj.9500]
+light_at = [35, 128]  # read off the grid
+
+[sobj.9571]
+light_at = [43, 130]  # read off the grid
+
+[sobj.10111]
+light_at = [35, 133]  # the flames' middle
+
+[sobj.10112]
+light_at = [18, 133]  # the flames' middle
+
+[sobj.10526]
+light_at = [33, 180]  # the flames' middle
+
+[sobj.11113]
+light_at = [23, 71]  # the highest flame
+
+[sobj.11148]
+light_at = [23, 112]  # read off the grid
+
+[sobj.11151]
+light_at = [16, 100]  # read off the grid
+
+[sobj.11152]
+light_at = [39, 112]  # read off the grid
+
+[sobj.11230]
+light_at = [23, 83]  # the flames' middle
+
+[sobj.11233]
+light_at = [20, 91]  # the flames' middle
+
+[sobj.11236]
+light_at = [25, 83]  # the flames' middle
+
+[sobj.11239]
+light_at = [22, 84]  # the flames' middle
+
+[sobj.12272]
+light_at = [20, 107]  # the highest flame
+
+[sobj.12344]
+light_at = [28, 74]  # the highest flame
+
+[sobj.12345]
+light_at = [10, 74]  # the highest flame
+
+[sobj.12346]
+light_at = [22, 64]  # read off the grid
+
+[sobj.13765]
+light_at = [38, 42]  # the flames' middle
+
+[sobj.13825]
+light_at = [22, 142]  # the highest flame
+
+[sobj.13835]
+light_at = [22, 78]  # the highest flame
+
+[sobj.13849]
+light_at = [24, 123]  # the hung lantern's middle
+
+[sobj.13883]
+light_at = [31, 110]  # read off the grid
+
+[sobj.14128]
+light_at = [45, 30]  # read off the grid
+
+[sobj.14131]
+light_at = [2, 28]  # read off the grid
+
+[sobj.14200]
+light_at = [32, 58]  # the flames' middle
+
+[sobj.14201]
+light_at = [19, 53]  # the flames' middle
+
+[sobj.14916-14917]
+light_at = [22, 62]  # read off the grid
+
+[sobj.15293]
+light_at = [35, 111]  # the flames' middle
+
+[sobj.15294]
+light_at = [13, 101]  # the flames' middle
+
+[sobj.15296]
+light_at = [39, 103]  # the flames' middle
+
+[sobj.15297]
+light_at = [9, 102]  # the flames' middle
+
+[sobj.15559]
+light_at = [23, 71]  # the flames' middle
+
+[sobj.16107]
+light_at = [24, 52]  # read off the grid
+
+[sobj.16110]
+light_at = [24, 52]  # read off the grid
+
+[sobj.16143]
+light_at = [17, 86]  # the skull's glowing bowl
+
+[sobj.16144]
+light_at = [19, 86]  # the skull's glowing bowl
+
+[sobj.16147]
+light_at = [16, 86]  # the skull's glowing bowl
+
+[sobj.16148]
+light_at = [18, 86]  # the skull's glowing bowl
+
+[sobj.16152]
+light_at = [18, 86]  # the skull's glowing bowl
+
+[sobj.16172]
+light_at = [18, 86]  # the skull's glowing bowl (Astra 76-2: 16179's wall, its bowl the same pixels)
+
+[sobj.16173]
+light_at = [17, 88]  # the highest flame
+
+[sobj.16177]
+light_at = [21, 144]  # the flames' middle
+
+[sobj.16179-16180]
+light_at = [18, 86]  # the skull's glowing bowl
+
+[sobj.16191]
+light_at = [17, 84]  # the skull's glowing bowl
+
+[sobj.16194]
+light_at = [15, 84]  # the skull's glowing bowl
+
+[sobj.16207]
+light_at = [16, 84]  # the skull's glowing bowl
+
+[sobj.16210]
+light_at = [18, 86]  # the skull's glowing bowl
+
+[sobj.16224]
+light_at = [20, 59]  # the flames' middle
+
+[sobj.16225]
+light_at = [20, 52]  # the flames' middle
+
+[sobj.16226]
+light_at = [21, 77]  # the flames' middle
+
+[sobj.16242]
+light_at = [41, 35]  # the fire below
+
+[sobj.16243]
+light_at = [6, 27]  # the fire below
+
+[sobj.16244]
+light_at = [42, 27]  # the fire below
+
+[sobj.16245]
+light_at = [6, 35]  # the fire below
+
+[sobj.16296]
+light_at = [41, 68]  # the flames' middle
+
+[sobj.16297]
+light_at = [2, 66]  # read off the grid
+
+[sobj.16298]
+light_at = [46, 62]  # read off the grid
+
+[sobj.16299]
+light_at = [5, 68]  # the flames' middle
+
+[sobj.16364]
+light_at = [35, 122]  # the flames' middle
+
+[sobj.16366]
+light_at = [10, 119]  # the flames' middle
+
+[sobj.16562]
+light_at = [18, 74]  # read off the grid

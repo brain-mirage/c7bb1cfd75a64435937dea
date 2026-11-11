@@ -3,7 +3,7 @@
   "name": "Retro (5.x)",
   "kind": "draw",
   "version": "0.7.0",
-  "contract": 4,
+  "contract": 5,
   "assembly": "2d-5x.dll",
   "entry": "TK.Modules.Draw5x.Module",
   "serves": ["tiles", "map-objects", "items", "monsters", "npcs", "characters", "effects"],
@@ -18,7 +18,7 @@
     {
       "key": "view",
       "name": "Retro World View",
-      "page": "worldview",
+      "page": "worldviewgraphics",
       "values": "modern=As the World View settings say;old=The old version's view (21 x 19 cells, smaller);old-wide=The old version's wide view (29 x 19 cells, smaller)"
     }
   ]

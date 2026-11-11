@@ -30,7 +30,7 @@
 local C = TK.GetComponent("5x.chat")
 local H = __tk
 local S = require("interfaces.5x.skin")
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 local E = require("interfaces.5x.elements")
 
 local L = TK.Xml.Data("main.xml")
@@ -77,7 +77,19 @@ function C:Add(text, fg, bg, rgb, show)
     else
         self.offset = 0
     end
-    self:Draw()
+    -- GA-3 (client round 4, the client review's 4.29): drawn once, at the next frame drawn, for every message of this
+    -- frame (scripts.DrawLine, the frame's watched script, which the host calls only while the frame shows: a hidden log
+    -- is drawn when it shows). A scroll still draws at once (C:Draw clears the flag). Drawing only.
+    if not self.drawDue and self.frame then
+        self.drawDue = true
+        self.frame:SetUpdateWhen("line")
+    end
+    -- WIRE (GA-3, client round 5): the bar is set now, with the message, not at the draw: its range decides whether a
+    -- left press on it is its own or goes on to the map under it (interfaces/5x/scrollbar.lua), as 4a's chat pane sets
+    -- its bar as a line comes (ChattingPane::AddIncomingMessage 0x0047F370, 7.x's). Leaving it to the next frame's draw
+    -- changes what the server sees for a press in that frame.
+    local bar = self.frame and self.frame.bar
+    if bar then bar:Refresh() end
 end
 
 --- A message's row: its bands and its text, made once and kept.
@@ -119,6 +131,7 @@ end
 function C:Draw()
     local f = self.frame
     if not f then return end
+    self.drawDue = false -- GA-3 (client round 4): the messages C:Add left for the next frame are drawn now
     for _, r in ipairs(f.rows) do
         r.text:Hide()
         for _, b in ipairs(r.bands) do b:Hide() end
@@ -155,7 +168,7 @@ end
 --- The chat rules' line or a prompt's, drawn in the prompt area with its caret while one is open (the original's
 --- LineInputPane: its prompt and text in 0x80 on 0x8F); the rules own it, its keys and what it sends. s6-interface-5x-b
 --- (round 7, s6-interface-5x's Y3): every prompt, the one-key ones too ("Eat what?", the take-off, the cast, F9's, the
---- emote letter), as 5.33 draws all its LineInputPanes here (components/classic draws none of them while this shows).
+--- emote letter), as 5.33 draws all its LineInputPanes here (shared/components/classic draws none of them while this shows).
 function C:DrawLine()
     local f = self.frame
     if not H:IsLiveInput() then
@@ -195,7 +208,11 @@ function scripts.Box(box)
     H:SetTextInsets(box.__h, 0, 0, 0, 0)
 end
 
-function scripts.DrawLine() C:DrawLine() end
+-- GA-3 (client round 4): the log's messages of the last frame drawn first (C:Add); then the line as before
+function scripts.DrawLine()
+    if C.drawDue then C:Draw() end
+    C:DrawLine()
+end
 
 function C:OnEnable()
     local f = TK.Xml.Load("main.xml", { scripts = scripts, elements = E }).frame

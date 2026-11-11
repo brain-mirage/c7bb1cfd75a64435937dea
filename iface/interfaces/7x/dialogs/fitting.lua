@@ -1,4 +1,4 @@
--- s6-modular-g (interfaces, round 13): 7.x's look of the fitting room (components/dialogs/fitting.lua), from Source-5's
+-- s6-modular-g (interfaces, round 13): 7.x's look of the fitting room (shared/components/dialogs/fitting.lua), from Source-5's
 -- class pages. Drawing only: the indexes, the cells' parts and what is sent are the renderer's and the model's.
 --
 -- FittingRoomDialog (0x0041BDD0): 820 x 500, centred, no slide; the web board's frame (its OnPaint 0x0041C5E0); controls
@@ -14,7 +14,7 @@
 
 local S = require("interfaces.7x.skin")
 local unpack = table.unpack
-local entry = require("interfaces.original.entry")
+local entry = require("shared.original.entry")
 local D = TK.Xml.Data("fitting.xml")
 
 return function(L, X)

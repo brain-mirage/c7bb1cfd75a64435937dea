@@ -7,7 +7,7 @@
 --   0x00481750); its six labels drawn twice a pixel apart in the port's colour (0x80) from x 15 (-Color- from 9) on the
 --   lines 21 + 16 n (OnPaint 0x00481490); the row under the pointer outlined from x 4 to 62 round its 16-pixel
 --   rectangle, raised (0x8F left and top, 0x80 right and bottom), sunken while pressed.
--- Its place follows the scaled screen (interfaces/screen.lua's Screen.Place) until the player moves it (edit mode, its
+-- Its place follows the scaled screen (shared/original/screen.lua's Screen.Place) until the player moves it (edit mode, its
 -- Layout tab).
 -- s6-ui-core (round 85): the XML twin's scripts; the button, the menu, its rows and their places are main.xml's
 -- (core/xml.md).
@@ -19,13 +19,13 @@
 -- closes it when it is outside; a left press outside closes it and goes on; the right button and the wheel leave it
 -- open. Any key closes it and goes on (HandleKeyOrTextEvent 0x00481470), Escape too. A row's rectangle is 4a's,
 -- (0, 6 + 16 n)-(67, 22 + 16 n) (GetItemRect 0x00481A80, HitTest 0x00481AD0); its choice is the game layer's menu row
--- (TK.Game.Chat.MenuAction and MenuChosen, core/game/chat.lua, as Modern's chat frame's menu: the rules' chat:mode sets
+-- (TK.Game.Chat.MenuAction and MenuChosen, shared/game/chat.lua, as Modern's chat frame's menu: the rules' chat:mode sets
 -- UserPane::m_currentSayMode and opens the mode's line, -Color- opens the ChattingColorPane dialog), so nothing here is
 -- sent: the lines it opens send what the player types. No sound (ChattingPane.cpp plays none).
 
 local C = TK.GetComponent("7x.saymode")
 local S = require("interfaces.7x.skin")
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 -- 7.x's drawing helpers (X.Frame, X.Rect, X.Bold, X.Outline; s6-interface-7x-b round 8, the separation's step 5:
 -- interfaces/7x/draw.lua, the dialogs look's file's before)
 local X = require("interfaces.7x.draw")
@@ -68,7 +68,7 @@ end
 
 --- A left press anywhere in the menu: it is pressed, nothing is chosen yet (the outline drawn sunken).
 local function press(m, button)
-    -- WIRE: which press arms the menu is the game layer's menu rule (TK.Game.Chat.MenuArms, core/game/chat.lua:
+    -- WIRE: which press arms the menu is the game layer's menu rule (TK.Game.Chat.MenuArms, shared/game/chat.lua:
     -- 0x004811C0's field_F8; s6-gateway-research round 38 moved it there)
     if not TK.Game.Chat.MenuArms(button) then return end
     m.pressed = true

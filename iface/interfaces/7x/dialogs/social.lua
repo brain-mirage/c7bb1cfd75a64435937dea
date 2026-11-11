@@ -1,5 +1,5 @@
 -- s6-modular-g (interfaces, round 12): 7.x's look of the user list, the hunters-list settings and the friend list
--- (components/dialogs/social.lua), from Source-5's class pages (the EPF layout). Drawing only: the indexes, the keys,
+-- (shared/components/dialogs/social.lua), from Source-5's class pages (the EPF layout). Drawing only: the indexes, the keys,
 -- the 85 and 84 requests and the whisper are the renderer's and the model's.
 --
 -- The user list (UserListDialogPane 0x0059BC90): 709 x 452 on USERLIST.EPF in USERLIST.PAL, at placement slot 8
@@ -24,7 +24,7 @@
 
 local S = require("interfaces.7x.skin")
 local unpack = table.unpack
-local entry = require("interfaces.original.entry")
+local entry = require("shared.original.entry")
 local D = TK.Xml.Data("social.xml")
 
 return function(L, X)

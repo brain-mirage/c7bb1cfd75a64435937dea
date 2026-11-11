@@ -3,7 +3,7 @@
 --   global     the lock state and Button Lock (per profile, as in Bartender)
 --   components one table per component, filled from its defaults
 --   positions  frame key -> { point, relativePoint, x, y } relative to UIParent
---   bindings   key -> command, e.g. ["CTRL-1"] = "CLICK TKHotkey13" (the original's hotkey carriers: core/game/hotkeys.lua)
+--   bindings   key -> command, e.g. ["CTRL-1"] = "CLICK TKHotkey13" (the original's hotkey carriers: shared/game/hotkeys.lua)
 --   secondaryKeys  key -> true: the keys in their command's second slot (s6-ui-bars; the others are primary)
 --   actions    action slot (as a string) -> { kind = "spell"|"item", slot = 1..52 }: the bars a character starts with
 --              on its first entry; its own are in its hotbars (TK.Characters)
@@ -68,7 +68,7 @@ function DB:DefaultCommands()
 end
 
 --- The commands that came after profiles began to note what they were given (rounds 17 and 18), with the logic's own
---- commands (bindingsNewIn2, core/bindings.lua): a profile without the note was given every other default when it was
+--- commands (bindingsNewIn2, shared/bindings.lua): a profile without the note was given every other default when it was
 --- made. Core's own here; a component or panel adds its own beside its default (the list is read at profile load,
 --- after they load): Original Commands' MUSIC, the action wheel's two.
 DB.NEWER_COMMANDS = { "SCREENSHOT", "SCREENSHOTBMP" }
@@ -108,7 +108,7 @@ local function holder(t, path, make)
     return t, keys[#keys]
 end
 
---- s6-input (round 49; interface-separation.md 5.13): saved values an interface's components held that are now global,
+--- s6-input (round 49; interface-separation.md 5.13): saved values an interface's components held that are now shared,
 --- moved once for every profile, whichever interface it is for: each installed interface's movedSaved, { ["<old path>"] =
 --- "<new path>" } (dotted paths in the profile). The old value is read once, then dropped; a value already at the new path
 --- is kept. A profile something moved in is saved as it loads.
@@ -153,7 +153,7 @@ end
 --- the profile's bindings, in its note of the defaults given (an old command noted marks its new name, so a hotkey the
 --- player deliberately unbound stays unbound) and in the computer's global keys (TK.Bindings:Globals, by command). A
 --- renamed command is never saved under its old name again. Wire: the hotkeys keep their keys, and the keys their
---- input path (a CLICK binding: core/game/hotkeys.lua); losing one changes what a key sends.
+--- input path (a CLICK binding: shared/game/hotkeys.lua); losing one changes what a key sends.
 function DB:CarryRenamed(p, given)
     local renamed = self:Renamed()
     if type(p.bindings) == "table" then self:RenameCommands(p.bindings) end
@@ -217,16 +217,18 @@ function DB:Normalize(p)
         out.components[c.name] = V.NormalizeLike(out.components[c.name], c.defaults or {}, c:ValueRules(),
             "components." .. c.name, problems)
     end
-    -- s6-input (round 49, separation step 4b): the effect name lists, every interface's (core/effecticons.lua), with
+    -- s6-input (round 49, separation step 4b): the effect name lists, every interface's (shared/effecticons.lua), with
     -- what an interface's component kept of them before, moved here after its own carry-over above (DB:MoveSaved).
     out.effectLists = p.effectLists
     self:MoveSaved(out)
     out.effectLists = V.NormalizeLike(out.effectLists, { buffNames = {}, debuffNames = {} }, nil, "effectLists", problems)
 
     out.positions = V.Positions(p.positions, problems)
+    -- T-36 step 3 (gateway round 91, review r91d): the sizes an interface's layout.lua last gave (global/editmode.lua)
+    out.layoutSizes = type(p.layoutSizes) == "table" and p.layoutSizes or nil
     out.bindings = V.Bindings(p.bindings, problems, self.knownCommands) or U.Copy(self.defaultBindings)
     out.defaultsGiven = self:GiveNewDefaults(out.bindings, given)
-    -- s6-ui-bars: the keys in their command's second slot (core/bindings.lua); a mark on an unbound key is dropped.
+    -- s6-ui-bars: the keys in their command's second slot (shared/bindings.lua); a mark on an unbound key is dropped.
     out.secondaryKeys = {}
     for k, v in pairs(type(p.secondaryKeys) == "table" and p.secondaryKeys or {}) do
         if v == true and out.bindings[k] then out.secondaryKeys[k] = true end

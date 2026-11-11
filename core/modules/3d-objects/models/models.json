@@ -5,35 +5,40 @@
    "objects": [
     1619,
     1620
-   ]
+   ],
+   "category": "props/signs"
   },
   {
    "name": "signpost",
    "objects": [
     2051,
     2052
-   ]
+   ],
+   "category": "props/signs"
   },
   {
    "name": "bush_mound",
    "objects": [
     911,
     912
-   ]
+   ],
+   "category": "foliage/shrubs"
   },
   {
    "name": "bush_stems",
    "objects": [
     915,
     916
-   ]
+   ],
+   "category": "foliage/shrubs"
   },
   {
    "name": "jars",
    "objects": [
     434,
     435
-   ]
+   ],
+   "category": "props/containers"
   },
   {
    "name": "house-L",
@@ -134,26 +139,30 @@
      39,
      104
     ]
-   ]
+   ],
+   "category": "buildings"
   },
   {
    "name": "well",
    "objects": [
     437,
     438
-   ]
+   ],
+   "category": "props/wells"
   },
   {
    "name": "bench_grey",
    "objects": [
     302
-   ]
+   ],
+   "category": "props/furniture"
   },
   {
    "name": "bench_red",
    "objects": [
     313
-   ]
+   ],
+   "category": "props/furniture"
   },
   {
    "name": "tree_round",
@@ -161,14 +170,16 @@
     822,
     823,
     824
-   ]
+   ],
+   "category": "foliage/trees"
   },
   {
    "name": "tree_pair",
    "objects": [
     825,
     826
-   ]
+   ],
+   "category": "foliage/trees"
   },
   {
    "name": "tree_blossom",
@@ -177,7 +188,8 @@
     891,
     892,
     893
-   ]
+   ],
+   "category": "foliage/trees"
   },
   {
    "name": "tree_violet",
@@ -186,7 +198,8 @@
     895,
     896,
     897
-   ]
+   ],
+   "category": "foliage/trees"
   },
   {
    "name": "tree_fruit",
@@ -196,7 +209,8 @@
     862,
     863,
     864
-   ]
+   ],
+   "category": "foliage/trees"
   },
   {
    "name": "tree_slim",
@@ -205,7 +219,556 @@
     819,
     820,
     821
-   ]
+   ],
+   "category": "foliage/trees"
+  },
+  {
+   "name": "tree_big",
+   "objects": [
+    810,
+    811,
+    812,
+    813
+   ],
+   "category": "foliage/trees"
+  },
+  {
+   "name": "pine_a",
+   "objects": [
+    866,
+    867,
+    868,
+    869,
+    870
+   ],
+   "category": "foliage/trees"
+  },
+  {
+   "name": "pine_b",
+   "objects": [
+    871,
+    872,
+    873,
+    874,
+    875
+   ],
+   "category": "foliage/trees"
+  },
+  {
+   "name": "flower_yellow",
+   "objects": [
+    903
+   ],
+   "category": "foliage/flowers"
+  },
+  {
+   "name": "grass_tuft",
+   "objects": [
+    1289
+   ],
+   "category": "foliage/grass"
+  },
+  {
+   "name": "grass_1290_cut",
+   "objects": [
+    1290
+   ],
+   "category": "foliage/grass"
+  },
+  {
+   "name": "leafy_1287_cut",
+   "objects": [
+    1287
+   ],
+   "category": "foliage/plants"
+  },
+  {
+   "name": "leafy_1288_cut",
+   "objects": [
+    1288
+   ],
+   "category": "foliage/plants"
+  },
+  {
+   "name": "flower_907_cut",
+   "objects": [
+    907
+   ],
+   "category": "foliage/flowers"
+  },
+  {
+   "name": "flower_905_cut",
+   "objects": [
+    905
+   ],
+   "category": "foliage/flowers"
+  },
+  {
+   "name": "flower_901_cut",
+   "objects": [
+    901
+   ],
+   "category": "foliage/flowers"
+  },
+  {
+   "name": "flower_898_cut",
+   "objects": [
+    898
+   ],
+   "category": "foliage/flowers"
+  },
+  {
+   "name": "shop_sign_cut",
+   "objects": [
+    2047,
+    2048
+   ],
+   "category": "props/signs"
+  },
+  {
+   "name": "fence_501_cut",
+   "objects": [
+    501
+   ],
+   "category": "props/fences"
+  },
+  {
+   "name": "fence_501_cut_v15457",
+   "objects": [
+    15457
+   ],
+   "category": "props/fences"
+  },
+  {
+   "name": "fence_501_cut_v19234",
+   "objects": [
+    19234
+   ],
+   "category": "props/fences"
+  },
+  {
+   "name": "fence_502_cut",
+   "objects": [
+    502
+   ],
+   "category": "props/fences"
+  },
+  {
+   "name": "fence_502_cut_v15458",
+   "objects": [
+    15458
+   ],
+   "category": "props/fences"
+  },
+  {
+   "name": "fence_503_cut",
+   "objects": [
+    503
+   ],
+   "category": "props/fences"
+  },
+  {
+   "name": "fence_503_cut_v15459",
+   "objects": [
+    15459
+   ],
+   "category": "props/fences"
+  },
+  {
+   "name": "fence_19235_cut",
+   "objects": [
+    19235
+   ],
+   "category": "props/fences"
+  },
+  {
+   "name": "fence_19236_cut",
+   "objects": [
+    19236
+   ],
+   "category": "props/fences"
+  },
+  {
+   "name": "post_321_cut",
+   "objects": [
+    321
+   ],
+   "category": "props/posts"
+  },
+  {
+   "name": "post_322_cut",
+   "objects": [
+    322
+   ],
+   "category": "props/posts"
+  },
+  {
+   "name": "post_327_cut",
+   "objects": [
+    327
+   ],
+   "category": "props/posts"
+  },
+  {
+   "name": "post_328_cut",
+   "objects": [
+    328
+   ],
+   "category": "props/posts"
+  },
+  {
+   "name": "post_2944_cut",
+   "objects": [
+    2944
+   ],
+   "category": "props/posts"
+  },
+  {
+   "name": "post_2945_cut",
+   "objects": [
+    2945
+   ],
+   "category": "props/posts"
+  },
+  {
+   "name": "post_2947_cut",
+   "objects": [
+    2947
+   ],
+   "category": "props/posts"
+  },
+  {
+   "name": "post_2948_cut",
+   "objects": [
+    2948
+   ],
+   "category": "props/posts"
+  },
+  {
+   "name": "tree_tall_b_meshy",
+   "objects": [
+    797,
+    798,
+    799,
+    800
+   ],
+   "detail": {
+    "minTriangles": 0,
+    "maxTriangles": 0,
+    "falloffStart": 30.0,
+    "falloffEnd": 55.0
+   },
+   "lods": {
+    "low": [
+     {
+      "file": "lods/tree_tall_b_meshy_l50.glb",
+      "triangles": 1996
+     }
+    ],
+    "normal": [
+     {
+      "file": "lods/tree_tall_b_meshy_hd_l50.glb",
+      "triangles": 7996
+     },
+     {
+      "file": "lods/tree_tall_b_meshy_hd_l25.glb",
+      "triangles": 3998
+     }
+    ],
+    "high": [
+     {
+      "file": "lods/tree_tall_b_meshy_hd_l50.glb",
+      "triangles": 7996
+     },
+     {
+      "file": "lods/tree_tall_b_meshy_hd_l25.glb",
+      "triangles": 3998
+     }
+    ]
+   },
+   "category": "foliage/trees"
+  },
+  {
+   "name": "tree_tall_a_meshy",
+   "objects": [
+    793,
+    794,
+    795,
+    796
+   ],
+   "detail": {
+    "minTriangles": 0,
+    "maxTriangles": 0,
+    "falloffStart": 30.0,
+    "falloffEnd": 55.0
+   },
+   "lods": {
+    "low": [
+     {
+      "file": "lods/tree_tall_a_meshy_l50.glb",
+      "triangles": 1993
+     }
+    ],
+    "normal": [
+     {
+      "file": "lods/tree_tall_a_meshy_hd_l50.glb",
+      "triangles": 7993
+     },
+     {
+      "file": "lods/tree_tall_a_meshy_hd_l25.glb",
+      "triangles": 3996
+     }
+    ],
+    "high": [
+     {
+      "file": "lods/tree_tall_a_meshy_hd_l50.glb",
+      "triangles": 7993
+     },
+     {
+      "file": "lods/tree_tall_a_meshy_hd_l25.glb",
+      "triangles": 3996
+     }
+    ]
+   },
+   "category": "foliage/trees"
+  },
+  {
+   "name": "balustrade_323_cut",
+   "objects": [
+    323
+   ],
+   "category": "props/fences"
+  },
+  {
+   "name": "balustrade_324_cut",
+   "objects": [
+    324
+   ],
+   "category": "props/fences"
+  },
+  {
+   "name": "balustrade_325_cut",
+   "objects": [
+    325
+   ],
+   "category": "props/fences"
+  },
+  {
+   "name": "courtyard_rail_300",
+   "objects": [
+    300
+   ],
+   "category": "props/fences"
+  },
+  {
+   "name": "courtyard_rail_300_v311",
+   "objects": [
+    311
+   ],
+   "category": "props/fences"
+  },
+  {
+   "name": "courtyard_rail_301",
+   "objects": [
+    301
+   ],
+   "category": "props/fences"
+  },
+  {
+   "name": "courtyard_rail_301_v312",
+   "objects": [
+    312
+   ],
+   "category": "props/fences"
+  },
+  {
+   "name": "courtyard_wall_514",
+   "objects": [
+    514
+   ],
+   "category": "buildings/walls"
+  },
+  {
+   "name": "courtyard_wall_515",
+   "objects": [
+    515
+   ],
+   "category": "buildings/walls"
+  },
+  {
+   "name": "courtyard_wall_533",
+   "objects": [
+    533
+   ],
+   "category": "buildings/walls"
+  },
+  {
+   "name": "courtyard_wall_518",
+   "objects": [
+    518
+   ],
+   "category": "buildings/walls"
+  },
+  {
+   "name": "courtyard_wall_519",
+   "objects": [
+    519
+   ],
+   "category": "buildings/walls"
+  },
+  {
+   "name": "courtyard_wall_536",
+   "objects": [
+    536
+   ],
+   "category": "buildings/walls"
+  },
+  {
+   "name": "courtyard_wall_528",
+   "objects": [
+    528
+   ],
+   "category": "buildings/walls"
+  },
+  {
+   "name": "courtyard_wall_13998",
+   "objects": [
+    13998
+   ],
+   "category": "buildings/walls"
+  },
+  {
+   "name": "courtyard_wall_13999",
+   "objects": [
+    13999
+   ],
+   "category": "buildings/walls"
+  },
+  {
+   "name": "courtyard_wall_14002",
+   "objects": [
+    14002
+   ],
+   "category": "buildings/walls"
+  },
+  {
+   "name": "courtyard_wall_14003",
+   "objects": [
+    14003
+   ],
+   "category": "buildings/walls"
+  },
+  {
+   "name": "courtyard_wall_14008",
+   "objects": [
+    14008
+   ],
+   "category": "buildings/walls"
+  },
+  {
+   "name": "courtyard_wall_14009",
+   "objects": [
+    14009
+   ],
+   "category": "buildings/walls"
+  },
+  {
+   "name": "courtyard_wall_516",
+   "objects": [
+    516
+   ],
+   "category": "buildings/walls"
+  },
+  {
+   "name": "courtyard_wall_517",
+   "objects": [
+    517
+   ],
+   "category": "buildings/walls"
+  },
+  {
+   "name": "courtyard_wall_522",
+   "objects": [
+    522
+   ],
+   "category": "buildings/walls"
+  },
+  {
+   "name": "courtyard_wall_523",
+   "objects": [
+    523
+   ],
+   "category": "buildings/walls"
+  },
+  {
+   "name": "courtyard_wall_529",
+   "objects": [
+    529
+   ],
+   "category": "buildings/walls"
+  },
+  {
+   "name": "courtyard_wall_531",
+   "objects": [
+    531
+   ],
+   "category": "buildings/walls"
+  },
+  {
+   "name": "courtyard_wall_524",
+   "objects": [
+    524
+   ],
+   "category": "buildings/walls"
+  },
+  {
+   "name": "courtyard_wall_525",
+   "objects": [
+    525
+   ],
+   "category": "buildings/walls"
+  },
+  {
+   "name": "courtyard_wall_14000",
+   "objects": [
+    14000
+   ],
+   "category": "buildings/walls"
+  },
+  {
+   "name": "courtyard_wall_14001",
+   "objects": [
+    14001
+   ],
+   "category": "buildings/walls"
+  },
+  {
+   "name": "courtyard_wall_14006",
+   "objects": [
+    14006
+   ],
+   "category": "buildings/walls"
+  },
+  {
+   "name": "courtyard_wall_14007",
+   "objects": [
+    14007
+   ],
+   "category": "buildings/walls"
+  },
+  {
+   "name": "courtyard_wall_14004",
+   "objects": [
+    14004
+   ],
+   "category": "buildings/walls"
+  },
+  {
+   "name": "courtyard_wall_14005",
+   "objects": [
+    14005
+   ],
+   "category": "buildings/walls"
   }
  ]
 }

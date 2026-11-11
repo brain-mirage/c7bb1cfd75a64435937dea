@@ -4,12 +4,15 @@
 -- The screen's own page says whether the world view keeps to 5.33's map view.
 
 local C = TK.GetComponent("5x.screen")
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 
 --- A piece's settings: its switch and its own scale (its place is the profile's positions["5x.<id>"], edit mode's).
 local function piece() return { enabled = false, scale = 1 } end
 
-C.defaults = { backdrop = piece(), border = piece(), mapName = piece(), clock = piece(), mapPane = false }
+C.defaults = { backdrop = piece(), border = piece(), mapName = piece(), clock = piece(), mapPane = false, wholeScale = false }
+
+-- GA-3 (2026-11-10, the client review's 8.10): the screen at a whole-number scale while its page says so (Screen.Fit)
+Screen.whole[640] = function() return C:DB().wholeScale == true end
 
 -- The pieces' pages: the panel id (interface.lua), its settings' key, title and what it is.
 C.PAGES = {
@@ -30,6 +33,8 @@ function C:SettingsNodes()
           defaults = function() return C.defaults end,
           tabs = { { name = "General Settings", args = {
               { type = "description", name = "NexusTK 5.33's screen, 640 x 480, scaled to fit the window; while 5.x is the interface in use, the window's sides it does not fill are black." },
+              { type = "toggle", key = "wholeScale", name = "Whole-Number Scale", changed = Screen.WholeChanged,
+                desc = "The largest whole-number scale that fits, for sharp letters and edges. Off: the screen fills the window's height." },
               { type = "toggle", key = "mapPane", name = "World View in the Map View" },
               { type = "description", name = "The world view where 5.33 draws its map, (14, 12)-(422, 372) on the screen: the 17 x 15 cells the server sends, following the window's size. Moving or resizing the world view turns this off." },
           } } } },

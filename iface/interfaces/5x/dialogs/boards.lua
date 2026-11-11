@@ -1,5 +1,5 @@
 -- s6-interface-5x (the 5.x interface: docs/development/jobs/s6-interface-5x/PLAN.md, "The dialogs look"): 5.x's look of
--- the boards and mail (components/dialogs/bulletin.lua), from 5.33's own constructors, which are 7.5.2's older layout
+-- the boards and mail (shared/components/dialogs/bulletin.lua), from 5.33's own constructors, which are 7.5.2's older layout
 -- (4a BulletinSession.cpp's non-EPF branches) to the pixel but for the rows' columns and the form's entries.
 --
 -- Every window but the form is 446 x 366 (InitBulletinDialogBounds 0x00407DF0), its DLGBBSnn.EPF frame 0 in NPAL8.PAL
@@ -47,13 +47,13 @@
 
 local S = require("interfaces.5x.skin")
 local unpack = table.unpack
-local entry = require("interfaces.original.entry")
+local entry = require("shared.original.entry")
 local D = TK.Xml.Data("boards.xml")
 
 return function(L, X)
     local P = "NPAL8.PAL"
-    -- what 7.x's look draws alike: interfaces/original/boards.lua
-    local B = require("interfaces.original.boards")(X)
+    -- what 7.x's look draws alike: shared/original/boards.lua
+    local B = require("shared.original.boards")(X)
     local first = B.First
     local BUTTON = D.BUTTON
 

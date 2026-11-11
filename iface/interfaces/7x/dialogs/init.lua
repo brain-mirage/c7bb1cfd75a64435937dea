@@ -1,11 +1,11 @@
 -- s6-modular-g (interfaces, phase 4; docs/development/interfaces.md, "The dialogs: geometry is the look's,
 -- behaviour is shared"): 7.x's look of the dialogs, 4a's own windows from Source-5's class pages. A renderer
--- (components/dialogs/) makes its window's parts with their control indexes, fills them from the dialog model and passes
+-- (shared/components/dialogs/) makes its window's parts with their control indexes, fills them from the dialog model and passes
 -- the player's input on; this look only sizes, places and draws them: nothing in it reaches the model or the server.
 --
 -- The dialogs drawn so far are the families' files here (npc.lua, merchant.lua, exchange.lua, panes.lua, boards.lua,
 -- social.lua, web.lua, album.lua, shops.lua, fitting.lua, options.lua, macros.lua, misc.lua, heads.lua, generic.lua)
--- and the original client's alerts (interfaces/original/alerts.lua, drawn with X); every other dialog keeps the shared
+-- and the original client's alerts (shared/original/alerts.lua, drawn with X); every other dialog keeps the shared
 -- default look (window included) until it has its 7.x entry: an entry of this table is 7.x's; the dialogs component
 -- resolves missing entries over its shared default look (step 6).
 --
@@ -18,8 +18,8 @@
 -- s6-interface-7x-b (round 8, the interface separation's step 5: docs/development/interface-separation.md, the row for
 -- this file): the drawing helpers (X) are the original client's kit, made with 7.x's skin and its screen
 -- (interfaces/7x/draw.lua, shared with 7.x's panels); they were this file's before, and s6-devtools moved them to
--- interfaces/original/dialogkit.lua with neutral field names (win.lookEntry for win.x7, win.screenX and win.screenY for
--- win.x7x and win.x7y, and the controls' own). The alerts are the kit's too (interfaces/original/alerts.lua). What stays
+-- shared/original/dialogkit.lua with neutral field names (win.lookEntry for win.x7, win.screenX and win.screenY for
+-- win.x7x and win.x7y, and the controls' own). The alerts are the kit's too (shared/original/alerts.lua). What stays
 -- here is 7.x's: its windows, their placement, opening and focus mark.
 -- Round 9, step 6: the component resolves missing entries, selects the window's look and supplies its entry;
 -- this file no longer reaches Modern or the component's private building/focus state.
@@ -28,7 +28,7 @@
 -- dialogs component's, made by its renderers); entry.lua makes a family's entries from them.
 
 local fallback = TK.Dialogs.DefaultLook()
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 local S = require("interfaces.7x.skin")
 local D = TK.Xml.Data("look.xml")
 
@@ -104,12 +104,15 @@ end
 
 -- The families drawn so far, in this order (s6-interface-7x-b, round 7: the music dialog and the paper, misc.lua; the
 -- head choice, heads.lua; any dialog without a window of its own, generic.lua). The alerts are the original client's
--- (s6-interface-5x round 15, the separation's step 9: interfaces/7x/dialogs/alerts.lua, which forwarded to it, went).
-for _, family in ipairs({ "7x.dialogs.npc", "7x.dialogs.merchant", "original.alerts", "7x.dialogs.exchange",
-    "7x.dialogs.panes", "7x.dialogs.boards", "7x.dialogs.social", "7x.dialogs.web", "7x.dialogs.album", "7x.dialogs.shops",
-    "7x.dialogs.fitting", "7x.dialogs.options", "7x.dialogs.macros", "7x.dialogs.misc", "7x.dialogs.heads",
-    "7x.dialogs.generic" }) do
-    require("interfaces." .. family)(L, X)
+-- (s6-interface-5x round 15, the separation's step 9: interfaces/7x/dialogs/alerts.lua, which forwarded to it, went;
+-- s6-ui-core, the five parts' step 3: the original's, Shared, are under shared/original now).
+for _, module in ipairs({ "interfaces.7x.dialogs.npc", "interfaces.7x.dialogs.merchant", "shared.original.alerts",
+    "interfaces.7x.dialogs.exchange", "interfaces.7x.dialogs.panes", "interfaces.7x.dialogs.boards",
+    "interfaces.7x.dialogs.social", "interfaces.7x.dialogs.web", "interfaces.7x.dialogs.album",
+    "interfaces.7x.dialogs.shops", "interfaces.7x.dialogs.fitting", "interfaces.7x.dialogs.options",
+    "interfaces.7x.dialogs.macros", "interfaces.7x.dialogs.misc", "interfaces.7x.dialogs.heads",
+    "interfaces.7x.dialogs.generic" }) do
+    require(module)(L, X)
 end
 
 return L

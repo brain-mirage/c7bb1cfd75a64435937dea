@@ -2,7 +2,7 @@
 -- profile turns it on) and its Layout tab (scale and place; its reset is the original's place on the scaled screen).
 
 local C = TK.GetComponent("7x.clock")
-local Screen = require("interfaces.screen")
+local Screen = require("shared.original.screen")
 
 C.defaults = { enabled = false, scale = 1 }
 

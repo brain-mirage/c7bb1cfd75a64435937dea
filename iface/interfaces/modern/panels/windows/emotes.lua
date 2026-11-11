@@ -1,5 +1,5 @@
 -- The emote menu (plan D19): the original's sixteen expressions, which it offers only through a one-key prompt
--- (":" then a-p): the game layer's (TK.Game.Emotes, core/game/emotes.lua, with each one's 1D byte). Each button carries
+-- (":" then a-p): the game layer's (TK.Game.Emotes, shared/game/emotes.lua, with each one's 1D byte). Each button carries
 -- its action (TK.Actions).
 --
 -- It is the window of the game layer's "emotes" view (TK.Game.Views, s6-interface-5x round 12, step 1), whose key is

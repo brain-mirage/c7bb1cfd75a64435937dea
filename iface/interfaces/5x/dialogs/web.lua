@@ -1,5 +1,5 @@
 -- s6-interface-5x-b (round 8, s6-interface-5x's Y2; the 5.x interface: docs/development/jobs/s6-interface-5x/PLAN.md,
--- "The dialogs look"): 5.x's look of the browser dialog (components/dialogs/web.lua's BrowserDialog, D-53: the server's
+-- "The dialogs look"): 5.x's look of the browser dialog (shared/components/dialogs/web.lua's BrowserDialog, D-53: the server's
 -- page, S 0x66 kind 0, and the help key's). Drawing only: the close and what is sent are the renderer's and the model's.
 --
 -- 5.33's BrowserDialog (constructor 0x00406F90) is the whole 640 x 480 screen with its browser over all of it, no frame
@@ -11,7 +11,7 @@
 -- s6-ui-core (round 85): the XML twin's; the window's size and the parts' places are web.xml's (core/xml.md).
 
 local unpack = table.unpack
-local entry = require("interfaces.original.entry")
+local entry = require("shared.original.entry")
 local B = TK.Xml.Data("web.xml").Browser
 
 return function(L, X)

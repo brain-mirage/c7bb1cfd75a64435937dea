@@ -1,0 +1,11 @@
+# Weaver of Dreams (map 4023) on the test server: indoors (s6-reprojection-cloud-3 run 57, the owner's note): a staff
+# map's dream hall, a tiled floor among its own drawn clouds, with no land, sky or open country. The test server's
+# MapIndoor flag says 0 here, as for the rest of the staff maps 4015-4035 (offices, homes, a workshop, a loft), so the
+# flag is set by looking. No sky, so no rain, clouds, wind, lightning or cloud ring past its edges. Applies only when
+# the map the server sends passes the check (3.5).
+
+[check]
+size = "50x50"
+
+[map]
+indoor = true

@@ -5,7 +5,7 @@
 -- the profile like every other setting; main.lua applies them (TK.Objects.AnimationInterpolation). At the login screen
 -- and in the game, so it can be switched while watching the creatures.
 -- s6-ui-core (round 54; the owner, 2026-10-05: "The interpolation settings in Experimental should be moved there"): it is
--- Graphics > Advanced > Interpolation now (core/settings.lua's S.places sets where it is listed), needs Enable Advanced
+-- Graphics > Advanced > Interpolation now (core/global/settings.lua's S.places sets where it is listed), needs Enable Advanced
 -- Graphics there (its (!)), and its explanation is in tooltips (the owner's short-text rule).
 -- s6-ui-core (round 60; the owner, 2026-10-06: "Change the interpolation page on settings to be called Motion. Move the
 -- smooth character movement setting from experimental misc here."): the page is Motion, by type: Movement (the world
@@ -22,7 +22,7 @@ local METHODS = {
     { value = "best", text = "Best (optical flow)" },
 }
 
--- s6-ui-core (round 54): what its rows need to have an effect, their (!) (core/settings.lua); round 60: the switch's by
+-- s6-ui-core (round 54): what its rows need to have an effect, their (!) (core/global/settings.lua); round 60: the switch's by
 -- its key (TK.NeedSetting, named by its row)
 local advanced = TK.Needs("Advanced > Enable Advanced Graphics", function() return TK.Machine:AdvancedGraphics() end)
 local interpolating = TK.NeedSetting("enabled")

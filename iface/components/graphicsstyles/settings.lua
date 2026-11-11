@@ -10,7 +10,7 @@ local G = CS.TK.Modular.Draw.GraphicsStyles
 -- drawing, not one piece of the interface (a component's page is an Interface page unless it says otherwise).
 C.category = "general"
 -- s6-ui-core (round 54; the owner, 2026-10-05): "Asset Styles" (the manifest's title), a subpage of Graphics after its
--- General (core/settings.lua's GENERAL_ORDER). The keys are the same, so saved choices carry over.
+-- General (core/global/settings.lua's GENERAL_ORDER). The keys are the same, so saved choices carry over.
 C.parent = "Graphics"
 -- s6-ui-core (round 54): at the login screen too, as Graphics' other pages (the Looks, here until round 83, are on the
 -- Interface page now, which is there too).
@@ -55,7 +55,9 @@ end
 
 -- s6-ui-core (round 54; the owner, 2026-10-05: "each category ... offers Modern, Retro or Custom. Choosing Custom shows
 -- two dropdowns side by side right under that setting ... 2D / 3D and Normal / HD", and the head's "Fallback: Modern /
--- Retro"): a category's choices are the styles that serve it, then Custom. Custom's own choices are kept under
+-- Retro"): a category's choices are the styles that serve it, then Custom. G-74 replaces the visible HD choice with
+-- Graphics General's independent model quality; kind and fallback remain here. The legacy render-resolution choice
+-- stays under its saved key for old profiles and the style cycle. Custom's own choices are kept under
 -- s6-reprojection's keys (its FOR note): custom:<category>:kind, :quality and :fallback. Its drawing is main.lua's
 -- C:SelectCustom.
 local function styleChoices(category)
@@ -69,7 +71,6 @@ local function styleChoices(category)
     end
 end
 local KINDS = { { value = "2d", text = "2D" }, { value = "3d", text = "3D" } }
-local QUALITIES = { { value = "normal", text = "Normal" }, { value = "hd", text = "HD" } }
 local FALLBACKS = {}
 for _, s in ipairs(C.styles) do FALLBACKS[#FALLBACKS + 1] = { value = s.id, text = "Fallback: " .. s.name } end
 for _, c in ipairs(C.categories) do
@@ -85,7 +86,6 @@ local args = { { type = "header", name = "Drawing Style" } }
 for _, c in ipairs(C.categories) do
     local arg = { type = "stylechoice", key = c.key, name = c.name, values = styleChoices(c.key), extrasWhen = "custom",
                   extras = { { key = "custom:" .. c.key .. ":kind", values = KINDS },
-                             { key = "custom:" .. c.key .. ":quality", values = QUALITIES },
                              { key = "custom:" .. c.key .. ":fallback", values = FALLBACKS } } }
     -- s6-modular-b (round 14; Astra's P3 on round 13): the 3D module serves only Characters and no menu offers it, but a
     -- profile from before round 13 may still hold it. The drop-down shows that choice as it is drawn, Modern
@@ -104,7 +104,7 @@ end
 -- (CS.TK.Objects.PaletteOverrides; applied in main.lua): the warrior's Wind platemail (and its dress) in its blue dye
 -- ripples as in the 5.x clients, in the Modern drawing too; off, it is still and blue, as 7.5.2 draws it. Nothing is sent.
 -- s6-ui-core (build 41; the owner, 2026-10-05): it is the Experimental tab's Misc page's "Wind Armor Fix" now
--- (core/settings.lua, TK.MiscNode), with no description, the same key, so a saved choice carries over.
+-- (core/global/settings.lua, TK.MiscNode), with no description, the same key, so a saved choice carries over.
 C.defaults.windArmorShimmer = true
 local misc = TK.MiscNode.tabs[1].args
 misc[#misc + 1] = { type = "toggle", name = "Wind Armor Fix", default = true,
@@ -128,6 +128,11 @@ for line in string.gmatch(G.Options(), "[^\n]+") do
             o.values[#o.values + 1] = { value = value, text = text }
             o.default = o.default or value
         end
+        if module == "3d-objects" and key == "model-quality" then
+            -- The manifest keeps Normal first as the default; the dropdown presents quality in ascending order.
+            local rank = { low = 1, normal = 2, high = 3 }
+            table.sort(o.values, function(a, b) return rank[a.value] < rank[b.value] end)
+        end
         if o.default then
             C.options[#C.options + 1] = o
             C.defaults[o.db] = o.default
@@ -145,11 +150,13 @@ for line in string.gmatch(G.Options(), "[^\n]+") do
 end
 
 --- s6-ui-core (round 54): the modules' options another page lists (an option's manifest "page"), as that page's selects:
---- kept here under their keys (saved profiles keep them) and applied as this page's; each needs its module drawing the
---- Tiles now (the style drawn, the Cycle Graphics Style key's included: Astra's review), its (!) otherwise.
+--- kept here under their keys (saved profiles keep them) and applied as this page's. World View options need the module
+--- drawing Tiles; Graphics General's model quality needs Map Objects in Custom 3D, including the style-cycle override.
 function C:OptionsFor(page)
     local out, names = {}, {}
-    for _, c in ipairs(choices("tiles")()) do names[c.value] = c.text end
+    local category = page == "graphics" and "map-objects" or "tiles"
+    local categoryName = page == "graphics" and "Map Objects" or "Tiles"
+    for _, c in ipairs(choices(category)()) do names[c.value] = c.text end
     for _, o in ipairs(self.options) do
         if o.page == page then
             out[#out + 1] = { type = "select", name = o.name, values = o.values,
@@ -159,11 +166,25 @@ function C:OptionsFor(page)
                     C:Changed(node, o.db, v)
                 end,
                 default = function() return o.default end,
-                requires = { TK.Needs("Asset Styles > Tiles: " .. (names[o.module] or o.module),
-                    function() return G.Selected("tiles") == o.module end) } }
+                requires = { TK.Needs("Asset Styles > " .. categoryName .. ": " ..
+                    (o.module == "3d-objects" and "Custom 3D" or names[o.module] or o.module),
+                    function() return G.Selected(category) == o.module end) } }
         end
     end
     return out
+end
+
+-- G-74: core settings pages already exist when component settings load, as for Wind Armor Fix above. Register here
+-- so the same control is available at login as well as in the world, and follows the ordinary page/profile lifecycle.
+local graphics = TK.GraphicsNode.tabs[1].args
+-- Keep model fidelity beside the Models controls, before the separate Display group.
+local insertAt = #graphics + 1
+for i, arg in ipairs(graphics) do
+    if arg.type == "header" and arg.name == "Display" then insertAt = i break end
+end
+for _, option in ipairs(C:OptionsFor("graphics")) do
+    table.insert(graphics, insertAt, option)
+    insertAt = insertAt + 1
 end
 
 -- s6-ui-core (round 54; the owner, 2026-10-05: "condense that into 3 single lines, succinct, that describe each of the 3
@@ -171,7 +192,7 @@ end
 -- paragraphs (the Retro rules, the Mixed heads, the 3D test, the old world view's sizes).
 -- s6-ui-core (round 83; the owner, 2026-10-09: "If it makes sense move it for now and I'll decide later"): the Looks
 -- (Dialogs and Cursors), here since round 54, are the General tab's Interface page's Looks tab now
--- (components/interface/settings.lua), the same profile values.
+-- (core/global/components/interface/settings.lua), the same profile values.
 
 args[#args + 1] = { type = "header", name = "The Styles" }
 args[#args + 1] = { type = "description", name = "Modern: the 7.5.2 client's own art.", help = "As the live client draws it." }

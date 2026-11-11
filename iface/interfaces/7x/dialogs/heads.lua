@@ -1,4 +1,4 @@
--- s6-interface-7x-b (round 7): 7.x's look of the barber's head choice (components/dialogs/npc.lua's HeadSelectDialog, D-06),
+-- s6-interface-7x-b (round 7): 7.x's look of the barber's head choice (shared/components/dialogs/npc.lua's HeadSelectDialog, D-06),
 -- 4a's own window. Drawing only, but for where each control's press lands: the controls, their indexes and what is sent
 -- are the renderer's and the model's (nothing chosen is sent).
 --
@@ -15,7 +15,7 @@
 -- (core/xml.md).
 
 local unpack = table.unpack
-local entry = require("interfaces.original.entry")
+local entry = require("shared.original.entry")
 local D = TK.Xml.Data("heads.xml")
 
 return function(L, X)

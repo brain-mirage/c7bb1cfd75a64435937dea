@@ -4,7 +4,7 @@
 -- They are drawing preferences, so they are saved in the profile; main.lua applies them. At the login screen and in the
 -- game (a change shows at the next frame).
 -- s6-ui-core (round 60; the owner, 2026-10-06): the pages are Graphics > Advanced > Lighting and Weather now (listed
--- after Motion by core/settings.lua's S.places), each master switch hides the page's group, a feature's sub-features are
+-- after Motion by core/global/settings.lua's S.places), each master switch hides the page's group, a feature's sub-features are
 -- a group under it, and the explanations are the rows' tooltips. The keys and their stored values are as they were;
 -- nothing a switch does has changed.
 
@@ -16,6 +16,9 @@ C.defaults.rain, C.defaults.snow, C.defaults.rain_sound = false, false, 50 -- s6
 C.defaults.lightning, C.defaults.thunder_sound = true, 50 -- s6-effects (round 2): the lightning, on by default, and its thunder
 C.defaults.fog = false -- s6-effects (round 3): the low mist
 C.defaults.wet_gloss, C.defaults.puddle_reflections = false, false -- s6-effects (round 4, the owner): the wet ground's additions
+-- s6-reprojection-cloud-3 (run 76, G-56): the Wet Ground switch and the two parts that were always drawn with the weather,
+-- on, so that a profile sees what it saw before
+C.defaults.wet_ground, C.defaults.wet_darkening, C.defaults.puddles = true, true, true
 C.defaults.rain_ripples = false -- s6-effects (round 6): the rain's rings, a child of the Rain Shader
 C.defaults.embers, C.defaults.fireflies, C.defaults.bloom, C.defaults.dust = false, false, false, false -- s6-effects-c: the lighting's extras
 C.defaults.god_rays, C.defaults.silhouettes, C.defaults.reflections, C.defaults.heat_haze = false, false, false, false -- s6-effects-c (round 4): more extras
@@ -37,7 +40,7 @@ C.defaults.door_light = false -- s6-effects (round 12): light from the buildings
 -- (Lightning, on the other page, and Global Illumination); Colour by Hour Global Illumination off (it colours by the
 -- hour itself).
 -- s6-ui-core (round 54; the owner's rule for every settings page, 2026-10-05): these were disabled conditions; now each
--- control names what it needs (TK.Needs, core/settings.lua) and stays usable, its value kept, with a (!) after its title
+-- control names what it needs (TK.Needs, core/global/settings.lua) and stays usable, its value kept, with a (!) after its title
 -- while it is on and a need is unmet. Both pages read one settings table, so a need on the other page names it.
 -- s6-ui-core (round 60; the owner, 2026-10-06: "When Enable advanced lighting is disable hide all the options that require
 -- it. Clicking it shows the options."; and, by the head's note, declared needs and groups): a need on a setting of the
@@ -47,6 +50,8 @@ local weather = TK.NeedSetting("weather", true, "hide")
 local windShader = TK.NeedSetting("wind") -- s6-effects (round 11): Sway Speed is its
 local snowCover = TK.NeedSetting("snow_cover") -- s6-effects-b: Max Snow Cover caps it
 local rainShader = TK.NeedSetting("rain") -- s6-effects (round 6): the ripples ring its rain
+local wetGround = TK.NeedSetting("wet_ground") -- s6-reprojection-cloud-3 (run 76, G-56): its parts
+local puddles = TK.NeedSetting("puddles") -- s6-reprojection-cloud-3 (run 76, G-56): what mirrors in them
 local lightning = TK.NeedSetting("lightning") -- as main.lua reads it: on unless off (a profile always has it: its default)
 local lighting = TK.NeedSetting("lighting", true, "hide") -- s6-effects-c
 local embers = TK.NeedSetting("embers") -- s6-effects (round 8): the chimneys' smoke
@@ -133,12 +138,24 @@ function C:SettingsNodes()
                       desc = "The most snow that lies, in %. Lower makes heavy snow patchier; 0 lets none lie. Needs Snow Cover." },
                 } },
 
-                { type = "header", name = "Wet Ground", -- s6-effects (round 4, the owner): the wet ground's children
-                  desc = "While it rains the ground darkens and puddles fill; both dry after. These add to them." },
-                { type = "toggle", key = "wet_gloss", name = "Wet Ground Gloss",
-                  desc = "Wet ground catches the light: a faint sheen by day, a glint in a lightning flash." },
-                { type = "toggle", key = "puddle_reflections", name = "Puddle Reflections",
-                  desc = "Figures, trees and buildings are mirrored in the puddles, rippling." },
+                { type = "header", name = "Wet Ground" }, -- s6-effects (round 4, the owner): the wet ground's children
+                -- s6-reprojection-cloud-3 (run 76; register G-56, the owner, 2026-10-04: "nested sub options on the feature so
+                -- you can 'add to it' if its enabled"): one Wet Ground switch, its parts a group under it, as Max Snow Cover's
+                -- under Snow Cover; the reflections a group under the puddles they mirror in
+                { type = "toggle", key = "wet_ground", name = "Wet Ground",
+                  desc = "While it rains the ground gets wet, drying after. Choose its parts below." },
+                { type = "group", requires = { wetGround }, args = {
+                    { type = "toggle", key = "wet_darkening", name = "Darkening",
+                      desc = "Wet ground darkens while it rains and lightens as it dries." },
+                    { type = "toggle", key = "puddles", name = "Puddles",
+                      desc = "Still puddles fill on open ground in the rain and dry after." },
+                    { type = "group", requires = { puddles }, args = {
+                        { type = "toggle", key = "puddle_reflections", name = "Puddle Reflections",
+                          desc = "Figures, trees and buildings are mirrored in the puddles, rippling. Needs Puddles." },
+                    } },
+                    { type = "toggle", key = "wet_gloss", name = "Wet Ground Gloss",
+                      desc = "Wet ground catches the light: a faint sheen by day, a glint in a lightning flash." },
+                } },
 
                 { type = "header", name = "Storms" },
                 { type = "toggle", key = "lightning", name = "Lightning",

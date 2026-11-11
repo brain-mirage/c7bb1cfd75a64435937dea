@@ -1,6 +1,6 @@
 -- s6-interface-7x (round 2): 7.x's look of the original's Macro Setup (IntegrateMacroDialog 0x00541B30,
 -- ui/OptionPane.cpp; Source-5's class pages), the window the macros component gives the dialog when a look has this
--- entry (components/macros/hotkeys.lua, Dialog.build), where the macro window's setting shows the original's Macro
+-- entry (core/global/components/macros/hotkeys.lua, Dialog.build), where the macro window's setting shows the original's Macro
 -- Setup (the Menu's Hotkey row, its command). Drawing only: the rows, the controls and what they do are the macros
 -- component's and the model's (nothing is sent).
 --
@@ -17,7 +17,7 @@
 
 local S = require("interfaces.7x.skin")
 local unpack = table.unpack
-local entry = require("interfaces.original.entry")
+local entry = require("shared.original.entry")
 local D = TK.Xml.Data("macros.xml")
 
 return function(L, X)

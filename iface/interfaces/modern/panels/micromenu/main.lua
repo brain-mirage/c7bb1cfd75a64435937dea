@@ -138,7 +138,9 @@ function scripts.Ticker(f)
         wait = wait - elapsed
         if wait > 0 then return end
         wait = 0.5
-        C:ShowIcons()
+        -- s6-reprojection-cloud-1 (run 83, Astra 82-48): only these two follow the look; the others change on their events
+        C:ShowIcon(C.mail.def)
+        C:ShowIcon(C.parcel.def)
     end)
 end
 
@@ -149,18 +151,20 @@ function C:OnEnable()
     TK.EditMode:Register(f, "micromenu", "Micro Menu", C.defaultPosition, "micromenu")
 end
 
-function C:ShowIcons()
-    for _, def in ipairs(C.BUTTONS) do
-        local b = self.byId[def.id]
-        local icon, coords = self:Icon(def)
-        b.icon:SetTexture(icon)
-        local c = coords or { 0, 1, 0, 1 }
-        b.icon:SetTexCoord(c[1], c[2], c[3], c[4])
-        if def.id == "parcel" then
-            local none = TK.Game.Parcels.Count(0) == 0
-            b.icon:SetVertexColor(none and 0.55 or 1, none and 0.55 or 1, none and 0.55 or 1, none and 0.6 or 1)
-        end
+function C:ShowIcon(def)
+    local b = self.byId[def.id]
+    local icon, coords = self:Icon(def)
+    b.icon:SetTexture(icon)
+    local c = coords or { 0, 1, 0, 1 }
+    b.icon:SetTexCoord(c[1], c[2], c[3], c[4])
+    if def.id == "parcel" then
+        local none = TK.Game.Parcels.Count(0) == 0
+        b.icon:SetVertexColor(none and 0.55 or 1, none and 0.55 or 1, none and 0.55 or 1, none and 0.6 or 1)
     end
+end
+
+function C:ShowIcons()
+    for _, def in ipairs(C.BUTTONS) do self:ShowIcon(def) end
 end
 
 -- C:Buttons (the page's order) is settings.lua's (s6-interface-5x round 13: the page reads it while this is not loaded)

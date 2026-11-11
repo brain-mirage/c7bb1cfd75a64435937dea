@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 7.x's look of the window of a dialog without one of its own (its XML twin's layout; generic.lua draws with it): 4a's
      standard dialog, as the alerts draw it. Format: core/xml.md; the dialog's attributes are its look entry's values
-     (interfaces/original/entry.lua), its children where generic.lua draws its parts.
+     (shared/original/entry.lua), its children where generic.lua draws its parts.
      WIRE: each button's rectangle is where its press lands (the buttons, their indexes and what is sent are the
      renderer's and the model's); changing one changes which button a press reaches. -->
 <ui>

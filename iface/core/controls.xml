@@ -1,0 +1,140 @@
+<!-- Shared description of the existing XML primitives and Modern element factories.
+     The desktop designer embeds this same file; TK.Xml.Describe exposes it to Lua.
+     Adapters remain core/xml.lua and interfaces/modern/elements.lua. -->
+<ui>
+  <common>
+    <field name="key" kind="text" description="Name used by this panel's Lua and XML references." />
+    <field name="name" kind="text" description="Global frame name, when this control needs one." />
+    <field name="Point" kind="text" description="Anchor, relative object, relative anchor, X, Y; Y increases upwards." />
+    <field name="Size" kind="text" description="Width, height in UI pixels." />
+    <field name="authoredLayout" kind="boolean" choices="true|false" description="Keep XML geometry through Lua Layout calls. A player's Edit Mode placement still wins for a registered panel." />
+    <field name="Shown" kind="boolean" choices="true|false" description="Initial visibility." />
+    <field name="Alpha" kind="number" description="Opacity from 0 to 1." />
+  </common>
+  <events>
+    <field name="OnShow" kind="event" description="Callback when the control is shown." />
+    <field name="OnHide" kind="event" description="Callback when the control is hidden." />
+  </events>
+  <control tag="frame" label="Frame" width="240" height="160" container="true" adapter="CreateFrame">
+    <field name="type" kind="text" description="Native frame type; omitted means Frame." />
+  </control>
+  <control tag="frame" type="Button" label="Button (native)" width="100" height="24" container="true" adapter="CreateFrame">
+    <field name="type" kind="text" default="Button" description="Native frame type." />
+    <field name="Text" kind="text" default="Button" description="Button caption." />
+    <field name="NormalTexture" kind="text" description="Normal button texture." />
+    <field name="PushedTexture" kind="text" description="Pressed button texture." />
+    <field name="HighlightTexture" kind="text" description="Mouse-over texture." />
+  </control>
+  <control tag="frame" type="CheckButton" label="Check box (native)" width="24" height="24" container="true" adapter="CreateFrame">
+    <field name="type" kind="text" default="CheckButton" description="Native frame type." />
+    <field name="Checked" kind="boolean" choices="true|false" description="Checked state." />
+    <field name="CheckedTexture" kind="text" description="Checked-state texture." />
+  </control>
+  <control tag="frame" type="EditBox" label="Text input (native)" width="160" height="24" adapter="CreateFrame">
+    <field name="type" kind="text" default="EditBox" description="Native frame type." />
+    <field name="Text" kind="text" description="Input text." />
+    <field name="Numeric" kind="boolean" choices="true|false" description="Accept numeric input." />
+    <field name="MaxLetters" kind="number" description="Maximum number of letters." />
+    <field name="FontSize" kind="number" description="Input font size." />
+  </control>
+  <control tag="frame" type="Slider" label="Slider (native)" width="180" height="24" adapter="CreateFrame">
+    <field name="type" kind="text" default="Slider" description="Native frame type." />
+    <field name="MinMaxValues" kind="text" default="0, 100" description="Minimum, maximum." />
+    <field name="Value" kind="number" default="50" description="Current value." />
+    <field name="ValueStep" kind="number" default="1" description="Step size." />
+  </control>
+  <control tag="frame" type="StatusBar" label="Status bar (native)" width="180" height="20" adapter="CreateFrame">
+    <field name="type" kind="text" default="StatusBar" description="Native frame type." />
+    <field name="MinMaxValues" kind="text" default="0, 100" description="Minimum, maximum." />
+    <field name="Value" kind="number" default="50" description="Current value." />
+    <field name="StatusBarColor" kind="colour" default="0.2, 0.5, 1, 1" description="Red, green, blue, alpha." />
+    <field name="Orientation" kind="text" choices="HORIZONTAL|VERTICAL" description="Fill direction." />
+  </control>
+  <control tag="frame" type="ScrollFrame" label="Scroll frame (native)" width="240" height="180" container="true" adapter="CreateFrame">
+    <field name="type" kind="text" default="ScrollFrame" description="Native frame type." />
+    <field name="ScrollChild" kind="reference" description="@key of its content frame." />
+    <field name="VerticalScroll" kind="number" description="Vertical scroll offset." />
+  </control>
+  <control tag="frame" type="Cooldown" label="Cooldown (native)" width="40" height="40" adapter="CreateFrame">
+    <field name="type" kind="text" default="Cooldown" description="Native frame type." />
+    <field name="Cooldown" kind="text" description="Start time, duration." />
+    <field name="DrawSwipe" kind="boolean" choices="true|false" description="Show the cooldown swipe." />
+    <field name="DrawEdge" kind="boolean" choices="true|false" description="Show the moving edge." />
+  </control>
+  <control tag="texture" label="Picture / background" width="96" height="96" scripts="false" adapter="CreateTexture">
+    <field name="Texture" kind="text" description="Texture path or asset key." />
+    <field name="VertexColor" kind="colour" description="Red, green, blue, alpha (0 to 1)." />
+  </control>
+  <control tag="text" label="Text" width="160" height="24" scripts="false" adapter="CreateFontString">
+    <field name="Text" kind="text" default="Text" description="Displayed text." />
+    <field name="TextColor" kind="colour" description="Red, green, blue, alpha (0 to 1)." />
+    <field name="Font" kind="text" description="Font path, size and flags." />
+  </control>
+  <control tag="button" label="Button" width="100" height="22" interface="modern" adapter="TK.UI.Button">
+    <field name="text" kind="text" default="Button" description="Caption." />
+    <field name="style" kind="text" description="The interface's button style; omitted uses its normal style." />
+    <field name="click" kind="callback" description="Callback name in this panel's scripts table." />
+  </control>
+  <control tag="label" label="Label" width="160" height="24" interface="modern" scripts="false" adapter="TK.UI.Label">
+    <field name="text" kind="text" default="Label" description="Caption." />
+    <field name="size" kind="number" default="13" description="Font size." />
+    <field name="colour" kind="colour" description="Colour supplied to the interface factory." />
+    <field name="justify" kind="text" choices="LEFT|CENTER|RIGHT" description="Text alignment." />
+  </control>
+  <control tag="iconbutton" label="Icon button" width="18" height="18" interface="modern" adapter="TK.UI.IconButton">
+    <field name="texture" kind="text" description="Icon texture key." />
+    <field name="click" kind="callback" description="Callback name." />
+  </control>
+  <control tag="check" label="Check box" width="160" height="24" interface="modern" adapter="TK.UI.Check">
+    <field name="text" kind="text" default="Option" description="Caption." />
+    <field name="change" kind="callback" description="Callback receiving the checked state." />
+  </control>
+  <control tag="editbox" label="Text input" width="160" height="22" interface="modern" adapter="TK.UI.EditBox" />
+  <control tag="header" label="Heading" width="400" height="20" interface="modern" adapter="TK.UI.Header">
+    <field name="text" kind="text" default="Heading" description="Heading text." />
+  </control>
+  <control tag="panel" label="Panel" width="300" height="200" container="true" interface="modern" adapter="TK.UI.Panel" />
+  <control tag="window" label="Window" width="400" height="300" container="true" named="true" interface="modern" adapter="TK.UI.Window">
+    <field name="title" kind="text" default="Window" description="Window title." />
+    <field name="width" kind="number" default="400" description="Initial width." />
+    <field name="height" kind="number" default="300" description="Initial height." />
+  </control>
+  <control tag="scrollarea" label="Scrolling container" width="240" height="180" container="true" interface="modern" adapter="TK.UI.ScrollArea" />
+  <control tag="tab" label="Tab" width="100" height="24" interface="modern" adapter="TK.UI.Tab">
+    <field name="text" kind="text" default="Tab" description="Caption." />
+    <field name="click" kind="callback" description="Callback name." />
+    <field name="look" kind="text" description="The interface's tab look." />
+    <field name="icon" kind="text" description="Optional icon key." />
+  </control>
+  <control tag="stepper" label="Stepper" width="160" height="22" interface="modern" adapter="TK.UI.Stepper">
+    <field name="label" kind="text" default="Value" description="Caption." />
+    <field name="step" kind="callback" description="Callback receiving -1 or 1." />
+  </control>
+  <!-- The LegendList composite forwards the scroll frame API and native handle, retaining its Fill/rows API. -->
+  <control tag="legendlist" label="Legend list" width="240" height="180" interface="modern" adapter="TK.UI.Character.LegendList">
+    <field name="width" kind="number" default="240" description="List width." />
+    <field name="height" kind="number" default="180" description="List height." />
+  </control>
+  <control tag="gearslot" label="Equipment slot" width="40" height="40" named="true" interface="modern" adapter="TK.UI.Character.GearSlot">
+    <field name="point" kind="text" default="TOPLEFT" choices="TOPLEFT|TOP|TOPRIGHT|LEFT|CENTER|RIGHT|BOTTOMLEFT|BOTTOM|BOTTOMRIGHT" description="Initial anchor used by the factory." />
+    <field name="x" kind="number" default="0" description="Initial horizontal offset." />
+    <field name="y" kind="number" default="0" description="Initial vertical offset." />
+  </control>
+  <control tag="figurebox" label="Character figure" width="120" height="180" named="true" interface="modern" adapter="TK.UI.Character.FigureBox" />
+  <control tag="portrait" label="Portrait" width="48" height="48" interface="modern" adapter="portrait.New">
+    <field name="size" kind="number" default="48" description="Portrait size." />
+    <field name="point" kind="text" default="TOPLEFT" description="Initial anchor used by the factory." />
+    <field name="x" kind="number" default="0" description="Initial horizontal offset." />
+    <field name="y" kind="number" default="0" description="Initial vertical offset." />
+    <field name="colour" kind="colour" default="white" description="A skin colour name or comma-separated RGB parts." />
+  </control>
+  <control tag="bar" label="Bar" width="200" height="12" interface="modern" adapter="vitals.Bar">
+    <field name="height" kind="number" default="12" description="Bar height." />
+    <field name="colour" kind="colour" default="white" description="A skin colour name or comma-separated RGB parts." />
+  </control>
+  <control tag="vitalbar" label="Vital bar" width="200" height="18" interface="modern" adapter="vitals.VitalBar">
+    <field name="height" kind="number" default="18" description="Bar height." />
+    <field name="colour" kind="colour" default="white" description="A skin colour name or comma-separated RGB parts." />
+  </control>
+  <control tag="iconrow" label="Effect icons" width="200" height="24" interface="modern" adapter="effecticons.NewGroup" />
+</ui>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 7.x's look of the fitting room (its XML twin's layout; fitting.lua draws with it), from Source-5's class pages.
-     Format: core/xml.md; the dialog's attributes are its look entry's values (interfaces/original/entry.lua), its children where
+     Format: core/xml.md; the dialog's attributes are its look entry's values (shared/original/entry.lua), its children where
      fitting.lua draws its parts: rectangles (left, top, right, bottom) and image buttons (BUTT001.EPF's image id first).
      WIRE: a control's rectangle is where a press on it lands (GetControlBounds 0x0041D150, the grid's cells); changing
      one changes which control a press reaches, so what the client sends. -->

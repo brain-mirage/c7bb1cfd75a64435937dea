@@ -13,7 +13,7 @@
 --   C:ApplySettings()   apply every setting from its profile table; called on start, on each change and on a
 --                        profile switch, so it must be idempotent
 --   C:SettingsNodes()   optional: its entries in the settings tree (default: one node); a node's parent field puts it
---                        under another entry, to any depth (s6-ui-settings: core/settings.lua's header)
+--                        under another entry, to any depth (s6-ui-settings: core/global/settings.lua's header)
 --   C:OnSettingChanged(node, key, value)  optional: a finer-grained reaction than ApplySettings
 --
 -- Its root frames are its own (C:Own; TK.Visibility:Attach during its OnEnable or ApplySettings marks them too), the
@@ -84,7 +84,7 @@ function Component:SettingsNodes()
             order = self.order,
             tabs = self.tabs or {},
             atLogin = self.atLogin,
-            category = self.category, -- s6-ui-settings: the settings list's tab (core/settings.lua), interface by default
+            category = self.category, -- s6-ui-settings: the settings list's tab (core/global/settings.lua), interface by default
             listTop = self.listTop, -- s6-interface-5x (round 12): first in its tab's list, above the interfaces' (TK.Panels:GroupRoots)
             db = function() return self:DB() end,
             defaults = function() return self.defaults end, -- s6-ui-settings: what the page's reset icon puts back
@@ -174,6 +174,7 @@ function Components:Boot(manifests)
         for k, v in pairs(c) do kept[k] = v end
         self.settingsFields[c.name] = kept
         if not self.unloadable[c.name] then self:LoadMain(c) end
+        self:Pace()
     end
 
     -- s6-modular-g (interfaces, phase 2): the active interface's profile, its defaults on its first use.
@@ -181,24 +182,35 @@ function Components:Boot(manifests)
     TK.Machine:ApplyUIScale()
     TK.Machine:ApplyGraphics()
     TK.Interfaces:Loaded()
+    self:Pace()
     -- s6-interface-5x (round 13, step 11): the interface panels the profile has in use, in the manifests' order
     for _, c in ipairs(self.list) do
-        if self.unloadable[c.name] and TK.Interfaces:InUse(c.name) then self:LoadMain(c) end
+        if self.unloadable[c.name] and TK.Interfaces:InUse(c.name) then
+            self:LoadMain(c)
+            self:Pace()
+        end
     end
 
     for _, c in ipairs(self.list) do
-        if self.loaded[c.name] then self:Enable(c) end
+        if self.loaded[c.name] then
+            self:Enable(c)
+            self:Pace()
+        end
     end
     self:ReapplyAll()
     TK.Startup:Apply() -- existing setters, after the panels exist and before the login presentation
+    self:Pace()
+    TK.Machine:PrepareGraphicsEngine() -- s6-reprojection-cloud-1 run 65 (MC-MODES-01): with the engine now known
+    self:Pace()
+    -- From here to the end, one frame: the login screen (whose presentation may connect as it shows, L:Show) and, after
+    -- Boot, the mods (LuaHost, Bootstrap) start together, as when Boot was all one frame.
     TK.FireEvent("PLAYER_LOGIN")
     self.booted = true
     __tk:Log("interface panels loaded: " .. self:LoadedList())
     -- The client starts on the login screen (a UI reload in the world stays there); PLAYER_ENTERING_WORLD follows
     -- when Login enters the world.
     TK.Login:Start()
-    TK.Startup:Notice()
-end
+    TK.Startup:Notice()end
 
 --- Applies the whole profile again: every component's settings, positions, bindings and actions. s6-interface-5x (round
 --- 13, step 11): first the interface panels the profile now has in use are loaded and the others unloaded (Sync).
@@ -209,10 +221,20 @@ function Components:ReapplyAll()
     for _, c in ipairs(self.list) do
         self.current = c
         if c.ApplySettings then TK.SafeCall(c.ApplySettings, c) end
+        self.current = nil
+        self:Pace()
     end
-    self.current = nil
     TK.EditMode:RestoreAll()
     TK.FireEvent("TK_PROFILE_CHANGED")
+end
+
+--- s6-ui-core round 148 (steer d130e190, the start-up's frame): between two of Boot's steps (ReapplyAll's at the start
+--- too), a built player's start may end its frame here once the frame has run its share (core/init.lua's
+--- __tk_boot_begin sets pacing), so the window keeps drawing and answering. Elsewhere (the tests, the editor, a reload,
+--- ReapplyAll in the game) pacing is nil and this does nothing. The steps' order is the same either way; nothing else
+--- runs in the frames between (the UI is held: UIHost.Starting).
+function Components:Pace()
+    if self.pacing then self.pacing() end
 end
 
 -- ----- only what is turned on is loaded (s6-interface-5x, round 13, the separation's step 11; 5.18) -----
@@ -279,6 +301,17 @@ function Components:FrameOwner(onRoot)
     local name, panel = self:Owner(3)
     if name and onRoot and sourceOwner(3) == nil then return nil end
     return name, panel
+end
+
+--- Runs fn(...) as component c's own code at its start (its OnEnable's context: c current, no panel), whoever's code
+--- runs now, so what it makes is c's and goes when c is unloaded. For what a component makes on its first reach from
+--- another's handler (Modern's bar buttons, made when a key first reaches a bar that is off): an interface asks for
+--- this here and assigns nothing of this table's itself (the separation's R3 and guard G4).
+function Components:MakeAsOwn(c, fn, ...)
+    local loading, current, panel = self.loading, self.current, self.panel
+    self.loading, self.current, self.panel = nil, c, nil
+    TK.SafeCall(fn, ...)
+    self.loading, self.current, self.panel = loading, current, panel
 end
 
 --- Records a frame as its owner's (Owner), to be destroyed with it.
@@ -559,7 +592,7 @@ end
 -- ----- standard tabs for simple components -----
 
 --- s6-ui-core (round 54; the owner's rule for every settings page): a setting an arg needs to have an effect (an arg's
---- requires = { TK.Needs(...), ... }, shown by core/settings.lua as a (!) after its title while it is on): label, as the
+--- requires = { TK.Needs(...), ... }, shown by core/global/settings.lua as a (!) after its title while it is on): label, as the
 --- (!)'s tooltip names it ("Weather > Lightning"); met(db, node), whether it is as needed now (db: the page's
 --- settings table, as disabled's). result (s6-ui-core round 60; the owner, 2026-10-06: "if its not that state it is
 --- hidden, greyed out etc"): what an unmet need does to the arg: "grey" (the default: the (!) rule above), "hide" (not on
@@ -706,7 +739,7 @@ TK.StandardVisibilityArgs = {
 }
 
 --- Gives a component the three standard tabs. parent puts its page under another entry of the settings list (an id, or
---- a title's text such as "Bars": core/settings.lua's header); layoutExtra adds controls at the end of its Layout tab.
+--- a title's text such as "Bars": core/global/settings.lua's header); layoutExtra adds controls at the end of its Layout tab.
 function Component:StandardSettings(positionKey, generalExtra, options)
     options = options or {}
     if options.transparency then

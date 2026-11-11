@@ -17,13 +17,15 @@ for i, c in ipairs(P.categories) do CATEGORY[c] = i end
 --- The active interface (TK.Interfaces, which the boot loads first: core/components.lua's Boot).
 function P:Interface() return TK.Interfaces:Active() end
 
---- The active interface's panels, in its order.
+--- The active interface's panels, in its order (the Global Interface's are not among them: TK.Interfaces.global).
 function P:List() return self:Interface().panels end
 
---- Every installed interface's panels: the active interface's first, then the others' in the registry's order.
+--- Every panel: the active interface's first, the Global Interface's (s6-ui-core, the five parts' step 2a), then the other
+--- installed interfaces' in the registry's order.
 function P:All()
     local out = {}
     for _, p in ipairs(self:List()) do out[#out + 1] = p end
+    for _, p in ipairs(TK.Interfaces.global) do out[#out + 1] = p end
     for _, interface in ipairs(TK.Interfaces.list) do
         if interface ~= self:Interface() then
             for _, p in ipairs(interface.panels) do out[#out + 1] = p end
@@ -32,9 +34,12 @@ function P:All()
     return out
 end
 
---- A panel of the active interface by its id, or nil.
+--- A panel of the active interface or of the Global Interface by its id, or nil.
 function P:Get(id)
     for _, p in ipairs(self:List()) do
+        if p.id == id then return p end
+    end
+    for _, p in ipairs(TK.Interfaces.global) do
         if p.id == id then return p end
     end
 end
@@ -53,6 +58,23 @@ local function find(nodes, id)
     end
 end
 
+-- s6-ui-core (round 150): each component's pages by id, made once. A component makes its pages again at each
+-- SettingsNodes (the bars' ten, 7.x's and 5.x's Screen.Page), and a start asks P:IsOn once for each of a component's
+-- panels (the bars' pages were made 11 times); every page's db reads the profile as it is called, so the pages made
+-- once serve the whole run. A page a component does not hold is looked for among them all, as before.
+local pagesOf = setmetatable({}, { __mode = "k" })
+
+--- Component c's page whose id is id, or nil.
+local function pageIn(c, id)
+    local pages = pagesOf[c]
+    if not pages then
+        pages = {}
+        for _, node in ipairs(c:SettingsNodes()) do pages[node.id] = pages[node.id] or node end
+        pagesOf[c] = pages
+    end
+    return pages[id]
+end
+
 --- Whether a panel is on: its page's switch, or always for a panel without one (a window). s6-optimize (round 14): the
 --- page is looked for among its own component's pages first; making every component's (Components:AllNodes) took some
 --- 5.5 ms, and the profile's save asks this for each other interface's panel (Interfaces:Unused: 40 ms a save in Modern,
@@ -62,7 +84,7 @@ function P:IsOn(id, panel)
     if not panel then return false end
     if not panel.switch then return true end
     local c = panel.component and TK.GetComponent(panel.component)
-    local node = c and find(c:SettingsNodes(), panel.node) or find(TK.Components:AllNodes(), panel.node)
+    local node = c and pageIn(c, panel.node) or find(TK.Components:AllNodes(), panel.node)
     return node ~= nil and node.db()[panel.switch] ~= false
 end
 
@@ -85,7 +107,7 @@ local function rank(node)
     return t, CATEGORY[panel.category] or #P.categories + 1
 end
 
---- The Interface list's pages in their order (core/settings.lua's CategoryNodes).
+--- The Interface list's pages in their order (core/global/settings.lua's CategoryNodes).
 function P:SortNodes(nodes)
     local keys = {}
     for i, n in ipairs(nodes) do

@@ -3,7 +3,7 @@
 --
 -- The log (coverage rows G-31, C-13, K-099): the server's lines (0x0A, 0x0D; TK_CHAT_MESSAGE), newest at the bottom, at
 -- most 1000 (List(4, 1000), ChattingPane.cpp:44 and :105-109), coloured as the original's chat pane colours them (the
--- colour pairs: core/chat.lua). The wheel, Shift+Up and Shift+Down scroll it a line, Shift+Page Up and Shift+Page Down a
+-- colour pairs: shared/chat.lua). The wheel, Shift+Up and Shift+Down scroll it a line, Shift+Page Up and Shift+Page Down a
 -- page (ChattingPane::HandleKeyOrTextEvent 0x0047F6F0); a new line brings it back to the bottom unless Shift is held
 -- (AddIncomingMessage 0x0047F370). Shift with the walk keys up and down never walks: the rules take it (ChatRules).
 --
@@ -22,7 +22,7 @@
 -- session, whatever the tabs show.
 --
 -- s6-interface-5x (round 12, separation step 3): what every interface's chat uses is the game layer's
--- (core/game/chat.lua, TK.Game.Chat: the say modes and the menu's rows, Back to Talk, the typing area's rule, the offline
+-- (shared/game/chat.lua, TK.Game.Chat: the say modes and the menu's rows, Back to Talk, the typing area's rule, the offline
 -- line's logic, the chat and scroll keys, the lines as TK_CHAT_LINE); this frame draws Modern's log and bar with it and
 -- provides its line, its log and its prompt host there.
 --
@@ -32,11 +32,11 @@
 local C = TK.GetComponent("chatframe")
 local H = __tk
 local W = require("interfaces.modern.skin").UI -- s6-devtools (round 5, the separation's step 5): Modern's skin
-local Chat = TK.Chat -- s6-modular-g round 15: the chat's colours (core/chat.lua)
+local Chat = TK.Chat -- s6-modular-g round 15: the chat's colours (shared/chat.lua)
 local T = require("interfaces.modern.panels.chatframe.tabs")
 local B = require("interfaces.modern.panels.chatframe.tabbar")
 require("interfaces.modern.panels.chatframe.terminal") -- s6-play-modes (round 4): the Terminal tab; s6-ui-core (round 52): Modern's view of TK.Terminal
-local Term = TK.Terminal -- s6-ui-core (round 52): the Terminal's shared part (core/terminal.lua)
+local Term = TK.Terminal -- s6-ui-core (round 52): the Terminal's shared part (shared/terminal.lua)
 -- C.tabs is the component's settings tabs (Component:StandardSettings): these have names of their own.
 C.chatTabs, C.tabStrip = T, B -- s6-ui-core (round 52): C.terminal, never read, dropped (s6-optimize's chat review, H10)
 
@@ -63,8 +63,21 @@ function C:AddLine(text, rgb, outline, show, kind)
     -- s6-interface-5x (round 13's hotfix, a marked edit): the game screen's lines given at a late start are drawn once
     -- after them (TK_CHAT_REPLAYED below)
     if G.replaying then return end
-    self:Layout()
-    B:Refresh()
+    -- GA-3 (client round 4, the client review's 4.29): laid out once, at the next frame drawn, for every line of this
+    -- frame (scripts.Draw, which the host calls only while the frame shows: a hidden log is laid out when it shows, as
+    -- "shown" is watched). A scroll, a page or a tab shown still lays out at once (C:Layout clears the flag). Drawing only.
+    if not self.layoutDue then
+        self.layoutDue = true
+        self:DrawLineSoon()
+    end
+    -- WIRE (GA-3, client round 5): the newest-line button (more) follows the line at once, not the next frame's layout:
+    -- shown, it takes a left press at its place; hidden, that press goes to what is under it (the log, the map). Leaving
+    -- it to the layout changes what the server sees for a press in that frame.
+    local more = self.frame and self.frame.more
+    if more then more:SetShown(T:Current().offset > 0) end
+    -- s6-reprojection-cloud-1 (run 83, Astra 82-47): a line changes no tab's name or place, and only a whisper sets an alert
+    -- (T:Add): the other lines don't measure and place every tab again.
+    if entry.kind == "whisper" then B:Refresh() end
 end
 
 --- Scrolls the shown tab's log n lines back (older), or forward for a negative n, down to the newest (the wheel; the
@@ -176,6 +189,8 @@ end
 -- line's owner alone, which the "line" value watches, so the action a press finds is the same at every frame; changing
 -- what DrawLine watches can change which line a press on the typing area opens, which the server sees. Its other sources
 -- call DrawLineSoon: the tab shown (Terminal's mode text), the offline line's mode (TK_CHAT_SETTINGS), a new game screen.
+-- GA-3 (client round 4): and a new log line (C:AddLine), which scripts.Draw lays out first; the extra DrawLine sets the
+-- same typing action, as the line's owner is unchanged, so what a press opens is as before.
 local LINE_WATCH = { "line", "saymode", "shown" }
 
 --- DrawLine is called on the next frame (something it draws from changed that the watched values do not show).
@@ -358,7 +373,11 @@ function scripts.Provide(f)
     TK.Game.Prompts.ProvideHost("chatframe", function() return f:IsVisible() end)
 end
 
-function scripts.Draw() C:DrawLine() end
+-- GA-3 (client round 4): the log's lines of the last frame laid out first (C:AddLine); then the line as before
+function scripts.Draw()
+    if C.layoutDue then C:Layout() end
+    C:DrawLine()
+end
 
 function scripts.Shown()
     Term.Follow()
@@ -451,7 +470,7 @@ function C:OnEnable()
             TK.DB:MarkDirty()
         end,
     })
-    -- (Back to Talk on at every start, Config.cpp:1347-1349, is the game layer's since round 12: core/game/chat.lua.)
+    -- (Back to Talk on at every start, Config.cpp:1347-1349, is the game layer's since round 12: shared/game/chat.lua.)
     self:ShowBar()
 end
 
@@ -481,6 +500,7 @@ end
 function C:Layout()
     local db, f = self:DB(), self.frame
     if not f then return end
+    self.layoutDue = false -- GA-3 (client round 4): the lines AddLine left for the next frame are laid out now
     local tab = T:Current()
     local history, size = tab.lines, tab.fontSize
     local y, used, shown = 6, 0, 0
@@ -522,4 +542,4 @@ function C:ApplySettings()
     if banner and db.enabled == false then banner:Hide() end -- s6-interface-5x (round 12): the banner goes with it
 end
 
--- (The chat keys and the log's scroll keys are the game layer's since round 12: core/game/chat.lua.)
+-- (The chat keys and the log's scroll keys are the game layer's since round 12: shared/game/chat.lua.)

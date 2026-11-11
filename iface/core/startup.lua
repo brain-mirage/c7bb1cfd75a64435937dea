@@ -3,7 +3,6 @@
 local H = __tk
 local S = { overrides = {} }
 TK.Startup = S
-local P = CS.TK.Modular.ProtocolHost
 
 S.help = [[Startup options (for this launch only):
   -emulate <version>, -e <version>
@@ -11,6 +10,7 @@ S.help = [[Startup options (for this launch only):
     5 / 5x / 5.x / 5.3 / 5.33: the 5.x preset
     modern: the Modern preset
   -protocol <version>             An installed protocol, e.g. 5.33
+  --offline                       The offline world with stand-in data once the login screen is up
   -<page>.<setting> <value>        An existing scalar setting's key or name
     e.g. -worldviewgraphics.smoothing smooth
     Quote a name containing spaces. Toggles take true or false.
@@ -19,8 +19,16 @@ Put overrides after -e. Put Unity/tool options before -e.
 The normal menu remains available. Settings changes in this launch are temporary.
 An unknown option/value ignores the startup choices and starts normally.]]
 
-local aliases = { ["7"] = "7x", ["7x"] = "7x", ["7.x"] = "7x", ["7.5"] = "7x", ["7.5.2"] = "7x",
-                  ["5"] = "5x", ["5x"] = "5x", ["5.x"] = "5x", ["5.3"] = "5x", ["5.33"] = "5x", modern = "modern" }
+--- s6-gateway-research (round 71; interface-separation.md, G2: global code names no interface): the interface a
+--- -emulate value picks, from each installed interface's own `emulate` list (interfaces/<id>/interface.lua).
+local function presetFor(version)
+    version = version:lower()
+    for _, interface in ipairs(TK.Interfaces.list) do
+        for _, alias in ipairs(interface.emulate or {}) do
+            if alias == version then return interface.id end
+        end
+    end
+end
 -- MR-TK's launcher can append the saved graphics system after the player's arguments (AddGraphicsOption).
 local launcherFlags = { ["-force-d3d11"] = true, ["-force-d3d12"] = true, ["-force-vulkan"] = true,
                         ["--background"] = true }
@@ -34,9 +42,15 @@ function S:Read()
         local arg = args[i]:lower()
         if launcherFlags[arg] then
             i = i + 1
+        elseif arg == "--offline" then -- T-36 step 2 (gateway round 91): the interface page's Alone (Login:Start)
+            self.offline, i = true, i + 1
+        elseif arg == "--replay" then -- T-92 (gateway round 105): the editor's Replays page (Login:Start)
+            self.replay, i = true, i + 1
+        elseif arg == "--editor-gm" then -- T-03 part 2 (gateway round 112): the editor's GM client (Login:Start)
+            self.editorGm, i = true, i + 1
         elseif arg == "-e" or arg == "-emulate" then
             local version = args[i + 1]
-            self.preset = version and aliases[version:lower()]
+            self.preset = version and presetFor(version)
             if not self.preset or not TK.Interfaces:Get(self.preset) then
                 return "Unknown startup preset: " .. tostring(version or "(missing)")
             end
@@ -53,12 +67,13 @@ function S:Read()
 end
 
 --- Convert using the existing control's choices and bounds; do not call a setter until every option is valid.
-local function valueFor(a, text)
+local function valueFor(node, a, text)
     if a.type == "toggle" then
         if text == "true" then return true elseif text == "false" then return false end
     elseif a.type == "range" then
         local value = tonumber(text)
-        if value and (value == (a.stop and a.stop.value) or (value >= a.min and value <= a.max)) then return value end
+        local min, max = TK.Settings.RangeEnds(node, a) -- s6-ui-core (round 149): functions for the Layout offsets
+        if value and (value == (a.stop and a.stop.value) or (value >= min and value <= max)) then return value end
     elseif a.type == "select" or a.type == "oneof" then
         local choices = type(a.values) == "function" and a.values() or a.values or {}
         for _, choice in ipairs(choices) do
@@ -69,7 +84,8 @@ local function valueFor(a, text)
     end
 end
 
---- Match the first control, exactly as Settings:SetOption does; names may themselves contain dots.
+--- Match the first control, exactly as Settings:SetOption does; names may themselves contain dots. Gives its page's id,
+--- its key, the control and its page.
 local function controlFor(nodes, name)
     for _, node in ipairs(nodes) do
         local prefix = node.id .. "."
@@ -77,7 +93,7 @@ local function controlFor(nodes, name)
             local key = name:sub(#prefix + 1)
             for _, tab in ipairs(node.tabs or {}) do
                 for _, a in ipairs(TK.Settings.Controls(tab)) do
-                    if a.key == key or a.name == key then return node.id, key, a end
+                    if a.key == key or a.name == key then return node.id, key, a, node end
                 end
             end
         end
@@ -89,12 +105,12 @@ function S:Resolve()
     for _, o in ipairs(self.overrides) do
         if o.name == "protocol" then
             local found = false
-            for version in P.Versions():gmatch("[^;]+") do if version == o.text then found = true end end
-            if not found then return "Unknown protocol: " .. o.text .. " (installed: " .. P.Versions() .. ")" end
+            for version in H:GetProtocolVersions():gmatch("[^;]+") do if version == o.text then found = true end end
+            if not found then return "Unknown protocol: " .. o.text .. " (installed: " .. H:GetProtocolVersions() .. ")" end
             o.protocol = o.text
         else
-            local page, key, a = controlFor(nodes, o.name)
-            o.value = a and valueFor(a, o.text)
+            local page, key, a, node = controlFor(nodes, o.name)
+            o.value = a and valueFor(node, a, o.text)
             o.page, o.key = page, key
             if o.value == nil then return "Unknown startup setting or value: -" .. o.name .. " " .. o.text end
         end
@@ -104,7 +120,7 @@ end
 --- Load the preset through the ordinary defaults path. On any unknown choice, restore the saved startup instead.
 function S:Load()
     H.TemporarySettings = false
-    P.StartupVersion = nil
+    H:SetLaunchProtocol(nil) -- s6-ui-core (round 121): the protocol through __tk (LuaApi.Protocol.cs)
     local problem = self:Read()
     if not problem and not self.preset then
         TK.DB:Load(TK.Interfaces:ProfileName())
@@ -128,6 +144,7 @@ function S:Load()
         self.active, self.preset, self.overrides = false, nil, {}
         H.TemporarySettings = false
         TK.Machine.store.data, TK.Interfaces.active = machine, active
+        TK.Machine.changes = TK.Machine.changes + 1 -- round 153: the settings put back (machine.lua's count)
         self.message = problem .. ". Starting with your saved settings. Use -help for startup options."
         TK.DB:Load(TK.Interfaces:ProfileName())
     end
@@ -137,7 +154,7 @@ end
 function S:Apply()
     if not self.active then return end
     for _, o in ipairs(self.overrides) do
-        if o.protocol then P.StartupVersion = o.protocol
+        if o.protocol then H:SetLaunchProtocol(o.protocol)
         else TK.Settings:SetOption(o.page, o.key, o.value, true) end
     end
 end
