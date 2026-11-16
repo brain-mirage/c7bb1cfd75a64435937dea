@@ -776,19 +776,25 @@ end
 --- or unparks its commands' keys (the owner's hotfix), and loads or unloads the panel (s6-interface-5x round 13, step
 --- 11: TK.Components:Sync).
 function T:SettingChanged(node, key, value)
-    for _, panel in ipairs(self:SwitchPanels(node, key) or {}) do
+    local panels = self:SwitchPanels(node, key)
+    if not panels or #panels == 0 then return end
+    local keysChanged = false
+    for _, panel in ipairs(panels) do
         if panel.keys or panel.clicks then
             if value then self:AddKeys(panel) else self:RemoveKeys(panel) end
-            TK.DB:MarkDirty()
+            keysChanged = true
         end
-        TK.Components:Sync()
-        TK.Bindings:Park() -- the owner's hotfix: its commands' keys to the map they belong in now
-        -- s6-interface-5x (round 12, build 46; Astra's wrap-up review): every switch pushes the key layer again,
-        -- as a panel turned on or off makes its component's commands act or go inert (TK.Bindings:Inert), with
-        -- keys of its own or not (Modern's nameplates and N). Wire: without this push a panel turned off would
-        -- still send by its keys, where 4a's UserPane::HandleKeyOrTextEvent 0x005A5BD0 sends nothing
-        TK.FireEvent("UPDATE_BINDINGS")
     end
+    if keysChanged then TK.DB:MarkDirty() end
+    -- GA-3 client round 15 (the client review's pass 45): the rest once a switch, after all its panels' keys, not
+    -- once a panel (the same key layer at the end; its panels change in one call, so no key is read in between)
+    TK.Components:Sync()
+    TK.Bindings:Park() -- the owner's hotfix: its commands' keys to the map they belong in now
+    -- s6-interface-5x (round 12, build 46; Astra's wrap-up review): every switch pushes the key layer again,
+    -- as a panel turned on or off makes its component's commands act or go inert (TK.Bindings:Inert), with
+    -- keys of its own or not (Modern's nameplates and N). Wire: without this push a panel turned off would
+    -- still send by its keys, where 4a's UserPane::HandleKeyOrTextEvent 0x005A5BD0 sends nothing
+    TK.FireEvent("UPDATE_BINDINGS")
 end
 
 -- ----- the profile's fields -----

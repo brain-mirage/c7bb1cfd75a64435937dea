@@ -87,7 +87,9 @@
       <data key="slots"/>
       <!-- the drag label and the 15 slots (ITEMS), then their help and their actions -->
       <run call="ItemSlots"/>
-      <!-- the buttons (GetButtonBounds: 0 back, 1 on, 2 the list, 3 the pictures), on their press as 5.33's case 1 -->
+      <!-- the buttons (GetButtonBounds: 0 back, 1 on, 2 the list, 3 the pictures), on their press as 5.33's case 1.
+           The rectangles are 5.33's own (its button test sub_450CB0, the 5.33 dump's InventoryPane.c:657-669): the
+           pictures press is 8 pixels wide there too (GA-3 client round 15, the client review's pass 45: checked) -->
       <press l="59" t="259" r="81" b="277" call="Back"/>
       <press l="112" t="259" r="134" b="277" call="On"/>
       <press l="81" t="259" r="103" b="277" call="ListView"/>

@@ -27,8 +27,18 @@
       <!-- the group page: the members, Invite -->
       <frame key="group" Point="TOPLEFT, @parent, TOPLEFT, 16, -74">
         <do Point="BOTTOMRIGHT, @parent, BOTTOMRIGHT, -16, 14"/>
+        <!-- s6-ui-core (round 165, the client review's 8.6): a table, the members' names (or the page's note) on the left,
+             their vita and mana right-aligned in columns under their titles; it was one line of text a member -->
+        <label key="vitaTitle" text="Vita" size="12" colour="gold" justify="RIGHT" Width="100"
+               Point="TOPLEFT, @parent, TOPLEFT, 120, 0"/>
+        <label key="manaTitle" text="Mana" size="12" colour="gold" justify="RIGHT" Width="100"
+               Point="TOPLEFT, @parent, TOPLEFT, 220, 0"/>
         <label key="list" text="" size="12" colour="white" justify="LEFT" Width="320" WordWrap="true"
-               Point="TOPLEFT, @parent, TOPLEFT, 0, 0"/>
+               Point="TOPLEFT, @parent, TOPLEFT, 0, -18"/>
+        <label key="vita" text="" size="12" colour="white" justify="RIGHT" Width="100"
+               Point="TOPLEFT, @parent, TOPLEFT, 120, -18"/>
+        <label key="mana" text="" size="12" colour="white" justify="RIGHT" Width="100"
+               Point="TOPLEFT, @parent, TOPLEFT, 220, -18"/>
         <button key="invite" text="Invite..." width="110" height="24" style="red" click="Invite"
                 Point="BOTTOMLEFT, @parent, BOTTOMLEFT, 0, 0"/>
         <!-- The group page is the original's group tab: it asks for the list each time it becomes visible (2D 01, D20;

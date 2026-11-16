@@ -21,8 +21,9 @@
 -- (182, 159) and (250, 159), each 45 x 11 and drawn as 5.33's radios (X.Radio); Browse (7, image 50) (261, 232)-(333,
 -- 248); the play buttons (11-13, images 46, 48, 47) (94, 314), (168, 314), (242, 314), 72 x 16; OK (14, image 14) (168,
 -- 360)-(240, 376), the default. 5.33's other controls (the two volume sliders, the music source, the folder, the CD
--- drive, the order and repeat) are not the model's (its D-63 has 7.5.2's: the client's own sound settings keep them), so
--- only the picture shows their captions until ui-core's X8 seam consumes r18's native hooks below.
+-- drive, the order and repeat) are not the model's (its D-63 has 7.5.2's): the shared music dialog
+-- (shared/components/dialogs/music.lua) makes them, the client's own sound settings keep them, and it places and paints
+-- them in 5.33's form through the native hooks below (GA-3 client round 12, the client review's pass 44).
 -- Wire: 5.33 sends 1B 00 as it opens, 7.5.2 1B 01 00; the protocol in use
 -- decides, so the model's 7.5.2 bytes are kept.
 --
@@ -87,11 +88,11 @@ return function(L, X)
 
     L.Music = entry(D.Music, {
         width = NativeMusic.width, height = NativeMusic.height,
-        -- R18 art/rectangle contract for ui-core's shared X8 control/renderer seam.
+        -- 5.33's art and rectangles for the shared dialog's controls (R18).
         nativeLayout = NativeMusic,
-        -- Ui-core's X8 renderer supplies these controls/states; these hooks only
-        -- position shared input surfaces and paint 5.33 art. No local controls or
-        -- settings are constructed here. Until X8 calls them, they are preparation.
+        -- The shared music dialog makes these controls and keeps their states; it calls nativePlace to lay its input
+        -- surfaces on 5.33's rectangles and nativePaint to draw 5.33's art over them. Nothing here makes a control or a
+        -- setting.
         nativePlace = function(win, controls) NativeMusicArt.Place(X, win, controls) end,
         nativePaint = NativeMusicArt.Paint,
         place = function(win)

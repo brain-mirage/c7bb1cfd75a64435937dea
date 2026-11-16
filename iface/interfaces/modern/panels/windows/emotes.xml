@@ -10,7 +10,9 @@
   <window key="window" name="TKEmoteMenu" title="Emotes" width="300" height="290">
     <!-- as the character window: made by the shared widgets, it goes with the windows -->
     <run call="Own"/>
-    <do Point="CENTER, @parent, CENTER, 0, 120"/>
+    <!-- s6-ui-core (round 165, the client review's 8.7): 20 to the right, clear of the Social window's default place
+         (360 wide at -320), which it overlapped by 10 -->
+    <do Point="CENTER, @parent, CENTER, 20, 120"/>
     <run call="Buttons"/>
   </window>
 </ui>

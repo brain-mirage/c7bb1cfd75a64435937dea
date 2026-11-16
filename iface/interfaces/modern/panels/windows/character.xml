@@ -84,8 +84,14 @@
         <on script="OnEvent" call="PortraitChanged"/>
         <run call="ShowFigure"/>
       </figurebox>
+      <!-- the stats, two blocks of a names column and a values column (s6-ui-core round 165, the client review's 8.6: the
+           numbers right-aligned in their own column, so they line up) -->
       <label key="stats" text="" size="12" colour="white" justify="LEFT" Point="TOPLEFT, @parent, TOPLEFT, 24, -396"/>
+      <label key="statsValues" text="" size="12" colour="white" justify="RIGHT" Width="140"
+             Point="TOPLEFT, @parent, TOPLEFT, 94, -396"/>
       <label key="stats2" text="" size="12" colour="white" justify="LEFT" Point="TOPLEFT, @parent, TOP, 30, -396"/>
+      <label key="stats2Values" text="" size="12" colour="white" justify="RIGHT" Width="60"
+             Point="TOPLEFT, @parent, TOP, 80, -396"/>
       <label key="note" text="" size="12" colour="0.7, 0.7, 0.7" WordWrap="true" Width="470"
              Point="TOP, @parent, TOP, 0, -480"/>
       <!-- Bare hands (12 00) and Take Off All (fourteen 1F), the game layer's actions (TK.Game.SelfLook; wire:

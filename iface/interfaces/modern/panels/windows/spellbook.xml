@@ -107,7 +107,9 @@
         <text key="glyph" layer="ARTWORK" sublevel="3" Font="18, OUTLINE" Point="CENTER, @parent, CENTER, 0, 1"/>
         <frame key="cooldown" type="Cooldown" name="@with.cooldown" AllPoints="@parent">
           <run call="OverBox"/>
-          <do CountdownFontSize="14"/>
+          <!-- s6-ui-core (round 165, the client review's 8.6): the swipe only; a number covered the icon in a list that
+               has its own Cooldown column -->
+          <do HideCountdownNumbers="true"/>
           <!-- s6-ui-core (round 83): the aether's end -->
           <on script="OnCooldownDone" call="AetherEnd"/>
         </frame>

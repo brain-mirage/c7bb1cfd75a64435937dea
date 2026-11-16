@@ -201,12 +201,13 @@ return function(ctx)
         local row = 2
         if hasDesc then
             local y = 36
-            for _, line in ipairs(wrap(desc, cw)) do
+            local lines = wrap(desc, cw) -- GA-3 client round 15 (the client review's pass 45): wrapped once
+            for _, line in ipairs(lines) do
                 if y > h - 10 then break end
                 y = y + 12
                 text(line, cx - div(width(line), 2), y, 0x8F)
             end
-            row = #wrap(desc, cw) + 3
+            row = #lines + 3
         end
         local top = 11 - l180
         --- parts ({ text, colour }) centred together on cx, each in its own rectangle as 4a cuts them (CENTRED_ROW,

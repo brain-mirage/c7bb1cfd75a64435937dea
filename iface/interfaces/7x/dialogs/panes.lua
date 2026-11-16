@@ -52,16 +52,14 @@ return function(L, X)
             X.Rect(win.x7bar, win, unpack(PM.bar))
             return win
         end,
-        -- the name: centred by 6 pixels a byte of the game's code page (39 - 3 * its length: a Hangul character two
-        -- bytes there), on the line 21, in 0x8F
+        -- the name: centred by 6 pixels a character (39 - 3 * its characters, as 4a's wcslen counts them: S.Characters;
+        -- GA-3 client round 12: it counted a non-ASCII character as two), on the line 21, in 0x8F
         place = function(win)
             local n = PM.name
             bold(win, win.name, n.x, n.line, n.colour)
             win.name.onBoldText = function(text)
-                local bytes = 0
-                for _, c in utf8.codes(text or "") do bytes = bytes + (c < 0x80 and 1 or 2) end
                 win.name:ClearAllPoints()
-                win.name:SetPoint("TOPLEFT", win, "TOPLEFT", n.x - n.half * bytes, -(n.line - 12 + 1))
+                win.name:SetPoint("TOPLEFT", win, "TOPLEFT", n.x - n.half * S.Characters(text), -(n.line - 12 + 1))
             end
         end,
         row = function(win, r, i)

@@ -62,9 +62,10 @@ return function(L, X)
         return fs
     end
 
-    --- A text centred on the rectangle (l, t)-(r, b) by 6 pixels a character, its line on b (EmployeeDialogPane's).
+    --- A text centred on the rectangle (l, t)-(r, b) by 6 pixels a character, its line on b (EmployeeDialogPane's):
+    --- its characters as 4a's wcslen counts them (S.Characters; GA-3 client round 12: it counted UTF-8's bytes).
     local function centred(win, key, text, l, r, b)
-        pen(win, key, math.floor((l + r) / 2) - 3 * #text, b, TEXT):SetText(text)
+        pen(win, key, math.floor((l + r) / 2) - 3 * S.Characters(text), b, TEXT):SetText(text)
     end
 
     -- a text drawn outlined (DrawOutlinedTextAt): the look's helper (s6-interface-7x round 2: X.Outlined, moved there)

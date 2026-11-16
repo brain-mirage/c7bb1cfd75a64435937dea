@@ -77,10 +77,13 @@ return function(ctx)
 
     --- A texture of a picture's frame, filling a button at its crop's place (a missing one draws nothing); clip w x h
     --- crops the picture to a rectangle smaller than it (4a draws a picture into the control's rectangle, clipped).
-    --- image is the set it is read from (TK.Art.Image, the base set, when nil).
-    local function frameTexture(btn, file, frame, palette, clipW, clipH, image)
-        local t = btn:CreateTexture(nil, "ARTWORK")
+    --- image is the set it is read from (TK.Art.Image, the base set, when nil). t, when given, is a texture of the
+    --- button's to show it in again (X.Image's), else one is made.
+    local function frameTexture(btn, file, frame, palette, clipW, clipH, image, t)
+        t = t or btn:CreateTexture(nil, "ARTWORK")
+        t:ClearAllPoints()
         local key, w, h = (image or TK.Art.Image)(file, frame, palette)
+        t.key = key
         if not key then
             t:SetColorTexture(0, 0, 0, 0)
             t:SetAllPoints(btn)
@@ -94,7 +97,6 @@ return function(ctx)
         t:SetSize(cw, ch)
         t:SetTexCoord(0, cw / w, 0, ch / h)
         t:SetPoint("TOPLEFT", btn, "TOPLEFT", ox, -oy)
-        t.key = key
         return t
     end
 
@@ -113,25 +115,38 @@ return function(ctx)
         for _, old in ipairs({ btn.__normal, btn.__pushed, btn.__disabled }) do old:Hide() end
         local file, palette, base = "BUTT001.EPF", "BUTT001.PAL", id * 4
         if id >= 55 then file, palette, base = "BUTT002.EPF", "NPAL8.PAL", (id - 54) * 2 end
-        local normal = frameTexture(btn, file, base, palette, w, h)
-        btn:SetNormalTexture(normal)
-        btn:SetPushedTexture(frameTexture(btn, file, base + 1, palette, w, h))
+        -- the button's own textures, made once and shown the new id's frames when it is used again with another (GA-3
+        -- client round 13, the client review's pass 45: four new ones each time; as 5.x's X.Image)
+        local own = btn.kitPictures or {}
+        btn.kitPictures = own
+        own.normal = frameTexture(btn, file, base, palette, w, h, nil, own.normal)
+        btn:SetNormalTexture(own.normal)
+        own.pushed = frameTexture(btn, file, base + 1, palette, w, h, nil, own.pushed)
+        btn:SetPushedTexture(own.pushed)
         btn.focusedPicture = nil
         if id < 55 then
-            btn:SetDisabledTexture(frameTexture(btn, file, base + 2, palette, w, h))
+            own.disabled = frameTexture(btn, file, base + 2, palette, w, h, nil, own.disabled)
+            btn:SetDisabledTexture(own.disabled)
             -- the focused picture (offset 3) takes the normal one's place while the control has the focus (the look's
             -- focus mark); the normal texture shows it, so this one only names it
-            local focused = frameTexture(btn, file, base + 3, palette, w, h)
-            focused:Hide()
-            btn.focusedPicture = focused.key
+            own.focused = frameTexture(btn, file, base + 3, palette, w, h, nil, own.focused)
+            own.focused:Hide()
+            btn.focusedPicture = own.focused.key
         else
             -- BUTT002's bars: a disabled one is the normal picture under a 0x8F wash (draw mode 2)
-            local wash = btn:CreateTexture(nil, "OVERLAY")
-            wash:SetAllPoints(btn)
-            S.Fill(wash, S.WHITE, 0.5)
-            btn:SetDisabledTexture(wash)
+            own.wash = own.wash or btn:CreateTexture(nil, "OVERLAY")
+            own.wash:SetAllPoints(btn)
+            S.Fill(own.wash, S.WHITE, 0.5)
+            btn:SetDisabledTexture(own.wash)
         end
-        btn.normalPicture = normal.key
+        -- a disabled button shows its disabled texture again as each state is set, the one this id does not use too:
+        -- hide that one (Astra's pass 2 on round 13: 55's wash stayed over 37's frames, on main as well)
+        if id < 55 then
+            if own.wash then own.wash:Hide() end
+        elseif own.disabled then
+            own.disabled:Hide()
+        end
+        btn.normalPicture = own.normal.key
         if btn.GetHighlightTexture and btn:GetHighlightTexture() then btn:GetHighlightTexture():SetColorTexture(0, 0, 0, 0) end
         local label = btn:GetFontString()
         if label then label:Hide() end

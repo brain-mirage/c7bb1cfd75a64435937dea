@@ -2,7 +2,7 @@
 -- "Mixing"): the panel registry. Each installed interface (TK.Interfaces) lists its panels in its interface.lua, each one piece of the
 -- screen with its category, the component whose code draws it, its settings page, its switch, its place and the keys it
 -- brings. The Interface list shows the shown interface's panels under one Panes title, in their categories' order
--- (s6-ui-core round 83, the owner's request of 2026-10-09: P:GroupRoots); the other interfaces' panels are off in a profile
+-- (s6-ui-core round 83, the owner's request of 2026-10-09: P:GroupRoots; round 165: in three titles under it); the other interfaces' panels are off in a profile
 -- until turned on there. It draws nothing and sends nothing.
 
 local P = {}
@@ -131,6 +131,15 @@ end
 P.PANES, P.DECORATION = "Panes", "Decoration"
 local PANES_ID, DECORATION_ID = "heading:panes", "heading:decoration"
 
+--- s6-ui-core (round 165, the client review's 8.7: some forty rows in one column): Panes keeps every pane, under three
+--- titles of its own by category: On Screen (the frames, minimap, auras, chat), Bars and Buttons, and Windows.
+local GROUPS = {
+    { id = "heading:onscreen", title = "On Screen" },
+    { id = "heading:buttons", title = "Bars and Buttons" },
+    { id = "heading:windows", title = "Windows" },
+}
+local GROUP_OF = { Buttons = 2, Pages = 3 } -- every other category but Decoration is On Screen's
+
 --- Where a page goes in the Interface list: its interface's id (nil for a shared panel's) and its category; nothing for a
 --- page of no panel, which goes at the top.
 local function placeOf(node)
@@ -158,10 +167,16 @@ local function headingOf(node)
     return category == "Decoration" and DECORATION_ID or PANES_ID
 end
 
+--- The title under Panes a pane's page goes under (GROUPS' entry), by its panel's category.
+local function groupOf(node)
+    local _, category = placeOf(node)
+    return GROUPS[GROUP_OF[category] or 1]
+end
+
 --- The interface tab's list for the interface shown (s6-ui-core round 83): at the top the General page (listTop) and the
---- pages of no panel (Macros, Tooltips); then the Panes title with that interface's panes and the shared ones, in their
---- categories' order (P:SortNodes), each entry with its own pages under it (the bars under Bars, the minimap's icons under
---- the Minimap); then the Decoration title. Another interface's pages are not listed (a shortcut to one shows its interface
+--- pages of no panel (Macros, Tooltips); then the Panes title with that interface's panes and the shared ones under its
+--- three titles (GROUPS, round 165; a title with no pane left out), in their categories' order (P:SortNodes), each entry
+--- with its own pages under it (the bars under Bars, the minimap's icons under the Minimap); then the Decoration title. Another interface's pages are not listed (a shortcut to one shows its interface
 --- first: P:Reveal). The titles' ids are the same for every interface, so they keep their open state across them.
 function P:GroupRoots(roots, byId)
     local viewed = self:Viewed()
@@ -169,6 +184,11 @@ function P:GroupRoots(roots, byId)
     local panes = { id = PANES_ID, title = P.PANES, children = {} }
     local decoration = { id = DECORATION_ID, title = P.DECORATION, children = {} }
     byId[panes.id], byId[decoration.id] = panes, decoration
+    local groups = {}
+    for _, g in ipairs(GROUPS) do
+        groups[g] = { id = g.id, title = g.title, children = {} }
+        byId[g.id] = groups[g]
+    end
     local function pageOf(e)
         if e.node then return e.node end
         return e.children[1] and pageOf(e.children[1])
@@ -181,9 +201,12 @@ function P:GroupRoots(roots, byId)
         else
             local id = placeOf(page)
             if id == nil or id == viewed then
-                table.insert(heading == PANES_ID and panes.children or decoration.children, e)
+                table.insert(heading == PANES_ID and groups[groupOf(page)].children or decoration.children, e)
             end
         end
+    end
+    for _, g in ipairs(GROUPS) do
+        if #groups[g].children > 0 then panes.children[#panes.children + 1] = groups[g] end
     end
     for _, e in ipairs(top) do first[#first + 1] = e end
     if #panes.children > 0 then first[#first + 1] = panes end
@@ -194,6 +217,7 @@ end
 --- The titles above a page in the Interface list (P:GroupRoots), { id }: a shortcut to the page opens them (S:Select).
 function P:HeadingsOf(node)
     local heading = headingOf(node)
+    if heading == PANES_ID then return { { id = heading }, { id = groupOf(node).id } } end
     return heading and { { id = heading } } or {}
 end
 

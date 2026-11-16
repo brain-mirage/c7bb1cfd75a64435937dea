@@ -379,8 +379,13 @@ CW:AddTab({ id = "character", title = "Character", icon = "emoji:1f9cd", order =
         if hasSheet and statusA ~= "" then lines[#lines + 1] = statusA end
         if hasSheet and statusB ~= "" then lines[#lines + 1] = statusB end
         page.lines:SetText(table.concat(lines, "\n"))
-        page.stats:SetText(CH.StatsText(hp, hpMax, mp, mpMax, H:GetExperience(), H:GetMoney()))
-        page.stats2:SetText(CH.StatsText2(might, will, grace))
+        -- s6-ui-core (round 165, the client review's 8.6): names and numbers in two columns each
+        local names, values = CH.StatsColumns(hp, hpMax, mp, mpMax, H:GetExperience(), H:GetMoney())
+        page.stats:SetText(names)
+        page.statsValues:SetText(values)
+        names, values = CH.StatsColumns2(might, will, grace)
+        page.stats2:SetText(names)
+        page.stats2Values:SetText(values)
         for i, s in ipairs(page.slots) do
             local _, slotName, code, itemName, iconId = H:GetEquipment(i)
             CH.FillGearSlot(s, slotName, itemName, iconId)

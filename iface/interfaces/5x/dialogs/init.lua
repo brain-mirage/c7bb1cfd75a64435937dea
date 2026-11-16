@@ -138,9 +138,16 @@ function X.Image(win, btn, id, l, t, r, b)
     local B = D.IMAGE_BUTTON
     local file, base = B.file, 2 * id
     if id >= B.from then file, base = B.high, 2 * (id - (B.from - 1)) end
-    btn:SetNormalTexture(S.Picture(btn, nil, file, base, B.palette, 0, 0, "ARTWORK"))
-    btn:SetPushedTexture(S.Picture(btn, nil, file, base + 1, B.palette, 0, 0, "ARTWORK"))
-    btn:SetDisabledTexture(S.Picture(btn, nil, file, base, B.palette, 0, 0, "ARTWORK"))
+    -- GA-3 client round 12 (the client review's pass 42): the button's own three textures, made once and drawn again
+    -- with another id's frames (S.Picture shows them; the button's state then picks one), as X.Radio keeps its own
+    local own = btn.x5pictures or {}
+    btn.x5pictures = own
+    own[1] = S.Picture(btn, own[1], file, base, B.palette, 0, 0, "ARTWORK")
+    own[2] = S.Picture(btn, own[2], file, base + 1, B.palette, 0, 0, "ARTWORK")
+    own[3] = S.Picture(btn, own[3], file, base, B.palette, 0, 0, "ARTWORK")
+    btn:SetNormalTexture(own[1])
+    btn:SetPushedTexture(own[2])
+    btn:SetDisabledTexture(own[3])
     -- the wash over the disabled picture, shown with the button's state (the kit sets it by SetEnabled)
     if not btn.x5wash then
         btn.x5wash = S.Fill(btn:CreateTexture(nil, "OVERLAY"), S.WHITE, B.wash)

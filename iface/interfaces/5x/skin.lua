@@ -43,7 +43,8 @@ end
 --- A text's width in 5.33's font 0 as 5.33 measures it (GrafPort::GetTextWidth 0x00437E40: its glyphs' advances, a
 --- missing glyph counted as '?'), or nil without the packs.
 function S.TextWidth(text)
-    local ok, w = pcall(function() return H:FaceTextWidth(S.FACE, text or "") end)
+    -- GA-3 client round 15 (the client review's pass 43): the method itself to pcall, no new function per call
+    local ok, w = pcall(H.FaceTextWidth, H, S.FACE, text or "")
     if ok and w and w >= 0 then return w end
     return nil
 end
@@ -53,10 +54,22 @@ local COLOURS = D.COLOURS
 S.WHITE = COLOURS.white -- the chat's background, the status pane's name, the prompt line's background
 S.RED, S.BLUE, S.GREEN = COLOURS.red, COLOURS.blue, COLOURS.green
 
+-- GA-3 client round 15 (the client review's pass 43): each picture's key, built once ([file][frame][palette or false])
+local imageKeys = {}
+
 --- Frame n of a 5.33 interface picture (for example "USERSTAT.EPF") in a palette of the same set (BARAM.PAL by
 --- default): its key and size, or nil without the 5.33 set.
 function S.Image(file, frame, palette)
-    local key = "art:533/" .. file:upper() .. "/" .. (frame or 0) .. (palette and ("@" .. palette:upper()) or "")
+    frame = frame or 0
+    local byFrame = imageKeys[file] or {}
+    imageKeys[file] = byFrame
+    local byPalette = byFrame[frame] or {}
+    byFrame[frame] = byPalette
+    local key = byPalette[palette or false]
+    if not key then
+        key = "art:533/" .. file:upper() .. "/" .. frame .. (palette and ("@" .. palette:upper()) or "")
+        byPalette[palette or false] = key
+    end
     local ok, w, h = H:GetArtSize(key)
     if ok then return key, w, h end
 end
@@ -68,6 +81,8 @@ function S.Picture(parent, tex, file, frame, palette, x, y, layer)
     tex = tex or parent:CreateTexture(nil, layer or "ARTWORK")
     local key, w, h = S.Image(file, frame, palette)
     if not key then
+        -- a texture given back keeps no earlier picture that a button's state could show again (GA-3 client round 12)
+        tex:SetTexture(nil)
         tex:Hide()
         return tex
     end

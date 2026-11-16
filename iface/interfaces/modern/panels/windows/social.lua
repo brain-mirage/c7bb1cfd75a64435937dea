@@ -74,18 +74,26 @@ function S:Refresh()
     for id, b in pairs(window.tabs) do b:SetSelected(id == self.page) end
     window.group:SetShown(self.page == "group")
     window.ignore:SetShown(self.page == "ignore")
-    local lines = {}
+    local names, vita, mana = {}, {}, {}
     -- s6-ui-character (K-097): six members from the first shown, as NewGroupPane's m_firstVisibleMember and its six rows
     -- (SelfLookPane.cpp:2792), of the game layer's group list (TK.Game.Social.GroupMembers: the player's own included).
+    -- Round 165 (the client review's 8.6): a column each for the names, the vita and the mana.
     local members = TK.Game.Social.GroupMembers()
     local count = #members
     self.first = math.max(0, math.min(self.first or 0, count - 6))
     for i = self.first + 1, math.min(self.first + 6, count) do
         local m = members[i]
-        lines[#lines + 1] = string.format("%s   vita %d/%d   mana %d/%d", m.name, m.hp, m.hpMax, m.mp, m.mpMax)
+        names[#names + 1] = m.name
+        vita[#vita + 1] = string.format("%d / %d", m.hp, m.hpMax)
+        mana[#mana + 1] = string.format("%d / %d", m.mp, m.mpMax)
     end
-    if #lines == 0 then lines[1] = H:IsOnline() and "Not in a group." or "Offline: the group comes from the server." end
-    window.group.list:SetText(table.concat(lines, "\n"))
+    local group = window.group
+    group.vitaTitle:SetShown(#names > 0)
+    group.manaTitle:SetShown(#names > 0)
+    if #names == 0 then names[1] = H:IsOnline() and "Not in a group." or "Offline: the group comes from the server." end
+    group.list:SetText(table.concat(names, "\n"))
+    group.vita:SetText(table.concat(vita, "\n"))
+    group.mana:SetText(table.concat(mana, "\n"))
     local ignored = TK.Game.Social.Ignored()
     window.ignore.list:SetText(#ignored > 0 and table.concat(ignored, "\n") or "Nobody is ignored.")
 end

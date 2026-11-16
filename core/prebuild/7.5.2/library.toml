@@ -69811,6 +69811,99 @@ width = 40
 height = 20
 seen = 1
 
+[world_maps.WMkru]
+seen = 1
+
+[world_maps.WMkru.nodes.0]
+name = "Hamgyong Nam-Do"
+column = 930
+row = 650
+map = 0
+destination = 99
+x = 8
+y = 2
+links = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+
+[world_maps.WMkru.nodes.1]
+name = "Arctic Land"
+column = 1000
+row = 100
+map = 0
+destination = 1013
+x = 9
+y = 9
+links = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+
+[world_maps.WMkru.nodes.2]
+name = "Buya"
+column = 765
+row = 400
+map = 0
+destination = 1012
+x = 1
+y = 11
+links = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+
+[world_maps.WMkru.nodes.3]
+name = "Hausson"
+column = 950
+row = 470
+map = 0
+destination = 1025
+x = 10
+y = 8
+links = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+
+[world_maps.WMkru.nodes.4]
+name = "Kugnae"
+column = 722
+row = 550
+map = 0
+destination = 1011
+x = 18
+y = 14
+links = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+
+[world_maps.WMkru.nodes.5]
+name = "Nagnang"
+column = 650
+row = 660
+map = 0
+destination = 2520
+x = 8
+y = 8
+links = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+
+[world_maps.WMkru.nodes.6]
+name = "Mythic Nexus"
+column = 380
+row = 230
+map = 0
+destination = 41
+x = 30
+y = 4
+links = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+
+[world_maps.WMkru.nodes.7]
+name = "KaMing's Encampment"
+column = 280
+row = 370
+map = 0
+destination = 3800
+x = 31
+y = 3
+links = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+
+[world_maps.WMkru.nodes.8]
+name = "Mount Baekdu"
+column = 738
+row = 192
+map = 0
+destination = 4259
+x = 9
+y = 20
+links = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+
 [world_maps.clanban1]
 seen = 1
 
@@ -69823,99 +69916,6 @@ destination = 0
 x = 0
 y = 0
 links = [0]
-
-[world_maps.wmkru]
-seen = 1
-
-[world_maps.wmkru.nodes.0]
-name = "Hamgyong Nam-Do"
-column = 930
-row = 650
-map = 0
-destination = 99
-x = 8
-y = 2
-links = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-
-[world_maps.wmkru.nodes.1]
-name = "Arctic Land"
-column = 1000
-row = 100
-map = 0
-destination = 1013
-x = 9
-y = 9
-links = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-
-[world_maps.wmkru.nodes.2]
-name = "Buya"
-column = 765
-row = 400
-map = 0
-destination = 1012
-x = 1
-y = 11
-links = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-
-[world_maps.wmkru.nodes.3]
-name = "Hausson"
-column = 950
-row = 470
-map = 0
-destination = 1025
-x = 10
-y = 8
-links = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-
-[world_maps.wmkru.nodes.4]
-name = "Kugnae"
-column = 722
-row = 550
-map = 0
-destination = 1011
-x = 18
-y = 14
-links = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-
-[world_maps.wmkru.nodes.5]
-name = "Nagnang"
-column = 650
-row = 660
-map = 0
-destination = 2520
-x = 8
-y = 8
-links = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-
-[world_maps.wmkru.nodes.6]
-name = "Mythic Nexus"
-column = 380
-row = 230
-map = 0
-destination = 41
-x = 30
-y = 4
-links = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-
-[world_maps.wmkru.nodes.7]
-name = "KaMing's Encampment"
-column = 280
-row = 370
-map = 0
-destination = 3800
-x = 31
-y = 3
-links = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-
-[world_maps.wmkru.nodes.8]
-name = "Mount Baekdu"
-column = 738
-row = 192
-map = 0
-destination = 4259
-x = 9
-y = 20
-links = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 
 [characters]
 

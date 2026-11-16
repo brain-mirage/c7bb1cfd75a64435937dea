@@ -37,8 +37,12 @@
       <data key="art" setting="backdrop" column="1" x="630" y="4"/>
       <run call="Button"/>
     </frame>
-    <!-- the chat switch (649, 4)-(668, 21) -->
-    <frame from="TK7xChatButton" Point="TOPLEFT, @parent, TOPLEFT, 649, -4" Size="19, 17">
+    <!-- the chat switch (649, 4)-(668, 21), its picture all of it; its press only to the bar's right edge, 666.
+         GA-3 client round 15 (the client review's pass 45). WIRE: 4a's ChattingHandlePane::HandlePointerOrMouseEvent
+         0x00481D60 tests the pane's own bounds ((74, 727)-(740, 751), MainMenuPane.cpp:561) before
+         GetChatButtonRect's (ChattingPane.cpp:1351), so the rectangle's last 2 pixels take no press there; widening
+         this frame again makes them press the switch, as 4a does not -->
+    <frame from="TK7xChatButton" Point="TOPLEFT, @parent, TOPLEFT, 649, -4" Size="17, 17">
       <data key="art" setting="log" column="2" x="649" y="4"/>
       <run call="Button"/>
     </frame>

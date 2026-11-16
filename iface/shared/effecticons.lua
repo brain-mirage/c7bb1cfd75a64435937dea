@@ -49,7 +49,10 @@ end
 -- the rule before them: this computer's earlier right-click choice (TK.Machine effectOverrides), then data/effects.lua.
 -- Nothing is seeded (question 34).
 
+-- GA-3 client round 15 (the client review's pass 45): each kind's reading, kept with the list table it was read from
+-- (a list is replaced, never changed in place: E.SetNames, E.MoveToList), so a look-up no longer joins the names
 local parsed = {}
+local NONE = { names = {}, effects = {} }
 
 --- Round 43's text form, "A, B, #84", as a list (Effects on Others' carry-over, C:Migrate).
 local function split(text)
@@ -90,16 +93,16 @@ end
 --- A list's names (lower case, " (Caster)" left out) and graphic numbers ("#84", "#0x54").
 local function listOf(kind)
     local list = E.Names(kind)
-    local key = table.concat(list, "\n")
-    local l = parsed[key]
-    if l then return l end
-    l = { names = {}, effects = {} }
+    if #list == 0 then return NONE end
+    local p = parsed[kind]
+    if p and p.list == list then return p.l end
+    local l = { names = {}, effects = {} }
     for _, item in ipairs(list) do
         item = trim(item)
         local n = graphicOf(item)
         if n then l.effects[n] = true elseif item ~= "" then l.names[base(item):lower()] = true end
     end
-    parsed[key] = l
+    parsed[kind] = { list = list, l = l }
     return l
 end
 
@@ -435,6 +438,7 @@ end
 --- separation step 4b): those frames are an interface's (Modern's auras and target frame), so they listen to
 --- TK_EFFECT_LISTS_CHANGED instead of being called here. Drawing only.
 function E.ListsChanged()
+    parsed = {} -- read again whatever changed them
     if TK.Settings and TK.Settings.selected then TK.SafeCall(TK.Settings.RefreshPage, TK.Settings) end
     TK.FireEvent("TK_EFFECT_LISTS_CHANGED")
 end

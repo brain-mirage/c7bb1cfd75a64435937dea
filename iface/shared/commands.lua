@@ -1,6 +1,7 @@
 -- Key bindings for the original's other commands (plan D19, coverage-matrix.md "Key bindings"): each is a bindable
 -- command that runs one action (TK.Actions), with the original's key as its default where that key is free in this
--- UI. Until the rules for them exist (plan 5.7) they are logged and nothing is sent.
+-- UI. The logic's rules (plan 5.7: TK-Core/Rules, most in Keys/KeyCommandRules.cs) send what the original sends for
+-- each (the list's last column); the GM's brightness keys send nothing.
 --
 -- The boards (the original's b, 3B 01) get a free key, Shift+B, since B opens the bag here; the micro menu has a
 -- button for them.

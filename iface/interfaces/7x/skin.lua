@@ -35,9 +35,18 @@ end
 --- A text's width in font 0 as the original measures it (GrafPort::GetTextWidth: the glyphs' advances), or nil without
 --- the packs.
 function S.TextWidth(text)
-    local ok, w = pcall(function() return H:ClassicTextWidth(text or "") end)
+    -- GA-3 client round 15 (the client review's pass 43): the method itself to pcall, no new function per call
+    local ok, w = pcall(H.ClassicTextWidth, H, text or "")
     if ok and w and w >= 0 then return w end
     return nil
+end
+
+--- A text's length as the original counts it where it centres the text by 6 pixels a character: wcslen of the wide
+--- string it decoded from the server's bytes (RightButtonMenuPane::OnPaint 0x00554FC0, RightButtonMenuPane.cpp:129;
+--- EmployeeDialogPane::OnPaint, EmployeeDialogPane.cpp:234), so its characters: a Hangul syllable is one (Lua's #text
+--- counts UTF-8's bytes, three for it). GA-3 client round 12. Drawing only.
+function S.Characters(text)
+    return utf8.len(text or "") or #(text or "")
 end
 
 --- s6-modular-g (phase 5): frame n of an interface picture at (x, y) of parent (where the original puts the frame's top

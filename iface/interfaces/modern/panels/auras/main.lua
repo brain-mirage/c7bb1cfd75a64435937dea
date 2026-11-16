@@ -188,7 +188,10 @@ function C:Refresh()
         if ok then
             local kind, unclassified = TK.EffectIcons.Classify(name)
             local icon = Icons.Icon(name)
-            if unclassified and not self.logged[name] then
+            -- s6-ui-core round 165 (the client review's 2.7, its third line): only a server's unknown effect is reported.
+            -- The preview world shown behind the login screen carries unknown names on purpose (MockWorld's "Mystery
+            -- Aura" and "Strange Fog", to show how one is drawn), and a player's log should not open on them.
+            if unclassified and not self.logged[name] and H:IsOnline() then
                 self.logged[name] = true
                 H:LogWarning("effect '" .. name .. "' is not in lua/data/effects.lua; shown with the buffs, unclassified")
             end

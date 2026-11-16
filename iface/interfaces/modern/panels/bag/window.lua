@@ -146,8 +146,10 @@ local function layout(view, expanded)
         b:Hide()
     end
     window.expand:SetText(expanded and "Compact" or "Expand")
-    if view == "grid" then window.grid:Disable() else window.grid:Enable() end
-    if view == "list" then window.list:Disable() else window.list:Enable() end
+    -- s6-ui-core (round 165, the client review's 8.7): the view in use shows as selected, as the Settings tabs do; a
+    -- disabled button read as "not available". Clicking it again changes nothing (Bag:Refresh keeps the same view's place).
+    window.grid:SetSelected(view == "grid")
+    window.list:SetSelected(view == "list")
 end
 
 --- Shows the view: the slots it lists (every slot expanded, else those holding an item), from its scroll position.

@@ -8,9 +8,11 @@
 -- Browse (7, image 50) (205, 205)-(268, 229); the silent transport (11-13, images 46, 48/37 for pause, 47), enabled
 -- by the model's source rule (4a UpdateActionButton), at (36, 305), (110, 305), (184,
 -- 305), 63 x 24; OK (14, image 14) (110, 360)-(173, 384). 4a's other controls (the two volume sliders 2 and 4, the music
--- source 5, the folder 6, the CD drive 8, the order and repeat 9 and 10) are declared by the model, but the shared
--- renderer/commands do not wire them yet. The picture shows their captions; the Sound page keeps the settings
--- (a known limitation).
+-- source 5, the folder 6, the CD drive 8, the order and repeat 9 and 10) are the shared renderer's
+-- (shared/components/dialogs/music.lua), wired to the model as the rest are; this look puts them on 4a's rectangles
+-- (placeControls, s6-ui-core round 66) and draws the source, order and repeat as 4a's radios (paint). The picture shows
+-- their captions. The dialog's values are kept in the Sound settings (components/audio/settings.lua,
+-- RememberMusicDialog); an audio CD is not played (the CD source is silent, music.lua's tip says so).
 --
 -- The paper (EditablePaperPane::BuildControlsWithText 0x00545250, DrawBorder 0x005459B0, DrawBackground 0x00545D50): its
 -- size from the packet, (columns + 2) x (rows + 3) cells of 16 pixels, at its slot 7 (L.Place: centred on (512, 384), as

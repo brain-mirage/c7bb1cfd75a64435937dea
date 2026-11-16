@@ -280,10 +280,11 @@ function make.TitleBand(S, f)
 end
 
 --- Apply the shared button's persistent selection to a Lua-built or shell-built button (round 134).
---- The one-of group still owns selection and clicks; this only changes the normal face and caption.
-function make.ButtonSelection(S, b, normal, style)
+--- The one-of group still owns selection and clicks; this only changes the normal face and caption. caption, when given,
+--- is an unselected button's caption colour in place of the style's (the login's mode tabs, round 165).
+function make.ButtonSelection(S, b, normal, style, caption)
     local base = style == "red" and S.red or S.buttonGrey
-    local caption = style == "red" and S.gold or S.buttonText
+    caption = caption or (style == "red" and S.gold or S.buttonText)
     --- s6-ui-core (round 63): a persistent selection for one-of groups; ordinary buttons keep their usual look.
     function b:SetSelected(on)
         self.selected = on and true or false

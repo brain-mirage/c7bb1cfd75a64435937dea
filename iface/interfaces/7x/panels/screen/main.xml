@@ -60,9 +60,11 @@
     <run call="Build"/>
   </frame>
   <!-- the chat backdrop (ChattingBackPane, mode 1): palette index 128 of BARAM.PAL (black) over the scene, which keeps
-       70 %, on (9, 596)-(816, 720) -->
+       22 of 32 parts (CHAT's mode1, 10 of 32 covered: alpha 0.3125), on (9, 596)-(816, 720). GA-3 client round 15 (the
+       client review's pass 45): it started at 0.3, not its table's 10 of 32 -->
   <frame name="TK7xChatBackdrop" key="chatBackdrop" parent="UIParent" FrameStrata="LOW">
-    <data key="piece" setting="chatBackdrop" id="chatbackdrop" label="7.x Chat Backdrop" rect="9, 596, 816, 720" alpha="0.3"/>
+    <data key="piece" setting="chatBackdrop" id="chatbackdrop" label="7.x Chat Backdrop" rect="9, 596, 816, 720"
+          alpha="0.3125"/>
     <run call="Build"/>
   </frame>
 </ui>

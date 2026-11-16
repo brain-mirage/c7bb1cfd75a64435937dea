@@ -4,7 +4,9 @@
 
 local H = __tk
 local SECTION = "local_server"
-local MAX_PORT = 65529 -- the first port: the server takes it and the six after it
+-- The first port's top: the server takes it, the next one and the fifth after it (rs3's login, map and char ports;
+-- ServerHost.PortOffsets).
+local MAX_PORT = 65530
 
 local function int(key) return H:ClientSettingInt(SECTION, key) end
 
@@ -54,7 +56,7 @@ TK.LocalServerNode = { id = "localserver", title = "Local Server", order = 891, 
         { type = "description", name = function() return H:ClientSettingString(SECTION, "path") == "" and "Folder: bundled server" or "Folder: custom" end },
         { type = "header", name = "Connections" },
         { type = "input", name = "First Port", live = true,
-          desc = "The server takes the first port and the six after it.",
+          desc = "The server takes three ports: this one, the next one and the fifth after it.",
           get = function() return tostring(int("port")) end,
           set = function(_, text)
               local n = number(text, 1, MAX_PORT)
@@ -86,9 +88,9 @@ TK.LocalServerNode = { id = "localserver", title = "Local Server", order = 891, 
               end,
               default = function() return H:ClientSettingDefaultString(SECTION, "address") end },
         } },
-        { type = "description", name = "The address is the one it "
-            .. "gives the players; empty, it is this computer's LAN address. Players outside this network need the router "
-            .. "to forward the seven ports to this computer, and the address here to be the network's public one." },
+        { type = "description", name = "The address is the one it gives the players; empty, it is this computer's LAN "
+            .. "address. Players outside this network need the router to forward the server's three ports to this "
+            .. "computer, and the address here to be the network's public one." },
         { type = "header", name = "The Server's Settings" },
         rate("xp_rate", "Experience Rate"),
         rate("drop_rate", "Drop Rate"),

@@ -73,17 +73,40 @@ function CH.PlaceFigure(figure, key, w, h)
     figure:SetSize(w * scale, h * scale)
 end
 
---- The Character tab's two stat columns as text (the Library's Overview shows a character's the same way): vita, mana,
---- experience and gold; Might, Will and Grace.
-function CH.StatsText(hp, hpMax, mp, mpMax, experience, gold)
+--- The Character tab's two stat blocks as rows { name, value }: vita, mana, experience and gold; Might, Will and Grace.
+local function statRows(hp, hpMax, mp, mpMax, experience, gold)
     local F = TK.Util.FormatNumber
-    return string.format("Vita  %s / %s\nMana  %s / %s\nExperience  %s\nGold  %s", F(hp or 0), F(hpMax or 0), F(mp or 0),
-        F(mpMax or 0), F(experience or 0), F(gold or 0))
+    return { { "Vita", F(hp or 0) .. " / " .. F(hpMax or 0) }, { "Mana", F(mp or 0) .. " / " .. F(mpMax or 0) },
+        { "Experience", F(experience or 0) }, { "Gold", F(gold or 0) } }
 end
 
-function CH.StatsText2(might, will, grace)
-    return string.format("Might  %d\nWill  %d\nGrace  %d", might or 0, will or 0, grace or 0)
+local function statRows2(might, will, grace)
+    return { { "Might", string.format("%d", might or 0) }, { "Will", string.format("%d", will or 0) },
+        { "Grace", string.format("%d", grace or 0) } }
 end
+
+--- Rows as one text, "name  value" a line (the Library's Overview).
+local function asText(rows)
+    local lines = {}
+    for i, r in ipairs(rows) do lines[i] = r[1] .. "  " .. r[2] end
+    return table.concat(lines, "\n")
+end
+
+--- Rows as two columns' texts, the names' and the values' (s6-ui-core round 165, the client review's 8.6: the Character
+--- tab's numbers line up in a column of their own).
+local function asColumns(rows)
+    local names, values = {}, {}
+    for i, r in ipairs(rows) do names[i], values[i] = r[1], r[2] end
+    return table.concat(names, "\n"), table.concat(values, "\n")
+end
+
+--- The stat blocks as text (the Library's Overview shows a character's so).
+function CH.StatsText(...) return asText(statRows(...)) end
+function CH.StatsText2(...) return asText(statRows2(...)) end
+
+--- The stat blocks as a names column and a values column (the Character tab).
+function CH.StatsColumns(...) return asColumns(statRows(...)) end
+function CH.StatsColumns2(...) return asColumns(statRows2(...)) end
 
 --- A colour of the base palette (BARAM.PAL), or black without the packs (the legend's backdrop is light).
 local function paletteColour(index)

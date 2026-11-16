@@ -87,7 +87,7 @@ end
 -- one place (docs/development/interfaces.md, the `pregame` part). scene: the host's login scene, drawn behind the
 -- UI (Modern's); picture: the texture the screens show where the scene is off or cannot run. An interface faithful to the
 -- original would give the original's title picture (TK.Art.Image("TITLE.EPF")) and no scene. Read as the screens are
--- built.
+-- shown (the picture where a screen first shows it without the scene: showBackground).
 L.background = { scene = true, picture = "tk:login-bg" }
 
 local fullScreens = {}
@@ -109,14 +109,23 @@ local function showBackground()
     -- s6-ui-login (round 10): held still with the machine setting Disable Login Page Animations (interface/settings.lua)
     H:SetLoginSceneStill(TK.Machine:Get() ~= nil and TK.Machine:Get().disableLoginAnimations == true)
     local scene = H:ShowLoginScene(shown and L.background.scene == true and presentation == nil)
-    for _, f in ipairs(fullScreens) do f.background:SetShown(not scene) end
+    for _, f in ipairs(fullScreens) do
+        -- GA-3 (client round 5, the client review's 4.40): the picture is set where a screen first shows it, not as the
+        -- screen is built: setting a texture makes its art at once (640x360, kept for the run), and the scene covers it
+        -- on every device that can draw the scene. Drawing only.
+        if not scene and not f.pictureSet and f:IsShown() then
+            f.background:SetTexture(L.background.picture)
+            f.pictureSet = true
+        end
+        f.background:SetShown(not scene)
+    end
 end
 
 -- The shell draws both full-screen pages. Lua keeps their opening/closing and the background's lifetime.
 local function fullScreen(name, subtitle, part)
     local f = TK.NameShellFrame(shellPart(part), name)
+    -- its picture: showBackground
     f.background, f.version = shellPart(part .. ".background"), shellPart(part .. ".version")
-    f.background:SetTexture(L.background.picture)
     f.version:SetText(L.VersionText(H:GetBuildVersion()))
     local content = TK.NameShellFrame(shellPart(part .. ".content"), name .. "Content")
     f.subtitle = shellPart(part .. ".subtitle")
@@ -860,7 +869,9 @@ local function buildScreen()
     for i, mode in ipairs({ "online", "offline", "server" }) do
         local b = shellButton("screen.mode." .. mode)
         b:SetParent(screen.modes)
-        W.ButtonSelection(b, shellPart("screen.mode." .. mode .. ".normal"))
+        -- s6-ui-core (round 165, the client review's 8.7): an unselected mode's caption in the status text's light grey;
+        -- the buttons' own gold-grey on the dark face read as disabled.
+        W.ButtonSelection(b, shellPart("screen.mode." .. mode .. ".normal"), nil, { 0.8, 0.8, 0.85 })
         b:SetPoint("LEFT", screen.modes, "LEFT", (i - 1) * 109, 0)
         screen.modes:Add(b, mode)
         screen.modeButtons[mode] = b
@@ -1645,22 +1656,32 @@ function L:StepStyle(step)
     updatePreview()
 end
 
--- s6-ui-core (round 62): the shared stepper (W.Stepper), its [<] and [>] where they were; a step round the look's values
-local function stepper(parent, label, y, count, key)
+--- The totems by the look's value (1-4; the create sends it less one, 0-3), as 7.x's status view names them
+--- (interfaces/7x/panels/side/selflook.xml's SPIRITS). Strings 212-215 are their descriptions, not their names.
+local TOTEMS = { "Ju jak", "Baekho", "Hyun moo", "Chung ryong" }
+
+-- s6-ui-core (round 62): the shared stepper (W.Stepper), its [<] and [>] where they were; a step round the look's values.
+-- Round 165 (the client review's 8.7): opts.first is the first value (1, or 0 for the gender's) and opts.text a value's
+-- name (a totem's, the gender's) in place of "n / count"; the labels narrower so a name fits left of the preview.
+local function stepper(parent, label, y, count, key, opts)
+    opts = opts or {}
+    local first = opts.first or 1
     local s
     local function show()
-        s:SetValue(tostring(create.look[key]) .. " / " .. count)
+        local value = create.look[key]
+        s:SetValue(opts.text and opts.text(value) or (tostring(value) .. " / " .. count))
         updatePreview()
     end
     s = W.Stepper(parent, label, function(step)
-        create.look[key] = (create.look[key] - 1 + step) % count + 1
+        create.look[key] = (create.look[key] - first + step) % count + first
         show()
-    end, { labelWidth = 130, valueWidth = 60, size = 13 })
+    end, { labelWidth = 110, valueWidth = 84, size = 13 })
     s:SetPoint("TOPLEFT", parent, "TOPLEFT", 250, y + 4)
     create.steppers[key] = show
     -- Named for a driver's clicks (gate mode logs them; round 40's pictures of the styles): TKCreateHairColourNext...
     local name = "TKCreate" .. label:gsub(" ", "")
     _G[name .. "Prev"], _G[name .. "Next"] = s.back, s.forward
+    return s
 end
 
 local function buildCreate()
@@ -1684,9 +1705,10 @@ local function buildCreate()
     local pv = TK.NameShellFrame(shellPart("create.preview"), "TKCreatePreview")
     pv.figure, pv.none, pv.note = shellPart("create.figure"), shellPart("create.none"), shellPart("create.note")
     pv.note:SetText(L.NOT_IN_STYLE)
-    -- The style arrows under the cell (round 37), the style's name between them (round 62: the shared stepper).
-    local styles = W.Stepper(p, nil, function(step) L:StepStyle(step) end, { valueWidth = 96 })
-    styles:SetPoint("TOP", pv, "BOTTOM", 0, -4)
+    -- The style arrows under the cell (round 37), the style's name between them (round 62: the shared stepper). Round 165
+    -- (the client review's 8.7): captioned; the caption hangs left of the cell, so the arrows stay centred under it.
+    local styles = W.Stepper(p, "Style", function(step) L:StepStyle(step) end, { labelWidth = 44, valueWidth = 96 })
+    styles:SetPoint("TOP", pv, "BOTTOM", -22, -4)
     pv.styleName, pv.stylePrev, pv.styleNext = styles.value, styles.back, styles.forward
     _G.TKCreateStylePrev, _G.TKCreateStyleNext = pv.stylePrev, pv.styleNext   -- named for the gate's driver
     pv.turn = shellButton("create.turn", function()
@@ -1700,17 +1722,16 @@ local function buildCreate()
     -- straight from here (s6-ui-core round 41, Astra's review of 7d91f551; s6-login-scene's row, taken by the UI job).
     create:HookScript("OnHide", function() if Styles then Styles.PreviewDone() end end)
 
-    create.gender = shellButton("create.gender", function()
-        create.look.gender = 1 - create.look.gender
-        create.gender:SetText(create.look.gender == 0 and "Male" or "Female")
-        updatePreview()
-    end)
-    _G.TKCreateGender = create.gender   -- named for a driver's clicks, as the steppers
+    -- Round 165 (the client review's 8.7): the gender a stepper as every other choice (it was a button). Its [>] keeps the
+    -- old button's name for a driver's clicks (tools/ui-live's creation_styles.py): with two values a step is a toggle.
+    local gender = stepper(p, "Gender", -20, 2, "gender",
+        { first = 0, text = function(v) return v == 0 and "Male" or "Female" end })
+    _G.TKCreateGender = gender.forward
     stepper(p, "Hair", -50, 18, "hair")
     stepper(p, "Hair Colour", -80, 16, "hairColour")
     stepper(p, "Face", -110, 12, "face")
     stepper(p, "Face Colour", -140, 16, "faceColour")
-    stepper(p, "Totem", -170, 4, "totem")
+    stepper(p, "Totem", -170, 4, "totem", { text = function(v) return TOTEMS[v] end })
 
     -- WIRE: the same clicks still reach SubmitCreateUser (0x0052ED80, then 0x0052F160's look) or CancelCreate.
     -- The shell adds no command handlers; changing this input path changes what the server sees.
@@ -1739,11 +1760,10 @@ function L:CreateMessage(text, progress)
     presentation.Message(text, progress)
 end
 
---- The look's gender and steppers as the look is now (each stepper draws the preview again); an interface's own dialog
---- draws it its way.
+--- The look's steppers, the gender's among them, as the look is now (each stepper draws the preview again); an
+--- interface's own dialog draws it its way.
 local function showLook()
     if create.ShowLook then return create.ShowLook() end
-    create.gender:SetText(create.look.gender == 0 and "Male" or "Female")
     for _, show in pairs(create.steppers) do show() end
 end
 

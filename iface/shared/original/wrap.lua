@@ -1,8 +1,8 @@
 -- s6-devtools (round 5; the interface separation's step 5: docs/development/interface-separation.md 4.4, open question
 -- 49): the original client's word wrap of its message lists, for any interface that draws one. Moved from 5.x's message
 -- board (interfaces/5x/panels/board/main.lua, C.Cut, s6-interface-5x), which follows 4a's code line by line; 7.x's
--- messages pane has its own reading of the same function (interfaces/7x/panels/messages/main.lua, C.Wrap). Drawing
--- only: nothing here is sent.
+-- messages pane cuts its messages with it too (interfaces/7x/panels/messages/main.lua, C.Wrap). Drawing only: nothing
+-- here is sent.
 
 local Wrap = {}
 

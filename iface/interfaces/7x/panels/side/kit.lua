@@ -179,11 +179,28 @@ end
 
 --- The longest start of text that fits width pixels of font 0, broken after a space where there is one (the space
 --- dropped), else inside the word; and the rest.
+--- GA-3 client round 12 (the client review's pass 42): the start is found by halving over whole characters, not by
+--- measuring it again for each further byte. A longer start is never narrower (S.TextWidth sums its glyphs' advances),
+--- so where the byte-by-byte search ended on a whole character this is the same start, in a handful of measures a line
+--- in place of one a byte. A start is never cut inside a character: that search measured such a cut as nothing (nil)
+--- and so could end a line inside one (Astra's pass 1).
 local function fit(text, width)
     local w = S.TextWidth(text)
     if not w or w <= width then return text, "" end
-    local n = 1
-    while n < #text and (S.TextWidth(text:sub(1, n + 1)) or 0) <= width do n = n + 1 end
+    -- the byte each character ends on
+    local ends = {}
+    for at in utf8.codes(text) do
+        if at > 1 then ends[#ends + 1] = at - 1 end
+    end
+    ends[#ends + 1] = #text
+    -- the first lo characters fit (or lo is 1, the first always taken, as before) and the first hi do not: the whole
+    -- text to begin with
+    local lo, hi = 1, #ends
+    while hi - lo > 1 do
+        local mid = math.floor((lo + hi) / 2)
+        if (S.TextWidth(text:sub(1, ends[mid])) or 0) <= width then lo = mid else hi = mid end
+    end
+    local n = ends[lo]
     local space = text:sub(1, n + 1):match("^.*() ")
     if space and space > 1 then return text:sub(1, space - 1), text:sub(space + 1) end
     return text:sub(1, n), text:sub(n + 1)

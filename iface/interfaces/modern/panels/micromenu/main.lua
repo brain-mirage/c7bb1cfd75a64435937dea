@@ -130,14 +130,15 @@ function scripts.PortraitChanged(_, _, unit)
 end
 
 -- Mail and Parcel, while shown: "some" or "none" as the minimap's icons, looked at twice a second as the minimap does
--- (its wait is this build's).
+-- (its wait is this build's). GA-3 client round 13 (the client review's pass 45): whether either is shown is looked at
+-- on the same beat, not every frame.
 function scripts.Ticker(f)
     local wait = 0
     f:SetScript("OnUpdate", function(_, elapsed)
-        if not (C.mail:IsShown() or C.parcel:IsShown()) then return end
         wait = wait - elapsed
         if wait > 0 then return end
         wait = 0.5
+        if not (C.mail:IsShown() or C.parcel:IsShown()) then return end
         -- s6-reprojection-cloud-1 (run 83, Astra 82-48): only these two follow the look; the others change on their events
         C:ShowIcon(C.mail.def)
         C:ShowIcon(C.parcel.def)
