@@ -154,6 +154,7 @@ function C:Refresh()
         self.look = win.look or inUse
         local ok, err = pcall(win.renderer.update, win, view)
         if not ok then __tk:LogError("dialog window " .. view.name .. ": " .. tostring(err)) end
+        K.FitBoxes(win, view)
         win.updating = false
         win.opened = false
         -- s6-sandbox (round 12): from the trade window up, the stack is on the client's own layer (FULLSCREEN_DIALOG, which
@@ -163,7 +164,8 @@ function C:Refresh()
         if (TK.LOST_CONNECTION_DIALOGS or {})[view.name] then raised = true end -- s6-ui-core (round 33, review r32 P2 1): over the cover
         win:SetFrameStrata(raised and "FULLSCREEN_DIALOG" or win.builtStrata or "DIALOG")
         win:SetFrameLevel(10 + i * 20)
-        win:SetShown(view.visible and not win.renderer.hidden)
+        -- a window standing in for one drawn elsewhere (the minimap's, in a look without its own: misc.lua) never shows
+        win:SetShown(view.visible and not win.renderer.hidden and not win.standIn)
         K.ShowState(win, view)
         self.look = inUse
     end
@@ -304,6 +306,14 @@ function TK.Dialogs.ParcelParent() return C:ParcelParent() end
 --- A renderer of a class from outside the component (the macros' Macro Setup): see the renderer's shape at the top.
 function TK.Dialogs.RegisterRenderer(class, r) C.renderers[class] = r end
 
+--- s6-ui-core (round 171): whether the look in use draws a class's window with an entry of its own (7.x's minimap),
+--- rather than the shared default's (core/global/mapwindow.lua stands in for the minimap only without one). Drawing
+--- only.
+function TK.Dialogs.Draws(class)
+    local r = C.renderers[class]
+    return r ~= nil and drawnBy(r, class) ~= D
+end
+
 --- A class's windows kept hidden while its dialog is open (settings' music page stands for the music dialog).
 function TK.Dialogs.SetHidden(class, on)
     local r = C.renderers[class]
@@ -324,6 +334,9 @@ TK.Dialogs.SlideShield = K.SlideShield
 --- The key hook (bindings.lua): true when the key was the dialogs'.
 function TK.DialogKeyHook(key)
     if H:DialogRevision() ~= revision then C:Refresh() end
+    -- Client review 2.44. WIRE: while a dialog list's scroll bar holds a press, 4a's ScrollPane takes every key for
+    -- nothing (K.BarHeld: no renderer key, no model key, no binding). Changing it changes what the server gets.
+    if K.BarHeld() then return true end
     local win = C:KeyWindow()
     if win then
         if win.renderer.key then win.renderer.key(win, key) end

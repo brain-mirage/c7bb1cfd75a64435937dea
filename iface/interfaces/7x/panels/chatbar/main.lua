@@ -192,7 +192,7 @@ function C:Layout() Screen.PlacePanel(self, 1024, 768, L.PLACE[1], L.PLACE[2]) e
 function C:ApplySettings() self:Layout() end
 
 Screen.Follow(C, "Layout")
--- 4a clears all three pressed flags on every left release (ChattingPane.cpp:1298-1300), even outside the bar.
+-- 4a clears all three pressed flags on every left release (ChattingPane.cpp:1302-1304), even outside the bar.
 -- GLOBAL_MOUSE_UP runs before the target's script: retain this release's origin for OnMouseUp, then clear the held
 -- state. A swallowed release has no script and cannot act. No capture is added; changing this path changes the wire.
 TK.On("GLOBAL_MOUSE_UP", function(_, button)

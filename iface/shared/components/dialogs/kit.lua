@@ -99,6 +99,14 @@ end
 --- same number): the dialog's part of the press runs, its list's does not (4a's ListPane::OnMouseEvent returns false).
 K.ROW_MISS = 0x7F
 
+--- Client review 2.40: a press on a list's scroll bar (its thumb, arrows or track), the list control's but no row's.
+--- Wire: 4a's ScrollableControlPane gives it to its ScrollPane, outside the rows (ScrollPane.cpp:955), so no row is
+--- activated (ListPane.cpp:260: a double activates only a row hit) and the user list queries no hunter
+--- (UserListDialogPane.cpp:822); the board and mail lists still read their end after it (3B 02). The model takes this
+--- part as such (DialogActions.BarHit, Dialog.Click). Posting a bar press as a row's sends the selected row's answer (3A)
+--- or a hunter's query (85).
+K.BAR_HIT = 0x7E
+
 --- A pointer move while a press on one of the window's controls is held (round 8): 4a hands it to the pressed control,
 --- with the values after it (a list's scroll bar dragged to its end asks for older rows).
 function K.Move(win, control)
@@ -112,6 +120,30 @@ function K.Wheel(win, control)
     if not win.serial then return end
     local x, y = GetCursorPosition()
     H:DialogWheel(win.serial, control, K.Values(win), math.floor(x), math.floor(y))
+end
+
+--- Client review 2.44 (Astra's pass 8): the list whose scroll bar holds the left press (K.heldBar), or nil to end it;
+--- the held list takes the wheel meanwhile (Frame:SetWheelCapture on its area). WIRE: 4a's ScrollPane has the input's
+--- capture from that press to its release (ScrollPane.cpp:125, :134), and EventDispatcher hands the capture's source,
+--- the holding DialogPane, every pointer event, the wheel too, even under a newer dialog (EventDispatcher.cpp:258,
+--- DialogPane.cpp:388): a covering NPC list turned instead and the mail list never asked for older rows (3B 02).
+local function holdBar(list)
+    local held = K.heldBar
+    if held == list then return end
+    if held then held.sf:SetWheelCapture(false) end
+    K.heldBar = list
+    if list then list.sf:SetWheelCapture(true) end
+end
+
+--- Client review 2.44 (Astra's pass 7): whether a dialog list's scroll bar holds a left press (K.heldBar, set by the
+--- thumb's or bar's accepted press, cleared by its release: list:ThumbRelease). WIRE: 4a's ScrollPane then has the
+--- capture and declines every key (ScrollPane.cpp:125, :178; EventDispatcher.cpp:279), so the dialogs' key hook
+--- (main.lua TK.DialogKeyHook) takes the key for nothing: an arrow there moved an NPC list's answer before the model
+--- declined the key (DialogRules' ModalInput), and the next 3A named it. Changing it changes what the server gets.
+function K.BarHeld()
+    local held = K.heldBar
+    if held and not held.sf:IsVisible() then holdBar(nil); held = nil end -- its window went with it
+    return held ~= nil
 end
 
 --- A key-down for the window's dialog, with its values.
@@ -128,15 +160,98 @@ local function hitControl(frame, index)
     return index or frame.__dialogControl
 end
 
---- The control of this window under the pointer and its part, or -1.
+--- The control of win at (x, y) in UIParent units, as DialogPane::HitTestControls (0x0049FB10) finds it: the
+--- highest-indexed control whose rectangle holds the point, or -1; and the scroll bar frame it hit, if any.
+--- Client review 2.29. Wire: 4a's PointInRect (0x004B7E80) takes the left and top edges and leaves the right and bottom
+--- ones; UIParent's y runs up, so the top edge is b + h (taken) and the bottom b (left). Changing the edges changes which
+--- control a press on one picks.
+--- Client review 2.44 (Astra's passes 6 and 7). WIRE: a list's control is 4a's ListPane with its scroll bar (ScrollPane,
+--- ScrollPane.cpp:955), so the bar (the kit's thumb or track, 7.x's 4a bar right of the rows, or 5.33's own bar:
+--- list.nativeBar) is the list's control too; the list's frame ends at its bar. Changing it changes which control a
+--- press there reaches, and whether its list pages (3B 02).
+local function within(f, x, y)
+    local l, b, w, h = TK.Util.RootRect(f)
+    return l and x >= l and x < l + w and y > b and y <= b + h
+end
+local function hitAt(win, x, y)
+    local function holds(f) return within(f, x, y) end
+    local best, bar = -1, nil
+    for index, f in pairs(win.controls or {}) do
+        if index > best and f:IsVisible() then
+            local hit
+            if f.list then
+                local native = f.list.nativeBar and f.list.nativeBar.frame
+                if native and native:IsVisible() and holds(native) then hit = native
+                elseif f.thumb and f.thumb:IsVisible() and holds(f.thumb) then hit = f.thumb
+                elseif f.track and f.track:IsVisible() and holds(f.track) then hit = f.track end
+            end
+            if hit or holds(f) then best, bar = index, hit end
+        end
+    end
+    return best, bar
+end
+
+--- Client review 2.44 (Astra's passes 9 to 11): a wheel turn a dialog got outside its place goes to the side panel's
+--- shown page whose bounds hold the pointer (7.x's side panel: its WheelAt), or nowhere. WIRE: 4a's DialogPane
+--- forwards an event outside its bounds to the GeneralPurposePanel's active child pane by that pane's bounds
+--- (DialogPane.cpp:404, :427-430; its tab strip takes no wheel), so a turn there while a dialog's bar holds the press
+--- still moves the spell list, its blank band too (SpellInventoryPane.cpp:679), whose row a later click casts (0F);
+--- dropping it changes that slot.
+local function sidePaneWheel(delta)
+    local side = TK.GetComponent("7x.side")
+    if not (side and side.WheelAt) then return end
+    local x, y = TK.Util.CursorRoot()
+    side:WheelAt(x, y, delta)
+end
+
+--- Client review 2.44 (Astra's pass 9): the window's held press ended with no release of its own (the host swallowed it,
+--- UIHost.MouseUp: 7.x's item box shown): a drawn drag stops and the held bar lets go (5.33's bar's repeat, the kit's
+--- timer, the hold and its wheel capture: list:ThumbRelease) with nothing posted. WIRE: the model's capture ends with the
+--- physical release (DialogRules, as 4a's at ScrollPane.cpp:134); posting a release here would send a second input
+--- record, and keeping the hold kept taking the window's keys (an arrow lost, so the next 3B 03 named the old row).
+function K.CancelPress(win)
+    local bar = win.__pressedBar
+    win.__pressedBar = nil
+    local stop = bar and bar:GetScript("OnDragStop")
+    if stop then stop(bar) end
+    local held = K.heldBar
+    if held and held.sf.__dialogWin == win and not (held.nativeBar and held.nativeBar:Cancel()) then held:ThumbRelease() end
+end
+
+--- Client review 2.42 (Astra's passes 5 and 15). WIRE: 4a's HitTestPart gives 10 for a point on no part of a radio
+--- group (its gap, RadioGroupControlPane 0x00496270) or of a slider (off its parts 13-17, SliderControlPane
+--- 0x00496800), and DialogPane::HandlePointerOrMouseEvent (0x0049E240, DialogPane.cpp:318-331) takes such a press as
+--- its background drag: no control is focused or tracked, and a release there commands nothing (:376-386). A frame
+--- whose part 10 means that (frame.__noPart: the user list's sort, the music sliders) posts it as outside the
+--- dialog's controls (-1); every other part keeps its number (the fitting room's entries count from 1). Tracking the
+--- gap let the sort's radio take its release and reorder the rows a row press asks 85 for; changing it changes what
+--- the server sees.
+K.NO_PART = 10
+local function onPart(frame, index, part)
+    if part == K.NO_PART and frame and frame.__noPart then return -1, 0 end
+    return index, part
+end
+
+--- The control of this window under the pointer and its part, or -1. While a slide's shield holds a press, at the
+--- shield's moved point (win.__pointAt; dialogkit.lua X.SlideOpen), as 4a hit-tests the queued release against the
+--- window at its place (client review 2.44).
+--- Client review 2.42 (Astra's pass 5). WIRE: at the shield's point a control with options (f.PartAt: the user list's
+--- sort radio) gives the option there, as RadioGroupControlPane::HitTestPart (0x00496270) does for 4a's release; the
+--- option the radio takes orders the rows a row press asks 85 for, so part 0 there changed what the server sees.
 local function controlUnderPointer(win)
+    if win.__pointAt then
+        local x, y = win.__pointAt()
+        local best = hitAt(win, x, y)
+        local c = win.controls[best]
+        return onPart(c, best, c and c.PartAt and c:PartAt(x, y) or 0)
+    end
     local f = GetMouseFocus()
     while f do
         if f.__dialogWin == win and f.__dialogControl then
             -- 4a DialogPane::HandlePointerOrMouseEvent 0x0049E240 hit-tests Up afresh after the control releases.
             -- Reusing a slider's pressed part can refresh enables and expose extra shared C12 draws to the wire path.
             local part = f.__dialogPart
-            return hitControl(f), (type(part) == "function" and part(false) or part) or 0
+            return onPart(f, hitControl(f), (type(part) == "function" and part(false) or part) or 0)
         end
         f = f.__dialogParent
     end
@@ -174,7 +289,9 @@ function K.Wire(win, frame, index, before, part)
         local pressedPart = type(part) == "function" and part(true) or part
         -- s6-characters r51: the same optional bounds as the release (0x0049FB10 / 0x004B7E80); changing the hit changes
         -- which control the model tracks and therefore which reply the server receives.
-        K.Pointer(win, hitControl(frame, index), button, true, pressedPart)
+        -- 2.42: a press on no part of a radio or a slider is the dialog's background (onPart, above)
+        local target, targetPart = onPart(frame, hitControl(frame, index), pressedPart)
+        K.Pointer(win, target, button, true, targetPart)
     end)
     frame:HookScript("OnMouseUp", function(_, button)
         local over, overPart = controlUnderPointer(win)
@@ -187,6 +304,18 @@ end
 --- button keeps its checked texture under the same name, frame.lua's SetCheckedTexture).
 local function kitCheck(c) return c ~= nil and type(c.__checked) == "boolean" end
 
+--- Client review 2.28: a pickOnRelease list's left release takes the row under it (x, y in UIParent units), before the
+--- release is posted, so the release's values carry it. Wire: RankingEventListPane::HandlePointerOrMouseEvent
+--- (0x0045B460, RankingEventScrollPane.cpp:736-752) picks nothing on the press and hit-tests the release (HitTestRow):
+--- a row other than the selected one is selected and its page asked for (7D 02); no row leaves the selection. Changing
+--- it changes which category's 7D 02 the server gets.
+local function pickOnRelease(list, x, y)
+    local row = list:HitRow(x, y)
+    if not row then return end
+    list:Pick(row, IsShiftKeyDown(), IsControlKeyDown())
+    if list.onSelect then list.onSelect(row) end
+end
+
 --- s6-rules-dialogs (round 34; s6-modular-g round 11's note): a press or release on a window that is sliding open, given
 --- to the control that is at its point once the window is at its place. A look that animates the slide catches the
 --- presses over the window's place and calls this from each one's own event (the host posts one record per physical
@@ -198,7 +327,10 @@ local function kitCheck(c) return c ~= nil and type(c.__checked) == "boolean" en
 --- its own press would (list:RowAt, ListPane::HitTestItem's clamp), or a press that hits none is the dialog's alone
 --- (K.ROW_MISS). The record waits too: the model's own stall for the slide (Dialog.Slide) holds it until then. Changing
 --- which control or row this picks changes what the client sends.
---- (A radio group's option is not told apart here: no sliding dialog has one.)
+--- Client review 2.42 (Astra's pass 5): a control with options (f.PartAt: the user list's sort radio, which slides
+--- open) gives the option at the point, on the press and on the release (RadioGroupControlPane::HitTestPart 0x00496270:
+--- 0x40 + i, or 10 off both). Part 0 there made a click on the active option turn the sort over, which changes the
+--- name a row press asks 85 for.
 --- s6-modular-g (Astra's review of round 12, 3): a release over the control that had the press is then that control's
 --- click, as the host gives it after the release's own scripts (UIHost.MouseUp): a check box toggles (UICheckButton's
 --- BeforeClick; K.Check's own state in its OnClick, which posts that release itself), so the dialog's OK reads the box as
@@ -210,25 +342,57 @@ local function kitCheck(c) return c ~= nil and type(c.__checked) == "boolean" en
 --- its release is posted, but it makes no click, for any control (a check box, a button, the user list's sort). A click
 --- there toggled the hunters box twice, so OK sent 84 00 where 4a sends 84 01; changing it changes the reply.
 function K.PressAt(win, x, y, button, down, double)
-    if not (win.serial and win:IsShown()) then return end
-    local best = -1
-    for index, f in pairs(win.controls or {}) do
-        if index > best and f:IsVisible() then
-            local l, b, w, h = TK.Util.RootRect(f)
-            if l and x >= l and x < l + w and y >= b and y < b + h then best = index end
+    local left = button == "LeftButton"
+    if not (win.serial and win:IsShown()) then
+        -- client review 2.44 (Astra's pass 7, P2): a held bar's drawn drag ends with its window
+        if not down and left and win.__pressedBar then
+            local held = win.__pressedBar
+            local stop = held:GetScript("OnDragStop")
+            win.__pressedBar = nil
+            if stop then stop(held) end
         end
+        return
     end
+    -- Client review 2.44 (Astra's passes 6 and 7). WIRE: a press on a list's scroll bar (hitAt) is the bar's press (its
+    -- own OnMouseDown, below: 4a's thumb or track press, then 3B 02 at a board's or the mail list's end).
+    local best, bar = hitAt(win, x, y)
     local f = win.controls[best]
     local list = f and f.list
     local part
     -- s6-input (round 43; Astra's self-review): the pressed control and row are the left press's, the one 4a's DialogPane
     -- tracks (HandlePointerOrMouseEvent 0x0049E240: type 1 only); a right press or release between keeps them, so the
     -- left release still reaches the tracking list (its tick's stop) and the held moves still go to it.
-    local left = button == "LeftButton"
-    if down and left then win.__pressedRow = nil end
+    if down and left then win.__pressedRow, win.__pressedBar = nil, nil end
+    if down and bar then
+        -- 2.44: the bar's own press, at the shield's point (K.List's pointer and 5.33's Bar:Pointer read win.__pointAt).
+        -- An ordinary left press holds it (4a's capture): the held moves (K.PressedMoveAt) and the release (below) are
+        -- the bar's, and a thumb that drags its drawn list (K.List) drags it from here, as its own drag would. 5.33's bar
+        -- passes a double's second press on (scrollbar.lua): here it is the list's bar press alone, which the model
+        -- ignores (2.40: Dialog.Click).
+        local native = list.nativeBar and bar == list.nativeBar.frame
+        if native and double then return K.Pointer(win, best, button, true, K.BAR_HIT) end
+        bar:GetScript("OnMouseDown")(bar, button, double)
+        if left and not double then
+            win.__pressedBar = bar
+            local drag = bar:GetScript("OnDragStart")
+            if drag then drag(bar) end
+        end
+        return
+    end
+    if not down and left and win.__pressedBar then
+        -- 2.44: the held bar's release, by its own OnMouseUp (4a's ResetScrollState, then the release to the control
+        -- under the shield's point: controlUnderPointer), after its drawn drag's stop
+        local held = win.__pressedBar
+        win.__pressedAt, win.__pressedRow, win.__pressedBar = nil, nil, nil
+        local stop = held:GetScript("OnDragStop")
+        if stop then stop(held) end
+        held:GetScript("OnMouseUp")(held, button)
+        return
+    end
     if down and list then
         local row = list:RowAt(y, x)
-        if row and button == "LeftButton" then
+        if left then list:FollowPress(row ~= nil and not double) end -- 2.41: an ordinary press follows
+        if row and button == "LeftButton" and not list.pickOnRelease then -- 2.28: such a list's row is the release's
             list:Pick(row, IsShiftKeyDown(), IsControlKeyDown())
             if list.onSelect then list.onSelect(row) end
             -- s6-input (round 42): K.List's rows, below. Round 43: the row the shield's held moves go to (K.PressedMoveAt).
@@ -239,6 +403,9 @@ function K.PressAt(win, x, y, button, down, double)
         end
         if not row then part = K.ROW_MISS end -- round 35: a press that hits no row is the dialog's alone (below)
     end
+    if f and f.PartAt and not part then part = f:PartAt(x, y) end -- 2.42: a radio's option at the point (above)
+    best, part = onPart(f, best, part) -- 2.42: a radio's gap is the dialog's background press
+    if best == -1 then f = nil end
     if down then
         -- only an ordinary press is tracked (event 1); a double's second press (event 2) leaves none for its release
         if left then win.__pressedAt = not double and best or nil end
@@ -246,7 +413,12 @@ function K.PressAt(win, x, y, button, down, double)
         return K.Pointer(win, best, button, true, part)
     end
     local pressed = left and win.controls[win.__pressedAt or -1] or nil
+    -- 2.41 (Astra's pass 13): a tracked row press's release follows at the shield's point first (list:FollowRelease)
+    local tracked = left and win.__pressedRow and pressed and pressed.list
     if left then win.__pressedAt, win.__pressedRow = nil, nil end
+    if tracked then tracked:FollowRelease() end
+    -- Client review 2.28 (pickOnRelease, above): the pressed list's release over itself takes its row first.
+    if pressed and pressed == f and f.list and f.list.pickOnRelease then pickOnRelease(f.list, x, y) end
     -- s6-input (round 43): the left release reached the pressed list, its window still open (above): its case 3 (below).
     if pressed and pressed.list and not pressed.list.own then H:DialogListReleased() end
     local click = pressed == f and left and f and f.Click
@@ -267,7 +439,8 @@ end
 --- article or mail list's 3B 02 at its end). Not forwarding them leaves a list pressed during the slide unscrolled and
 --- unpaged, which changes what the server sees.
 function K.PressedMoveAt(win)
-    local row = win.__pressedRow
+    -- client review 2.44: or the held scroll bar's (K.PressAt): its moves go to the list, which pages at its end
+    local row = win.__pressedRow or win.__pressedBar
     local move = row and row:GetScript("OnPressedMove")
     if move then move(row) end
 end
@@ -493,6 +666,27 @@ function K.SetEdit(e, text)
     e.__before = text
 end
 
+--- The client review's 2.16: the text the model keeps for each box whose typed text 4a's control could not hold
+--- (TK.Core.Rules.Dialog.TextBox: its width, lines and characters), back in the box, as 4a's control deletes what does
+--- not fit (TextEditPane::EnforceMaxLength 0x00591180, EnforceMaxLines 0x00591200). Wire: the next key types into what
+--- the original's box holds, so the text the dialog posts is the original's; changing it changes what the server gets.
+function K.FitBoxes(win, view)
+    local boxes = view.contents and view.contents.boxes
+    if not boxes then return end
+    for _, box in ipairs(boxes) do
+        local e = win.controls and win.controls[box[1]]
+        if e and e.SetText then
+            local text = K.Text(box[2])
+            -- Wire (Astra's review of 57264cc2bb): not K.SetEdit's caret at the end. 4a's limits delete only what does
+            -- not fit and clamp the selection's ends to what is left (TextEditPane.cpp:1455-1456, :1470-1471), so the
+            -- caret stays where the key left it, as TMP's text setter keeps it (clamped to the new length). At the end,
+            -- a key typed inside a full box would go after its text: 4a's 5612 from 1234, Home, 5, 6 would be 5123.
+            if e:GetText() ~= text then e:SetText(text) end
+            e.__before = text
+        end
+    end
+end
+
 --- A list of rows (single choice, or several with multi): control index, rows drawn by render(row, item, i).
 --- Its selection is the UI's; a press on a row selects it before the press goes to the model. width x height is the
 --- look's; the rows' height is the list's (20 unless the look sets the original's with list:SetRowHeight: s6-modular-g,
@@ -503,7 +697,11 @@ end
 --- Every list is one of 4a's ListPanes (the boards, mail, trade, item and spell menus, NPC questions, the bank, the
 --- powers, the user list), whose press outside the rows picks a row (below). own = true for a list 4a draws with a pane
 --- of its own that does not (the rankings' RankingEventListPane::HitTestRow 0x0045BD10): a press there picks nothing.
-function K.List(win, index, width, height, multi, own)
+--- paneBar: such a pane's own scroll bar (the rankings' categories: RankingEventScrollPane), its rectangle's insets in
+--- the list's, in 4a's pixels ({ top, bottom, right, width }: RankingEventListPane::UpdateRenderRegion 0x0045AF70 puts
+--- it 4 below the list's top, 10 above its bottom, 3 left of its right edge, 15 wide). Its bar takes a wheel turn,
+--- and a held move of its thumb does not move the list (list:ThumbPress below).
+function K.List(win, index, width, height, multi, own, paneBar)
     local sf = W.ScrollArea(win)
     sf:SetSize(width, height)
     -- s6-characters (round 46, step 6): the list's background and its rows' look are the look's (L.List: the default's)
@@ -518,9 +716,34 @@ function K.List(win, index, width, height, multi, own)
     -- (ArticleListPane::HandlePointerOrMouseEvent 0x00474EC0; review r4, 6): each goes to the model with the values
     -- after the scroll. The wheel moves 4a's position (below) by its notches; a look's own drawn list (list:OwnDrawn)
     -- scrolls by W.ScrollArea's step too, a list drawn at 4a's position follows the position.
+    -- Client review 2.47 (Astra's passes 21, 23 to 25): after a page's rebuild under the kit's held thumb, a look's
+    -- own drawn list follows 4a's position until the release, not its drawn drag or its wheel step (list:ToTop,
+    -- setLogical)
+    local drawnFollows
     local wheel = sf:GetScript("OnMouseWheel")
     sf:SetScript("OnMouseWheel", function(self, delta)
-        if list:OwnDrawn() then wheel(self, delta) end
+        -- Client review 2.44 (Astra's passes 8 to 11). WIRE: 4a's DialogPane hit-tests its own controls at the point
+        -- (DialogPane.cpp:388; the shield's moved point while a slide holds a press) and its list turns only over its
+        -- rows: the bar takes no wheel and the list's wheel bounds leave the bar out (ScrollPane.cpp:111, :1054), except
+        -- a list with a pane's own bar (paneBar: the rankings' RankingEventListPane takes a turn anywhere in its
+        -- bounds, bar included, RankingEventScrollPane.cpp:580, :725; its first row is the next 7D 02's; the rankings'
+        -- table is RankingUserListPane, which has no bar and no wheel, RankingUserListPane.cpp:10, :53). While
+        -- this list's bar holds the press the wheel comes here wherever the pointer is (holdBar): over another list of
+        -- the dialog it turns that one, outside the dialog's place the side panel's page there (sidePaneWheel), and
+        -- elsewhere nothing. Changing it changes which list turns, so whether 3B 02 goes, or the spell row a click casts.
+        local x, y
+        if win.__pointAt then x, y = win.__pointAt() else x, y = TK.Util.CursorRoot() end
+        local hit, bar = hitAt(win, x, y)
+        if K.heldBar == list and hit ~= index then
+            local other = win.controls[hit]
+            if other and other.list then other:GetScript("OnMouseWheel")(other, delta)
+            elseif hit < 0 and not within(win, x, y) then sidePaneWheel(delta) end
+            return
+        end
+        if bar and not paneBar then return end
+        -- 2.47 (Astra's pass 25): a followed list draws 4a's position in MoveLogical (setLogical), not the
+        -- widget's step
+        if list:OwnDrawn() and not drawnFollows then wheel(self, delta) end
         list:MoveLogical(-delta) -- 4a's own position (below), before the values go
         K.Wheel(win, index)
     end)
@@ -532,9 +755,20 @@ function K.List(win, index, width, height, multi, own)
         -- The thumb's press and release go to the model as K.Wire's do, 4a's own thumb first (list:ThumbPress below: a
         -- press 4a's bar would not take goes as a miss).
         thumb.__dialogWin, thumb.__dialogControl = win, index
-        thumb:HookScript("OnMouseDown", function(_, button)
-            local part = nil
-            if button == "LeftButton" then part = list:ThumbPress() end
+        thumb:HookScript("OnMouseDown", function(_, button, double)
+            local part = K.BAR_HIT -- client review 2.40: the bar's press, not a row's (K.BAR_HIT)
+            -- Client review 2.40 (pass 111; Astra's pass 6). WIRE: 4a's bar takes an ordinary press only
+            -- (ScrollPane.cpp:111), so a double's second press tracks nothing: it moves no position and starts no drawn
+            -- drag (thumb.__double, OnDragStart below; the model ignores it too: Dialog.Click). Arming the thumb there
+            -- moves the list, so the row a later click sends (an NPC answer's 3A) or the end the list pages at (3B 02)
+            -- is not 4a's; changing it changes what the server sees.
+            if button == "LeftButton" then
+                thumb.__double = double
+                if not double then
+                    part = list:ThumbPress() or K.BAR_HIT
+                    if part ~= K.ROW_MISS then holdBar(list) end -- 2.44: the bar holds the input (K.BarHeld)
+                end
+            end
             K.Pointer(win, index, button, true, part)
         end)
         thumb:HookScript("OnMouseUp", function(_, button)
@@ -542,16 +776,29 @@ function K.List(win, index, width, height, multi, own)
             local over, overPart = controlUnderPointer(win)
             K.Pointer(win, over, button, false, overPart)
         end)
+        -- 2.44 (Astra's pass 9): a swallowed release lets the bar go and posts nothing (K.CancelPress)
+        thumb:HookScript("OnPressCancelled", function(_, button) if button == "LeftButton" then K.CancelPress(win) end end)
         -- s6-interface-5x (round 7). W.ScrollArea's own drag (the drawn scroll, a continuous fraction of the bar) only
         -- where it is not 4a's position: a look's own drawn list (list:OwnDrawn), or a list that does not page. A paging
         -- list drawn at 4a's position follows 4a's thumb instead (list:ThumbPress), so its drawn and paged position are one.
+        -- Client review 2.44 (Astra's pass 11). WIRE: a pane's own bar (paneBar) takes no drag at all: 4a's
+        -- RankingEventScrollPane sets the position at the press only (BeginPartInteraction,
+        -- RankingEventScrollPane.cpp:476), a held move redraws its thumb at the pointer and moves nothing (:113-119,
+        -- :427) and its timer is Pane::OnTimer, so a wheel turn while it is held stays (:725). The drag wrote its old
+        -- offset over the turn, so the next 7D 02 named another category. The shield's presses come here too
+        -- (K.PressAt). Changing it changes that category.
         local dragStart = thumb:GetScript("OnDragStart")
         thumb:SetScript("OnDragStart", function(...)
-            if list:OwnDrawn() or not list.logical then dragStart(...) end
+            if not thumb.__double and not paneBar and (list:OwnDrawn() or not list.logical) then
+                dragStart(...)
+                -- 2.47: its frames stop after a rebuild under it (list:ToTop)
+                thumb:SetScript("OnUpdate", function() if not drawnFollows then thumb.DragStep() end end)
+            end
         end)
-        -- A move while the thumb is held drags it, then goes to the list (review r6, 3: older rows before the release).
+        -- A move while the thumb is held drags it, then goes to the list (review r6, 3: older rows before the release);
+        -- a pane's own bar's thumb is drawn under the pointer instead (list:PaneThumbAt).
         thumb:SetScript("OnPressedMove", function()
-            if thumb.DragStep then thumb.DragStep() end
+            if paneBar then list:PaneThumbAt() elseif thumb.DragStep and not drawnFollows then thumb.DragStep() end
             list:ThumbDragged()
             K.Move(win, index)
         end)
@@ -589,8 +836,11 @@ function K.List(win, index, width, height, multi, own)
     -- and each such move takes the held press's step below like any other move.
     list.logicalRow = 0
 
-    --- The drawn list's view height and row height: the look's pixels.
-    local function drawn() return math.floor(sf:GetHeight() + 0.5), list.rowHeight end
+    --- The drawn list's view height and row height: the look's pixels. Client review 2.47: the height the look placed
+    --- it at (list.drawnHeight, dialogkit.lua's X.List) where it says so, as the frame's own comes back snapped to the
+    --- screen's pixels (236.8 for 7.x's 236-high user list column), which made a list drawn at 4a's size its own
+    --- (list:OwnDrawn).
+    local function drawn() return list.drawnHeight or math.floor(sf:GetHeight() + 0.5), list.rowHeight end
 
     --- 4a's view height and row height, 4a's pixels: list.logical's, else the drawn ones.
     local function geometry()
@@ -607,23 +857,30 @@ function K.List(win, index, width, height, multi, own)
     end
 
     --- 4a's GetScrollRange (0x004F3F20) for its view, in rows: the rows that do not fit, rounded up, but 1 for rows
-    --- exactly as tall as the view.
+    --- exactly as tall as the view. Astra's pass 13 and the client reviewer's pass 113. WIRE: a pane's own bar
+    --- (paneBar, the rankings' categories) is 0 there, RankingEventListPane::ComputeVisibleRowRange's count - 10
+    --- (0x0045B080), so its bar takes no press (list:ThumbPress, KitTrackPress); 1 made it hold the press and take the
+    --- window's keys.
     local function logicalRange()
         local h, rh = geometry()
         local excess = #list.items * rh - h
-        if excess == 0 and #list.items > 0 then return 1 end
+        if excess == 0 and #list.items > 0 then return paneBar and 0 or 1 end
         if excess <= 0 then return 0 end
         return math.floor((excess + rh - 1) / rh)
     end
 
-    --- 4a's ApplyScrollPosition: the position, kept within its range; a list drawn at 4a's position scrolls to it (by
-    --- whole rows, as 4a's content moves: ListPane::GetContentOffset 0x004F4140).
+    --- The drawn list scrolled to 4a's position: its first row shown is 4a's (by whole rows, as 4a's content moves:
+    --- ListPane::GetContentOffset 0x004F4140).
+    local function showLogical()
+        sf:SetVerticalScroll(math.min(sf:GetVerticalScrollRange(), list.logicalRow * list.rowHeight))
+        sf.Refresh()
+    end
+
+    --- 4a's ApplyScrollPosition: the position, kept within its range; a list drawn at 4a's position scrolls to it, as
+    --- does a look's own drawn list while it follows the position (drawnFollows, 2.47: list:ToTop).
     local function setLogical(row)
         list.logicalRow = math.max(0, math.min(logicalRange(), row))
-        if not list:OwnDrawn() then
-            sf:SetVerticalScroll(math.min(sf:GetVerticalScrollRange(), list.logicalRow * list.rowHeight))
-            sf.Refresh()
-        end
+        if drawnFollows or not list:OwnDrawn() then showLogical() end
     end
 
     --- 4a's position moved by rows (the wheel: less its notches; a look's bar part).
@@ -652,9 +909,11 @@ function K.List(win, index, width, height, multi, own)
         sf.Refresh()
     end
 
-    --- The pointer below the drawn list's top (the look's pixels), and whether it is across the list.
+    --- The pointer below the drawn list's top (the look's pixels), and whether it is across the list: while a slide's
+    --- shield holds a press, at the shield's moved point (win.__pointAt, dialogkit.lua X.SlideOpen; client review 2.44).
     local function pointer()
-        local x, y = TK.Util.CursorRoot()
+        local x, y
+        if win.__pointAt then x, y = win.__pointAt() else x, y = TK.Util.CursorRoot() end
         local l, b, w, h = TK.Util.RootRect(sf)
         return (b + h - y) / sf:GetEffectiveScale(), x >= l and x < l + w
     end
@@ -672,11 +931,33 @@ function K.List(win, index, width, height, multi, own)
         local drawnBelow, across = pointer()
         local below = drawnBelow * h / drawn()
         if release and (not across or below < 0 or below >= h) then return end
-        logicalIntoView(math.max(0, math.min(n - 1, list.logicalRow + math.floor(below / rh))) + 1)
+        local at = math.max(0, math.min(n - 1, list.logicalRow + math.floor(below / rh))) + 1
+        logicalIntoView(at)
         if list:OwnDrawn() then
-            local at = math.floor((sf:GetVerticalScroll() + drawnBelow) / list.rowHeight)
-            drawnIntoView(math.max(0, math.min(n - 1, at)) + 1)
+            at = math.max(0, math.min(n - 1, math.floor((sf:GetVerticalScroll() + drawnBelow) / list.rowHeight))) + 1
+            drawnIntoView(at)
         end
+        -- Client review 2.41. WIRE: a followSelects list (the Power dialog's columns) also selects the row it follows,
+        -- on each held move and on the release inside its view, as PowerListPane::OnMouseEvent does (OnItemSelected at
+        -- PowerDialogPane.cpp:399 and :420; ListPane's own only scrolls), the row the press picked in a look's own
+        -- drawn list; A to COLOR's 4C 02 then names that row's power. Only an ordinary left press follows
+        -- (__followPress, below): 4a's tracking flag is set by event 1 alone (PowerDialogPane.cpp:388) and its move and
+        -- release test it (:405, :416), so a double-click's second press keeps its own row. Changing it changes the id
+        -- the server gets.
+        if list.followSelects and list.__followPress then list:Pick(at) end
+    end
+
+    --- Client review 2.41 (Astra's passes 5 and 13). WIRE: the press that follows (logicalFollow's selection) is an
+    --- ordinary left press that hit a row, a press below the rows included (HitTestItem's clamp, ListPane.cpp:329;
+    --- PowerDialogPane.cpp:388 sets the tracking for event 1 alone), on each path a press takes: a row's own, the
+    --- list's background and a slide's shield (K.PressAt). Its release follows to the row under it first and ends it
+    --- (:415-427), before the release is posted. A path that skipped either left the pressed power selected, so A to
+    --- COLOR's 4C 02 named it; changing it changes that power.
+    function list:FollowPress(ordinary) self.__followPress = ordinary end
+
+    function list:FollowRelease()
+        logicalFollow(true)
+        self.__followPress = false
     end
 
     -- 4a's thumb (ScrollPane with EPF art): its bar as tall as 4a's view, the thumb kScrollPanePartExtentBySkin's 38.
@@ -685,18 +966,55 @@ function K.List(win, index, width, height, multi, own)
     local thumbGrab = 0 -- the last thumb press's 4a pixels into 4a's thumb (m_thumbDragOffset): a track press uses it
     local ticker = CreateFrame("Frame", nil, sf)
 
+    --- 4a's track (its thumb's travel), 4a's pixels: the bar is 4a's view tall (ScrollPane, EPF), or a pane's own bar's
+    --- rectangle in it (paneBar; client review 2.45: 418 for the rankings' 470).
+    local function track4a()
+        return geometry() - THUMB - (paneBar and paneBar.top + paneBar.bottom or 0)
+    end
+
+    --- The kit's own drawn bar (W.ScrollArea's track, where the look puts it): its top below the list's top, its
+    --- thumb's travel, and its thumb as drawn (its top below the track's top, and its height; none for a thumb not
+    --- laid out yet, Astra's pass 13), the look's pixels.
+    local function kitBar()
+        local s = sf:GetEffectiveScale()
+        local _, sb, _, sh = TK.Util.RootRect(sf)
+        local _, tb, _, th = TK.Util.RootRect(sf.track)
+        local _, ub, _, uh = TK.Util.RootRect(sf.thumb)
+        local h = sf.thumb:GetHeight()
+        return (sb + sh - tb - th) / s, th / s - h, ub and (tb + th - ub - uh) / s, ub and h
+    end
+
     --- 4a's track over a drawn bar's thumb travel (a look's own, else the kit's thumb's): 4a pixels per drawn pixel.
     local function scale(travel)
-        travel = travel or sf:GetHeight() - sf.thumb:GetHeight()
-        return travel > 0 and (geometry() - THUMB) / travel or 1
+        travel = travel or select(2, kitBar())
+        return travel > 0 and track4a() / travel or 1
+    end
+
+    --- Client review 2.46. WIRE: a press's pointer on 4a's bar, in 4a's pixels below its top; y is the pointer's
+    --- drawn pixels below where the drawn thumb's way starts. With the kit's drawn thumb (its top there, thumbTop, and
+    --- its height, thumbH) each drawn part maps onto 4a's: the thumb onto 4a's thumb (38 tall, at top, 4a's thumb
+    --- top), the drawn track above and below it onto 4a's track on that side. So a press just below a proportional
+    --- thumb (Modern's, the 5.x fallback's) is just below 4a's thumb, not the share of the whole bar its distance from
+    --- the top would be. Without it (5.33's bar, whose 13-pixel thumb is near 4a's on 4a's scale) the pointer is on
+    --- 4a's bar by the bars' travels (scale; decision 2026-10-04-paging-lists-pointer-on-752s-view). travel: the
+    --- drawn thumb's way. It decides the row a track press jumps to and a thumb press's offset into the thumb
+    --- (HitTestPart, DragToPosition), so the rows a later click sends (3A, 7D 02) and when the list pages (3B 02);
+    --- changing it changes what the server sees.
+    local function on4aBar(y, travel, top, thumbTop, thumbH)
+        if not thumbTop or thumbH <= 0 then return math.floor(y * scale(travel)) end
+        if y < 0 then return 0 end -- above the drawn way: 4a's bar's top
+        if y < thumbTop then return math.floor(y * top / thumbTop) end
+        local below = y - thumbTop - thumbH
+        if below < 0 then return top + math.floor((y - thumbTop) * THUMB / thumbH) end
+        local rest = travel - thumbTop -- the drawn track below the thumb
+        return top + THUMB + (rest > 0 and math.floor(below * (track4a() - top) / rest) or 0)
     end
 
     --- ScrollPane::UpdatePositionFromCursor (0x0055E210), vertical, EPF: 4a's thumb top moved by the pointer's 4a pixels
     --- since the press (the press's offset into the thumb cancels out), plus one, kept on 4a's track (view - 38); the
     --- position is (range + 1) x that top / the track, truncated, at most the range.
     local function thumbFollow()
-        local h = geometry()
-        local range, track = logicalRange(), h - THUMB
+        local range, track = logicalRange(), track4a()
         if not thumbDrag or range <= 0 or track <= 0 then return end
         local top = thumbDrag.top + math.floor(pointer() * thumbDrag.k) - thumbDrag.y + 1
         top = math.max(0, math.min(track, top))
@@ -712,15 +1030,45 @@ function K.List(win, index, width, height, multi, own)
     --- the list takes none of them and asks for nothing. travel: a look's own drawn thumb's way (list:BarPress), else the
     --- kit's thumb's; arrow: where that way starts below the bar's top (its top arrow), for the offset a later track
     --- press uses (list:TrackPress).
+    --- Client review 2.44 (Astra's pass 6): every list's thumb press sets 4a's grab (m_thumbDragOffset), which the kit's
+    --- own track's press uses for any list (list:KitTrackPress). WIRE: it places that jump, so the row a later click
+    --- sends or the end the list pages at (3B 02); changing it changes what the server sees.
+    --- Client review 2.45 and Astra's pass 11. WIRE: a pane's own bar (paneBar, the rankings' categories) is 4a's
+    --- RankingEventScrollPane: on its rectangle (track4a, the drawn bar's top and travel mapped onto it), the
+    --- thumb's press takes its offset into the thumb and moves it to the pointer less that offset, plus one
+    --- (BeginPartInteraction and DragToPosition, RankingEventScrollPane.cpp:476, :510-537), so the position is
+    --- (range + 1) x (its top + 1) / the track, at most the range; nothing moves it after (the timer is
+    --- Pane::OnTimer, a move only redraws). That position is the first category a later press asks for (7D 02);
+    --- changing it changes the category.
+    local paneThumb -- while a pane's own bar's thumb is held: the pointer and the drawn thumb's top at the press
     function list:ThumbPress(travel, arrow)
-        thumbDrag = nil
+        thumbDrag, paneThumb, drawnFollows = nil, nil, nil
+        local kit = not travel -- the kit's own thumb, not a look's bar (2.47: list:ToTop)
+        local range, track = logicalRange(), track4a()
+        -- Astra's pass 13. WIRE: 4a's ranking bar takes no press while nothing scrolls (IsScrollable,
+        -- RankingEventScrollPane.cpp:100, :121-123), so the press is the list's (K.ROW_MISS: no hold), and its release
+        -- asks for the category under it (client review 2.28). Holding it took the window's keys.
+        if paneBar and range <= 0 then return K.ROW_MISS end
+        -- The kit's drawn thumb (on4aBar, client review 2.46); a look's own bar passes its travel.
+        local thumbTop, thumbH
+        if not travel then arrow, travel, thumbTop, thumbH = kitBar() end
+        local k = scale(travel)
+        local top = range > 0 and math.floor(self.logicalRow * track / range) or 0
+        if range > 0 then
+            local at = on4aBar(pointer() - (arrow or 0), travel, top, thumbTop, thumbH)
+            thumbGrab = math.max(0, math.min(THUMB - 1, at - top))
+        end
+        if paneBar then
+            if track > 0 then
+                setLogical(math.min(range, math.floor((range + 1) * math.min(track, top + 1) / track)))
+            end
+            if not thumbTop then thumbTop = select(3, kitBar()) end
+            paneThumb = { at = pointer(), top = thumbTop or 0 }
+            return nil
+        end
         if not self.logical then return nil end
-        local range = logicalRange()
         if range <= 0 then return K.ROW_MISS end
-        local h, k = geometry(), scale(travel)
-        thumbDrag = { top = math.floor(self.logicalRow * (h - THUMB) / range), k = k, y = math.floor(pointer() * k),
-                      due = GetTime() + 0.2 }
-        thumbGrab = math.max(0, math.min(THUMB - 1, math.floor((pointer() - (arrow or 0)) * k) - thumbDrag.top))
+        thumbDrag = { top = top, k = k, y = math.floor(pointer() * k), due = GetTime() + 0.2, kit = kit }
         thumbFollow()
         ticker:SetScript("OnUpdate", function()
             local now = GetTime()
@@ -741,16 +1089,44 @@ function K.List(win, index, width, height, multi, own)
     --- (m_thumbDragActive, GetScrollPartRect 0x0055D9E0), so the timer's steps find no track. With a range of 0,
     --- K.ROW_MISS, as the thumb's. WIRE: the position it leaves is the one the list's end is read from after the press
     --- (3B 02); moving it again while the press is held, or otherwise, changes when the server gets 3B 02.
+    --- trackJump: the jump, with a range above 0 (part nil: the side of 4a's thumb the pointer is on, list:KitTrackPress).
+    --- A pane's own bar (paneBar) jumps the same way on its rectangle (RankingEventScrollPane's
+    --- UpdateActiveInteraction, :490-507: DragToPosition with the last thumb press's offset; client review 2.45).
+    local function trackJump(part, travel, arrow)
+        local thumbTop, thumbH -- the kit's drawn thumb: the pointer on 4a's bar by its parts (on4aBar, 2.46)
+        if not travel then arrow, travel, thumbTop, thumbH = kitBar() end
+        local range, track = logicalRange(), track4a()
+        if track <= 0 then return end
+        local top = math.floor(list.logicalRow * track / range)
+        local y = on4aBar(pointer() - (arrow or 0), travel, top, thumbTop, thumbH)
+        local side = y < top and 1 or y >= top + THUMB and 3 or 2
+        if side ~= 2 and side == (part or side) then
+            setLogical(math.min(range, math.floor((range + 1) * math.max(0, math.min(track, y - thumbGrab + 1)) / track)))
+        end
+    end
+
     function list:TrackPress(part, travel, arrow)
         thumbDrag = nil
-        if not self.logical then return nil end
-        local range, track = logicalRange(), geometry() - THUMB
+        if not self.logical then return nil end -- a look's own bar scrolls another list itself (5.x's)
+        if logicalRange() <= 0 then return K.ROW_MISS end
+        trackJump(part, travel, arrow)
+        return nil
+    end
+
+    --- Client review 2.44 (Astra's passes 111 and 6): a left press on the kit's own track (W.ScrollArea's; 7.x's is 4a's
+    --- 13-pixel bar right of the rows, dialogkit.lua X.List), for every list: 4a's track press (trackJump), on 4a's
+    --- position, which a list drawn at it follows (setLogical); a look's own drawn list (list:OwnDrawn) is moved to the
+    --- same share of its drawn scroll, so what it shows goes with what it pages at. WIRE: the position it leaves is the
+    --- row a later click sends (an NPC answer's 3A) and the end the list pages at (3B 02); a list that does not page
+    --- took the press and did not move, so the row was not 4a's. Changing it changes what the server sees.
+    function list:KitTrackPress()
+        thumbDrag = nil
+        local range = logicalRange()
         if range <= 0 then return K.ROW_MISS end
-        if track <= 0 then return nil end
-        local y = math.floor((pointer() - (arrow or 0)) * scale(travel))
-        local top = math.floor(self.logicalRow * track / range)
-        if (y < top and 1 or y >= top + THUMB and 3 or 2) == part then
-            setLogical(math.min(range, math.floor((range + 1) * math.max(0, math.min(track, y - thumbGrab + 1)) / track)))
+        trackJump(nil)
+        if self:OwnDrawn() then
+            sf:SetVerticalScroll(sf:GetVerticalScrollRange() * self.logicalRow / range)
+            sf.Refresh()
         end
         return nil
     end
@@ -765,9 +1141,23 @@ function K.List(win, index, width, height, multi, own)
 
     --- The thumb's release (ScrollPane::ResetScrollState 0x0055E600): the timer stops, the position stays where it was.
     function list:ThumbRelease()
-        thumbDrag = nil
+        thumbDrag, drawnFollows = nil, nil
         ticker:SetScript("OnUpdate", nil)
+        if K.heldBar == self then holdBar(nil) end -- 2.44: every bar release ends the hold (K.BarHeld)
         self:ThumbDragged()
+        -- a pane's own bar's thumb goes back to the position (RankingEventScrollPane.cpp:142-143: drawing only)
+        if paneThumb then paneThumb = nil sf.Refresh() end
+    end
+
+    --- A pane's own bar's held thumb (paneBar): drawn under the pointer less the press's offset into it, kept on its
+    --- track, as 4a draws it while held (m_thumbDragActive, RankingEventScrollPane.cpp:427-435); the list stays
+    --- where it is. Drawing only.
+    function list:PaneThumbAt()
+        if not paneThumb then return end
+        local _, travel = kitBar()
+        local y = math.max(0, math.min(travel, paneThumb.top + pointer() - paneThumb.at))
+        sf.thumb:ClearAllPoints()
+        sf.thumb:SetPoint("TOPLEFT", sf.track, "TOPLEFT", 0, -y)
     end
 
     --- s6-ui-core (round 98): a look's own scroll bar that takes the bar's presses in place of the kit's (5.x's 5.33 bar:
@@ -780,8 +1170,10 @@ function K.List(win, index, width, height, multi, own)
     function list:BarPress(part, travel, arrow)
         local miss
         if part == 2 then miss = self:ThumbPress(travel, arrow)
-        else miss = self:TrackPress(part < 2 and 1 or 3, travel, arrow) end
-        K.Pointer(win, index, "LeftButton", true, miss)
+        elseif part then miss = self:TrackPress(part < 2 and 1 or 3, travel, arrow)
+        else miss = self:KitTrackPress() end -- nil: the kit's own track (2.44, below)
+        if not miss then holdBar(self) end -- 2.44: the bar holds the input (K.BarHeld)
+        K.Pointer(win, index, "LeftButton", true, miss or K.BAR_HIT) -- 2.40: the bar's, not a row's (K.BAR_HIT)
     end
 
     function list:BarMove() K.Move(win, index) end
@@ -790,6 +1182,38 @@ function K.List(win, index, width, height, multi, own)
         self:ThumbRelease()
         local over, overPart = controlUnderPointer(win)
         K.Pointer(win, over, "LeftButton", false, overPart)
+    end
+
+    -- Client review 2.44. WIRE: a left press on the kit's own track is 4a's track press (ScrollPane.cpp:617,
+    -- BeginPartPress 0x0055DF10: list:KitTrackPress above), and the press then goes to the list as the thumb's does
+    -- (K.BAR_HIT), the held moves and the release after it; ArticleListPane and MailListPane (0x00474EC0, 0x0047AD80)
+    -- read the list's end after each and ask for older rows (3B 02; BulletinSession.cpp:1100, :2598). The track was a
+    -- plain frame, so such a press sent nothing. A double's second press takes no track press (2.40: 4a's bar takes an
+    -- ordinary press only, ScrollPane.cpp:111). A slide's shield passes its presses here too (K.PressAt). Changing it
+    -- changes what the server sees.
+    if sf.track then
+        local track = sf.track
+        track.__dialogWin, track.__dialogControl = win, index
+        track:SetClaimButtons("LeftButton")
+        track:SetCapturesPress(true)
+        track:SetScript("OnMouseDown", function(_, button, double)
+            if button ~= "LeftButton" then return end
+            if double then K.Pointer(win, index, button, true, K.BAR_HIT) return end
+            list:BarPress()
+        end)
+        track:SetScript("OnPressedMove", function() list:BarMove() end)
+        track:SetScript("OnMouseUp", function(_, button) if button == "LeftButton" then list:BarRelease() end end)
+        track:SetScript("OnPressCancelled", function(_, button) if button == "LeftButton" then K.CancelPress(win) end end)
+    end
+    -- Client review 2.44 (Astra's passes 10 and 11). WIRE: a list with a pane's own bar (paneBar: the rankings'
+    -- RankingEventListPane) takes a wheel turn anywhere in its bounds, its bar included (RankingEventScrollPane.cpp:580,
+    -- :725), and the kit's bar lies outside the list's area, so its thumb and track hand a turn to the list's wheel
+    -- (above). Without it the turn was lost, and the first category a later press asks for (7D 02) was not 4a's.
+    if paneBar then
+        for _, part in ipairs({ sf.thumb, sf.track }) do
+            part:EnableMouseWheel(true)
+            part:SetScript("OnMouseWheel", function(_, delta) sf:GetScript("OnMouseWheel")(sf, delta) end)
+        end
     end
 
     --- s6-ui-core (round 99, round 98's final review P1): a reused window's list is a new dialog's (main.lua's
@@ -805,6 +1229,26 @@ function K.List(win, index, width, height, multi, own)
         list:ThumbRelease()
         list.logicalRow = 0
         scrollToTop(self)
+    end
+
+    --- Client review 2.47 (Astra's passes 18 and 19). WIRE: a page's rebuild (social.lua's Users.update) puts the list
+    --- at its top and nothing more. 4a's range reset (ScrollWidget_SetMaxRange, ScrollPane.cpp:52) leaves a held thumb
+    --- its capture, grab and timer, and the timer's next tick puts the position back at the thumb by the new range: on
+    --- a list drawn at 4a's position, thumbDrag's ticker and thumbFollow (ScrollPane::UpdatePositionFromCursor
+    --- 0x0055E210, OnTimer 0x0055C610). A release before that tick leaves the top row first. Astra's passes 21 and 23:
+    --- a look's own drawn list (list:OwnDrawn, the default look's) held on the kit's thumb drags its drawn rows
+    --- (W.ScrollArea's) apart from that position, and the drag put the old offset back on the next frame. From the
+    --- rebuild to the release it follows 4a's position instead (drawnFollows): the drag's frames and held moves stop,
+    --- as 4a's move only redraws its bar (ScrollPane::HandlePointerOrMouseEvent 0x0055C400) and its release cancels
+    --- the next tick (ResetScrollState 0x0055E600), and whatever moves 4a's position puts 4a's first row first
+    --- (setLogical, showLogical): each of 4a's ticks, and a wheel turn (Astra's pass 24: the position less its notches,
+    --- clamped, ScrollablePane::HandlePointerOrMouseEvent 0x0055EF50), over its own drawn step. A look's own bar
+    --- (5.x's, list:BarPress) stays the only one to move its drawn rows. Changing it changes which name a press on the
+    --- first visible row asks 85 for.
+    function list:ToTop()
+        self.logicalRow = 0
+        scrollToTop(sf)
+        if thumbDrag and thumbDrag.kit and self:OwnDrawn() then drawnFollows = true end
     end
 
     local function paint()
@@ -839,6 +1283,7 @@ function K.List(win, index, width, height, multi, own)
     -- double-click), so OK or a double-click then sends that row. Changing which row this picks, or dropping it, changes
     -- the answer the server gets for the same click. An empty list picks nothing (-1): see the miss below.
     list.own = own
+    list.paneBar = paneBar -- a look draws it at its rectangle (dialogkit.lua's styleBar)
 
     --- The row a press at y (UIParent units) picks: HitTestItem's clamp (above); nil for an empty list, or for an own
     --- list's press that is on no row. s6-modular-g (round 13): with x too, an own list's press beside its row is on no
@@ -849,12 +1294,23 @@ function K.List(win, index, width, height, multi, own)
         if n == 0 then return nil end
         for i = 1, n do
             local left, bottom, w, h = TK.Util.RootRect(self.rows[i])
-            if y >= bottom then
-                if self.own and (y >= bottom + h or (x and (x < left or x >= left + w))) then return nil end
+            -- Client review 2.29. Wire: a row's top edge is its own and its bottom edge the next row's, as 4a's
+            -- PointInRect (K.PressAt above); y runs up here. Changing it changes the row a press on an edge picks.
+            if y > bottom then
+                if self.own and (y > bottom + h or (x and (x < left or x >= left + w))) then return nil end
                 return i
             end
         end
         return not self.own and n or nil
+    end
+
+    --- Client review 2.28 (Astra's passes 5 and 12): the row an own pane's HitTestRow (RankingEventListPane,
+    --- 0x0045BD10) finds at (x, y) in UIParent units: on the list's shown rows only (its ten boxes from its first row),
+    --- so none outside the list's area, where a scrolled-out row's frame may lie. WIRE: the rankings' field 0, the
+    --- category a release asks for (7D 02); changing it changes that category.
+    function list:HitRow(x, y)
+        if not within(sf, x, y) then return nil end
+        return self:RowAt(y, x)
     end
 
     -- Round 35 (review r34 P1). Wire: a press that hits no row (an empty list) goes to the model marked as a miss
@@ -866,7 +1322,7 @@ function K.List(win, index, width, height, multi, own)
         -- s6-interface-5x (round 6), s6-input (round 43): the left press picked a row, so 4a's list tracks it as a
         -- row's press
         local tracking
-        sf:HookScript("OnMouseDown", function(_, button)
+        sf:HookScript("OnMouseDown", function(_, button, double)
             local _, y = TK.Util.CursorRoot()
             local at = list:RowAt(y)
             if at and button == "LeftButton" then
@@ -874,7 +1330,10 @@ function K.List(win, index, width, height, multi, own)
                 if list.onSelect then list.onSelect(at) end
                 H:DialogListTracks() -- s6-input (round 42): a press that picked a row tracks, as a row's own (below)
             end
-            if button == "LeftButton" then tracking = at ~= nil end
+            if button == "LeftButton" then
+                tracking = at ~= nil
+                list:FollowPress(at ~= nil and not double) -- 2.41 (Astra's pass 13): a press below the rows follows
+            end
             K.Pointer(win, index, button, true, not at and K.ROW_MISS or nil)
         end)
         -- s6-interface-5x (round 6), s6-input (round 43; Astra's self-review of round 43). Wire: such a press tracks in 4a
@@ -890,10 +1349,28 @@ function K.List(win, index, width, height, multi, own)
         end)
         sf:HookScript("OnMouseUp", function(_, button)
             if button == "LeftButton" then
-                if tracking then logicalFollow(true) end -- 4a's position first (above)
+                if tracking then list:FollowRelease() end -- 4a's position first (above), and Power's row (2.41)
                 tracking = false
                 -- s6-input (round 43): the list's own release, its window still open (a row's, below)
                 if win.serial then H:DialogListReleased() end
+            end
+            local over, overPart = controlUnderPointer(win)
+            K.Pointer(win, over, button, false, overPart)
+        end)
+    end
+
+    --- Client review 2.28 (Astra's pass 4). WIRE: an own pickOnRelease list whose look leaves gaps between its rows
+    --- (7.x's ranking categories) takes the presses there as its own: 4a's list control answers its whole rectangle
+    --- (hit part 22, RankingEventScrollPane.cpp:558), tracks the press and picks the row under the release (:736-752),
+    --- none in a gap. A press in a gap released over a category so asks for its page (7D 02). Changing it changes which
+    --- category the server is asked for. No tracking: an own list is no ListPane (above).
+    function list:TakeGaps()
+        sf:EnableMouse(true)
+        sf:HookScript("OnMouseDown", function(_, button) K.Pointer(win, index, button, true) end)
+        sf:HookScript("OnMouseUp", function(_, button)
+            if button == "LeftButton" then
+                local x, y = TK.Util.CursorRoot()
+                pickOnRelease(list, x, y)
             end
             local over, overPart = controlUnderPointer(win)
             K.Pointer(win, over, button, false, overPart)
@@ -973,9 +1450,12 @@ function K.List(win, index, width, height, multi, own)
         else return false end
         self:Pick(target, key:find("SHIFT%-") ~= nil, key:find("CTRL%-") ~= nil)
         self:ShowRow(target)
-        -- Review r21, 4: a selection by key is a selection as a click's is (the user list's and the power dialog's
-        -- columns keep one row between them: UserListPane::OnItemSelected 0x0059ED20).
-        if self.onSelect then self.onSelect(target) end
+        -- Review r21, 4: a selection by key is a selection as a click's is (the user list's columns keep one row
+        -- between them: UserListPane::OnItemSelected 0x0059ED20). Client review 2.41. WIRE: but not a keyKeepsOthers
+        -- list's (the Power dialog's columns): only PowerListPane's press clears the other columns
+        -- (PowerDialogPane.cpp:381-383), its arrows are ListPane's own (ListPane.cpp:289) and leave them, and
+        -- ApplyPowerSlot (:213-219) then sends the first column's. Changing it changes the power id in 4C 02.
+        if self.onSelect and not self.keyKeepsOthers then self.onSelect(target) end
         return true
     end
 
@@ -998,12 +1478,31 @@ function K.List(win, index, width, height, multi, own)
                     logicalFollow(false)
                     K.Move(win, index)
                 end)
-                row:HookScript("OnMouseUp", function(_, button) if button == "LeftButton" then logicalFollow(true) end end)
+                -- Client review 2.41 (Astra's pass 5). WIRE: the press that may follow (logicalFollow above): an
+                -- ordinary left press, not a double-click's second (event 2), whose row is its own
+                -- (PowerDialogPane.cpp:388); the left release ends it. Changing it changes the id A to COLOR's 4C 02
+                -- sends.
+                row:HookScript("OnMouseDown", function(_, button, double)
+                    if button == "LeftButton" then list:FollowPress(not double) end
+                end)
+                row:HookScript("OnMouseUp", function(_, button)
+                    if button == "LeftButton" then list:FollowRelease() end
+                end)
+                -- Client review 2.28 (pickOnRelease, above): a pickOnRelease list's row is the release's, taken before
+                -- K.Wire's release is posted; its press picks nothing (below).
+                row:HookScript("OnMouseUp", function(_, button)
+                    if button == "LeftButton" and list.pickOnRelease then
+                        local x, y = TK.Util.CursorRoot()
+                        pickOnRelease(list, x, y)
+                    end
+                end)
                 local n = i
                 K.Wire(win, row, index, function(button)
                     if button == "LeftButton" then
-                        list:Pick(n, IsShiftKeyDown(), IsControlKeyDown())
-                        if list.onSelect then list.onSelect(n) end
+                        if not list.pickOnRelease then
+                            list:Pick(n, IsShiftKeyDown(), IsControlKeyDown())
+                            if list.onSelect then list.onSelect(n) end
+                        end
                         -- s6-input (round 42). Wire: a left press that picks a row of 4a's ListPane tracks it and starts
                         -- EventMan's auto-scroll tick (ListPane::OnMouseEvent 0x004F4190 case 1, PowerListPane's too:
                         -- ScheduleAutoScrollTick 0x004A8F60): the host then posts a move at the pointer every 20 ms until
@@ -1039,9 +1538,20 @@ function K.List(win, index, width, height, multi, own)
         -- board's list asks for older rows when the position meets that range (AtEnd below). So a full page of mail
         -- (7.x's twenty 14-pixel rows in 280) asks once scrolled a row, not at its first press. Changing the content's
         -- height changes when the older rows are asked for.
+        -- Client review 2.47 (Astra's pass 20). WIRE: a list drawn at 4a's position also reaches 4a's last one, the
+        -- range rounded up: 4a's content moves by whole rows (ApplyScrollPosition, ScrollPane.cpp:915;
+        -- ListPane::GetContentOffset 0x004F4140, ListPane.cpp:223), so 25 rows of 12 in 236 end 72 down, not 64. The
+        -- bar reads the same range. Changing it changes the row a press near the list's top picks at its end (the 85
+        -- a user list's row asks).
         local rows = #items * self.rowHeight
-        local exact = not self.own and rows > 0 and rows == math.floor(sf:GetHeight() + 0.5) -- an own list is no ListPane
-        sf.content:SetSize(width, math.max(1, exact and rows + self.rowHeight or rows))
+        local view = drawn()
+        local exact = not self.own and rows > 0 and rows == view -- an own list is no ListPane
+        local height = exact and rows + self.rowHeight or rows
+        if not self.own and not self:OwnDrawn() then
+            local range = logicalRange()
+            if range > 0 then height = math.max(height, view + range * self.rowHeight) end
+        end
+        sf.content:SetSize(width, math.max(1, height))
         setLogical(self.logicalRow) -- older rows added: the position stays, in its new range (above)
         sf.Refresh()
         paint()

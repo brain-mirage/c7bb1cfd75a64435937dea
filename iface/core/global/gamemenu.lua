@@ -2,9 +2,11 @@
 -- core, not a component, so no setting can remove it: Settings, Key Bindings and Edit Mode are always reachable
 -- even with the micro menu disabled or hidden. Escape is handled before any key binding and cannot be rebound.
 -- s6-ui-core (round 124, the Global Interface's C# shell, piece 1; the owner's answer to question A): the window is C#
--- (Runtime/Shell/GameMenu.cs) and works without our Lua, with its own Reload UI and Return to Game. This file is its Lua
--- face: TK.GameMenu, TKGameMenu and TKGameMenu.buttons.<id> stay, and the entries added here keep their onClick, label and
--- shown in this file, which the shell asks for (__tk_shell, TK.ShellCalls).
+-- (Runtime/Shell/GameMenu.cs) and works without our Lua, with its own Reload UI and Return to Game. Round 170 (U-64 step
+-- 1; the owner, 2026-10-26: the Global Interface is C#, and mods and interfaces add menu items to it): Settings, Key
+-- Bindings and Edit Mode, and Esc's closing of the menu, are the shell's too. This file is its Lua face: TK.GameMenu,
+-- TKGameMenu and TKGameMenu.buttons.<id> stay, and the entries interfaces and mods add with AddEntry keep their onClick,
+-- label and shown in this file, which the shell asks for (__tk_shell, TK.ShellCalls).
 
 local W = TK.UI
 local H = __tk
@@ -58,16 +60,7 @@ local function alpha() return W.FramePanelAlpha(TKGameMenu) end
 TK.ShellCalls["menu.alpha"] = alpha
 TKGameMenu:RegisterEvent("TK_PANEL_STYLE_CHANGED")
 TKGameMenu:SetScript("OnEvent", function() if G:IsOpen() then H:ShellMenuAlpha(alpha()) end end)
--- Esc closes it. Registered at its first opening, as the Lua window was made then, so its place in TK.Escape's windows
--- is unchanged.
-local escapeAdded
-TK.ShellCalls["menu.opened"] = function()
-    if not escapeAdded then
-        escapeAdded = true
-        TK.Escape:AddWindow(TKGameMenu, function() G:Close() end)
-    end
-    TK.FitToScreen(TKGameMenu)
-end
+TK.ShellCalls["menu.opened"] = function() TK.FitToScreen(TKGameMenu) end
 
 function G:Open() H:ShellMenuOpen() end
 function G:Close() H:ShellMenuClose() end
@@ -77,14 +70,4 @@ function G:Toggle()
     if self:IsOpen() then self:Close() else self:Open() end
 end
 
-G:AddEntry({ id = "settings", text = "Settings", order = 10, style = "red", action = "open:music",
-    onClick = function() G:Close(); TK.Settings:Open() end })
--- s6-ui-core (round 31): the key-bindings list, as WoW's Game Menu opens it; the hover binding is its Quick Keybind Mode.
-G:AddEntry({ id = "keybindings", text = "Key Bindings", order = 20,
-    onClick = function() G:Close(); TK.Settings:Open("keybindings", "General") end,
-    shown = function() return TK.GameState == nil or TK.GameState:InWorld() end })
-G:AddEntry({ id = "editmode", text = "Edit Mode", order = 30,
-    label = function() return TK.EditMode:IsOpen() and "Close Edit Mode" or "Edit Mode" end, -- s6-ui-core (round 54)
-    onClick = function() G:Close(); TK.EditMode:Toggle() end,
-    shown = function() return TK.GameState == nil or TK.GameState:InWorld() end })
--- Reload UI (80) and Return to Game (100) are the shell's own.
+-- Settings (10), Key Bindings (20), Edit Mode (30), Reload UI (80) and Return to Game (100) are the shell's own.

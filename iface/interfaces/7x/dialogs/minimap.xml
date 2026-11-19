@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 7.x's look of the minimap (its XML twin's layout; minimap.lua draws with it), the original's window (MiniMapDialog
+     0x00450CA0) from Source-5's class pages (MiniMapDialog, its GetControlLayout and BuildControls, and
+     MiniMapSymbolControlPane). Format: core/xml.md; the dialog's attributes are its look entry's values
+     (shared/original/entry.lua), its children where minimap.lua draws its parts: rectangles (left, top, right, bottom),
+     points (x, y), pictures (file, palette) and image buttons (BUTT001.EPF's image id first).
+     WIRE: a control's rectangle is where a press on it lands (DialogPane::HitTestControls 0x0049FB10); changing one
+     changes which control a press reaches: the close button (6) ends the dialog, after which M sends 7C again. -->
+<ui>
+  <!-- 768 x 768 at (40, 0)-(808, 768) on the 1024 x 768 screen: centred on (424, 384), not moved by the slot's clamps;
+       MMAPBACK.EPF frame 0 in MMAPBACK.PAL as its picture (control 0) -->
+  <data key="MiniMap" width="768" height="768" centreX="424" centreY="384">
+    <data key="art" value="MMAPBACK.EPF, MMAPBACK.PAL"/>
+    <!-- the title plate (1): MNTITLE.EPF frame 0 in MNTITLE.PAL at (273, 18); the map's name centred on (382, 31) -->
+    <data key="plate" file="MNTITLE.EPF" palette="MNTITLE.PAL" x="273" y="18"/>
+    <data key="title" value="382, 31"/>
+    <!-- the check boxes, NPC (2) and Portal (4): ONOFFBUT.EPF in BUTTON.PAL, frame 1 checked -->
+    <data key="check" file="ONOFFBUT.EPF" palette="BUTTON.PAL"/>
+    <data key="npc" value="60, 729, 76, 745"/>
+    <data key="portal" value="105, 729, 121, 745"/>
+    <!-- the texts (3, 5, 7, 9) at their points -->
+    <data key="labels">
+      <option text="NPC" at="80, 730"/>
+      <option text="Portal" at="125, 730"/>
+      <option text="X : " at="520, 730"/>
+      <option text="Y : " at="580, 730"/>
+    </data>
+    <!-- the cell under the pointer, X (8) and Y (10) -->
+    <data key="cellX" value="540, 730, 570, 743"/>
+    <data key="cellY" value="600, 730, 630, 743"/>
+    <!-- the close button (6, image 14), 63 x 24 -->
+    <data key="close" value="14, 648, 725, 711, 749"/>
+    <!-- the map's square (MinimapPicture.WholeKey's 662 x 662), its picture framed 2 pixels outside
+         (RectangleControlPane, colour 0x80) -->
+    <data key="map" x="53" y="53" size="662" frame="2"/>
+    <!-- the player's mark: MNPLAYER.EPF frames 0-4 in MNPLAYER.PAL, 100 ms each; its name at 0.7 -->
+    <data key="player" file="MNPLAYER.EPF" palette="MNPLAYER.PAL" frames="5" alpha="0.7"/>
+    <!-- the NPCs' and the portals' marks: MNSYMBOL.EPF in MNSYMBOL.PAL, NPC frame 4, a portal 5 with lines, else 3; a
+         name sits frame 3's height above its point -->
+    <data key="symbol" file="MNSYMBOL.EPF" palette="MNSYMBOL.PAL" npc="4" portal="3" portalLines="5" label="3"/>
+  </data>
+</ui>

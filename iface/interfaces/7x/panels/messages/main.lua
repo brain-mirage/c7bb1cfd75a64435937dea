@@ -91,7 +91,8 @@ end
 
 --- The spell list's lines now: the effects, then a line of 24 dashes and the aethers when there are any (RebuildDisplayText
 --- 0x0056BEA0), each "name" and its whole seconds left, rounded up, as string 222 "%s %3ds"; a negative value the name
---- alone; a time run out is no line.
+--- alone; a time run out is no line. Client review 8.45: the aethers in the order they came, each under the name its
+--- slot had at its 3F (SpelledPane::AddOrUpdateEntry 0x0056BCA0 keeps the text it was given); an empty slot's is none.
 function C.SpellLines(now)
     local lines = {}
     local function entry(name, left)
@@ -107,9 +108,9 @@ function C.SpellLines(now)
     end
     local aethers = {}
     for i = 1, H:GetNumAethers() do
-        local ok, kind, slot, start, duration = H:GetAether(i)
-        local name = ok and TK.ActionInfo({ kind = kind, slot = slot })
-        if name and math.ceil(start + duration - now) > 0 then aethers[#aethers + 1] = { name, math.ceil(start + duration - now) } end
+        local ok, _, _, start, duration, name = H:GetAether(i)
+        local left = ok and math.ceil(start + duration - now)
+        if name and left > 0 then aethers[#aethers + 1] = { name, left } end
     end
     if #aethers > 0 then
         lines[#lines + 1] = string.rep("-", L.SPELLS.dashes)

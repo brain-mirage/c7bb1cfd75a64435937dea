@@ -1,6 +1,6 @@
 # MR-TK Public-Test
 
-**Download the game from this repository's release: [build-next82-pt.zip](../../releases/download/next82-pt/build-next82-pt.zip)**
+**Download the game from this repository's release: [build-next83-pt.zip](../../releases/download/next83-pt/build-next83-pt.zip)**
 (also under **Releases**, on the right of this page). Unpack it anywhere and start `MR-TK.exe`; it connects to the
 Dev server.
 

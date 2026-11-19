@@ -4,7 +4,8 @@
 -- the player's input on; this look only sizes, places and draws them: nothing in it reaches the model or the server.
 --
 -- The dialogs drawn so far are the families' files here (npc.lua, merchant.lua, exchange.lua, panes.lua, boards.lua,
--- social.lua, web.lua, album.lua, shops.lua, fitting.lua, options.lua, macros.lua, misc.lua, heads.lua, generic.lua)
+-- social.lua, web.lua, album.lua, shops.lua, fitting.lua, options.lua, macros.lua, misc.lua, heads.lua, minimap.lua,
+-- generic.lua)
 -- and the original client's alerts (shared/original/alerts.lua, drawn with X); every other dialog keeps the shared
 -- default look (window included) until it has its 7.x entry: an entry of this table is 7.x's; the dialogs component
 -- resolves missing entries over its shared default look (step 6).
@@ -111,7 +112,7 @@ for _, module in ipairs({ "interfaces.7x.dialogs.npc", "interfaces.7x.dialogs.me
     "interfaces.7x.dialogs.social", "interfaces.7x.dialogs.web", "interfaces.7x.dialogs.album",
     "interfaces.7x.dialogs.shops", "interfaces.7x.dialogs.fitting", "interfaces.7x.dialogs.options",
     "interfaces.7x.dialogs.macros", "interfaces.7x.dialogs.misc", "interfaces.7x.dialogs.heads",
-    "interfaces.7x.dialogs.generic" }) do
+    "interfaces.7x.dialogs.minimap", "interfaces.7x.dialogs.generic" }) do
     require(module)(L, X)
 end
 

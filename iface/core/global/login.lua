@@ -1056,10 +1056,12 @@ function L:Submit()
     -- changes what a retry sends. Our own screen forgets it here.
     if not presentation then screen.password:SetText("") end
     local length = #password
+    -- WIRE (round 170, the client review's 2.10): only empty fields are refused here, standing for the original's greyed
+    -- OK (LoginDialogPane::UpdateActionButton 0x004FAE30 disables it while either box is empty).
+    -- LoginDialogPane::OnControlCommand (0x004FAD00) tests no letter of the name: it sends whatever the box holds
+    -- and the server refuses a name it won't take. A test of the letters here would send nothing where 4a sends; adding
+    -- one changes what the server sees.
     if account == "" then return self:Error("Enter your account name.") end
-    if not TK.Machine.IsAccountName(account) then
-        return self:Error("An account name has at most " .. L.MAX_ACCOUNT .. " letters, digits, '-' or '_'.")
-    end
     if length == 0 then return self:Error("Enter your password.") end
     if length > L.MAX_PASSWORD then return self:Error("A password has at most " .. L.MAX_PASSWORD .. " characters.") end
     TK.Machine:RememberAccount(account)
@@ -1667,10 +1669,11 @@ local function stepper(parent, label, y, count, key, opts)
     opts = opts or {}
     local first = opts.first or 1
     local s
-    local function show()
+    -- quiet: the value only, when showLook draws the preview once for all the steppers (round 170)
+    local function show(quiet)
         local value = create.look[key]
         s:SetValue(opts.text and opts.text(value) or (tostring(value) .. " / " .. count))
-        updatePreview()
+        if not quiet then updatePreview() end
     end
     s = W.Stepper(parent, label, function(step)
         create.look[key] = (create.look[key] - first + step) % count + first
@@ -1760,11 +1763,12 @@ function L:CreateMessage(text, progress)
     presentation.Message(text, progress)
 end
 
---- The look's steppers, the gender's among them, as the look is now (each stepper draws the preview again); an
---- interface's own dialog draws it its way.
+--- The look's steppers, the gender's among them, as the look is now, and the preview drawn once for them all (round
+--- 170: it was drawn once per stepper, six times); an interface's own dialog draws it its way.
 local function showLook()
     if create.ShowLook then return create.ShowLook() end
-    for _, show in pairs(create.steppers) do show() end
+    for _, show in pairs(create.steppers) do show(true) end
+    updatePreview()
 end
 
 function L:ShowCreate()
@@ -1856,9 +1860,11 @@ function L:SubmitCreate()
     -- refusal's HandleCreateUserReply (0x0052F390) leave them: after a refused 02, Enter sends the same request again.
     -- Emptying them here would make that Enter send nothing, which the server can tell.
     local account, password, again = create.account:GetText(), create.password:GetText(), create.repeatBox:GetText()
-    if not TK.Machine.IsAccountName(account) then
-        return self:CreateMessage("An account name has 1 to " .. L.MAX_ACCOUNT .. " letters, digits, '-' or '_'.")
-    end
+    -- WIRE (round 170, the client review's 2.10 and pass 78): the name is not tested at all, not even for being empty.
+    -- The creation dialog's OK is never greyed (CreateUserDialogPane::OnControlCommand 0x0052EA80 submits at once) and
+    -- SubmitCreateUser (0x0052ED80) tests only the password's digit and its repeat, then sends 02 with the name as the
+    -- box holds it, an empty one too, for the server to refuse. A test of the name here would send nothing where 4a
+    -- sends; adding one changes what the server sees.
     -- Both refusals put the focus in the password field, as the original's.
     if #password == 0 or not password:find("%d") then
         focusRefused(create.password)
@@ -2165,10 +2171,15 @@ local function bookImage(file, n)
     return TK.Art.Image(file, n, L.BOOK_PALETTE)
 end
 
---- How many pages a book has in the packs (0 without them).
+--- How many pages a book has in the packs (0 without them). Round 170 (the client review's 4.60): the packs' are counted
+--- by key, as the start's buttons are (TK.Art.ImageKey above), so no page's picture is made only to be counted; showPage
+--- makes the one shown. An interface's own book (5.x's, from the 5.33 set, which has no key-only test) is counted by
+--- its Image.
 function L.BookPages(file)
+    local own = presentation and presentation.book
+    local key = own and own.Image or function(f, i) return TK.Art.ImageKey(f, i, L.BOOK_PALETTE) end
     local n = 0
-    while n < 64 and bookImage(file, n) do n = n + 1 end
+    while n < 64 and key(file, n) do n = n + 1 end
     return n
 end
 
@@ -2223,10 +2234,11 @@ function TK.LoginKeyHook(key)
     if (bare == "ENTER" or bare == "ESCAPE" or bare == "SPACE") and book and book:IsShown() then return L:TurnPage() end
     -- an interface's own login screen (its menu, its dialog) while no box has the keyboard and no window is over it but
     -- its own Change Password dialog (round 92's final review, P3: that dialog's Enter and Escape with no field focused
-    -- are its buttons' keys, as DialogPane's, not the Escape window's close at once)
+    -- are its buttons' keys, as DialogPane's, not the Escape window's close at once). A window the shell closes has no
+    -- frame here (Escape:Topmost gives its id only), so it never counts as that dialog, even when there is none.
     local top = presentation and TK.Escape:Topmost()
     if presentation and screen:IsShown() and not H:IsTextInputActive()
-        and (not top or top.frame == presentation.passwordDialog) and not W.QuestionShown() then
+        and (not top or top.frame ~= nil and top.frame == presentation.passwordDialog) and not W.QuestionShown() then
         return presentation.Key(bare, key)
     end
     return false

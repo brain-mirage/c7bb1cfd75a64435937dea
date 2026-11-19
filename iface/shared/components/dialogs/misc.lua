@@ -553,15 +553,223 @@ end)
 
 C.renderers.WorldMapPane = Map
 
--- D-66: the minimap, the close button (6). s6-world-view (round 17, the owner's revision of plan D26, 2026-10-01): the
--- model's dialog has no window of its own. The map window (core/global/mapwindow.lua) takes its place: it opens on M
--- and with the dialog (the server's 70), closes when the dialog closes, and its close box and Escape press the dialog's
--- close button (6). The round-19 expanded view that was here is that window now.
-C.renderers.MiniMapDialog = {
-    hidden = true,
-    build = function() return K.Window(10, 10, "") end,
-    update = function() end,
-}
+-- D-66: the minimap (MiniMapDialog 0x00450CA0): the NPC (2) and Portal (4) check boxes and the close button (6).
+-- s6-world-view (round 17, the owner's revision of plan D26, 2026-10-01): in a look without an entry of its own for it
+-- (Modern's, 5.x's) the model's dialog has no window of its own (win.standIn: never shown). The map window
+-- (core/global/mapwindow.lua) takes its place: it opens on M and with the dialog (the server's 70), closes when the
+-- dialog closes, and its close box and Escape press the dialog's close button (6). The round-19 expanded view that was
+-- here is that window now.
+--
+-- s6-ui-core (round 171, steer 70b1e9b2, the owner 2026-11-17: "7x should have all of 7x features ... just use our
+-- stuff"): a look with an entry (C.look.MiniMap: 7.x's) draws the original's window, which opens as the original's does
+-- (the server's 70: DialogRules' S2C.OpenMinimap), with our map picture in place of the downloaded .mnm picture
+-- (live:wholemap, MinimapPicture.WholeKey: the whole map, centred in 662 x 662). As the original's:
+-- - the player's mark where the player stood as it opened, with the name, not moved after (MiniMapDialog.md:244-245);
+-- - the NPCs and the exits the Library knows (core/global/library/markers.lua) as the .mnm's markers (NPC: with the
+--   name) and areas (Portal: while the pointer is over one, its tooltip, the name and up to six lines, a seventh
+--   "...");
+-- - the cell under the pointer (HandlePointerOrMouseEvent);
+-- - the check boxes, which show or hide their marks and are kept for next time (the original's Config
+--   m_miniMapSymbolCategory2Visible and 1Visible; the machine's minimapMarks here);
+-- - it keeps the map it opened on (4a does not reload it on a map change): the picture is no longer drawn then.
+-- The window only draws: what each control's press and release post is the kit's and the model's (K.Check, K.Button;
+-- control 6 starts the close timer), the same in every look. Nothing is sent but M's 7C (DialogRules.MinimapKey).
+local WHOLE = "live:wholemap" -- MinimapPicture.WholeKey
+local MiniMap = { look = "MiniMap" }
+
+--- The marks of the map the window opens on: the Library's NPCs (their names) and exits (the label's first line their
+--- name, the others their lines: six at most, a seventh "...", as the original's tooltip).
+local function minimapMarks(map)
+    local marks = {}
+    for _, m in ipairs(TK.MapMarkerLayers.library and TK.MapMarkerLayers.library(map) or {}) do
+        local lines = {}
+        for line in tostring(m.label or ""):gmatch("[^\n]+") do lines[#lines + 1] = line end
+        local name = table.remove(lines, 1) or ""
+        if m.kind == "npc" then
+            marks[#marks + 1] = { kind = "npc", x = m.x, y = m.y, name = name }
+        elseif m.kind == "warp" then
+            for i = #lines, 8, -1 do lines[i] = nil end
+            if #lines == 7 then lines[7] = "..." end
+            marks[#marks + 1] = { kind = #lines > 0 and "portalLines" or "portal", x = m.x, y = m.y, name = name,
+                lines = lines }
+        end
+    end
+    return marks
+end
+
+--- A cell's point in the window: the middle of its pixels in the picture, from the picture's top-left cell and zoom.
+local function minimapPoint(win, x, y)
+    local p, A = win.placed, win.entry.map
+    return A.x + (x - p.x0) * p.z + p.z / 2, A.y + (y - p.y0) * p.z + p.z / 2
+end
+
+--- The marks drawn: the portals, the NPCs, then the player's on top, each category while its box is checked; a mark off
+--- the square (a map larger than it) is not drawn. Each pin keeps its rectangle, where the pointer is over it.
+local function minimapLayout(win)
+    local n, A = 0, win.entry.map
+    win.portalPins, win.playerPin = {}, nil
+    local function put(m, frame)
+        local x, y = minimapPoint(win, m.x, m.y)
+        if x < A.x or y < A.y or x >= A.x + A.size or y >= A.y + A.size then return end
+        n = n + 1
+        local pin = win.pins[n]
+        if not pin then
+            pin = { tex = win:CreateTexture(nil, "OVERLAY"), label = W.Label(win, "", 12) }
+            win.pins[n] = pin
+        end
+        pin.mark = m
+        local named = m.kind ~= "portal" and m.kind ~= "portalLines"
+        -- 4a's ClampViewCenter keeps an NPC's or a portal's symbol inside the picture; the player's is not clamped
+        pin.l, pin.t, pin.r, pin.b = win.entry.mark(win, pin, m.kind, frame, x, y, named and m.name or nil,
+            m.kind ~= "player" and win.pictureRect or nil)
+        if m.kind == "portal" or m.kind == "portalLines" then win.portalPins[#win.portalPins + 1] = pin end
+        return pin
+    end
+    if win.placed then
+        for _, m in ipairs(win.marks) do
+            local npc = m.kind == "npc"
+            if (npc and win.npc.__checked) or (not npc and win.portal.__checked) then put(m) end
+        end
+        win.playerPin = win.player and put(win.player, win.frame) or nil
+    end
+    for i = n + 1, #win.pins do
+        win.pins[i].tex:Hide()
+        win.pins[i].label:Hide()
+        win.pins[i].drawn = nil -- the look's mark sets only what changed (7x/dialogs/minimap.lua): it starts again
+    end
+end
+
+--- The picture's part that is the map (a map smaller than the square is centred in it, its top-left cell before 0), at
+--- its place in the square: the original's picture at its natural size centred there, framed by the look.
+local function minimapPicture(win)
+    local p, A = win.placed, win.entry.map
+    local l = p.x0 < 0 and math.floor(-p.x0 * p.z + 0.5) or 0
+    local t = p.y0 < 0 and math.floor(-p.y0 * p.z + 0.5) or 0
+    local w, h = A.size - 2 * l, A.size - 2 * t
+    win.map:SetTexCoord(l / A.size, (l + w) / A.size, t / A.size, (t + h) / A.size)
+    win.pictureRect = { A.x + l, A.y + t, A.x + l + w, A.y + t + h }
+    win.entry.picture(win, table.unpack(win.pictureRect))
+    win.map:Show()
+end
+
+--- The pointer: the cell under it on the picture (X and Y), and the tooltip of the portal under it (Portal shown).
+local function minimapPointer(win)
+    local x, y = TK.Util.CursorRoot()
+    local l, b, w, h = TK.Util.RootRect(win)
+    local over = l ~= nil and win:IsMouseOver()
+    local wx = over and (x - l) * win:GetWidth() / w or 0
+    local wy = over and (b + h - y) * win:GetHeight() / h or 0
+    local cx, cy, p, R = "", "", win.placed, win.pictureRect
+    if over and p and R and wx >= R[1] and wx < R[3] and wy >= R[2] and wy < R[4] then
+        local A = win.entry.map
+        cx, cy = tostring(math.floor(p.x0 + (wx - A.x) / p.z)), tostring(math.floor(p.y0 + (wy - A.y) / p.z))
+    end
+    if win.cellX:GetText() ~= cx then win.cellX:SetText(cx) end
+    if win.cellY:GetText() ~= cy then win.cellY:SetText(cy) end
+    local tip
+    if over then
+        for _, pin in ipairs(win.portalPins or {}) do
+            if wx >= pin.l and wx < pin.r and wy >= pin.t and wy < pin.b then tip = pin.mark break end
+        end
+    end
+    if tip == win.tipFor then return end
+    win.tipFor = tip
+    if not tip then return GameTooltip:Hide() end
+    GameTooltip:SetOwner(win, "ANCHOR_CURSOR")
+    GameTooltip:AddLine(tip.name, 1, 1, 1)
+    if #tip.lines > 0 then GameTooltip:AddLine(" ") end
+    for _, line in ipairs(tip.lines) do GameTooltip:AddLine(line, 0.9, 0.9, 0.9) end
+    GameTooltip:Show()
+end
+
+--- Each frame while it shows: the map it opened on (once left, the picture stays as it was), the picture's placing
+--- once it is drawn (and again if it moves: a map larger than the square follows the player), the player's mark
+--- (MNPLAYER.EPF's five frames, 100 ms each) and the pointer.
+local function minimapTick(win, elapsed)
+    local known, _, map = H:GetLocation()
+    if not win.frozen and win.onMap and known and map ~= win.onMap then
+        win.frozen = true
+        H:ShowLive(WHOLE, false)
+    end
+    if not win.frozen then
+        local ok, x0, y0 = H:OffsetLive(WHOLE)
+        local p = win.placed
+        if ok then
+            local z = H:ZoomLive(WHOLE, 0)
+            if not (p and p.x0 == x0 and p.y0 == y0 and p.z == z) then
+                win.placed = { x0 = x0, y0 = y0, z = z }
+                minimapPicture(win)
+                minimapLayout(win)
+            end
+        end
+    end
+    win.clock = win.clock + (elapsed or 0)
+    if win.clock >= 0.1 then
+        win.clock = 0
+        win.frame = (win.frame + 1) % win.entry.player.frames
+        local pin = win.playerPin
+        if pin then
+            local x, y = minimapPoint(win, win.player.x, win.player.y)
+            win.entry.mark(win, pin, "player", win.frame, x, y, win.player.name)
+        end
+    end
+    minimapPointer(win)
+end
+
+function MiniMap.build(_, L)
+    if not L then
+        local win = K.Window(10, 10, "")
+        win.standIn = true
+        return win
+    end
+    local win = K.Window(L.width, L.height, "")
+    win.entry = L
+    win.npc, win.portal = K.Check(win, 2, ""), K.Check(win, 4, "")
+    win.close = K.Button(win, 6, "")
+    win.mapName = W.Label(win, "", 12)
+    win.cellX, win.cellY = W.Label(win, "", 12), W.Label(win, "", 12)
+    win.map = win:CreateTexture(nil, "ARTWORK")
+    win.map:SetTexture(WHOLE)
+    win.map:Hide()
+    win.pins, win.marks, win.clock, win.frame = {}, {}, 0, 0
+    L.place(win)
+    -- a check box shows or hides its marks and is kept (K.Check has toggled it and posted its release by now)
+    for _, item in ipairs({ { win.npc, "npc" }, { win.portal, "portal" } }) do
+        item[1]:HookScript("OnClick", function(_, button)
+            if button ~= "LeftButton" then return end
+            TK.Machine:Get().minimapMarks[item[2]] = item[1].__checked
+            TK.Machine:MarkDirty()
+            minimapLayout(win)
+        end)
+    end
+    -- drawn only while it shows (CLAUDE.md: nothing runs that is neither shown nor on the wire)
+    win:HookScript("OnShow", function() if not win.frozen then H:ShowLive(WHOLE, true) end end)
+    win:HookScript("OnHide", function()
+        H:ShowLive(WHOLE, false)
+        if win.tipFor then GameTooltip:Hide() end
+        win.tipFor = nil
+    end)
+    win:HookScript("OnUpdate", function(_, elapsed) minimapTick(win, elapsed) end)
+    return win
+end
+
+--- A new dialog: the map and the player's cell it opens on, its name as the title, the boxes as they were kept.
+function MiniMap.update(win)
+    if win.standIn or not win.opened then return end
+    local known, zone, map, x, y = H:GetLocation()
+    local _, name = H:GetUnitInfo("player")
+    win.onMap, win.frozen, win.placed, win.pictureRect = known and map or nil, false, nil, nil
+    win.player = known and { kind = "player", x = x, y = y, name = name or "" } or nil
+    win.marks = known and minimapMarks(map) or {}
+    win.mapName:SetText(known and zone or "")
+    local kept = TK.Machine:Get().minimapMarks
+    win.npc:SetValue(kept.npc)
+    win.portal:SetValue(kept.portal)
+    win.map:Hide()
+    minimapLayout(win)
+end
+
+C.renderers.MiniMapDialog = MiniMap
 
 -- D-68, D-69: the paper's text (1; writable: an edit that takes Enter). Esc (control 0, out of sight) is done: a
 -- writable paper then sends its text.

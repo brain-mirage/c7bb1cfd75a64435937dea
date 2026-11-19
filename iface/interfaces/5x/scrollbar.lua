@@ -42,7 +42,7 @@ function Bar.Width(skin) return WIDTH[skin or 0] end
 --- of the left press on a part after it acted (view.Pressed(part)), of the moves while it is held (view.Moved()) and of
 --- its release (view.Released()): a dialog's list (Bar.ForList).
 function Bar.New(parent, l, t, b, skin, view)
-    local self = setmetatable({ skin = skin or 0, view = view, pool = {}, used = 0 }, Bar)
+    local self = setmetatable({ skin = skin or 0, view = view, pool = {}, used = 0, owner = parent }, Bar)
     local f = CreateFrame("Frame", nil, parent)
     f:SetPoint("TOPLEFT", parent, "TOPLEFT", l, -t)
     f:SetSize(WIDTH[self.skin], b - t)
@@ -54,6 +54,7 @@ function Bar.New(parent, l, t, b, skin, view)
     self.wash:SetAllPoints(f)
     f:SetScript("OnMouseDown", function(_, button) if button == "LeftButton" then self:Press() end end)
     f:SetScript("OnMouseUp", function(_, button) if button == "LeftButton" then self:Release() end end)
+    f:SetScript("OnPressCancelled", function(_, button) if button == "LeftButton" then self:Cancel() end end)
     f:SetScript("OnHide", function() self:Release() end)
     f:SetScript("OnPressedMove", function() if self.active and self.view.Moved then self.view.Moved() end end)
     f:SetScript("OnUpdate", function(_, elapsed)
@@ -99,12 +100,17 @@ function Bar:Hit(x, y)
     end
 end
 
---- The pointer in the bar, in its pixels from its top left.
+--- The pointer in the bar, in its pixels from its top left. Client review 2.44 (Astra's pass 7). WIRE: while a slide's
+--- shield holds a press on its window, at the shield's moved point (owner.__pointAt, dialogkit.lua X.SlideOpen), as 4a
+--- hit-tests the queued press and its timer's steps against the window at its place (DialogPane.cpp:496); the real
+--- pointer against the sliding bar picked another part, so another position (3B 02). Changing it changes that.
 function Bar:Pointer()
     local f = self.frame
     local l, b, w, h = TK.Util.RootRect(f)
     if not l or w <= 0 then return -1, -1 end
-    local x, y = TK.Util.CursorRoot()
+    local x, y
+    local at = self.owner and self.owner.__pointAt
+    if at then x, y = at() else x, y = TK.Util.CursorRoot() end
     local k = f:GetWidth() / w
     return (x - l) * k, (b + h - y) * k
 end
@@ -126,11 +132,25 @@ function Bar:Press()
     if self.view.Pressed then self.view.Pressed(part) end
 end
 
-function Bar:Release()
-    if not self.active then return end
+--- The press ends: the repeat stops and the bar is drawn at rest; true if a press was active.
+local function stop(self)
+    if not self.active then return false end
     self.active, self.lit = nil, nil
     self:Refresh()
-    if self.view.Released then self.view.Released() end
+    return true
+end
+
+function Bar:Release()
+    if stop(self) and self.view.Released then self.view.Released() end
+end
+
+--- Client review 2.44 (Astra's pass 9): the press ended with no release of its own (the host swallowed it: 7.x's item
+--- box shown): the repeat stops and the view hears Cancelled, not Released. WIRE: nothing goes to the model, whose capture
+--- ends with the physical release (ScrollPane.cpp:134); a release posted here would send a second input record.
+function Bar:Cancel()
+    if not stop(self) then return false end
+    if self.view.Cancelled then self.view.Cancelled() end
+    return true
 end
 
 --- The active part acts (ProcessActivePart): the thumb follows the pointer; an arrow or the track steps while the pointer
@@ -339,6 +359,7 @@ function Bar.ForList(list, win, l, t, r, b)
             end,
             Moved = function() list:BarMove() end,
             Released = function() list:BarRelease() end,
+            Cancelled = function() list:ThumbRelease() end, -- 2.44: the hold ends, nothing posted (Bar:Cancel)
         })
         list.nativeBar = bar
         -- the bar's events are the list's, as the kit's thumb's (its release over it: K's controlUnderPointer). Wire: the

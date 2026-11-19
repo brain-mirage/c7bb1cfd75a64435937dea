@@ -128,8 +128,12 @@ function C:SetBoxShown(p, on)
 end
 
 --- ObjectPane.cpp:1142: the box under the name, (middle - 5, 2 pixels below the text) to (middle + 7, 12 below).
+--- s6-ui-core round 172 (steer f8ea909d, the client review's 4.63): called every frame for each carnage name, it
+--- sets the box again only when the size or a colour changed, as ShowArrow does. Drawing only.
 function C:ShowBox(p, fill, inside)
     local k = self:DB().size / 12
+    if p.boxK == k and p.boxFill == fill and p.boxInsideColour == inside then return end
+    p.boxK, p.boxFill, p.boxInsideColour = k, fill, inside
     p.box:ClearAllPoints()
     p.box:SetSize(12 * k, 10 * k)
     p.box:SetPoint("TOP", p, "BOTTOM", k, -2 * k)

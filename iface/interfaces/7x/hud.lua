@@ -76,7 +76,8 @@ function Hud.Lines(parent, rowHeight, paint)
             L:Redraw()
         end
     end
-    -- a left press on the track: the thumb's middle follows the pointer until the release (4a's EPF bar)
+    -- a left press on the track: the thumb's middle follows the pointer until the release (our bar; the press and
+    -- capture rules it keeps are 4a's ScrollPane's, above)
     local function follow()
         local _, y = Help.PointIn(track)
         local h = track:GetHeight()

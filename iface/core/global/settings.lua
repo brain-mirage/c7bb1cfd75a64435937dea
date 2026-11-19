@@ -88,11 +88,10 @@
 local U = TK.Util
 local W = TK.UI
 
-local S = { selected = nil, tabIndex = 1, focused = false } -- focused: S:HasFocus's
+local S = { selected = nil, tabIndex = 1 }
 TK.Settings = S
 
 local WIDTH, HEIGHT = 810, 600
-local TREE_W = 226
 
 -- The list's tabs, in their order; a node's category names one.
 S.categories = {
@@ -140,16 +139,7 @@ local function categoryOf(node) return node.category or "interface" end
 -- s6-ui-settings: a node with tabs is a page; one without is a title only (the header's "nested settings menus").
 local function isPage(node) return node ~= nil and node.tabs ~= nil end
 
---- The first page among a tree's entries (S:Tree) and under them, depth first: what a tab or a title opens on.
-local function firstPage(entries)
-    for _, e in ipairs(entries) do
-        if isPage(e.node) then return e.node end
-        local page = firstPage(e.children)
-        if page then return page end
-    end
-end
-
-local frame, treeScroll, treeContent, categoryBar, tabBar, pageScroll, pageContent, status, lockCheck, buttonLockCheck
+local frame, treeScroll, tabBar, pageScroll, pageContent
 local bindingRows -- the binding rows' own frame (placeBindingRows)
 local resetButton, resetAsk
 local requestMarker
@@ -157,17 +147,16 @@ local keyMarker -- s6-ui-core (round 80): F8's music request outside the window 
 local build
 
 --- s6-ui-bars: the status line's text, grey, or red for an error (the Key Bindings page's "Function is Now Unbound!").
-local function setStatus(text, err)
-    if err then status:SetTextColor(1, 0.25, 0.25) else status:SetTextColor(0.75, 0.75, 0.75) end
-    status:SetText(text)
-end
+--- The line is the shell's (SettingsWindow.SetStatus, round 172).
+local function setStatus(text, err) __tk:ShellSettingsStatus(text, err == true) end
 local musicBlocker, musicOpen, musicWanted, musicSeen, musicPart, musicLevel
 local musicOk   -- the music dialog's window whose OK a control leaving the Sound page pressed (S:LeavesMusic)
 
 -- ----- widget pools (frames are never destroyed, so page widgets are reused) -----
 
-local pools = { oneof = {}, toggle = {}, range = {}, select = {}, execute = {}, header = {}, input = {}, description = {},
-                binding = {}, bindingHeading = {}, orderlist = {}, namelist = {}, stylechoice = {} } -- s6-ui-core (round 54)
+-- s6-ui-core (round 172, U-64 step 4 parts b and c): the plain controls' pools, the one-of's and the style choice's
+-- among them, are the shell's (SettingsWindow.PageControls.cs).
+local pools = { range = {}, binding = {}, bindingHeading = {}, orderlist = {}, namelist = {} }
 local used = {}
 
 local function acquire(kind, make)
@@ -534,7 +523,7 @@ local function titleOf(w, arg)
     return w.title
 end
 
-local TEXT_COLOUR = { 0.85, 0.85, 0.85 } -- a line of text's (builders.description)
+local TEXT_COLOUR = { 0.85, 0.85, 0.85 } -- a line of text's (SettingsControls.TextColour)
 
 --- A title's own colour: a switch's white, a line of text's light grey, the others' gold.
 local function titleColour(arg)
@@ -590,8 +579,6 @@ local function argHidden(node, arg, db)
     return needsUnmet(node, arg, "hide", db)
 end
 
-local INDENT = 20 -- a sub-feature's step in (indent)
-
 -- s6-ui-core (round 125, piece 4a of the Global Interface's plan): the plain controls are the shell's
 -- (Runtime/Shell/SettingsControls.cs). A builder takes one from its pool, wraps its parts under the names the page code
 -- and the tests use, and sets w.ops: what the player's input on it does. The shell calls an op inside the input's own
@@ -607,79 +594,6 @@ TK.ShellCalls["settings.op"] = function(id, op, value)
     if f then f(value) end
 end
 
--- The page's open drop-down (its list is the shell's): a press anywhere but on its list or its own button closes it, as
--- make.Dropdown's lists close (shared/widgets/init.lua).
-local openSelect
-TK.On("GLOBAL_MOUSE_DOWN", function()
-    local d = openSelect
-    if not d then return end
-    if not (d.list and d.list:IsShown()) then openSelect = nil return end
-    local focus = GetMouseFocus()
-    while focus do
-        if focus == d.button or focus == d.list then return end
-        focus = focus:GetParent()
-    end
-    d:CloseList()
-end)
-
---- A drop-down (make.Dropdown's methods, on the shell's control): values are { value =, text = } entries.
-local function newSelect(width, parent)
-    local d = shellControl("select", width, parent)
-    d.title, d.button, d.text = sub(d, "title"), sub(d, "button"), sub(d, "text")
-    function d:SetValue(v)
-        self.current = v
-        for _, x in ipairs(self.values or {}) do
-            if x.value == v then self.text:SetText(x.text) return end
-        end
-        self.text:SetText(tostring(v))
-    end
-    function d:GetValue() return self.current end
-    function d:SetValues(vs) self.values = vs end
-    function d:CloseList()
-        if openSelect == self then
-            openSelect = nil
-            __tk:ShellSettingsCloseDropdowns()
-        end
-    end
-    function d:Configure(label, values, onChange)
-        self.title:SetText(label)
-        self.values, self.onChange = values, onChange
-        self:CloseList()
-    end
-    function d:SetEnabled(on)
-        if on then self.button:Enable() else self.button:Disable() end
-        local t, x = on and W.gold or W.grey, on and W.white or W.grey
-        self.title:SetTextColor(t[1], t[2], t[3], 1)
-        self.text:SetTextColor(x[1], x[2], x[3], 1)
-    end
-    d.ops = {
-        -- the list, its entries' texts and the current one ticked; one drop-down open at a time
-        open = function()
-            W.CloseDropdowns()
-            local texts, current = {}, 0
-            for i, v in ipairs(d.values or {}) do
-                texts[i] = v.text
-                if v.value == d.current then current = i end
-            end
-            __tk:ShellSettingsList(d.__h, table.concat(texts, "\n"), current)
-            d.list = d.list or sub(d, "list")
-            d.list.dropdown = d -- s6-input: a press on the list is the drop-down's window's (onWindow, below)
-            d.list.items = {}
-            for i = 1, #texts do d.list.items[i] = sub(d, "item" .. i) end
-            openSelect = d
-        end,
-        -- a pick (the list already closed): the entry's value shown and set
-        set = function(i)
-            openSelect = nil
-            local v = d.values and d.values[i]
-            if not v then return end
-            d:SetValue(v.value)
-            if d.onChange then d.onChange(v.value) end
-        end,
-    }
-    return d
-end
-
 --- s6-ui-core (round 125, piece 4b): a tab of the window's bars (make.Tab's look, the shell's): SetSelected draws it as
 --- the chosen one; its click runs b.ops.run. name: its global name (the gate's TKSettingsTab:<category>).
 local function newTab(bar, name, size)
@@ -692,102 +606,53 @@ local function newTab(bar, name, size)
     return b
 end
 
---- A one-of group (make.OneOf's methods, on the shell's frame and buttons): a group owns its members' clicks and always
---- selects one. Configure builds a row of buttons from { value, text, desc, disabled } choices; SetValue changes the
---- selection silently, a click reports it.
-local function newOneOf(width)
-    local f = shellControl("oneof", width)
-    f.title = sub(f, "title")
-    f.items, f.buttons = {}, {}
-    function f:SetValue(value)
-        local found = false
-        for _, item in ipairs(self.items) do if item.value == value then found = true end end
-        self.value = found and value or (self.items[1] and self.items[1].value)
-        for _, item in ipairs(self.items) do item.control:SetSelected(item.value == self.value) end
-    end
-    function f:GetValue() return self.value end
-    function f:SetEnabled(on)
-        self.enabled = on
-        for _, item in ipairs(self.items) do item.control:SetEnabled(on and not item.disabled) end
-    end
-    function f:SetGreyed(on) self:SetAlpha(on and 0.62 or 1) end
-    function f:Configure(label, choices, onChange)
-        self.title:SetText(label)
-        self.onChange, self.items = onChange, {}
-        local w = (self:GetWidth() - math.max(0, #choices - 1) * 6) / math.max(1, #choices)
-        for i, choice in ipairs(choices) do
-            local b = self.buttons[i]
-            if not b then
-                b = TK.WrapShellButton(__tk:ShellSettingsControl("execute", self.__h, w))
-                function b:SetSelected(on)
-                    self.selected = on and true or false
-                    __tk:ShellSettingsSelected(self.__h, self.selected)
-                end
-                self.buttons[i] = b
-            end
-            b:SetText(choice.text)
-            b:SetSize(w, 24)
-            b:ClearAllPoints()
-            b:SetPoint("TOPLEFT", self, "TOPLEFT", (i - 1) * (w + 6), -20)
-            W.Tip(b, choice.desc)
-            local item = { control = b, value = choice.value, disabled = choice.disabled }
-            self.items[i] = item
-            -- clicking the selected one cannot leave the group empty
-            b.ops = { run = function()
-                local changed = self.value ~= item.value
-                self:SetValue(item.value)
-                if changed and self.onChange then self.onChange(item.value) end
-            end }
-            b:Show()
-        end
-        for i = #choices + 1, #self.buttons do self.buttons[i]:Hide() end
-        self:SetValue(self.value)
-        self:SetEnabled(true)
-    end
-    return f
-end
+-- s6-ui-core (round 172, U-64 step 4 parts b and c): the plain kinds (a header, a switch, a button, a line of text, a
+-- drop-down, a text field, a one-of, a style choice) are built, filled and drawn by the shell
+-- (Runtime/Shell/SettingsWindow.PageControls.cs); this side gives their data ("settings.data", "settings.values",
+-- "settings.entries"), keeps their views (shellView) and sets their options ("settings.set", "settings.run"). builders
+-- has the kinds still drawn here.
+local PLAIN = { header = true, toggle = true, execute = true, description = true, select = true, input = true,
+    oneof = true, stylechoice = true }
 
 local builders = {}
 
-function builders.header(node, arg, width)
-    local h = acquire("header", function()
-        local h = shellControl("header", width)
-        h.label, h.right = sub(h, "label"), sub(h, "right")
-        return h
-    end)
-    h:SetWidth(width)
-    h.label:SetText(arg.name)
-    return h, 30
-end
-
-function builders.toggle(node, arg)
-    local c = acquire("toggle", function()
-        local box = shellControl("toggle")
-        box.label, box.box = sub(box, "label"), sub(box, "box")
-        function box:SetLabel(text)
-            self.label:SetText(text)
-            self:SetSize(28 + self.label:GetStringWidth(), 24)
-        end
-        function box:SetLabelEnabled(on) __tk:ShellSettingsCheckEnabled(self.__h, on) end
+--- The Lua view of a plain control the shell built (TK.Wrap of its frame: TK.Settings:Widget's, pageWidgets'), with its
+--- parts under the names the page code and the tests use. A frame is always one kind (the shell pools them by kind), so
+--- its parts and hooks are set once.
+local function shellView(kind, h)
+    if kind == "execute" then return TK.WrapShellButton(h) end
+    local w = TK.Wrap(h)
+    if w.viewKind then return w end
+    w.viewKind = kind
+    if kind == "header" then
+        w.label, w.right = sub(w, "label"), sub(w, "right")
+    elseif kind == "toggle" then
+        w.label, w.box = sub(w, "label"), sub(w, "box")
         -- WIRE (s6-ui-core): a box that stands for one of a dialog's controls (the music dialog's effects radio, 4a's
         -- MusicControlDialog 0x00528E60) hands its press and release to that dialog (arg.pointer), as the original's
         -- control took them; changing when they are handed on changes what the server sees.
-        box:HookScript("OnMouseDown", function(_, button) if box.pointer then box.pointer(true, button, box) end end)
-        box:HookScript("OnMouseUp", function(_, button) if box.pointer then box.pointer(false, button, box) end end)
-        return box
-    end)
-    c.pointer = arg.pointer
-    c:SetLabel(arg.name)
-    -- An option the original also sends (arg.action, an action kind) is attached to the box, and a change in the world
-    -- runs it (plan 5.9). WIRE: the action runs inside the click's dispatch (the shell's "set"), as it did; moving it
-    -- changes when the server sees it.
-    TK.Actions:SetTable(c, arg.action and { kind = arg.action } or nil)
-    c.onChange = function(on)
-        setArg(node, arg, on)
-        if arg.action and TK.GameState:InWorld() then TK.Actions:RunFrozen() end
+        w:HookScript("OnMouseDown", function(_, button) if w.pointer then w.pointer(true, button, w) end end)
+        w:HookScript("OnMouseUp", function(_, button) if w.pointer then w.pointer(false, button, w) end end)
+    elseif kind == "description" then
+        w.text = sub(w, "text")
+    elseif kind == "select" then
+        w.title, w.button, w.text, w.list = sub(w, "title"), sub(w, "button"), sub(w, "text"), sub(w, "list")
+        -- the list's entries, as make.Dropdown's list.items (the shell makes them as the list first needs them)
+        w.list.items = setmetatable({}, { __index = function(_, k)
+            local item = type(k) == "number" and __tk:ShellSettingsSub(w.__h, "item" .. k)
+            return item and item > 0 and TK.Wrap(item) or nil -- nil past the last (ipairs stops)
+        end })
+        function w:GetValue() return self.current end -- the value shown (the last refresh's)
+    elseif kind == "oneof" then
+        w.title = sub(w, "title")
+        function w:GetValue() return self.value end -- the chosen one's (the last refresh's, or the click's)
+    elseif kind == "stylechoice" then
+        w.main = shellView("select", __tk:ShellSettingsSub(h, "main"))
+        w.title = w.main.title -- the page's title (S:Widget's callers)
+    else -- input
+        w.title, w.box = sub(w, "title"), sub(w, "box")
     end
-    c.ops = { set = c.onChange }
-    return c, 34
+    return w
 end
 
 -- s6-ui-core (round 60): every range is the one slider (W.Slider); one with handles has a value a handle, each set as an
@@ -838,74 +703,6 @@ local function rangeValues(node, arg)
     local out = {}
     for i, h in ipairs(arg.handles) do out[i] = argValue(node, h) end
     return table.unpack(out, 1, #arg.handles)
-end
-
-function builders.select(node, arg, width)
-    local d = acquire("select", function() return newSelect(width) end)
-    d:SetWidth(width)
-    d:Configure(arg.name, resolveValues(node, arg), function(v) setArg(node, arg, v) end)
-    return d, 56
-end
-
---- A setting offered as mutually exclusive buttons, with the same get/set/reset and needs as other rows.
-function builders.oneof(node, arg, width)
-    local f = acquire("oneof", function() return newOneOf(width) end)
-    f:SetWidth(width)
-    f:Configure(arg.name, resolveValues(node, arg), function(v) setArg(node, arg, v) end)
-    return f, 54
-end
-
--- s6-ui-core (round 54; the owner, 2026-10-05, Asset Styles: "Choosing Custom shows two dropdowns side by side right under
--- that setting, each as wide as its longest word ... Switching back to Modern or Retro hides them"): a select whose value
--- arg.extrasWhen shows small selects under it, side by side (arg.extras: { key, values }, in the same settings table),
--- each as wide as its longest choice; one that would pass the column's edge starts a new line (Astra's pass 3: the
--- head's Fallback made three, wider than a column). The page is laid out again when they show or hide (S:RefreshPage).
-local probe
-local function fitWidth(values)
-    probe = probe or W.Label(pageContent, "", 12, W.white)
-    probe:Hide()
-    local most = 0
-    for _, v in ipairs(values) do
-        probe:SetText(v.text)
-        most = math.max(most, probe:GetStringWidth())
-    end
-    return math.floor(most + 36) -- the field's padding and its arrow
-end
-
-function builders.stylechoice(node, arg, width)
-    local f = acquire("stylechoice", function()
-        local f = shellControl("frame")   -- s6-ui-core (round 125, piece 4b): the shell's frame and drop-downs
-        f.main = newSelect(width, f)
-        f.main:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 0)
-        f.title = f.main.title -- the page's title (its (!), S:Widget's callers)
-        f.extras = {}
-        return f
-    end)
-    f:SetWidth(width)
-    f.main:SetWidth(width)
-    f.main:Configure(arg.name, resolveValues(node, arg), function(v) setArg(node, arg, v) end)
-    local open = argValue(node, arg) == arg.extrasWhen
-    local x, line = 0, 0
-    for i, e in ipairs(arg.extras or {}) do
-        local d = f.extras[i]
-        if not d then
-            d = newSelect(80, f)
-            f.extras[i] = d
-        end
-        local w = fitWidth(e.values)
-        if x > 0 and x + w > width then x, line = 0, line + 1 end
-        d:SetWidth(w)
-        d:Configure("", e.values, function(v) setArg(node, { key = e.key }, v) end)
-        d:ClearAllPoints()
-        d:SetPoint("TOPLEFT", f, "TOPLEFT", x, -26 - line * 28)
-        d:SetShown(open)
-        x = x + w + 6
-    end
-    for i = #(arg.extras or {}) + 1, #f.extras do f.extras[i]:Hide() end
-    f.open = open
-    local lines = open and #(arg.extras or {}) > 0 and line + 1 or 0
-    f:SetHeight(46 + lines * 28)
-    return f, 56 + lines * 26
 end
 
 -- ----- s6-ui-settings: the ordered list of switches (the owner, 2026-10-02) -----
@@ -1125,68 +922,6 @@ function builders.namelist(node, arg, width)
     return f, f:GetHeight() + 8
 end
 
-function builders.execute(node, arg)
-    local b = acquire("execute", function() return TK.WrapShellButton(__tk:ShellSettingsControl("execute", pageContent.__h, 200)) end)
-    b:SetText(arg.name)
-    b:SetWidth(math.max(160, b:GetFontString():GetStringWidth() + 30))
-    b.ops = { run = function()
-        TK.SafeCall(arg.func, node)
-        S:RefreshPage()
-    end }
-    return b, 34
-end
-
-function builders.input(node, arg, width)
-    local f = acquire("input", function()
-        local f = shellControl("input", width)
-        f.title, f.box = sub(f, "title"), sub(f, "box")
-        return f
-    end)
-    f:SetWidth(width)
-    f.box:SetWidth(width)
-    f.title:SetText(arg.name)
-    if arg.live then
-        -- Keeps its text, set as it is typed (a form's field: Tab moves on, a button takes them all).
-        f.box:SetText(arg.get and tostring(arg.get(node) or "") or "")
-        f.ops = {
-            changed = function(text) setArg(node, arg, text) end,   -- typed (the shell skips the code's own SetText)
-            enter = function() f.box:ClearFocus() end,
-        }
-        return f, 50
-    end
-    f.box:SetText("")
-    f.ops = { enter = function(text)
-        f.box:ClearFocus()
-        if text ~= "" then setArg(node, arg, text) end
-        f.box:SetText("")
-    end }
-    return f, 50
-end
-
-function builders.description(node, arg, width)
-    local f = acquire("description", function()
-        local f = shellControl("description")
-        f.text = sub(f, "text")
-        return f
-    end)
-    f.text:SetWidth(width)
-    local text = type(arg.name) == "function" and arg.name(node) or arg.name
-    f.text:SetText(text)
-    local h = f.text:GetStringHeight()
-    f:SetSize(width, h)
-    -- s6-ui-core (round 54; the owner: a line "ends with a ? that shows a short tooltip on hover"): a one-line help
-    if arg.help then
-        if not f.help then f.help = titleMark(f, "?", W.gold) end
-        f.help:ClearAllPoints()
-        f.help:SetPoint("TOPLEFT", f, "TOPLEFT", math.min(f.text:GetStringWidth(), width - 16) + 6, 1)
-        f.help.lines = { arg.help }
-        f.help:Show()
-    elseif f.help then
-        f.help:Hide()
-    end
-    return f, h + 8
-end
-
 --- Shows a slot's binding on its button, or, as WoW's Key Bindings frame, "Not Bound" in gold, dimmed (s6-ui-bars). keys is
 --- the command's keys in B:Keys's order (s6-optimize round 9: the page takes every command's in one pass, B:KeysByCommand).
 local function showSlot(b, keys, slot)
@@ -1340,19 +1075,87 @@ function builders.bindingHeading(node, arg, width)
     return f, 22
 end
 
---- Updates every widget's value and enabled state from the db (after any change).
-function S:RefreshPage()
-    local node = self.selected
-    if not node then return end
+--- Updates every widget's value and enabled state from the db (after any change). s6-ui-core (round 172, U-64 step 4
+--- part b): the shell's (SettingsWindow.RefreshPage): it draws the plain controls' values and greys from
+--- "settings.values", then asks "settings.marks" for the (!) marks and the controls drawn here.
+function S:RefreshPage() __tk:ShellSettingsRefreshPage() end
+
+-- "settings.values"' separators (SettingsWindow.RefreshPage splits them)
+local RECORD, FIELD = "\30", "\31"
+
+--- The text a drop-down shows for the value v: its entry's, else the value (make.Dropdown's SetValue).
+local function shownText(values, v)
+    for _, x in ipairs(values) do
+        if x.value == v then return x.text end
+    end
+    return tostring(v)
+end
+
+--- The plain controls' state for the shell to draw, one record a control (SettingsWindow.RefreshPage reads them): its
+--- row, "1" when disabled (kept for "settings.marks"), then a switch's "1" when on; a line's text when its name is a
+--- function; a drop-down's text shown; a one-of's chosen button's number; a style choice's drop-downs' texts. A
+--- drop-down's entries are kept on its view for its list ("settings.entries") and its pick ("settings.set").
+TK.ShellCalls["settings.values"] = function()
+    local node = S.selected
+    if not node then return nil end
+    local out = {}
+    for _, pw in ipairs(pageWidgets) do
+        local w, arg = pw[1], pw[2]
+        if PLAIN[arg.type] then
+            local disabled = argDisabled(node, arg)
+            pw[4] = disabled
+            local rec = pw[3] .. FIELD .. (disabled and "1" or "")
+            if arg.type == "toggle" then
+                rec = rec .. FIELD .. (argValue(node, arg) and "1" or "")
+            elseif arg.type == "description" then
+                if type(arg.name) == "function" then rec = rec .. FIELD .. tostring(arg.name(node)) end
+            elseif arg.type == "select" then
+                w.values, w.current = resolveValues(node, arg), argValue(node, arg)
+                rec = rec .. FIELD .. shownText(w.values, w.current)
+            elseif arg.type == "oneof" then
+                -- a value not among the choices shows the first (make.OneOf's SetValue)
+                local values, v = w.values, argValue(node, arg)
+                local chosen = #values > 0 and 1 or 0
+                for i, x in ipairs(values) do
+                    if x.value == v then chosen = i break end
+                end
+                w.value = values[chosen] and values[chosen].value
+                rec = rec .. FIELD .. chosen
+            elseif arg.type == "stylechoice" then
+                local m, db = w.main, nodeDB(node)
+                m.values, m.current = resolveValues(node, arg), argValue(node, arg)
+                rec = rec .. FIELD .. shownText(m.values, m.current)
+                for i, e in ipairs(arg.extras or {}) do
+                    local d = w.extras[i]
+                    d.current = db[e.key]
+                    rec = rec .. FIELD .. shownText(e.values, d.current)
+                end
+            end
+            out[#out + 1] = rec
+        end
+    end
+    return table.concat(out, RECORD)
+end
+
+--- After the shell drew the plain controls' values: their (!) marks (s6-ui-core round 54: a title greyed by an unmet
+--- need goes over the colour the values gave it), the controls drawn here, and whether the page is laid out again (a
+--- row comes or goes, a list's rows changed): true, and the shell lays it out where it was scrolled to.
+TK.ShellCalls["settings.marks"] = function()
+    local node = S.selected
+    if not node then return false end
     local relayout = false -- s6-ui-core (round 44): a name list's rows changed
     local keys -- every command's keys, taken once for the page's binding rows (s6-optimize round 9)
     for _, pw in ipairs(pageWidgets) do
         local w, arg = pw[1], pw[2]
-        local disabled = argDisabled(node, arg)
-        if arg.type == "toggle" then
-            w:SetChecked(argValue(node, arg) and true or false)
-            w:SetLabelEnabled(not disabled)
-            showNeeds(node, w, arg, disabled) -- s6-ui-core (round 54): its (!)
+        local disabled = pw[4] -- a plain control's, worked out for "settings.values"
+        if not PLAIN[arg.type] then disabled = argDisabled(node, arg) end
+        if PLAIN[arg.type] then -- drawn by the shell: only its (!) here (a button and a style choice have none)
+            if arg.type ~= "execute" and arg.type ~= "stylechoice" then showNeeds(node, w, arg, disabled) end
+            if arg.type == "oneof" then
+                w:SetAlpha((w.needsGreyed or disabled) and 0.62 or 1) -- by an unmet need (make.OneOf's SetGreyed)
+            elseif arg.type == "stylechoice" and (argValue(node, arg) == arg.extrasWhen) ~= w.open then
+                relayout = true -- s6-ui-core (round 54): its small choices shown or hidden: the page laid out again
+            end
         elseif arg.type == "range" or arg.type == "dualrange" then -- s6-ui-core (round 60): the one slider
             -- the handles shown first (round 62: a stop that goes with a handle off places the values)
             for i, h in ipairs(arg.handles or {}) do
@@ -1361,35 +1164,6 @@ function S:RefreshPage()
             w:SetValue(rangeValues(node, arg))
             w:SetEnabled(not disabled)
             showNeeds(node, w, arg, disabled)
-        elseif arg.type == "oneof" then
-            w:SetValue(argValue(node, arg))
-            w:SetEnabled(not disabled)
-            showNeeds(node, w, arg, disabled)
-            w:SetGreyed(w.needsGreyed or disabled)
-        elseif arg.type == "select" then
-            w:SetValues(resolveValues(node, arg))
-            w:SetValue(argValue(node, arg))
-            w:SetEnabled(not disabled)
-            showNeeds(node, w, arg, disabled)
-        elseif arg.type == "input" then
-            w.box:SetEnabled(not disabled) -- s6-ui-core (round 60): a need that disables
-            local c = disabled and W.grey or W.gold
-            w.title:SetTextColor(c[1], c[2], c[3], 1)
-            showNeeds(node, w, arg, disabled)
-        elseif arg.type == "header" or arg.type == "description" then
-            -- s6-ui-core (round 60): a header or a line of text greyed by a need that disables it, or its (!)
-            if arg.type == "description" and type(arg.name) == "function" then w.text:SetText(arg.name(node)) end
-            local c = disabled and W.grey or titleColour(arg)
-            titleOf(w, arg):SetTextColor(c[1], c[2], c[3], 1)
-            showNeeds(node, w, arg, disabled)
-        elseif arg.type == "stylechoice" then
-            -- s6-ui-core (round 54): its small choices shown or hidden: the page laid out again
-            w.main:SetValues(resolveValues(node, arg))
-            w.main:SetValue(argValue(node, arg))
-            for i, e in ipairs(arg.extras or {}) do w.extras[i]:SetValue(nodeDB(node)[e.key]) end
-            if (argValue(node, arg) == arg.extrasWhen) ~= w.open then relayout = true end
-        elseif arg.type == "execute" then
-            w:SetEnabled(not disabled)
         elseif arg.type == "binding" and not TK.KeyBindMode.capture then
             keys = keys or TK.Bindings:KeysByCommand()
             for slot, b in ipairs(w.keys) do showSlot(b, keys[arg.command], slot) end
@@ -1407,12 +1181,11 @@ function S:RefreshPage()
     for _, h in ipairs(pageHides) do
         if argHidden(node, h[1], db) ~= h[2] then relayout = true break end
     end
-    if relayout then return self:BuildPage(true) end
-    lockCheck:SetChecked(not TK.EditMode.unlocked)
-    buttonLockCheck:SetChecked(TK.DB:Global().buttonLock and true or false)
-    -- Edit mode needs the world; on the login screen it is greyed out. The Key Bindings list is there at the login too.
-    local inWorld = TK.GameState:InWorld()
-    lockCheck:SetLabelEnabled(inWorld)
+    if relayout then return true end
+    -- Lock and Button Lock as they are (the shell's: SettingsWindow.ShowLocks greys Lock out of the world, where edit
+    -- mode cannot run; the Key Bindings list is there at the login too)
+    __tk:ShellSettingsLocks(TK.DB:Global().buttonLock == true)
+    return false
 end
 
 --- s6-library round 18 (the owner: an explanation a player needs goes "in a hover tooltip, not on the page"): an
@@ -1420,94 +1193,212 @@ end
 local optionTip = W.Tip
 
 --- keepScroll (s6-ui-core, round 44): the same page laid out again, where it was scrolled to (a name list's rows changed).
-function S:BuildPage(keepScroll)
-    local scrolled = keepScroll and pageScroll:GetVerticalScroll() or nil
-    -- A key box waiting for a key belongs to the page being replaced (review R2.3).
+--- s6-ui-core (round 172, U-64 step 4 part a): the shell lays the page out (Runtime/Shell/SettingsWindow.Page.cs): its
+--- columns, rows, indents and height; this side lists the tab's rows ("settings.layout") and builds each control the
+--- shell asks for ("settings.build"), then refreshes the page as before.
+function S:BuildPage(keepScroll) __tk:ShellSettingsBuildPage(keepScroll == true) end
+
+local layoutRows = {}   -- the controls listed for the shell's layout, by their number in its list ("settings.build")
+local rowViews = {}     -- the plain controls' views, by the same number ("settings.view")
+local rowChoices = {}   -- a one-of's choices, by the same number, worked out as it is built ("settings.data")
+
+--- The shown tab's rows for the shell's layout, one line each (SettingsWindow.Page.cs reads them): the groups
+--- opened (s6-ui-core round 60: each grouped row as its view), a row left out while it is hidden or of a type the page
+--- does not draw. A row that could come or go is noted with whether it was hidden (pageHides), so RefreshPage lays the
+--- page out again when that changes. The page being replaced goes first: its widgets back to their pools, and a key
+--- box waiting for a key (review R2.3).
+TK.ShellCalls["settings.layout"] = function()
     TK.KeyBindMode:CancelCapture()
     releaseAll()
     U.Wipe(pageWidgets)
     U.Wipe(pageHides)
-    local node = self.selected
-    if not node then return end
-    local tabs = node.tabs or {}
-    local tab = tabs[self.tabIndex] or tabs[1]
-    if not tab then return end
-
-    local pad = 16
-    local total = pageScroll:GetWidth() - pad * 2
-    local colW = math.floor((total - pad) / 2)
-    local x, y, col, rowH = pad, -12, 0, 0
-
-    local function newRow()
-        if col > 0 then
-            y = y - rowH
-            col, rowH = 0, 0
-        end
-    end
-
-    -- s6-ui-core (round 60): whether an arg is left off, noted for RefreshPage when it could change
-    local function hides(a, db)
+    U.Wipe(layoutRows)
+    U.Wipe(rowViews)
+    U.Wipe(rowChoices)
+    local node = S.selected
+    local tabs = node and node.tabs or {}
+    local tab = tabs[S.tabIndex] or tabs[1]
+    if not tab then return nil end
+    local out = {}
+    local function listed(a, db)
         local hidden = argHidden(node, a, db)
         if a.hidden or a.requires then pageHides[#pageHides + 1] = { a, hidden } end
-        return hidden
+        if hidden or not (builders[a.type] or PLAIN[a.type]) then return nil end
+        layoutRows[#layoutRows + 1] = a
+        return #layoutRows
     end
-
-    local rows = {} -- s6-ui-core (round 60): the groups opened, each grouped row as its view
-    walk(tab.args, function(a) rows[#rows + 1] = a end)
-    for _, arg in ipairs(rows) do
+    walk(tab.args, function(arg)
         local db = nodeDB(node)
         if arg.type == "break" then
-            newRow()
+            out[#out + 1] = "break"
         elseif arg.type == "row" then
-            -- s6-interface-5x (round 12): controls side by side on one row, each its own width (arg.args; a control's
-            -- rowWidth, else a column's), the check boxes and buttons level with a dropdown's box below its title
-            newRow()
-            local rx, rh = pad + (arg.indent or 0) * INDENT, 0 -- s6-ui-core (round 60): in a group, its steps in
+            -- s6-interface-5x (round 12): controls side by side on one row, each its rowWidth wide, else a column's
+            out[#out + 1] = "row\t" .. (arg.indent or 0)
             for _, a in ipairs(arg.args) do
-                if not hides(a, db) and builders[a.type] then
-                    local cw = a.rowWidth or colW
-                    local w, h = builders[a.type](node, a, cw)
-                    optionTip(w, a.desc)
-                    w:SetPoint("TOPLEFT", pageContent, "TOPLEFT", rx, y - (a.type == "select" and 0 or 22))
-                    pageWidgets[#pageWidgets + 1] = { w, a }
-                    rx = rx + (a.rowWidth or (a.type == "select" and cw) or w:GetWidth()) + pad
-                    rh = math.max(rh, h + (a.type == "select" and 0 or 22))
-                end
+                local i = listed(a, db)
+                if i then out[#out + 1] = "in\t" .. i .. "\t" .. a.type .. "\t" .. (a.rowWidth or "") end
             end
-            y = y - rh
-        elseif not hides(arg, db) then
-            local full = arg.type == "header" or arg.type == "description" or arg.type == "binding"
-                or arg.type == "bindingHeading" or arg.type == "orderlist" or arg.type == "namelist" or arg.width == "full"
-            -- s6-ui-core (round 60): an indented control is on a row of its own, its steps in
-            local own, inset = arg.indent ~= nil, (arg.indent or 0) * INDENT
-            if full or own then newRow() end
-            local width = full and (total - inset) or colW
-            local build = builders[arg.type]
-            if build then
-                local w, h = build(node, arg, width)
-                -- s6-library round 18. s6-ui-core (round 52; Astra's review): an input's box takes the pointer, not its
-                -- frame (a hover does not reach the parent), so the box carries the tip.
-                optionTip(arg.type == "input" and w.box or w, arg.desc)
-                local wx = (full or own) and (pad + inset) or (pad + col * (colW + pad))
-                -- Check boxes sit at the left of their column; everything else fills it.
-                w:SetPoint("TOPLEFT", pageContent, "TOPLEFT", wx, y - (arg.type == "toggle" and 6 or 0))
-                pageWidgets[#pageWidgets + 1] = { w, arg }
-                if full or own then
-                    y = y - h
-                else
-                    rowH = math.max(rowH, h)
-                    col = col + 1
-                    if col >= 2 then newRow() end
-                end
+            out[#out + 1] = "end"
+        else
+            -- s6-ui-core (round 60): an indented control (indent given) is on a row of its own, its steps in
+            local i = listed(arg, db)
+            if i then
+                out[#out + 1] = "item\t" .. i .. "\t" .. arg.type .. "\t" .. (arg.indent or "") .. "\t"
+                    .. (arg.width == "full" and "1" or "")
             end
         end
+    end)
+    return table.concat(out, "\n")
+end
+
+--- Builds the listed control i, width wide, for the shell to place: its frame, its height on the page and its width.
+--- s6-library round 18: an option's desc is its control's tooltip; s6-ui-core (round 52; Astra's review): an input's
+--- box takes the pointer, not its frame (a hover does not reach the parent), so the box carries the tip, in a row too.
+TK.ShellCalls["settings.build"] = function(i, width)
+    local a = layoutRows[tonumber(i)]
+    local w, h = builders[a.type](S.selected, a, width)
+    optionTip(a.type == "input" and w.box or w, a.desc)
+    pageWidgets[#pageWidgets + 1] = { w, a }
+    return w.__h, h, w:GetWidth()
+end
+
+--- A plain control's data for the shell to build it (SettingsWindow.BuildPlain): its name (worked out when it is a
+--- function), and a live field's flag and text (a form's field keeps its text: Tab moves on, a button takes them all);
+--- a style choice's: whether its small choices show (s6-ui-core round 54: while its value is arg.extrasWhen) and how
+--- many there are. A one-of's choices are worked out here, once for its building (its buttons' texts, tooltips).
+TK.ShellCalls["settings.data"] = function(i)
+    local n = tonumber(i)
+    local a, node = layoutRows[n], S.selected
+    local name = a.name
+    if type(name) == "function" then name = name(node) end
+    name = name ~= nil and tostring(name) or ""
+    if a.type == "input" and a.live then return name, true, a.get and tostring(a.get(node) or "") or "" end
+    if a.type == "oneof" then
+        rowChoices[n] = resolveValues(node, a)
+    elseif a.type == "stylechoice" then
+        return name, argValue(node, a) == a.extrasWhen, #(a.extras or {})
     end
-    newRow()
+    return name
+end
+
+--- A control's entries for the shell (SettingsWindow.Entries): a drop-down's as its list opens, a style choice's small
+--- choice's as it is built (its width) and opened, a one-of's choices as it is built. The current one's number (0:
+--- none), then each entry's text; a one-of's each followed by whether it is disabled. part: a style choice's small
+--- choice (arg.extras), 0 its main drop-down.
+TK.ShellCalls["settings.entries"] = function(i, part)
+    local n, p = tonumber(i), tonumber(part) or 0
+    local a, w, node = layoutRows[n], rowViews[n], S.selected
+    local oneOf, values, v = a.type == "oneof"
+    if oneOf then
+        values, v = rowChoices[n] or {}, argValue(node, a)
+    elseif a.type == "stylechoice" and p > 0 then
+        local e = a.extras[p]
+        values, v = e.values, nodeDB(node)[e.key]
+    else -- the last refresh's (settings.values), as the pick reads them
+        local d = a.type == "stylechoice" and w.main or w
+        values, v = d.values or {}, d.current
+    end
+    local current, out = 0, {}
+    for k, x in ipairs(values) do
+        if current == 0 and x.value == v then current = k end
+        out[#out + 1] = x.text
+        if oneOf then out[#out + 1] = x.disabled == true end
+    end
+    return current, table.unpack(out)
+end
+
+--- The shell built the plain control i (its frame h): its view kept for the refresh and TK.Settings:Widget, its
+--- tooltip, and what goes with its kind: a switch's dialog control and action, a drop-down's set by value (the tests'
+--- onChange), a line's "?".
+TK.ShellCalls["settings.view"] = function(i, h)
+    local n = tonumber(i)
+    local a, node = layoutRows[n], S.selected
+    local w = shellView(a.type, h)
+    if a.type == "toggle" then
+        w.pointer = a.pointer
+        -- An option the original also sends (arg.action, an action kind) is attached to the box, and a change in the
+        -- world runs it (plan 5.9). WIRE: the action runs inside the click's dispatch (the shell's "set", through
+        -- "settings.set"), as it did; moving it changes when the server sees it.
+        TK.Actions:SetTable(w, a.action and { kind = a.action } or nil)
+        w.onChange = function(on)
+            setArg(node, a, on)
+            if a.action and TK.GameState:InWorld() then TK.Actions:RunFrozen() end
+        end
+    elseif a.type == "select" then
+        w.onChange = function(v) setArg(node, a, v) end
+    elseif a.type == "oneof" then
+        -- its buttons (the shell's, one a choice), each with its choice's tooltip
+        w.values, w.buttons = rowChoices[n], {}
+        for k, choice in ipairs(w.values) do
+            local b = TK.WrapShellButton(__tk:ShellSettingsSub(h, "button" .. k))
+            W.Tip(b, choice.desc)
+            w.buttons[k] = b
+        end
+    elseif a.type == "stylechoice" then
+        -- its drop-downs (the shell's): the main one sets the option, each small choice its own key (arg.extras)
+        w.main.onChange = function(v) setArg(node, a, v) end
+        w.extras = {}
+        for k, e in ipairs(a.extras or {}) do
+            local d = shellView("select", __tk:ShellSettingsSub(h, "extra" .. k))
+            d.values = e.values
+            d.onChange = function(v) setArg(node, { key = e.key }, v) end
+            w.extras[k] = d
+        end
+        w.open = argValue(node, a) == a.extrasWhen -- as the shell built it ("settings.data"; "settings.marks")
+    elseif a.type == "description" then
+        -- s6-ui-core (round 54; the owner: a line "ends with a ? that shows a short tooltip on hover"): a one-line help
+        if a.help then
+            if not w.help then w.help = titleMark(w, "?", W.gold) end
+            w.help:ClearAllPoints()
+            w.help:SetPoint("TOPLEFT", w, "TOPLEFT", math.min(w.text:GetStringWidth(), w:GetWidth() - 16) + 6, 1)
+            w.help.lines = { a.help }
+            w.help:Show()
+        elseif w.help then
+            w.help:Hide()
+        end
+    end
+    optionTip(a.type == "input" and w.box or w, a.desc)
+    rowViews[n] = w
+    pageWidgets[#pageWidgets + 1] = { w, a, i }
+end
+
+--- The player's input on the plain control i, from the shell (SettingsWindow.PageInput), inside the input's own
+--- dispatch: a switch's new state, a drop-down's pick (the entry's number in its list, "settings.entries"; part: a
+--- style choice's small choice, 0 its main one), a one-of's choice's number, a field's text. WIRE: a switch's runs its
+--- frozen action here (its onChange, "settings.view"), inside the click, as before.
+TK.ShellCalls["settings.set"] = function(i, value, part)
+    local n = tonumber(i)
+    local a, w = layoutRows[n], rowViews[n]
+    if not (a and w) then return end
+    if a.type == "toggle" then
+        w.onChange(value == true)
+    elseif a.type == "select" or a.type == "stylechoice" then
+        local p = tonumber(part) or 0
+        local d = a.type == "select" and w or p == 0 and w.main or w.extras[p]
+        local v = d and d.values and d.values[tonumber(value)]
+        if v then d.onChange(v.value) end
+    elseif a.type == "oneof" then
+        -- the choice clicked (the shell drew it chosen); clicking the chosen one sets nothing (make.OneOf's)
+        local choice = w.values[tonumber(value)]
+        if choice and choice.value ~= w.value then
+            w.value = choice.value
+            setArg(S.selected, a, choice.value)
+        end
+    else
+        setArg(S.selected, a, value)
+    end
+end
+
+--- A button's click (the plain control i), from the shell: its function, then the page's refresh.
+TK.ShellCalls["settings.run"] = function(i)
+    local a = layoutRows[tonumber(i)]
+    if not a then return end
+    TK.SafeCall(a.func, S.selected)
+    S:RefreshPage()
+end
+
+TK.ShellCalls["settings.laidout"] = function()
     placeBindingRows(#pools.binding < bindingRowsMade) -- out of the window unless a row is in use (s6-optimize round 10)
-    pageContent:SetSize(pageScroll:GetWidth(), -y + 12)
-    pageScroll:ScrollToTop()
-    if scrolled then pageScroll:SetVerticalScroll(scrolled) end
-    self:RefreshPage()
 end
 
 --- The widget showing an option on the open page, by the option's name (for tests); s6-sandbox (round 11): or its id,
@@ -1519,7 +1410,7 @@ function S:Widget(name)
 end
 
 --- The status line's text (what the last change did).
-function S:StatusText() return status and status:GetText() or "" end
+function S:StatusText() return __tk:ShellSettingsStatusText() end
 
 --- Scrolls the page so a widget is at its top (the Key Bindings page is long; tests and scripts).
 function S:ScrollTo(widget)
@@ -1535,7 +1426,7 @@ function S:SetOption(nodeId, keyOrName, value, startup)
         -- s6-interface-5x (round 12): a row's controls are found by their own names (BuildPage's "row")
         for _, a in ipairs(controls(tab)) do
             if a.key == keyOrName or a.name == keyOrName then
-                if not status then build() end
+                if not frame then build() end
                 setArg(node, a, value)
                 return true
             end
@@ -1628,60 +1519,10 @@ end
 
 -- ----- the list's tabs (s6-ui-settings) -----
 
-local categoryButtons = {}
-
---- The list's tabs, on the window's top row across both panes (GA-3, the client review's 8.1: in the list's width
---- they were squeezed to the client's smallest text): one per category with a page here (the gate's names are
---- TKSettingsTab:<category>). A category with none, at the login screen, is hidden.
-function S:BuildCategoryTabs(all)
-    all = all or self:Nodes()
-    local shownTabs = {}
-    for i, c in ipairs(self.categories) do
-        local b = categoryButtons[i]
-        if not b then
-            b = newTab(categoryBar, "TKSettingsTab:" .. c.id, 13) -- s6-ui-core (round 125, piece 4b): the shell's tab
-            b:SetText(c.title)
-            b.ops = { run = function() S:ShowCategory(c.id) end }
-            self:LeavesMusic(b, function() return S:LeavesMusicFor(S:CategoryTarget(c.id)) end)
-            categoryButtons[i] = b
-        end
-        local target = self:CategoryTarget(c.id, all)
-        -- The page the click shows carries its request on the tab too (D20, as its row; Astra's review): Sound reopened
-        -- through General asks as its row does.
-        TK.Actions:Set(b, target and target.request)
-        local shown = target ~= nil
-        b:SetShown(shown)
-        if shown then
-            shownTabs[#shownTabs + 1] = b
-            b:SetSelected(c.id == self.category)
-        end
-    end
-    if #shownTabs == 0 then return end
-    -- the row has room for the five at full size (about 360 of its 470 points), so no shrinking as in the list
-    local x = 0
-    for _, b in ipairs(shownTabs) do
-        local w = b:GetFontString():GetStringWidth() + 24
-        b:SetSize(w, 24)
-        b:ClearAllPoints()
-        b:SetPoint("BOTTOMLEFT", categoryBar, "BOTTOMLEFT", x, 0)
-        x = x + w + 3
-    end
-end
-
---- The page a list tab's click shows: the row last open there (kept in the profile), else its first page; nil when the
---- tab has none here (from all, the pages here, when the caller has them).
-function S:CategoryTarget(category, all)
-    local kept = TK.DB:Global().settingsRows[category]
-    for _, n in ipairs(self:CategoryNodes(category, all)) do
-        if n.id == kept and isPage(n) then return n end
-    end
-    return firstPage(self:Tree(category, all))
-end
-
-function S:ShowCategory(category)
-    local node = self:CategoryTarget(category)
-    if node then self:Select(node.id, nil, true) end   -- the tab's row last open: the closed entries stay closed
-end
+--- A list tab's click (the gate's TKSettingsTab:<category>): the row last open there, the closed entries staying
+--- closed. s6-ui-core (round 172, U-64 step 3): the tabs are the shell's (Runtime/Shell/SettingsWindow.Tree.cs draws
+--- them on the window's top row, one per category with a page here).
+function S:ShowCategory(category) __tk:ShellSettingsShowCategory(category) end
 
 -- ----- the tree -----
 
@@ -1779,103 +1620,13 @@ function S:Tree(category, all)
     return shownOf(roots), byId
 end
 
---- The page an entry opens on (S:Select): a shown page itself; a shown title's first page (a title with one page: that
---- page); for an entry not shown, or a shown title with no shown page under it, the nearest entry above it that has
---- one, the same way (Astra's review of round 17). nil if none.
-local function pageFor(e, byId)
-    while e do
-        local page = e.visible and (isPage(e.node) and e.node or firstPage(e.children))
-        if page then return page end
-        e = e.node and byId[e.node.parent]
-    end
-end
-
---- The page a title's click shows: its first page (s6-ui-core round 54; the owner, 2026-10-05: "clicking the header for
---- an item with subpages automatically selects the top-level subpage under it"; before, a title with one child only).
-local function titlePage(e) return firstPage(e.children) end
-
 --- Opens or closes an entry's children (its + / - button). The closed ones are kept in the profile with the tab and the
---- rows last open, so the list looks the same at the next opening.
+--- rows last open, so the list looks the same at the next opening. The shell's list asks for it ("settings.expand").
 function S:SetExpanded(id, open)
     local closed = TK.DB:Global().settingsCollapsed
     if (closed[id] == true) ~= open then return end
     closed[id] = (not open) or nil
     TK.DB:MarkDirty()
-end
-
-local ROW_STEP, INDENT = 19, 12
-
---- A list row, recycled: its selection band, its + / - button and its text. BuildTree sets its entry and its target (the
---- page its click shows) each time.
-local function newRow(i)
-    -- s6-ui-core (round 125, piece 4b): the row is the shell's (SettingsControls.TreeRow); its clicks come back as "run"
-    -- (the row) and "expand" (its + / - button)
-    local b = TK.Wrap(__tk:ShellSettingsControl("treerow", treeContent.__h, 0))
-    b:SetHeight(ROW_STEP)
-    -- Wire: a press that leaves the Sound page (a row showing another page) is the music dialog's control 14, its OK,
-    -- which 4a's MusicControlDialog::OnControlCommand (0x00529790) answers with CloseDialog. The close sends nothing,
-    -- but it is what lets the Sound page's next opening build the dialog again (MusicControlDialog::MusicControlDialog,
-    -- 0x00528E60), which sends 1B 01 00. Changing which rows press it changes the 1B the server sees, and when.
-    S:LeavesMusic(b, function() return S:LeavesMusicFor(b.target) end)
-    b.sel, b.text, b.expander = sub(b, "sel"), sub(b, "text"), sub(b, "expander")
-    b.expander.label = sub(b, "expanderLabel")
-    b.ops = {
-        run = function() if b.target then S:Select(b.target.id) end end,
-        expand = function()
-            S:SetExpanded(b.entry.id, TK.DB:Global().settingsCollapsed[b.entry.id] == true)
-            S:BuildTree()
-        end,
-    }
-    treeButtons[i] = b
-    return b
-end
-
---- all: the pages here when the caller has them (S:Select lists them once per page change: s6-optimize's note).
-function S:BuildTree(all)
-    for _, b in ipairs(treeButtons) do b:Hide() end
-    local closed = TK.DB:Global().settingsCollapsed
-    local rows = {}
-    local function add(entries, depth)
-        for _, e in ipairs(entries) do
-            rows[#rows + 1] = { entry = e, depth = depth }
-            if not closed[e.id] then add(e.children, depth + 1) end
-        end
-    end
-    add(self:Tree(self.category, all), 0)
-
-    local y = -6
-    for i, row in ipairs(rows) do
-        local b = treeButtons[i] or newRow(i)
-        local e, depth = row.entry, row.depth
-        local page = isPage(e.node)
-        b.entry = e
-        b.target = page and e.node or titlePage(e)
-        b.nodeId = page and e.node.id or nil   -- the gate's name for the row (gatecontrols.lua): the rows are recycled
-        b:ClearAllPoints()
-        b:SetPoint("TOPLEFT", treeContent, "TOPLEFT", 4, y)
-        b:SetPoint("TOPRIGHT", treeContent, "TOPRIGHT", -4, y)
-        local x = 2 + depth * INDENT
-        b.expander:ClearAllPoints()
-        b.expander:SetPoint("LEFT", b, "LEFT", x, 0)
-        b.expander:SetShown(#e.children > 0)
-        b.expander.label:SetText(closed[e.id] and "+" or "-")
-        b.text:ClearAllPoints()
-        b.text:SetPoint("LEFT", b, "LEFT", x + 16, 0)
-        b.text:SetText(e.title)
-        W.Color(b.text, (depth == 0 or not page) and W.gold or W.white)
-        b.sel:SetShown(page and self.selected ~= nil and self.selected.id == e.node.id)
-        -- Wire (D20): the row's press carries the request of the page its click shows; C# freezes it at the press, and
-        -- the page's marker runs it when the page shows. Only the Sound pages have one, open:music: in the world the
-        -- page is the original's MusicControlDialog, and opening it builds the dialog, whose constructor (4a's
-        -- MusicControlDialog::MusicControlDialog, 0x00528E60) sends 1B 01 00 (S:SetMusicDialog). A row that shows no
-        -- page carries none. Changing which rows carry it changes when the server sees 1B 01 00.
-        TK.Actions:Set(b, b.target and b.target.request)
-        b:Show()
-        y = y - ROW_STEP
-    end
-    treeContent:SetSize(TREE_W - 12, -y + 6)
-    treeScroll.Refresh()
-    self:BuildCategoryTabs(all)
 end
 
 function S:FindNode(id, startup)
@@ -1885,108 +1636,165 @@ function S:FindNode(id, startup)
     end
 end
 
---- The first page of a list tab here, or of the first tab that has one.
-function S:FirstNode(category, all)
-    local node = firstPage(self:Tree(category, all))
-    if node then return node end
-    for _, c in ipairs(self.categories) do
-        node = firstPage(self:Tree(c.id, all))
-        if node then return node end
-    end
+-- s6-ui-core (round 172, U-64 step 3): the list's behaviour is the shell's (Runtime/Shell/SettingsWindow.Tree.cs): it
+-- draws the tree, opens and closes its entries, selects a page and keeps its row in view. What the list holds stays
+-- here: the pages here (S:Nodes), each tab's tree (S:Tree; the Interface tab's grouped by TK.Panels) and the profile's
+-- kept tab, rows and closed entries. The shell reads them as a catalogue and hands each choice back ("settings.show").
+
+--- Shows the page an entry's id names (any tab's entry: a page, a title node, or a title the tree made for a parent),
+--- else the shown tab's first page. restoring: the row last open is shown again, the entries the player closed staying
+--- closed; any other call is a shortcut to the page, and every entry above it opens (SettingsWindow.Select).
+function S:Select(id, tabName, restoring) __tk:ShellSettingsSelect(id, tabName, restoring == true) end
+
+--- The list drawn again from what is shown now (an interface viewed: core/panels.lua's P:View).
+function S:BuildTree() __tk:ShellSettingsBuildTree() end
+
+--- s6-ui-settings (s6-peer's note): the list drawn again after a page changed which entries are shown; a selected page
+--- no longer shown gives way to the nearest shown entry above it.
+function S:RefreshTree() __tk:ShellSettingsRefreshTree() end
+
+local listed -- the pages here as the shell's catalogue last listed them (S:Nodes(), once per page change: s6-optimize)
+local function pages(fresh)
+    if fresh or not listed then listed = S:Nodes() end
+    return listed
 end
 
---- Shows the page an entry's id names (any tab's entry: a page, a title node, or a title the tree made for a parent,
---- through pageFor), else the current tab's first page. restoring: the row last open is shown again (the window's
---- opening, a list tab's click, a profile or game state change), so the entries the player closed stay closed; any
---- other call is a shortcut to the page, and every entry above it opens so its row shows (Astra's round 16 review).
-function S:Select(id, tabName, restoring)
-    local all, node = self:Nodes(), nil
-    -- s6-interface-5x (round 12): a shortcut to another interface's page shows that interface's list first, so the page's
-    -- row is in the tree (the list holds only the shown interface's pages). Only the Interface tab's pages: a General page
-    -- that is a panel's (Classic Commands) leaves the shown interface alone (Astra's s6-interface-5x-self-12-3).
-    if not restoring then
-        for _, n in ipairs(all) do
-            if n.id == id then
-                if categoryOf(n) == "interface" then TK.Panels:Reveal(n) end
-                break
+--- The shell's catalogue of the list: one line a fact, its fields tab-separated. "k", the tab last open; for each tab
+--- "c", its id, title and row last open, then its shown entries depth first, "e", depth, id, title, flags (n: a node,
+--- p: a page, x: closed), the node's parent and an Interface page's headings (TK.Panels:HeadingsOf); then
+--- its entries not shown, "h", id, flags, the node's parent (the shell finds the nearest shown entry above them).
+TK.ShellCalls["settings.catalogue"] = function(_, fresh)
+    local all = pages(fresh)
+    local g = TK.DB:Global()
+    local closed = g.settingsCollapsed
+    local out = { "k\t" .. (g.settingsTab or "") }
+    local function flags(e)
+        return (e.node and "n" or "") .. (isPage(e.node) and "p" or "") .. (closed[e.id] and "x" or "")
+    end
+    for _, c in ipairs(S.categories) do
+        local roots, byId = S:Tree(c.id, all)
+        out[#out + 1] = table.concat({ "c", c.id, c.title, g.settingsRows[c.id] or "" }, "\t")
+        local function add(entries, depth)
+            for _, e in ipairs(entries) do
+                local n, heads = e.node, {}
+                if c.id == "interface" and isPage(n) then
+                    for _, h in ipairs(TK.Panels:HeadingsOf(n)) do heads[#heads + 1] = h.id end
+                end
+                out[#out + 1] = table.concat({ "e", depth, e.id, e.title or e.id, flags(e), n and n.parent or "",
+                    table.concat(heads, ",") }, "\t")
+                add(e.children, depth + 1)
+            end
+        end
+        add(roots, 0)
+        for id, e in pairs(byId) do
+            if not e.visible then
+                out[#out + 1] = table.concat({ "h", id, flags(e), e.node and e.node.parent or "" }, "\t")
             end
         end
     end
-    for _, c in ipairs(self.categories) do
-        local _, byId = self:Tree(c.id, all)
-        if byId[id] then
-            node = pageFor(byId[id], byId)
-            break
+    return table.concat(out, "\n")
+end
+
+--- s6-interface-5x (round 12): a shortcut to another interface's page shows that interface's list first, so the page's
+--- row is in the tree (the list holds only the shown interface's pages). Only the Interface tab's pages: a General page
+--- that is a panel's (Classic Commands) leaves the shown interface alone (Astra's s6-interface-5x-self-12-3).
+TK.ShellCalls["settings.reveal"] = function(id)
+    for _, n in ipairs(pages(true)) do
+        if n.id == id then
+            if categoryOf(n) == "interface" then TK.Panels:Reveal(n) end
+            return
         end
     end
-    node = node or self:FirstNode(self.category or TK.DB:Global().settingsTab, all)
-    local changed = self.selected == nil or self.selected.id ~= node.id
+end
+
+--- The shell's choice of page (SettingsWindow.Select): its node is S.selected; its list tab shows, and the profile
+--- keeps it and its row for the next opening; the page's tab is chosen; and the Sound page's request goes (below).
+TK.ShellCalls["settings.show"] = function(id, tabName, changed)
+    local node
+    for _, n in ipairs(pages()) do
+        if n.id == id then node = n break end
+    end
+    if not node then return end
     if changed then dismissReset() end
-    self.selected = node
-    -- The page's list tab shows, and the profile keeps it and its row for the next opening.
-    self.category = categoryOf(node)
+    S.selected = node
+    S.category = categoryOf(node)
     -- s6-interface-5x (round 12): the Interface tab lists one interface's pages; a page of another shows that one first
-    if self.category == "interface" then TK.Panels:Reveal(node) end
+    if S.category == "interface" then TK.Panels:Reveal(node) end
     local g = TK.DB:Global()
-    if g.settingsTab ~= self.category or g.settingsRows[self.category] ~= node.id then
-        g.settingsTab = self.category
-        g.settingsRows[self.category] = node.id
+    if g.settingsTab ~= S.category or g.settingsRows[S.category] ~= node.id then
+        g.settingsTab = S.category
+        g.settingsRows[S.category] = node.id
         TK.DB:MarkDirty()
     end
     if tabName then
         for i, t in ipairs(node.tabs or {}) do
-            if t.name == tabName then self.tabIndex = i end
+            if t.name == tabName then S.tabIndex = i end
         end
     elseif changed then
         -- Keep the same tab when moving between similar nodes (Bar 1 to Bar 2), as Bartender does.
-        local tabs = node.tabs or {}
-        if self.tabIndex > #tabs then self.tabIndex = 1 end
+        if S.tabIndex > #(node.tabs or {}) then S.tabIndex = 1 end
     end
-    if not restoring then
-        -- A shortcut to the page: its row shows, every entry above it opening.
-        local _, byId = self:Tree(self.category, all)
-        local p = node.parent
-        while byId[p] do
-            self:SetExpanded(p, true)
-            p = byId[p].node and byId[p].node.parent
-        end
-        -- s6-interface-5x (round 11): and the Interface list's title above it (Panes or Decoration, core/panels.lua)
-        if self.category == "interface" then
-            for _, h in ipairs(TK.Panels:HeadingsOf(node)) do self:SetExpanded(h.id, true) end
-        end
-    end
-    -- D20: a page that stands for one of the original's dialogs asks as that dialog did, each time the player opens it
-    -- in the world: its marker frame carries the request and becomes visible with the page (and with the window).
+    -- WIRE (D20): a page that stands for one of the original's dialogs asks as that dialog did, each time the player
+    -- opens it in the world: its marker frame carries the request and becomes visible with the page (and with the
+    -- window). The Sound pages' open:music is 4a's MusicControlDialog constructor's 1B 01 00 (0x00528E60); changing
+    -- when the marker shows changes when the server sees it.
     local music = node.request == "open:music" and TK.GameState:InWorld()
     if requestMarker then requestMarker:SetShown(music) end
-    self:SetMusicDialog(music and frame ~= nil and frame:IsShown())
-    self:BuildTree(all)
-    if changed then self:RevealSelected() end -- s6-sandbox (round 10): the Plugins pages are at the tree's end
-    self:BuildTabs()
-    self:BuildPage()
+    S:SetMusicDialog(music and frame ~= nil and frame:IsShown())
 end
 
---- s6-ui-settings (s6-peer's note): the list drawn again after a page changed which entries are shown (a node's
---- shown()); a selected page no longer shown gives way to the nearest shown entry above it.
-function S:RefreshTree()
-    if not self:IsOpen() then return end
-    local _, byId = self:Tree(self.category)
-    local e = self.selected and byId[self.selected.id]
-    if e and e.visible then self:BuildTree() else self:Select(self.selected and self.selected.id, nil, true) end
+TK.ShellCalls["settings.page"] = function()
+    S:BuildTabs()
+    S:BuildPage()
 end
+TK.ShellCalls["settings.expand"] = function(id, open) S:SetExpanded(id, open == true) end
 
---- s6-sandbox (round 10): scrolls the tree so the selected page's row shows (a page opened directly, deep in the tree).
-function S:RevealSelected()
-    for _, b in ipairs(treeButtons) do
-        if b:IsShown() and b.sel:IsShown() then
-            local _, _, _, _, y = b:GetPoint(1)
-            local top, view = treeScroll:GetVerticalScroll(), treeScroll:GetHeight()
-            if -y < top or -y + 19 > top + view then
-                treeScroll:SetVerticalScroll(math.min(math.max(0, -y - view / 2), treeScroll:GetVerticalScrollRange()))
-                treeScroll.Refresh()
+--- The shell's rows and tabs just drawn (SettingsWindow.Tree.cs's Mirror), one line each, tab-separated: "r", the row's
+--- handle, its entry, its page (or ""), the page its click shows (or ""); "t", the tab's handle, its category, "1" when
+--- chosen, the page its click shows. They keep their names here (TK.Settings.treeButtons with entry, nodeId and target:
+--- the gate's TKSettingsNode:<id>, gatecontrols.lua; _G["TKSettingsTab:<category>"] with selected) and their presses'
+--- wire.
+TK.ShellCalls["settings.rows"] = function(_, text)
+    local byId = {}
+    for _, n in ipairs(pages()) do byId[n.id] = n end
+    local i = 0
+    for line in text:gmatch("[^\n]+") do
+        local kind, h, id, a, target = line:match("^(%a)\t(%d+)\t([^\t]*)\t([^\t]*)\t([^\t]*)$")
+        local b
+        if kind == "r" then
+            b = TK.Wrap(tonumber(h))
+            i = i + 1
+            treeButtons[i] = b
+            if not b.sel then
+                b.sel, b.text, b.expander = sub(b, "sel"), sub(b, "text"), sub(b, "expander")
+                b.expander.label = sub(b, "expanderLabel")
+                -- Wire: a press that leaves the Sound page (a row showing another page) is the music dialog's control
+                -- 14, its OK, which 4a's MusicControlDialog::OnControlCommand (0x00529790) answers with CloseDialog.
+                -- The close sends nothing, but it is what lets the Sound page's next opening build the dialog again
+                -- (MusicControlDialog::MusicControlDialog, 0x00528E60), which sends 1B 01 00. Changing which rows press
+                -- it changes the 1B the server sees, and when.
+                S:LeavesMusic(b, function() return S:LeavesMusicFor(b.target) end)
             end
-            return
+            b.entry = { id = id }
+            b.nodeId = a ~= "" and a or nil   -- the gate's name for the row (gatecontrols.lua): the rows are recycled
+        else
+            b = TK.WrapShellButton(tonumber(h))
+            if not b.category then
+                b.category = id
+                _G["TKSettingsTab:" .. id] = b
+                -- the music dialog's OK, as a row's (above)
+                S:LeavesMusic(b, function() return S:LeavesMusicFor(b.target) end)
+            end
+            b.selected = a == "1"
         end
+        b.target = byId[target]
+        -- Wire (D20): the press carries the request of the page its click shows; C# freezes it at the press, and the
+        -- page's marker runs it when the page shows. Only the Sound pages have one, open:music: in the world the page
+        -- is the original's MusicControlDialog, and opening it builds the dialog, whose constructor (4a's
+        -- MusicControlDialog::MusicControlDialog, 0x00528E60) sends 1B 01 00 (S:SetMusicDialog). A row or tab that
+        -- shows no page carries none (as Sound reopened through the General tab asks as its row does: Astra's review).
+        -- Changing which carry it changes when the server sees 1B 01 00.
+        TK.Actions:Set(b, b.target and b.target.request)
     end
 end
 
@@ -2018,18 +1826,13 @@ function build()
     TK.Actions:SetOpen(keyMarker, "open:music")
     _G.TKSettingsFrame, _G.TKSettingsRequest, _G.TKMusicKeyRequest = frame, requestMarker, keyMarker
 
-    lockCheck = part("lock")
-    function lockCheck:SetLabelEnabled(on) __tk:ShellSettingsCheckEnabled(self.__h, on) end
-    buttonLockCheck = part("buttonLock")
-
     -- s6-ui-core (round 31): the key-bindings list, as WoW's Key Bindings button opens it (round 54: the hover binding
     -- is Edit Mode's Keybinds).
     local keys = TK.WrapShellButton(__tk:ShellSettingsPart("keys"))
     S:LeavesMusic(keys, function() return S.selected == nil or S.selected.id ~= "keybindings" end)
     frame.keysButton = keys
 
-    categoryBar = part("categoryBar")
-    treeScroll, treeContent = part("treeScroll"), part("treeContent")
+    treeScroll = part("treeScroll")
     treeScroll.Refresh = function() __tk:ShellSettingsScroll("tree", false) end
     S.treeScroll = treeScroll
     tabBar = part("tabBar")
@@ -2057,15 +1860,12 @@ function build()
     pageScroll.Refresh = function() __tk:ShellSettingsScroll("page", false) end
     function pageScroll:ScrollToTop() __tk:ShellSettingsScroll("page", true) end
     bindingRows = part("bindingRows")
-    status = part("status")
 
     local close = TK.WrapShellButton(__tk:ShellSettingsPart("close"))
     S:LeavesMusic(close, function() return true end)   -- its press and release are the dialog's OK's
     frame.closeButton = close
     frame.plate = part("plate")
-    TK.Escape:AddWindow(frame, function() S:Close() end)
-    -- after the window's, as when the question was made at its first asking (Esc's order kept for piece 5)
-    TK.Escape:AddWindow(resetAsk, function() resetAsk:Hide() end)
+    __tk:ShellSettingsBuilt()   -- Esc closes the window, then the reset question (the shell's, round 172)
 
     -- The music dialog's modality (S:SetMusicDialog): the shell's blocker over the whole screen under the window.
     musicBlocker = part("musicBlocker")
@@ -2080,24 +1880,20 @@ function build()
         if S:MusicWindow() then S:SetMusicDialog(true) elseif musicSeen then S:Close() end
     end)
     frame:HookScript("OnHide", syncListKeys)
-    frame:HookScript("OnHide", function() S.focused = false end) -- s6-input: closed, the game has the keys (S:HasFocus)
     frame:RegisterEvent("TK_PANEL_STYLE_CHANGED")
     frame:HookScript("OnEvent", function(_, event)
         if event == "TK_PANEL_STYLE_CHANGED" then pushFinish() end
     end)
 end
 
--- The shell's clicks (SettingsWindow.cs), each inside its click's dispatch as the Lua controls' were.
-TK.ShellCalls["settings.lock"] = function(_, on)
-    if on then TK.EditMode:Lock() else TK.EditMode:Unlock() end
-    S:RefreshPage()
-end
+-- The shell's calls (SettingsWindow.cs), each inside its click's dispatch as the Lua controls' were.
+-- Button Lock is the profile's: the shell's check writes it here.
 TK.ShellCalls["settings.buttonlock"] = function(_, on)
     TK.DB:Global().buttonLock = on
     TK.DB:MarkDirty()
     TK.FireEvent("TK_BUTTON_LOCK", on)
 end
-TK.ShellCalls["settings.keys"] = function() S:Select("keybindings", "General") end
+TK.ShellCalls["settings.refresh"] = function() S:RefreshPage() end   -- after Lock (edit mode's Lock or Unlock)
 TK.ShellCalls["settings.askreset"] = function() S:AskReset() end
 -- The music dialog's OK is its control 14: the model closes the dialog, and the page goes with it.
 TK.ShellCalls["settings.close"] = function() if not (musicOpen and S:MusicWindow()) then S:Close() end end
@@ -2105,32 +1901,32 @@ TK.ShellCalls["settings.reset"] = function(_, which)
     local node = resetAsk.node
     S:Reset(node, which == "tab" and { node.tabs[resetAsk.tabIndex] } or node.tabs)
 end
-
-function S:Open(nodeId, tabName)
+-- s6-ui-core (round 172, U-64 step 3): the window's opening and closing are the shell's (SettingsWindow.Open, Close);
+-- these are their Lua parts. Opening a closed window: the window made if it is not yet (it is at PLAYER_LOGIN, below),
+-- and the login screen's server and Library read again (s6-library).
+TK.ShellCalls["settings.opening"] = function()
     if not frame then build() end
-    -- Each opening of the window is a new one: the page's request goes when Select shows its marker (review r1
-    -- finding 5); a window already open only changes page.
-    if not frame:IsShown() then
-        requestMarker:Hide()
-        TK.LibraryPageReset() -- s6-library: the login screen's server, the Library read again
-    end
-    frame:Show()
-    pushFinish()
-    S.focused = true -- s6-input: an opened window has the focus (S:HasFocus)
-    -- Always all on the screen, at any UI scale (review F5): shrunk if needed, and back on screen if it was off.
-    TK.FitToScreen(frame, 10, 16)
-    setStatus("Profile: " .. TK.DB.name)
-    local g = TK.DB:Global()
-    self:Select(nodeId or g.settingsRows[g.settingsTab], tabName, nodeId == nil)   -- no page named: the row last open
+    TK.LibraryPageReset()
 end
-
-function S:Close()
+-- Opened: always all on the screen, at any UI scale (review F5: shrunk if needed, back on screen if it was off); its
+-- see-through finish, the profile's name and the tab's row last open go back to the shell.
+TK.ShellCalls["settings.opened"] = function()
+    TK.FitToScreen(frame, 10, 16)
+    local g = TK.DB:Global()
+    return W.FramePanelAlpha(frame), TK.DB.name, g.settingsRows[g.settingsTab]
+end
+-- Closing: a key capture cancelled, the reset question gone, the Sound page's music dialog closed, the drop-downs shut.
+TK.ShellCalls["settings.closing"] = function()
     TK.KeyBindMode:CancelCapture()
     dismissReset()
-    self:SetMusicDialog(false)
-    if frame then frame:Hide() end
+    S:SetMusicDialog(false)
     W.CloseDropdowns()
 end
+
+--- Opens the window on a page and tab (none: the row last open), or, open already, changes the page (the shell's).
+function S:Open(nodeId, tabName) __tk:ShellSettingsOpen(nodeId, tabName) end
+
+function S:Close() __tk:ShellSettingsClose() end
 
 --- Head note 32: in the world the Sound page is the original's music dialog (MusicControlDialog), a modal one: the
 --- page's opening asks the dialog model for it (open:music, 1B 01 00), and the model owns it from then on (round 17's
@@ -2148,6 +1944,7 @@ function S:SetMusicDialog(open)
     syncMusicRenderer()
     if not frame or open == (musicOpen or false) then return end
     musicOpen = open
+    __tk:ShellSettingsMusic(open)   -- the dialog owns the keys while it is open (SettingsWindow.HasFocus)
     musicSeen = open
     if open then musicOk = nil end
     syncMusicRenderer()
@@ -2210,37 +2007,17 @@ function S:OpenMusic()
     self:Open("sound")
 end
 
-function S:Toggle()
-    if frame and frame:IsShown() then self:Close() else self:Open() end
-end
+function S:Toggle() __tk:ShellSettingsToggle() end
 
-function S:IsOpen() return frame ~= nil and frame:IsShown() end
+function S:IsOpen() return __tk:ShellSettingsIsOpen() end
 
---- s6-input (the head's note of 2026-10-06; the owner: "when you are interacating with the settings page or things in it
---- directly, IE you clicked on the window (focused etc basically) it shouldnt be sending background commands"): whether
---- the window has the focus. It takes it when it opens and at a press on it or on what opened from it (its binding rows,
---- a drop-down list, the reset question, a panel switch's clash question, a notice, a confirmation); a press anywhere
---- else (the game world, another window) or its closing gives it back. While it has it every key is the window's: the
---- logic routes the keys and side buttons to the UI (C#'s InputRouting.UiFocus, read from S.focused) and the bindings
---- run none (shared/bindings.lua B:OnKey). WIRE: this decides whether a key may reach the game's keys (4a's
+--- s6-input (the head's note of 2026-10-06): whether the window has the focus, the shell's (SettingsWindow.HasFocus and
+--- Press say when it has it). WIRE: it decides whether a key may reach the game's keys (4a's
 --- UserPane::HandleKeyOrTextEvent 0x005A5BD0) and send; changing it changes what the server sees.
--- s6-modular-g r23: the Sound page renders MusicControlDialog; the model owns its keys, not ordinary Settings
--- focus. Its close can precede this frame's page update. WIRE: after DialogPane's Escape (0x0049E6E0), the next
--- Q must reach UserPane (0x005A5BD0) and OpenQuitPrompt (0x005A94B0). Keeping the page's focus changes what the
--- server sees. The model's closing stall/slide and the closing key's ownership stay with the model.
-function S:HasFocus() return self.focused and self:IsOpen() and not musicOpen or false end
+function S:HasFocus() return __tk:ShellSettingsHasFocus() end
 
-local function onWindow(f)
-    while f do
-        if f == frame or f == resetAsk or f == W.choose or f == W.confirm or f == _G.TKPopup then return true end
-        f = f.dropdown or f:GetParent() -- a drop-down's list goes by its drop-down
-    end
-    return false
-end
-
-TK.On("GLOBAL_MOUSE_DOWN", function()
-    if S:IsOpen() then S.focused = onWindow(GetMouseFocus()) end
-end)
+-- A press anywhere: the window takes the focus when the press is on it or on what opened from it, else gives it back.
+TK.On("GLOBAL_MOUSE_DOWN", function() __tk:ShellSettingsPress() end)
 
 -- The Sound page's request can be attached only while the UI loads (plan 5.9): the window is made now.
 TK.On("PLAYER_LOGIN", function() if not frame then build() end end)
@@ -2275,10 +2052,12 @@ TK.BindingGroups = {
     -- s6-ui-settings: the options tab (F10) and the original's keys for its local switches (Shift+R, Shift+F10-F12).
     { "Game Options", { "TOGGLEGAMEOPTIONS", "TOGGLECLICKLOOK", "TOGGLESHOWDAMAGE", "TOGGLETABVSWAP", "TOGGLECLICKMOVE" } },
     { "Screenshots", { "SCREENSHOT", "SCREENSHOTBMP" } },
+    -- s6-ui-core (round 169, interface-separation.md's W5): 16 of the 22 commands Classic Commands registers
+    -- (shared/components/classic/main.lua); its other six come under Other. Whisper, shout and say are the chat's keys
+    -- (TK.Game.Chat), not Classic's.
     { "Classic Prompts", { "CLASSICDROP", "CLASSICDROPALL", "CLASSICEAT", "CLASSICUSE", "CLASSICWIELD", "CLASSICWEAR",
         "CLASSICTHROW", "CLASSICGIVE", "CLASSICGIVEALL", "CLASSICCAST", "CLASSICINVITE", "CLASSICEMOTE",
-        "CLASSICWHISPER", "CLASSICSHOUT", "CLASSICSAY", "CLASSICIGNORE", "CLASSICSTATUS", "CLASSICCOLLECTION",
-        "CLASSICHELP" } },
+        "CLASSICIGNORE", "CLASSICSTATUS", "CLASSICCOLLECTION", "CLASSICHELP" } },
     { "Macros", { "TOGGLEMACROS", "MACROS" } }, -- s6-macros (round 10): the macro window's, Original Macro Setup, and keys bound to macros
 }
 

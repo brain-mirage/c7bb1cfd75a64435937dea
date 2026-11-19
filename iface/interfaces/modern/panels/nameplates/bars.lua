@@ -34,34 +34,44 @@ function C:DrawBar(id, kind, prefix, unit, view, px, py, target)
         f = table.remove(spare) or newBar()
         V.Reset(f.hp)
         V.Reset(f.mp)
-        f.px = nil
+        f.px, f.drawn = nil, nil
         self.unitBars[id] = f
     end
-    local c = COLOURS[kind]
-    f.hp:SetStatusBarColor(c[1], c[2], c[3], 1)
-    f.hp.lossColour = kind == "creature" and V.LOSS_ON_RED or nil -- the damage taken against a red fill
     local form = db[prefix .. "Numbers"] ~= "none" and db[prefix .. "Numbers"] or nil
     local loss, mana = db[prefix .. "Damage"], false
-    local preview = id == target and self.preview
+    local preview = unit and id == target and self.preview or nil -- points only: a percentage has none to place it by
+    local hp, hpMax, mp, mpMax, _
     if unit then
-        local _, hp, hpMax, mp, mpMax = H:GetUnitVitals(unit)
-        V.Set(f.hp, hp, hpMax, loss)
-        V.Numbers(f.hp, hp, hpMax, form)
-        V.Preview(f.hp, preview and preview.amount, preview and preview.kind)
-        mana = prefix == "player" and db.playerMana and mpMax > 0
-        if mana then V.Set(f.mp, mp, mpMax, loss) end
+        _, hp, hpMax, mp, mpMax = H:GetUnitVitals(unit)
+        mana = prefix == "player" and db.playerMana and mpMax > 0 or false
     else
         local hit, percent = H:GetUnitHit(id)
-        percent = hit and percent or 100
-        V.Set(f.hp, percent, 100, loss)
-        V.Numbers(f.hp, percent, nil, form)
-        V.Preview(f.hp, nil) -- a percentage only: no points to place a heal or a hit by
+        hp = hit and percent or 100
     end
-    f.mp:SetShown(mana)
-    local hpH = V.Height(f.hp, form and HP_NUMBERS_H or HP_H)
-    f.hp:SetHeight(hpH)
-    local height = hpH + (mana and GAP + MP_H or 0)
-    f:SetHeight(height)
+    -- s6-ui-core round 172 (the client review's 4.63): the bar is set again only when what it shows changed, as
+    -- effecticons.lua's G.Show does: each setter crosses into C#, and most frames repeat the last. The damage taken
+    -- runs down on its own (vitals.lua's OnUpdate), so an unchanged bar needs no call.
+    local d = f.drawn
+    if not (d and d.kind == kind and d.form == form and d.loss == loss and d.hp == hp and d.hpMax == hpMax
+            and d.mp == mp and d.mpMax == mpMax and d.mana == mana and d.preview == preview) then
+        d = d or {}
+        f.drawn = d
+        d.kind, d.form, d.loss, d.hp, d.hpMax, d.mp, d.mpMax, d.mana, d.preview =
+            kind, form, loss, hp, hpMax, mp, mpMax, mana, preview
+        local c = COLOURS[kind]
+        f.hp:SetStatusBarColor(c[1], c[2], c[3], 1)
+        f.hp.lossColour = kind == "creature" and V.LOSS_ON_RED or nil -- the damage taken against a red fill
+        V.Set(f.hp, hp, hpMax or 100, loss)
+        V.Numbers(f.hp, hp, hpMax, form)
+        V.Preview(f.hp, preview and preview.amount, preview and preview.kind)
+        if mana then V.Set(f.mp, mp, mpMax, loss) end
+        f.mp:SetShown(mana)
+        local hpH = V.Height(f.hp, form and HP_NUMBERS_H or HP_H)
+        f.hp:SetHeight(hpH)
+        d.height = hpH + (mana and GAP + MP_H or 0)
+        f:SetHeight(d.height)
+    end
+    local height = d.height
     if f.px ~= px or f.py ~= py then
         f:ClearAllPoints()
         f:SetPoint("TOP", view.frame, "CENTER", px, py)

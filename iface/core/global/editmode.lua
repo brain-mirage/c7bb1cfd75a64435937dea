@@ -7,17 +7,21 @@
 -- frame near a corner stays near it when the window or the UI scale changes.
 --
 -- s6-ui-core (round 124, the Global Interface's C# shell, piece 2; the owner's answer to question A): what the player
--- handles is C# (Runtime/Shell/EditMode.cs): the Edit Mode window, the movers, the grid, dragging with its snapping, the
--- resize grip and the nudge. This file keeps what is saved and what belongs to other parts: the places in the profile, the
--- Layout tab, whether a mover shows, the switches in TK.Machine, unlocking and key-binding mode. The shell asks for them
--- through __tk_shell (TK.ShellCalls["edit.*"]); TK.EditMode, its entries with their mover and grip, TKEditModeDialog with
--- its controls, and TKEditGrid stay, wrapping the shell's frames.
+-- handles is C# (Runtime/Shell/EditMode.cs): the Edit Mode window, the movers, the grid, dragging with its snapping,
+-- the resize grip and the nudge. Since round 171 (U-64 step 2) its behaviour is C# too: opening and closing it, Lock
+-- and Unlock, Keybinds, the arrow keys, the state line, the grid's showing and a mover's right click; TK.EditMode's
+-- methods for them only call the shell. This file keeps what is saved and what belongs to other parts: the places in
+-- the profile and the interfaces' layouts, the Layout tab, whether a mover shows, the switches in TK.Machine, the
+-- tooltip, the opacity, and what a lock or an unlock does on the Lua side (TK.EditMode.unlocked, key-binding mode, the
+-- Visibility rules). The shell asks for them through __tk_shell (TK.ShellCalls["edit.*"]); TK.EditMode, its entries
+-- with their mover and grip, TKEditModeDialog with its controls, and TKEditGrid stay, wrapping the shell's frames.
 
 local U = TK.Util
 local W = TK.UI
 local H = __tk
 
--- selected is the shell's (the mover drawn chosen, which a drag and a click set): read and written through it
+-- selected is the shell's (the mover drawn chosen, which a drag and a click set): read and written through it.
+-- unlocked mirrors the shell's, which sets it ("edit.unlocked") at each lock and unlock.
 local E = setmetatable({ unlocked = false, entries = {}, list = {} }, {
     __index = function(t, k)
         if k == "selected" then
@@ -111,8 +115,9 @@ function E:Register(frame, key, label, default, node, enabled, resize)
     if not self.entries[key] then self.list[#self.list + 1] = entry end
     self.entries[key] = entry
     frame:SetMovable(true)
-    -- the shell's mover over it (one per key: a panel started again keeps it), and its grip when it resizes
-    entry.mover = TK.Wrap(H:ShellEditRegister(key, frame.__h, label, resize ~= nil,
+    -- the shell's mover over it (one per key: a panel started again keeps it), its right click's settings page, and its
+    -- grip when it resizes
+    entry.mover = TK.Wrap(H:ShellEditRegister(key, frame.__h, label, node, resize ~= nil,
                                               resize and resize.minWidth or 50, resize and resize.minHeight or 50))
     if resize then entry.mover.grip = TK.Wrap(H:ShellEditGrip(key)) end
     self:Restore(entry)
@@ -277,11 +282,6 @@ TK.ShellCalls["edit.machine"] = function()
     return g.grid and true or false, g.snap and true or false, g.gridSize or 32
 end
 
-TK.ShellCalls["edit.settings"] = function(key)
-    local entry = E.entries[key]
-    if entry and entry.node then TK.Settings:Open(entry.node) end
-end
-
 -- A mover's or a grip's tooltip; no key hides it.
 TK.ShellCalls["edit.tooltip"] = function(key, which)
     if not key then GameTooltip:Hide() return end
@@ -299,28 +299,17 @@ TK.ShellCalls["edit.tooltip"] = function(key, which)
     GameTooltip:Show()
 end
 
---- Arrow keys nudge the selected frame while unlocked (the bindings' OnKey asks first).
+--- Arrow keys nudge the selected frame while unlocked (the bindings' OnKey asks first); the shell decides
+--- (EditMode.Key).
 -- WIRE: shared/bindings.lua asks this before the game's own keys; an arrow handled here (true) is consumed and never
 -- reaches 4a's UserPane::HandleKeyOrTextEvent (0x005A5BD0), where it would walk or turn the character and send that.
--- Changing when a key is handled (unlocked, a key down, a frame selected, an arrow) changes what the server sees.
-function E:OnKey(key, down)
-    if not self.unlocked or not down or not self.selected then return false end
-    local bare = U.BareKey(key)
-    -- In screen pixels (Shift: 10), whatever the UI scale.
-    local step = (key:find("SHIFT%-") and 10 or 1) / TK.UIScale()
-    local dx, dy = 0, 0
-    if bare == "LEFT" then dx = -step elseif bare == "RIGHT" then dx = step
-    elseif bare == "UP" then dy = step elseif bare == "DOWN" then dy = -step
-    else return false end
-    return H:ShellEditNudge(dx, dy) -- the shell moves it and asks for its save
-end
+-- Changing when a key is handled (EditMode.Key: unlocked, a key down, a frame selected, an arrow) changes what the
+-- server sees.
+function E:OnKey(key, down) return H:ShellEditKey(key, down) end
 
 -- ----- the grid (the shell's) -----
 
-function E:UpdateGrid()
-    local g = TK.Machine:Get()
-    H:ShellEditGrid(self.unlocked and g.grid and true or false, g.gridSize or 32)
-end
+function E:UpdateGrid() H:ShellEditUpdateGrid() end
 
 -- drawn again for the new screen while it shows
 TK.On("DISPLAY_SIZE_CHANGED", function() E:UpdateGrid() end)
@@ -332,7 +321,8 @@ TK.On("UI_SCALE_CHANGED", function() E:UpdateGrid() end)
 -- start dragging. Then you can click it again to lock. If you click Keybinds when it's unlocked it should automatically
 -- relock, and clicking the Lock button should turn off the keybind mode (both can't be on at the same time)."): Edit Mode
 -- opens locked; Unlock / Lock moves the frames or stops; Keybinds is key-binding mode (shared/bindings.lua, TK.KeyBindMode),
--- whose line and results show here. Its close box and Escape close it, locked and with key-binding mode off.
+-- whose line and results show here. Its close box and Escape close it, locked and with key-binding mode off. Round 171
+-- (U-64 step 2): all of that is the shell's (EditMode.cs); this file keeps the Lua side it asks for.
 
 local dialog = TK.Wrap(H:ShellEditFrame())
 _G.TKEditModeDialog = dialog
@@ -344,17 +334,30 @@ for _, name in ipairs({ "closeButton", "grid", "snap", "hint", "status" }) do
 end
 _G.TKEditGrid = TK.Wrap(H:ShellEditControl("gridFrame"))
 
-TK.ShellCalls["edit.lock"] = function() if E.unlocked then E:Lock() else E:Unlock() end end
-TK.ShellCalls["edit.keybinds"] = function() E:Keybinds() end
-TK.ShellCalls["edit.close"] = function() E:Close() end
+-- Show Grid's and Snap to Frames' clicks, kept in TK.Machine (the shell draws the grid again after Show Grid's).
 TK.ShellCalls["edit.grid"] = function(_, on)
     TK.Machine:Get().grid = on
     TK.Machine:MarkDirty()
-    E:UpdateGrid()
 end
 TK.ShellCalls["edit.snap"] = function(_, on)
     TK.Machine:Get().snap = on
     TK.Machine:MarkDirty()
+end
+
+-- The Lua side of the shell's unlock (on) and lock, in the order E:Unlock and E:Lock had: the mirror, key-binding mode
+-- off at a lock (an unlock turns it off itself, before it opens the window), and the Visibility rules, which show the
+-- panels hidden while locked.
+TK.ShellCalls["edit.unlocked"] = function(_, on)
+    E.unlocked = on and true or false
+    if not on then TK.KeyBindMode:Disable() end
+    for frame in pairs(TK.Visibility.frames) do TK.Visibility:Apply(frame) end
+end
+
+-- Key-binding mode (shared/bindings.lua), for the shell's Keybinds, Lock and Unlock: on (true) or off (false) when
+-- asked, and whether it is on.
+TK.ShellCalls["edit.keybindmode"] = function(_, on)
+    if on == true then TK.KeyBindMode:Enable() elseif on == false then TK.KeyBindMode:Disable() end
+    return TK.KeyBindMode.active and true or false
 end
 
 -- The see-through finish, as the game menu's: asked at opening, pushed when it changes while the window is open.
@@ -363,83 +366,31 @@ TK.ShellCalls["edit.alpha"] = alpha
 dialog:RegisterEvent("TK_PANEL_STYLE_CHANGED")
 dialog:SetScript("OnEvent", function() if E:IsOpen() then H:ShellEditAlpha(alpha()) end end)
 
---- The dialog's line, its two buttons' words and the status line, as the state is now.
-local function showState() H:ShellEditState(TK.KeyBindMode.active and true or false) end
-
-local escapeAdded
-
---- Opens Edit Mode, locked (the owner: "the button starts with Unlock").
-function E:Open()
-    if not TK.GameState:InWorld() then return end
-    if not escapeAdded then
-        -- Escape closes it when edit mode is the topmost thing open (key-binding mode's Escape is its own first);
-        -- registered at its first opening, when the Lua window was made, so its place in TK.Escape's windows is unchanged.
-        escapeAdded = true
-        TK.Escape:AddWindow(dialog, function() E:Close() end)
-    end
-    local g = TK.Machine:Get()
-    H:ShellEditOpen(g.grid and true or false, g.snap and true or false)
-    showState()
-end
+--- Opens Edit Mode, locked (the owner: "the button starts with Unlock"); only in the world.
+function E:Open() H:ShellEditOpen() end
 
 function E:IsOpen() return H:ShellEditIsOpen() end
 
 --- The frames movable (Edit Mode opened if it is not); key-binding mode stops, as only one is on at a time.
-function E:Unlock()
-    if not TK.GameState:InWorld() then return end
-    TK.KeyBindMode:Disable()
-    if not self:IsOpen() then self:Open() end
-    self.unlocked = true
-    H:ShellEditSetUnlocked(true)
-    for frame in pairs(TK.Visibility.frames) do TK.Visibility:Apply(frame) end
-    self:UpdateMovers()
-    self:UpdateGrid()
-    showState()
-    TK.FireEvent("TK_EDIT_MODE", true)
-end
+function E:Unlock() H:ShellEditUnlock() end
 
 --- The frames fixed again; Edit Mode stays open (its Close closes it).
-function E:Lock()
-    local was = self.unlocked
-    self.unlocked = false
-    H:ShellEditSetUnlocked(false) -- and nothing selected
-    TK.KeyBindMode:Disable()
-    for frame in pairs(TK.Visibility.frames) do TK.Visibility:Apply(frame) end
-    self:UpdateMovers()
-    self:UpdateGrid()
-    showState()
-    if was then TK.FireEvent("TK_EDIT_MODE", false) end
-end
+function E:Lock() H:ShellEditLock() end
 
 --- Keybinds: key-binding mode on (the frames locked first) or off.
-function E:Keybinds()
-    if TK.KeyBindMode.active then
-        TK.KeyBindMode:Disable()
-    else
-        if self.unlocked then self:Lock() end
-        TK.KeyBindMode:Enable()
-    end
-    showState()
-end
+function E:Keybinds() H:ShellEditKeybinds() end
 
 --- Closes Edit Mode: locked, key-binding mode off.
-function E:Close()
-    self:Lock()
-    H:ShellEditHide()
-end
+function E:Close() H:ShellEditClose() end
 
 --- The micro menu's and the game menu's Edit Mode: opens it, or closes it.
-function E:Toggle()
-    if self:IsOpen() then self:Close() else self:Open() end
-end
+function E:Toggle() H:ShellEditToggle() end
 
 --- Key-binding mode's line for its last key (TK.KeyBindMode:Status), in its colour.
-function E:SetStatus(text, r, g, b)
-    dialog.status:SetTextColor(r or 0.6, g or 0.9, b or 0.6)
-    dialog.status:SetText(text or "")
-end
+function E:SetStatus(text, r, g, b) H:ShellEditStatus(text or "", r or 0.6, g or 0.9, b or 0.6) end
 
-TK.On("TK_KEYBIND_MODE", function() showState() end)
+-- The dialog's line and its buttons' words as key-binding mode turns on or off, from wherever it is turned.
+TK.On("TK_KEYBIND_MODE", function() H:ShellEditState(TK.KeyBindMode.active and true or false) end)
 TK.On("PLAYER_LEAVING_WORLD", function() if E:IsOpen() then E:Close() end end)
 TK.On("TK_PROFILE_CHANGED", function() E:UpdateGrid() end)
 

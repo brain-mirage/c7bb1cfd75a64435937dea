@@ -90,12 +90,34 @@ watch:SetScript("OnUpdate", function(self)
     if not carry() then self:Hide() end
 end)
 
--- A left press on a slot (4a's selection): its slot, whether the button is still held, whether the pointer has
--- reached another slot since the press (m_draggedSincePress, set only by a move onto a different resolved slot,
--- :1026-1044), the move that starts the UI's drag included, and whether a key has ended it (cleared, below). A drag of a
--- slot's: the carry it started, and the carry its release ends if nothing takes it (a click's carry included). One for
--- every interface's slots, as 4a has one selection.
-local press, drag = {}, {}
+--- A tab's left press, 4a's selection with its m_draggedSincePress: one per tab (the bag's slots, the spell lists'
+--- rows), as each of 4a's two tabs keeps its own. press.slot is the slot pressed; press.held whether the button is
+--- still down; press.reached whether the pointer has come over another slot since the press, the move that starts the
+--- UI's drag included (never by distance); press.blocked whether a dialog was alive at the press; press.cleared whether
+--- a key has ended it (Native28, set by the tab's key watcher).
+--- WIRE (client review 2.25, shared by both tabs): Simple Click's use or cast on the release on the pressed slot reads
+--- `reached` (NewInventoryPane::HandlePointerOrMouseEvent 0x004ECB50, InventoryPane.cpp:1026-1044, :1218-1220;
+--- NewSpellInventoryPane::HandlePointerOrMouseEvent 0x0057D9C0, SpellInventoryPane.cpp:737-744, :820-823), and a press
+--- made while a dialog is alive selects nothing (InventoryPane.cpp:1136; SpellInventoryPane.cpp:780). Changing either
+--- changes which releases send a use (1C) or a cast (0F).
+function I.Press()
+    local p = {}
+    --- The left press on a slot.
+    function p:Down(slot)
+        self.slot, self.held, self.reached, self.cleared, self.blocked = slot, true, false, false, H:ActiveDialogs() > 0
+    end
+    --- The pointer comes over a slot (its button's OnEnter): another slot than the pressed one, while held, is reached.
+    function p:Over(slot)
+        if self.held and self.slot and slot and slot ~= self.slot then self.reached = true end
+    end
+    --- The left button's release on the pressed button.
+    function p:Up() self.held = false end
+    return p
+end
+
+-- The bag's press (I.Press, above), one for every interface's slots, as 4a has one selection. A drag of a slot's: the
+-- carry it started, and the carry its release ends if nothing takes it (a click's carry included).
+local press, drag = I.Press(), {}
 
 -- s6-interface-5x (Native28). WIRE: NewInventoryPane::HandleKeyOrTextEvent 0x004EC920 (InventoryPane.cpp:880-934) sets the
 -- selection to -1 on every key-down (type 8: repeats, and Shift, Ctrl or Alt alone with code 0, EventMan::PostKeyDownEvent
@@ -141,7 +163,13 @@ local pressKeys = I.PressKeys("TKSlotPressKeys",
 
 --- Whether a slot's left press still holds 4a's selection (m_selectedInventorySlot): from the press until its release or
 --- a key that ends it (above). Native29: for the pages' selection paint (shared/original/draglabel.lua); a read only.
-function I.PressSelected() return pressKeys:IsShown() end
+--- Client review 2.35 (Astra's pass 5). WIRE: only a single press (case 1; a double's second press is case 2) on a slot
+--- that holds an item, with no dialog alive, selects it (NewInventoryPane::HandlePointerOrMouseEvent 0x004ECB50,
+--- InventoryPane.cpp:1136-1151). The 7.x side panel's edge timer starts only for a selection (InventoryPane.cpp:997),
+--- so this decides whether a held drag scrolls the list, and which slot its release moves (30 00).
+function I.PressSelected()
+    return pressKeys:IsShown() and press.had and not press.blocked and not press.double
+end
 
 --- The item commands for a slot, as data (the item menu's entries; also the tests' and the classic commands' help).
 function I.Commands(slot)
@@ -250,12 +278,14 @@ function I.SlotControl(b, opts)
     b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     b:RegisterForDrag("LeftButton")
     b:SetScript("OnMouseDown", function(self, button, double)
-        self.acted, self.double, self.blocked = nil, double == true, H:ActiveDialogs() > 0
+        self.acted, self.double = nil, double == true
         -- WIRE: NewInventoryPane::HandlePointerOrMouseEvent 0x004ECB50 case 4 opens local ItemHelpPane on the
         -- single right press, not its release, and sends no 66 request. Changing this changes what the server sees.
         if button == "RightButton" and help and not double and self.slot and itemAt(self.slot) then help(self.slot, self) end
         if button == "LeftButton" then
-            press.slot, press.held, press.reached, press.cleared = self.slot, true, false, false
+            press:Down(self.slot) -- and the dialog alive at the press (press.blocked)
+            press.had = itemAt(self.slot) and true or false -- 4a selects a slot that holds an item (:1150-1151)
+            press.double = double == true -- a double's second press is 4a's case 2, which selects nothing
             pressKeys:Show() -- Native28: the keys that end this press (above)
         end
         -- Case 2: in the default mode the double press uses the item, a dialog alive or not (the rules test the bow).
@@ -278,7 +308,7 @@ function I.SlotControl(b, opts)
         end
         if TK.Cursor:Get() then
             placeHeld(self)
-        elseif itemAt(self.slot) and not self.blocked and not press.cleared then -- Native28: a key ended the press
+        elseif itemAt(self.slot) and not press.blocked and not press.cleared then -- Native28: a key ended the press
             if not simpleClick() then
                 TK.Cursor:Set({ kind = "item", slot = self.slot, from = "bag" })
             elseif not self.double and not press.reached then
@@ -327,10 +357,10 @@ function I.SlotControl(b, opts)
         drag.started, drag.ending = nil, nil
     end)
     b:SetScript("OnMouseUp", function(_, button)
-        if button == "LeftButton" then press.held = false end
+        if button == "LeftButton" then press:Up() end
     end)
     b:SetScript("OnEnter", function(self)
-        if press.held and press.slot and self.slot and self.slot ~= press.slot then press.reached = true end
+        press:Over(self.slot)
         tooltip(self)
     end)
     b:SetScript("OnLeave", function(self) leave(self) end)

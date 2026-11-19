@@ -28,6 +28,12 @@ function Users.build()
     win.lists, win.counts = {}, {}
     for c, index in ipairs(COLUMNS) do
         local list = K.List(win, index, L.columnWidth, L.columnHeight)
+        -- Client review 2.47 (Astra's pass 19). WIRE: 7.5.2's own view of the columns for every look, as the boards'
+        -- (kit.lua's list.logical): 4a's 121 x 236 column less its 13-pixel bar, rows of 12 (the constructor
+        -- 0x0059BC90, UserListDialogPane.cpp:74-78; UserListPane 0x0059E710, :665). A look drawn at it (7.x) takes
+        -- 4a's thumb, its timer and its position after a rebuild (list:ToTop), so the row a press on the first visible
+        -- row asks 85 for; changing these numbers changes it.
+        list.logical = { height = 236, row = 12 }
         -- UserListPane::OnItemSelected (0x0059ED20): a row picked in one column clears the others.
         list.onSelect = function()
             for _, other in ipairs(win.lists) do if other ~= list then other:Select(nil) end end
@@ -39,7 +45,28 @@ function Users.build()
     win.note = K.Block(win, 12)
     win.sort = W.Check(win, "By name")
     win.controls[3] = win.sort
-    K.Wire(win, win.sort, 3)
+    -- Client review 2.42. WIRE: a look that draws 4a's radio group sets win.sortOptions (its two options' rectangles in
+    -- the group's own units, UserListDialogPane.cpp:67-73); each press and release then carries the option it hits,
+    -- 0x40 + i, or 10 off both (RadioGroupControlPane::HitTestPart, ControlPane.cpp:745-748), and the model takes the
+    -- release's option (the radio's release 0x00496190, :721-735), so the active option or the gap keeps the order. The
+    -- kit's own check box (no options) turns it over. The order decides which name a row's press asks 85 for: changing
+    -- it changes the 85s the server sees. x, y (UIParent units): a point other than the pointer's, the slide shield's
+    -- (K.PressAt and the release's lookup ask win.sort:PartAt).
+    function win:SortPart(x, y)
+        local o = self.sortOptions
+        if not o then return 0 end
+        if not x then x, y = TK.Util.CursorRoot() end
+        local l, b, w, h = TK.Util.RootRect(self.sort)
+        local px, py = (x - l) * o.width / w, (b + h - y) * o.height / h
+        for i, r in ipairs(o) do
+            -- PointInRect (0x004B7E80): the left and top edges in, the right and bottom ones out
+            if px >= r[1] and px < r[3] and py >= r[2] and py < r[4] then return 0x40 + i - 1 end
+        end
+        return 10
+    end
+    K.Wire(win, win.sort, 3, nil, function() return win:SortPart() end)
+    function win.sort:PartAt(x, y) return win:SortPart(x, y) end
+    win.sort.__noPart = true -- its gap's 10 is the dialog's background press (kit.lua onPart)
     win.only = W.Check(win, "Hunters only")
     win.controls[21] = win.only
     K.Wire(win, win.only, 21)
@@ -71,7 +98,16 @@ function Users.update(win, view)
     win.total:SetText(string.format("%d shown, %d online", c.shown or 0, c.total or 0))
     win.sort:SetChecked((c.sort or 0) == 1)
     win.only:SetChecked(c.huntersOnly and true or false)
-    local keep = win:Selected()
+    -- Client review 2.47. WIRE: a page's rebuild (the model's rebuilds count moved: RefreshCategoryView 0x0059D2B0,
+    -- UserListDialogPane.cpp:328) empties 4a's columns, so each starts again at its top (ScrollPane.cpp:1122; a held
+    -- thumb keeps its hold, list:ToTop) with nothing selected (ListPane::RemoveItems, ListPane.cpp:100). Any other
+    -- update (a matched sort click sorts in place, a hunter's text arrives) keeps each column's place; it keeps the
+    -- selected name too, this renderer's own rule (4a's in-place sort, UserListPane::SortByStatus and SortByName,
+    -- UserListDialogPane.cpp:716, keeps the selected index and flags). The top row decides which name a press on the
+    -- first visible row asks 85 for: changing it changes the 85s the server sees.
+    local rebuilt = c.rebuilds ~= win.rebuilds
+    win.rebuilds = c.rebuilds
+    local keep = not rebuilt and win:Selected()
     keep = keep and keep[1]
     for i, list in ipairs(win.lists) do
         local rows = (c.columns or {})[i] or {}
@@ -80,6 +116,10 @@ function Users.update(win, view)
             -- s6-modular-g (interfaces, round 12): a look's own rows (7.x's: the marks, the name right-aligned)
             if C.look.Users.row then C.look.Users.row(win, list, row, r) end
         end)
+        if rebuilt then
+            list:ToTop()
+            list:Select(nil) -- the keys' row too (list.anchor)
+        end
         for k, r in ipairs(rows) do if r[1] == keep then list:Select(k) end end
         win.counts[i]:SetText(tostring((c.counts or {})[i] or 0))
     end

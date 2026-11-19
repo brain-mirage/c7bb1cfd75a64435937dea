@@ -12,6 +12,7 @@ function G:Set(state)
     if state == self.state then return end
     local was = self.state
     self.state = state
+    __tk:ShellGameState(state) -- the Global Interface's shell shows its in-world parts by it (round 170)
     TK.Visibility:ApplyAll()
     TK.FireEvent("TK_GAME_STATE", state, was)
 end

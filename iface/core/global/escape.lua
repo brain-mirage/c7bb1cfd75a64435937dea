@@ -14,9 +14,10 @@
 -- see Escape first (it clears a binding there).
 --
 -- s6-ui-core (round 127, piece 5 of the Global Interface's C# shell): steps 1 and 2 are the shell's (Runtime/Shell/
--- Escape.cs: the cancels' order, the windows, which is on top). This file keeps the names and what each cancel and close
--- does, which the shell calls by id (__tk_shell "escape.cancel", "escape.close"). WIRE: the order and "the first cancel
--- that cancels something ends the key" are 4a's (Escape.cs says where); changing them changes what the server sees.
+-- Escape.cs: the cancels' order, the windows, which is on top), and step 3 too since round 170. This file keeps the names
+-- and what each cancel and Lua window's close does, which the shell calls by id (__tk_shell "escape.cancel",
+-- "escape.close"). WIRE: the order and "the first cancel that cancels something ends the key" are 4a's (Escape.cs says
+-- where); changing them changes what the server sees.
 
 local H = __tk
 local E = { cancels = {}, windows = {} } -- in the order added; the shell keeps their Esc order
@@ -43,14 +44,18 @@ function E:AddWindow(frame, close)
     return w
 end
 
---- The open window drawn on top: highest strata, then frame level (raised when shown), then the one shown last.
+--- The open window drawn on top: highest strata, then frame level (raised when shown), then the one shown last. A
+--- window the shell closes itself (the game menu, round 170) has no record here: it comes back as { id = id } alone.
 function E:Topmost()
-    return byId[H:ShellEscapeTopmost()]
+    local id = H:ShellEscapeTopmost()
+    if id == 0 then return nil end
+    return byId[id] or { id = id }
 end
 
+-- s6-ui-core (round 170, U-64 step 1): all three steps are the shell's now (Escape.Key); the game menu's opening when
+-- nothing took the key went with them. WIRE: the order is 4a's (Escape.cs); changing it changes what the server sees.
 function TK.HandleEscape()
-    if H:ShellEscapeHandle() then return true end
-    if TK.GameState:InWorld() then TK.GameMenu:Open() end
+    H:ShellEscapeKey()
     return true
 end
 

@@ -131,15 +131,48 @@ local function switchFor(view)
     elseif view == "collection" and H:IsCollectionLoaded() then TK.Game.SidePanel.Switch(5) end
 end
 
+--- Whether an input switched the panel to the group's tab (before: the active tab before the input's switch). Wire: the
+--- group's request, 2D 01, is NewGroupPane::OnActivate's (0x0056CB80), which runs only when 4a's SwitchActiveTab
+--- (GeneralPurposePanel.cpp:66-71) accepts the switch; it refuses the active tab above 1. Only the group's tab, of
+--- those above 1, has a request (the bag's and the spell book's openers carry none).
+local function switchedToGroup(view, before)
+    return view == "group" and before ~= SWITCH.group
+end
+
+--- Whether the view's key asks again at every press: the collection while its list has not come. WIRE: 4a's
+--- UserPane::SwitchToCollectionTab (0x005A4EA0) sends 27 00 00 at every press until the list (0x12) has come, whether
+--- the page shows or not; a page's request runs when the page shows in the input (plan 5.9), so the key shows the page
+--- anew, as V.StatusRequest does (steer f0ee3154: a second press closed it and sent nothing). Changing this changes
+--- whether the server sees each press's 27 00 00.
+local function asksAgain(view)
+    return view == "collection" and not H:IsCollectionLoaded()
+end
+
+--- Opens the view's window in an opening (before: as above). Wire: Modern's window (4a's panel has no close) follows
+--- 4a's switch for the group's request. After a refused switch the window shows in the next frame, outside the input,
+--- so the page's request does not run (V.StatusKey's way; f, f, f sends one 2D 01: GA-3's gate pair group-key). After
+--- an accepted one the page shows anew in the input, even when it already showed (another tab took the panel
+--- meanwhile: f, b, f sends two), so the request runs. Changing this changes whether the server gets 2D 01.
+local function openWindow(w, view, how, before)
+    if view == "group" and how == "input" then
+        if not switchedToGroup(view, before) then
+            TK.Await(function() return true end, function() w.Open(view, "server") end)
+            return
+        end
+        if w.IsOpen(view) then w.Close() end
+    end
+    w.Open(view, how)
+end
+
 --- Shows a view, the window's (or a provider's) part of an opening, the tab already switched: the provider in use that
---- draws it (the view's window, if open on any of its views, closes), else its window.
-local function show(view, how, serverPage)
+--- draws it (the view's window, if open on any of its views, closes), else its window (before: as above).
+local function show(view, how, serverPage, before)
     local w = windowOf(view)
     if V.Take(view, how, nil, serverPage) then
         if w and w.IsOpen(nil) then w.Close() end
         return true
     end
-    if w then w.Open(view, how) end
+    if w then openWindow(w, view, how, before) end
     return w ~= nil
 end
 
@@ -148,8 +181,9 @@ end
 --- opened it, outside any input: nothing is sent; no key's sample). True when something shows it.
 function V.Open(view, how, serverPage)
     if not TK.GameState:InWorld() or not drawn(view) then return false end
+    local before = TK.Game.SidePanel.Active()
     switchFor(view)
-    return show(view, how or "input", serverPage)
+    return show(view, how or "input", serverPage, before)
 end
 
 --- An opener's key or button: its tab switch first, on every press (4a's keys always call their SwitchActiveTab, which
@@ -170,7 +204,13 @@ function V.Toggle(view, key)
     if V.Take(view, "input", key) then
         if w and w.IsOpen(nil) then w.Close() end
     elseif w then
-        if w.IsOpen(view) then w.Close() else w.Open(view, "input") end
+        -- the window's own close sends nothing; a press that switched to the group's tab opens instead (its request),
+        -- and the collection's key before its list shows the page anew (its request again: asksAgain)
+        if asksAgain(view) then
+            if w.IsOpen(view) then w.Close() end
+            openWindow(w, view, "input", before)
+        elseif w.IsOpen(view) and not switchedToGroup(view, before) then w.Close()
+        else openWindow(w, view, "input", before) end
     end
 end
 
@@ -206,8 +246,8 @@ end
 --- self look's views (provider.StatusKey: 7.x's three), or, when its panel shows another
 --- page (5.x's after a plain 0x39: its page does not follow the tab; Astra's s6-interface-5x-self-12-1, P1), shows its
 --- self look in the next frame; with none (Modern), the character window shows or hides in the next frame. Both outside
---- the key's input, so the page's request does not run. False: the caller then opens the self look with its 2D 00.
---- Changing this changes whether the server gets 2D 00.
+--- the key's input, so the page's request does not run. False: the caller then shows the self look with its 2D 00
+--- (V.StatusRequest). Changing this changes whether the server gets 2D 00.
 function V.StatusKey()
     if not TK.Game.SidePanel.Is(0) then return false end
     local p = inUse()[1]
@@ -224,6 +264,22 @@ function V.StatusKey()
         end
     end
     return true
+end
+
+--- The status key with another tab active: UserPane's RequestLocalPlayerStatus (UserPane.cpp:1546-1548, 0x005A4F70)
+--- sends 2D 00 at every press. So the self look shows anew in the key's input and its page's request runs, even when
+--- its window already shows, as the group's accepted switch (openWindow). Wire: a toggle here closed Modern's character
+--- window that S had opened on tab 0 (V.StatusKey) and the bag's tab had left open, and sent nothing (GA-3's gate pair
+--- status-keys, ga3statuskeys-p5r2: S, the bag, S); changing this changes whether the server gets 2D 00.
+function V.StatusRequest()
+    if not TK.GameState:InWorld() or not drawn("character") then return end
+    local w = windowOf("character")
+    if V.Take("character", "input") then
+        if w and w.IsOpen(nil) then w.Close() end
+    elseif w then
+        if w.IsOpen("character") then w.Close() end
+        w.Open("character", "input")
+    end
 end
 
 -- ----- the pages' requests -----

@@ -140,7 +140,8 @@ end
 C.renderers.ClanBankPane = Bank
 
 -- D-30: REDO (0, Apply), A-D and COLOR (1-5: the selected power to a level), CLOSE (6), the four lists (7-10) of
--- { id, name, amount, level } (one selection among them all), the four thresholds (11-14), and the 5 x 5 grid.
+-- { id, name, amount, level } (a press leaves one selection among them all; the arrows may leave one in several, 2.41),
+-- the four thresholds (11-14), and the 5 x 5 grid.
 -- Fields: each list's selected power id, then the thresholds' texts.
 -- Wire: PowerDialogPane::OnControlCommand 0x0054A4C0 by these indexes with the eight fields; changing them changes what
 -- the server sees.
@@ -152,9 +153,14 @@ function Power.build()
     win.lists = {}
     for k = 1, 4 do
         local l = K.List(win, 6 + k, L.listWidth, L.listHeight)
+        -- A press on a row clears the other columns (PowerDialogPane.cpp:381-383); client review 2.41 (kit.lua's
+        -- followSelects and keyKeepsOthers): held moves and the release select in the pressed column, and the arrows
+        -- leave the other columns' rows.
         l.onSelect = function()
             for j = 1, 4 do if j ~= k then win.lists[j]:Select(nil) end end
         end
+        l.followSelects = true
+        l.keyKeepsOthers = true
         win.lists[k] = l
     end
     win.thresholds = {}
@@ -206,13 +212,13 @@ function Power.update(win, view)
     end
 end
 
---- The focused list takes the arrows (ListPane::OnKeyEvent, ListPane.cpp:289; review r5, 4); one selection among the four.
+--- The focused list takes the arrows (ListPane::OnKeyEvent, ListPane.cpp:289; review r5, 4). Client review 2.41. WIRE:
+--- they move that list's row alone and the other columns keep theirs, as 4a's, so A to COLOR's 4C 02 names the first
+--- column's (ApplyPowerSlot, PowerDialogPane.cpp:213-219). Changing it changes the power id the server gets.
 function Power.key(win, key)
     local f = win.view and win.view.focus
     local k = f and f >= 7 and f <= 10 and f - 6
-    if not k or not win.lists[k]:Key(key) then return false end
-    for j = 1, 4 do if j ~= k then win.lists[j]:Select(nil) end end
-    return true
+    return k and win.lists[k]:Key(key) or false
 end
 
 C.renderers.PowerDialogPane = Power
@@ -233,16 +239,33 @@ function Rankings.build()
     local L = C.look.Rankings
     local win = K.Window(L.width, L.height, "Rankings")
     -- s6-rules-dialogs (round 34): 4a's own panes (RankingEventListPane, RankingUserListPane), whose HitTestRow does not
-    -- clamp a press below the rows into the last one as a ListPane's does: own lists (the kit's K.List).
-    win.categories = K.List(win, 1, L.categoriesWidth, L.categoriesHeight, false, true)
+    -- clamp a press below the rows into the last one as a ListPane's does: own lists (the kit's K.List). Client review
+    -- 2.45 and Astra's pass 11. WIRE: the categories' bar is the pane's own RankingEventScrollPane, at its rectangle in
+    -- the list's (kit.lua's paneBar: RankingEventListPane::UpdateRenderRegion, RankingEventScrollPane.cpp:585), which
+    -- takes the wheel and moves the position at a press only; the table (RankingUserListPane) has no bar. Changing it
+    -- changes the first category a later press asks for (7D 02).
+    win.categories = K.List(win, 1, L.categoriesWidth, L.categoriesHeight, false, true,
+        { top = 4, bottom = 10, right = 3, width = 15 })
+    -- Client review 2.28. Wire: RankingEventListPane picks its row on the release, not the press (0x0045B460,
+    -- RankingEventScrollPane.cpp:736-752; kit.lua's pickOnRelease), so a press on one category released over another
+    -- asks for the other's page (7D 02), and a press in a gap between the categories is the list's too (TakeGaps).
+    -- Changing it changes which category the server is asked for.
+    win.categories.pickOnRelease = true
+    win.categories:TakeGaps()
     win.head = W.Label(win, "", 14, W.gold, "LEFT")
     win.total = W.Label(win, "", 12, W.white, "RIGHT")
     win.dates = W.Label(win, "", 12, W.grey, "LEFT")
     win.rows = K.List(win, 2, L.rowsWidth, L.rowsHeight, false, true)
     win.own = W.Label(win, "", 13, W.gold, "LEFT")
     win.row = K.Buttons(win, { { 0, "CLOSE" }, { 6, "GetReward" }, { 4, ">" }, { 3, "<" }, { 5, "RewardInfo" } }, L.button)
+    -- Client review 2.28 (Astra's passes 5 and 12). WIRE: field 0 is the category the list's shown rows hit at the
+    -- pointer (list:HitRow; the slide shield's moved point), none in a gap, over the bar or outside. The model asks for
+    -- it on the list's left release, whatever the press hit (RankingDialog.ControlPointer: RankingEventListPane's case
+    -- 3, 0x0045B460). It was the list's highlight, which an arrow had moved. Changing it changes the 7D 02 category.
     function win:Values()
-        local i = self.categories:First()
+        local x, y
+        if self.__pointAt then x, y = self.__pointAt() else x, y = TK.Util.CursorRoot() end
+        local i = self.categories:HitRow(x, y)
         return { i and tostring(self.categories.items[i][1]) or "" }
     end
     L.place(win)
@@ -259,7 +282,7 @@ function Rankings.update(win, view)
         if C.look.Rankings.category then C.look.Rankings.category(win, row, cat) end
     end, true)
     -- The model's selection shows when it changes (a released click, a server's list): a press alone refreshes the
-    -- view too, and must not undo the row it picked before its release (review r5, 1).
+    -- view too, and must not undo the row a release picks (client review 2.28: the release picks, pickOnRelease).
     local applied = tostring(c.selected) .. ":" .. #cats
     local sel
     for i, cat in ipairs(cats) do
@@ -292,9 +315,9 @@ function Rankings.update(win, view)
     if C.look.Rankings.fill then C.look.Rankings.fill(win, c) end
 end
 
-function Rankings.key(win, key)
-    if win.view and win.view.focus == 1 then return win.categories:Key(key) end
-end
+--- Client review 2.28 (Astra's pass 5). WIRE: the categories take no keys (RankingEventListPane::HandleKeyOrTextEvent
+--- 0x0045B450 returns false), so an arrow moves no highlight; it did, and a gap release then asked for its row (7D 02).
+function Rankings.key() return false end
 
 C.renderers.RankingDialog = Rankings
 

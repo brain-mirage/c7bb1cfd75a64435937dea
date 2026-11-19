@@ -12,7 +12,8 @@
 -- is no map to show), opens with the model's dialog when a 70 arrives, and closes when the model's dialog closes. That
 -- dialog is modal, so while it is open every key is its (shared/components/dialogs): M closes it, as do Enter and Escape (its
 -- close button, 6); the window's close box is that button then. Nothing is sent for any of them. The model's dialog has
--- no window of its own (shared/components/dialogs/misc.lua).
+-- no window of its own (shared/components/dialogs/misc.lua), but in a look that draws the original's (7.x's, round
+-- 171): there this window stands in for nothing (the watch at the end).
 --
 -- s6-peer (round 12): the window hosts plugins (the sandbox's C_MapWindow): TK.MapWindowArea() is its map area, which a
 -- plugin's own container covers, shown with the window; and Map:ShowAt moves the view to a map and cell (a plugin's
@@ -252,17 +253,23 @@ end
 -- server's 70, and closes with it). A new session counts from 0 again. s6-ui-core (round 101, T11 step 3): called only
 -- on the frames the requests changed, and on the next frame after the dialogs' windows changed (TK_DIALOGS_CHANGED, raised
 -- by the dialogs' own OnUpdate, later in the frame: the next frame, as this watch saw them before).
+-- s6-ui-core (round 171, steer 70b1e9b2): a look that draws the model's minimap itself (7.x's: the original's window,
+-- shared/components/dialogs/misc.lua) needs no stand-in: there the window opens only with the dialog (the server's 70),
+-- as the original's, and M's request opens nothing. Drawing only: the requests and the dialog are the rules' as before.
 local watch = CreateFrame("Frame", "TKMapWindowWatch", UIParent)
 watch:SetSize(1, 1)
 local modelOpen, asked = false, 0
 watch:SetScript("OnUpdate", function()
     local n = H:GetMinimapRequests()
-    for _ = asked + 1, n do Map:Toggle() end
+    local standIn = not TK.Dialogs.Draws("MiniMapDialog")
+    if standIn then
+        for _ = asked + 1, n do Map:Toggle() end
+    end
     asked = n
     local open = modelDialog() ~= nil
     if open ~= modelOpen then
         modelOpen = open
-        if open then Map:Open() else Map:CloseQuietly() end
+        if open and standIn then Map:Open() elseif not open then Map:CloseQuietly() end
     end
 end)
 watch:SetUpdateWhen("minimap")

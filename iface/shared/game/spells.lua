@@ -48,13 +48,16 @@ end
 -- the inputs, if it reaches the game's panes (GAME_KEY_DOWN with 4a's code and modifier bits, as shared/game/inventory.lua's
 -- slots): the book spell it carries is let go, and the release casts nothing (OnClick, OnDragStart). Changing these keys or
 -- this order changes what the server sees.
-local cleared = false -- the held press holds no selection: a key ended it, or it came while spell input was up (Native29)
+-- The rows' press, the bag's shared kind (TK.Game.Inventory.Press, client review 2.25; its WIRE comment), its own as
+-- 4a's spell tab keeps its own selection. press.cleared: the held press holds no selection: a key ended it, or it came
+-- while spell input was up (Native29) or a dialog was alive (2.25).
+local press = TK.Game.Inventory.Press()
 -- s6-input (2026-10-08, s6-optimize R52.1; the 5.x lane's code, touched only to share it): the watcher is the one the
 -- inventory's slots use (TK.Game.Inventory.PressKeys), with this tab's own kept key and its own end.
 local pressKeys = TK.Game.Inventory.PressKeys("TKSpellPressKeys",
     function(code) return code == 0x2B end, -- '+', any modifiers
     function(keys)
-        cleared = true
+        press.cleared = true
         keys:Hide()
         local held = TK.Cursor:Get()
         if held and held.kind == "spell" and held.from == "book" then ClearCursor() end
@@ -62,19 +65,25 @@ local pressKeys = TK.Game.Inventory.PressKeys("TKSpellPressKeys",
 
 --- Whether a row's left press still holds 4a's selection (m_selectedSpellSlot): from the press until its release or a key
 --- that ends it (above). Native29: for the pages' selection paint (shared/original/draglabel.lua); a read only.
-function Sp.PressSelected() return pressKeys:IsShown() and not cleared end
+--- Client review 2.35 (Astra's pass 5). WIRE: only a single press (case 1; a double's second press is case 2) on a slot
+--- that holds a spell, with no dialog alive and no spell input up (press.cleared), selects it
+--- (NewSpellInventoryPane::HandlePointerOrMouseEvent 0x0057D9C0, SpellInventoryPane.cpp:780-785). The 7.x side
+--- panel's edge timer starts only for a selection (:709), so this decides whether a held drag scrolls the list, and
+--- which slot its release swaps (30 01).
+function Sp.PressSelected() return pressKeys:IsShown() and press.had and not press.cleared and not press.double end
 
 --- 4a's double-click mode (Config::m_doubleClickEnabled, settings.toml options.double_click); off is Simple Click.
 function Sp.DoubleClickMode() return H:ClientSettingBool("options", "double_click") end
 local doubleClickMode = Sp.DoubleClickMode
 
 --- A cell's action for the cursor's carry (held): moving the book spell on the cursor there (a drop's release), else
---- casting its own spell. Wire: the cell's own slot, whatever the scroll (the file's comment; 4a's
---- ResolveVisibleSpellSlot 0x0057E8D0).
+--- casting its own spell, its own carried spell's row included (Simple Click's cast on a drag's release on the pressed
+--- row, CellControl's OnReceiveDrag; client review 2.25). Wire: the cell's own slot, whatever the scroll (the file's
+--- comment; 4a's ResolveVisibleSpellSlot 0x0057E8D0).
 function Sp.SetCellAction(b, held)
     local i = b.slot
-    if held and held.kind == "spell" and held.from == "book" then
-        if held.slot ~= i then TK.Actions:Set(b, "swapspells", i, held.slot) else TK.Actions:Clear(b) end
+    if held and held.kind == "spell" and held.from == "book" and held.slot ~= i then
+        TK.Actions:Set(b, "swapspells", i, held.slot)
     elseif H:GetSpellSlot(i) then
         TK.Actions:Set(b, "cast", i)
     else
@@ -100,16 +109,25 @@ function Sp.CellControl(b)
         if dropOnRow(self) then return end
         -- Simple Click: the release casts, but not a double press's (4a's type 3 after a type 2 holds no spell).
         -- Native28: nor one a key ended (above); Native29: nor one made while spell input was up (OnMouseDown).
-        if H:GetSpellSlot(self.slot) and not doubleClickMode() and not self.pressDouble and not cleared then TK.Actions:RunFrozen() end
+        -- Client review 2.25. WIRE: nor one whose pointer reached another slot's row while held, come back or not
+        -- (m_draggedSincePress, SpellInventoryPane.cpp:737-744, :820-823). Changing it changes the 0F the server gets.
+        if H:GetSpellSlot(self.slot) and not doubleClickMode() and not self.pressDouble and not press.cleared
+            and not press.reached then
+            TK.Actions:RunFrozen()
+        end
     end)
     -- Double-click mode: the double press casts (4a's type 2), on the press's own record; no release does.
     b:SetScript("OnMouseDown", function(self, button, double)
         if button ~= "LeftButton" then return end
         self.pressDouble = double == true
-        -- Native29. WIRE: 4a's single press selects only while no spell input is up (0x0057D9C0 case 1,
-        -- SpellInventoryPane.cpp:780, !m_spellInputActive), so such a press holds nothing: its release swaps (30 01) and
-        -- casts (Simple Click's 0F) nothing, whenever the input goes (:807-826). Changing it changes what the server sees.
-        cleared = H:IsSpellInputActive()
+        -- Native29 and client review 2.25. WIRE: 4a's single press selects only while no dialog is alive and no spell
+        -- input is up (0x0057D9C0 case 1, SpellInventoryPane.cpp:780, g_activeDialogCount <= 0 && !m_spellInputActive),
+        -- so such a press holds nothing: its release swaps (30 01) and casts (Simple Click's 0F) nothing, whenever the
+        -- dialog or the input goes (:797-829). Changing it changes what the server sees.
+        press:Down(self.slot)
+        press.had = H:GetSpellSlot(self.slot) and true or false -- 4a selects only a slot that holds a spell (:783-785)
+        press.double = self.pressDouble -- a double's second press is 4a's case 2, which selects nothing (:830-843)
+        if press.blocked or H:IsSpellInputActive() then press.cleared = true end
         pressKeys:Show() -- Native28: the keys that end this press (above)
         if double and doubleClickMode() and H:GetSpellSlot(self.slot) and not TK.Cursor:Get() then TK.Actions:RunFrozen() end
     end)
@@ -118,7 +136,7 @@ function Sp.CellControl(b)
         -- input was up (Native29, OnMouseDown), or for a double press (Native29: case 2, :830-843, selects nothing, and
         -- the first release ended the selection, :826), so dropping it on another row sends no 30 01. Changing it changes
         -- what the server sees.
-        if cleared or self.pressDouble then return end
+        if press.cleared or self.pressDouble then return end
         -- s6-ui-bars (the gate's bar-cast-placed): a drag picks this spell up whatever the cursor carries, as WoW's book
         -- does; what it carried is let go, never placed where this one is dropped.
         -- s6-ui-bars (review r5 finding 2, r6 finding 2): the spell's name and record are taken now, together (as the
@@ -129,7 +147,26 @@ function Sp.CellControl(b)
             TK.Cursor:Set({ kind = "spell", slot = self.slot, from = "book", name = name, rid = rid ~= 0 and rid or nil })
         end
     end)
-    b:SetScript("OnReceiveDrag", function(self) dropOnRow(self) end)
+    b:SetScript("OnReceiveDrag", function(self)
+        -- Client review 2.25. WIRE: the UI's drag (5 pixels) is not 4a's: its release on the pressed row is case 3's,
+        -- which with Simple Click casts unless the pointer reached another slot's row while held
+        -- (SpellInventoryPane.cpp:737-744, :820-823), however far it moved inside its own row; the row's action is its
+        -- cast (Sp.SetCellAction). Changing it changes the 0F the server gets.
+        local held = TK.Cursor:Get()
+        if held and held.kind == "spell" and held.from == "book" and held.slot == self.slot and self.slot == press.slot
+            and not press.reached and not press.cleared and not self.pressDouble and not doubleClickMode() then
+            ClearCursor()
+            TK.Actions:RunFrozen()
+            return
+        end
+        dropOnRow(self)
+    end)
+    -- The press's reach (press:Over) and its end, hooked so that a page's own OnEnter and OnMouseUp stay (7.x's).
+    -- WIRE (client review 2.25): only a row that holds a spell is reached: 4a's move marks m_draggedSincePress when
+    -- ResolveVisibleSpellSlot gives another slot, and it gives -1 for an empty one (SpellInventoryPane.cpp:737-744,
+    -- :1035-1042), so a press that crosses an empty row and comes back still casts. Changing it changes the 0F sent.
+    b:HookScript("OnEnter", function(self) if H:GetSpellSlot(self.slot) then press:Over(self.slot) end end)
+    b:HookScript("OnMouseUp", function(_, button) if button == "LeftButton" then press:Up() end end)
 end
 
 return Sp

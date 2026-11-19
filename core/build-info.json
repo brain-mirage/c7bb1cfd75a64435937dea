@@ -1,10 +1,10 @@
 {
     "flavour":  "Public-Test",
-    "version":  "next82-pt",
-    "commit":  "af2c4562fc90126c6adfbfec59cfa06110ab8b9a",
+    "version":  "next83-pt",
+    "commit":  "36db82503139690225038397184bc21b8520f2bb",
     "workTreeDirty":  false,
-    "builtAtUtc":  "2026-11-16T16:18:58Z",
-    "buildSeconds":  1458,
+    "builtAtUtc":  "2026-11-19T11:58:35Z",
+    "buildSeconds":  738,
     "unityVersion":  "6000.7.0b2 (d6546dc2b3a9)",
     "target":  "StandaloneWindows64",
     "scripting":  "Mono, .NET Standard 2.1",
@@ -16,9 +16,9 @@
     "notices":  "docs/THIRD-PARTY-NOTICES.md",
     "soundBank":  "included",
     "serverPackage":  "included",
-    "modules":  "included",
-    "rebuildCache":  "included",
-    "remoteProtocolHostServer":  "included",
+    "modules":  "reused",
+    "rebuildCache":  "reused",
+    "remoteProtocolHostServer":  "reused",
     "prebuild":  "reused",
     "devtools":  "SKIPPED: Public-Test builds leave out the authoring tools"
 }

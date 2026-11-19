@@ -113,10 +113,16 @@ return function(L, X)
             local note = U.note
             X.Text(win.note, win, note[1], note[2], note[3], note[4], S.LIST)
             win.note:SetWordWrap(false)
-            -- the sort: a radio group of two options, the press anywhere on it (the kit's switch)
+            -- the sort: 4a's radio group of two options, (0, 1)-(88, 15) and (0, 29)-(88, 43) in its 90 x 44
+            -- (UserListDialogPane.cpp:67-73; client review 2.42, the shared win:SortPart): the release's option is the
+            -- model's, so the check box's own turn is put back and the pictures follow the model's sort
             X.Rect(win.sort, win, unpack(U.sort))
             for _, part in ipairs({ win.sort.box, win.sort.check, win.sort.hl, win.sort.label }) do part:SetAlpha(0) end
-            win.sort:HookScript("OnClick", function() L.Users.radio(win) end)
+            win.sortOptions = { width = 90, height = 44, { 0, 1, 88, 15 }, { 0, 29, 88, 43 } }
+            win.sort:HookScript("OnClick", function()
+                win.sort:SetChecked(((win.view and win.view.contents.sort) or 0) == 1)
+                L.Users.radio(win)
+            end)
             check(win, win.only, U.only)
             -- the hunters box (20): a check box without a caption over the kit's button, which keeps its press
             X.Rect(win.party, win, unpack(U.partyRect))

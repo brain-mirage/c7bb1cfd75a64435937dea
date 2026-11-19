@@ -43,6 +43,9 @@ M.defaults = {
     graphics = { windowMode = "windowed", vsync = false, frameCap = 60, windowWidth = 0, displaySeeded = false, advanced = true },
     sound = { master = 1, music = 0.7, effects = 0.8 },
     server = { host = "127.0.0.1", port = 3000 },
+    -- s6-ui-core (round 171): 7.x's minimap window's NPC and Portal check boxes, kept for next time as the original's
+    -- Config m_miniMapSymbolCategory2Visible and 1Visible (shared/components/dialogs/misc.lua's MiniMapDialog)
+    minimapMarks = { npc = true, portal = true },
     -- s6-modular-g (interfaces, phase 2): the interface (applies at the next start, core/interfaces.lua; none until the
     -- player chooses one: the default interface, TK.Interfaces:Default, s6-interface-5x round 15) and the profile last
     -- used with each interface
@@ -96,7 +99,7 @@ function M:Normalize(m)
     V.NormalizeLike(out, { version = 1, uiScaleAuto = true, uiScale = 1, grid = false, gridSize = 32, snap = true,
                            showRecent = true, disableLoginAnimations = false, graphics = self.defaults.graphics,
                            sound = self.defaults.sound,
-                           server = self.defaults.server },
+                           server = self.defaults.server, minimapMarks = self.defaults.minimapMarks },
         self.rules, "machine", problems)
     -- s6-modular-g (interfaces, phase 2): interface id -> profile name, and profile name -> interface id
     out.interfaceProfiles, out.profileInterfaces = {}, {}

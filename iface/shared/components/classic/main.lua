@@ -138,9 +138,10 @@ local commands = {
     { "CLASSICSTATUS", "Status", "S", function()
         -- s6-interface-5x (round 12, step 1; Astra's re-review of round 11): with 4a's tab 0 the active tab the self look
         -- takes the key and nothing is sent, in every interface (TK.Game.Views.StatusKey: a side panel's views cycle;
-        -- Modern's window shows or hides outside the key's input); otherwise the key opens the self look with its 2D 00
+        -- Modern's window shows or hides outside the key's input); otherwise the self look shows anew with its 2D 00 at
+        -- every press, an open window too (GA-3's gate pairs 3: a toggle closed it, nothing sent)
         if TK.Game.Views.StatusKey() then return end
-        TK.Game.Views.Toggle("character")
+        TK.Game.Views.StatusRequest()
     end, { kind = "open:character" } },
     { "CLASSICCOLLECTION", "Collection", "Z", function() TK.Game.Views.Toggle("collection") end, { kind = "open:collection" } },
     { "CLASSICHELP", "Classic Commands Help", "SHIFT-/", function() C:PrintHelp() end },

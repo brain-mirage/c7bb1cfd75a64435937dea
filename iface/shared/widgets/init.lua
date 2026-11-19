@@ -569,35 +569,6 @@ function make.Check(S, parent, label, onChange)
     return b
 end
 
-local function formatValue(v, step)
-    if step and step >= 1 then return tostring(math.floor(v + 0.5)) end
-    local s = string.format("%.2f", v)
-    s = s:gsub("0+$", ""):gsub("%.$", "")
-    return s
-end
-
---- s6-ui-core (round 57; s6-optimize, through s6-effects: W.RangeSlider's box copied W.Slider's): a slider's value box,
---- an edit box under its track. Enter gives its number, if it is one, to set(v); then Enter and Escape both show the
---- slider's value again (show(box)) and let the box go.
-local function valueBox(parent, width, set, show)
-    local box = CreateFrame("EditBox", nil, parent)
-    box:SetSize(width, 17)
-    box:SetBackdrop({ bg = { 0, 0, 0, 0.55 }, edge = { 0.3, 0.3, 0.3, 1 }, bgFile = "tk:white", edgeFile = "tk:edge" })
-    box:SetFontSize(11)
-    box:SetJustifyH("CENTER")
-    box:SetScript("OnEnterPressed", function(self)
-        local v = tonumber(self:GetText())
-        if v then set(v) end
-        show(self)
-        self:ClearFocus()
-    end)
-    box:SetScript("OnEscapePressed", function(self)
-        show(self)
-        self:ClearFocus()
-    end)
-    return box
-end
-
 --- s6-ui-core (round 60; the owner, 2026-10-06: "instead of a single slider bar and a seperate dual slider bar we have a
 --- single one where you can enable multiple sliders, you can toggle the sliders on and off, it can push others"): the
 --- one slider, laid out like Bartender's: the name above (its tooltip, W.Tip, on the frame), the track, and under it the
@@ -622,436 +593,168 @@ end
 --- numbered 1–N, snaps through the same drag path, draws dividers and shows each divider's or handle's detailed tooltip.
 --- In sectioned mode, releasing a click on an unchanged stop also reports once, so its preset can be reapplied.
 --- onCommit(...values) runs after a physical release or an accepted Enter edit; cancelling a press does not commit.
-local SLIDER_INSET, STOP_W = 6, 30 -- the thumb's centre stays 6 in from each end, as the engine Slider's; the stop's room
-local AT_STOP = math.huge          -- a handle at the end stop, inside the control
+--- s6-ui-core (round 172, U-64 step 4 part c): the slider is the shell's (Runtime/Shell/ShellSlider.cs), which builds
+--- the parts, lays them out, keeps the values and answers the input; this is its Lua view. It keeps the parts under
+--- their names (f.slider, the track; f.thumbs, f.boxes, f.toggles, f.dividers; f.title, f.lo, f.hi, f.sectionLabel),
+--- the methods, the options as given (f.handles, f.stop, f.sections...), the callbacks (onChange, onCommit, onToggle:
+--- the shell's OnSliderChanged, OnSliderCommit and OnSliderToggle on the frame) and the tooltips (W.Tip). f.activePart
+--- and f.dragging are the shell's, kept here by its OnSliderState for the music dialog, its paint and its tests.
+local H = __tk
+local ONE_HANDLE = { {} }
+local NAN = 0 / 0
+local Slider = {} -- the view's methods, put on each slider
+
+local function sliderPart(f, name, i)
+    local h = H:ShellSliderPart(f.__h, name, i or 0)
+    return h ~= 0 and TK.Wrap(h) or nil
+end
+
+-- a handle's value as the Lua slider gave it: a whole number as one ("40", not "40.0"); at the end stop, the stop's
+-- value
+local function reported(f, v)
+    if v == math.huge and f.stop then return f.stop.value end
+    return math.tointeger(v) or v
+end
+
+-- The shell's scripts on the frame (ShellSlider.cs), each run inside the input that caused it. WIRE: the music dialog's
+-- K.Wire part reads f.activePart right after the shell's press handler set it (4a SliderControlPane 0x004974B0,
+-- music.lua); keeping it any later changes the part the server sees.
+local function stateChanged(f, activePart, dragging)
+    f.activePart = activePart ~= 0 and activePart or nil
+    f.dragging = dragging ~= 0 and dragging or nil
+end
+local function changed(f) return f.onChange(f:GetValue()) end
+local function committed(f) f.onCommit(f:GetValue()) end
+local function toggled(f, i, on) f.onToggle(i, on) end
+
+-- a sectioned slider's thumb tells its stop's detail, worked out as it is hovered (before W.Tip's hook shows tipText)
+local function thumbTip(t)
+    local f = t.sliderView
+    local v = f.sections and math.tointeger(H:ShellSliderValue(f.__h, t.handleIndex))
+    local section = v and f.sections[v]
+    t.tipText = section and ((section.text or tostring(v)) .. ". " .. (section.desc or "")) or nil
+end
 
 function make.Slider(S, parent, label, min, max, step, width, onChange, opts)
-    local f = CreateFrame("Frame", nil, parent)
-    width = width or 180
-    f:SetSize(width, 50)
-    local title = make.Label(S, f, label, 13, S.gold)
-    -- the track (f.slider, where the old Slider was: tests press it and ask it IsEnabled); its right end is Configure's
-    local track = CreateFrame("Button", nil, f)
-    track:SetPoint("TOPLEFT", f, "TOPLEFT", 0, -17)
-    track:SetPoint("TOPRIGHT", f, "TOPRIGHT", 0, -17)
-    track:SetHeight(18)
-    title:SetPoint("TOP", track, "TOP", 0, 17) -- over the track (round 62: check boxes may be beside it)
-    local bar = track:CreateTexture(nil, "BACKGROUND")
-    bar:SetTexture("tk:slider-track")
-    bar:SetPoint("LEFT", track, "LEFT", 0, 0)
-    bar:SetPoint("RIGHT", track, "RIGHT", 0, 0)
-    bar:SetHeight(8)
-    local lit = track:CreateTexture(nil, "ARTWORK")
-    lit:SetColorTexture(S.gold[1], S.gold[2], S.gold[3], 0.6)
-    lit:SetHeight(8)
-    local stopWell = track:CreateTexture(nil, "ARTWORK") -- the end stop's part of the track, darker
-    stopWell:SetColorTexture(0, 0, 0, 0.45)
-    stopWell:SetHeight(8)
-    local lo = make.Label(S, f, "", 10, S.white)
-    lo:SetPoint("TOPLEFT", track, "BOTTOMLEFT", 2, -1)
-    local hi = make.Label(S, f, "", 10, S.white)
-    local stopLabel = make.Label(S, f, "", 10, S.white)
-    stopLabel:SetPoint("TOPRIGHT", track, "BOTTOMRIGHT", -2, -1)
-    f.slider, f.title, f.lo, f.hi = track, title, lo, hi
-    local vals, shown, thumbs, boxes, toggles = {}, {}, {}, {}, {}
-    local dividers = {}
-    f.dividers, f.thumbs = dividers, thumbs
-    f.sectionLabel = make.Label(S, f, "", 12, S.white)
-    f.sectionLabel:SetPoint("TOP", track, "BOTTOM", 0, -16)
-    f.boxes, f.toggles = boxes, toggles
-    local enabled, n = true, 0
-    local besideW, laidStop = 0, nil -- round 62: the check boxes' room right of the track; the stop the layout has
-
-    local function trackW() return f:GetWidth() - besideW end
-    -- round 62: the stop, unless the handle it goes with (stop.onlyWithout) is on
-    local function hasStop() return f.stop ~= nil and not (f.stop.onlyWithout and shown[f.stop.onlyWithout]) end
-    local function inset() return f.originalControl and 19.5 or SLIDER_INSET end
-    local function span() return math.max(1, trackW() - 2 * inset() - (hasStop() and STOP_W or 0)) end
-    local function x(v)
-        if v == AT_STOP then return trackW() - SLIDER_INSET end
-        local offset = (v - f.min) / math.max(1e-9, f.max - f.min) * span()
-        return inset() + (f.originalControl and math.floor(offset) or offset)
-    end
-    local function snap(v)
-        v = TK.Util.Clamp(v, f.min, f.max)
-        if f.step and f.step > 0 then v = math.min(f.max, f.min + TK.Util.Round(v - f.min, f.step)) end
-        v = math.floor(v * 1e6 + 0.5) / 1e6 -- no floating noise such as 0.30000000000000004 (the engine Slider's rule)
-        return math.tointeger(v) or v       -- a whole number as one (shown and stored "40", not "40.0")
-    end
-    -- the value under the pointer (the stop past the maximum's half of its room)
-    local function pointed()
-        local l, _, w = TK.Util.RootRect(track)
-        local px = (TK.Util.CursorRoot() - l) / math.max(1e-9, w) * trackW()
-        if hasStop() and px > SLIDER_INSET + span() + STOP_W / 2 then return AT_STOP end
-        local value = f.min + (px - (f.dragOffset or 0) - inset()) / span() * (f.max - f.min)
-        -- Original SetValueFromThumbDrag 0x00497D80 uses integer division; other slider modes keep rounding.
-        return snap(f.originalControl and math.floor(value) or value)
-    end
-    -- r66: the existing slider can take original music-control input without a second slider. Geometry is
-    -- SliderControlPane::GetPartRect: 13px caps/thumb; keys and repeat timing remain the model's.
-    function f:OriginalPointer()
-        local l, b, w, h = TK.Util.RootRect(track)
-        local cx, cy = TK.Util.CursorRoot()
-        return (cx - l) / math.max(1e-9, w) * trackW(), trackW(), cy >= b and cy < b + h
-    end
-    function f:OriginalPart()
-        local px, width, inside = self:OriginalPointer()
-        local left = x(vals[1]) - 6.5
-        if not inside or px < 0 or px >= width then return 10 end
-        if px < 13 then return 13 end
-        if px >= trackW() - 13 then return 17 end
-        if px < left then return 14 end
-        if px >= left + 13 then return 16 end
-        return 15
-    end
-    local put
-    local function originalPress()
-        f.activePart = f:OriginalPart()
-        if f.activePart == 15 then
-            local l, _, w = TK.Util.RootRect(track)
-            f.dragOffset = (TK.Util.CursorRoot() - l) / math.max(1e-9, w) * trackW() - x(vals[1])
-            f.dragging = 1
-            put(1, pointed(), true) -- snapshot the initial integer thumb target before the physical press reaches K.Wire
-        else
-            local step = ({ [13] = -1, [14] = -10, [16] = 10, [17] = 1 })[f.activePart] or 0
-            put(1, vals[1] + step, true)
-        end
-    end
-    local function reported(v) return v == AT_STOP and f.stop.value or v end
-    local function text(i)
-        local v, r = vals[i], f.handles[i].relative
-        if f.sections then return f.sections[v].text or tostring(v) end
-        if v == AT_STOP then return f.stop.text end
-        if r and shown[r] and vals[r] ~= AT_STOP then
-            local d = v - vals[r]
-            return (d >= 0 and "+" or "-") .. formatValue(math.abs(d), f.step)
-        end
-        return formatValue(v, f.step)
-    end
-
-    -- What moves with the stop: the maximum's label before it, the stop's label and well, and with more handles the value
-    -- boxes, spread under the track, the last at the maximum's end.
-    local function layout()
-        laidStop = hasStop()
-        local room = laidStop and STOP_W or 0
-        hi:ClearAllPoints()
-        hi:SetPoint("TOPRIGHT", track, "BOTTOMRIGHT", -2 - room, -1)
-        stopLabel:SetText(laidStop and f.stop.text or "")
-        stopWell:SetShown(laidStop)
-        for i = 1, n do
-            local b = boxes[i]
-            b:ClearAllPoints()
-            if n == 1 then
-                b:SetPoint("TOP", track, "BOTTOM", 0, -1)
-            else
-                b:SetPoint("TOPLEFT", track, "BOTTOMLEFT", math.floor((trackW() - room - 52) * (i - 1) / (n - 1)), -1)
-            end
-        end
-    end
-
-    local function show()
-        if hasStop() ~= laidStop then layout() end
-        local first, last
-        for i = 1, n do
-            local t, b = thumbs[i], boxes[i]
-            t:SetShown(shown[i])
-            b:SetShown(shown[i] and not f.sections)
-            if shown[i] then
-                t:ClearAllPoints()
-                t:SetPoint("CENTER", track, "LEFT", x(vals[i]), 0)
-                if not b:HasFocus() then b:SetText(text(i)) end
-                if f.sections then
-                    local section = f.sections[vals[i]]
-                    t.tipText = (section.text or tostring(vals[i])) .. ". " .. (section.desc or "")
-                else t.tipText = nil end
-                first, last = first or i, i
-            end
-        end
-        f.sectionLabel:SetShown(f.sections ~= nil)
-        if f.sections then f.sectionLabel:SetText(text(1)) end
-        lit:ClearAllPoints()
-        lit:SetShown(n > 1 and first ~= nil and first ~= last)
-        if first then
-            lit:SetPoint("LEFT", track, "LEFT", x(vals[first]), 0)
-            lit:SetWidth(math.max(1, x(vals[last]) - x(vals[first])))
-        end
-    end
-
-    -- The shown handles in order, and where handle i is among them.
-    local function order(i)
-        local o, k = {}, nil
-        for j = 1, n do
-            if shown[j] then
-                o[#o + 1] = j
-                if j == i then k = #o end
-            end
-        end
-        return o, k
-    end
-
-    -- The gap in whole steps (rounded up: 10 with a step of 8 is 16), so a pushed handle stays on the step's grid
-    -- (Astra's r60-2 review: else showing the values again snapped the gap smaller).
-    local function gap()
-        local g = f.gap or 0
-        if g > 0 and f.step and f.step > 0 then g = math.ceil(g / f.step - 1e-9) * f.step end
-        return g
-    end
-
-    -- the values before a put, when the caller gives none: one table kept for the slider (put is not run inside its own
-    -- comparison, so the copy is not shared with a second put)
-    local saved = {}
-    local function savedValues()
-        for j = 1, n do saved[j] = vals[j] end
-        return saved
-    end
-
-    --- Puts handle i at v (a number or AT_STOP), held where the handles it pushes still fit, and pushes them by the gap.
-    --- Reports the values when one changed (user: the user's change). drag: a frame of a held thumb, which shows and reports
-    --- only a change: the pointer is usually still on the value it has, and a show crosses into C# for every handle.
-    put = function(i, v, user, before, drag)
-        before = before or savedValues()
-        local o, k = order(i)
-        local g = gap()
-        if v ~= AT_STOP then
-            v = TK.Util.Clamp(snap(v), f.min + g * (k - 1), math.max(f.min + g * (k - 1), f.max - g * (#o - k)))
-        end
-        vals[i] = v
-        for m = k + 1, #o do -- the ones after it, up (past the stop, still at the stop)
-            local need = vals[o[m - 1]] + g
-            if vals[o[m]] < need then vals[o[m]] = need == AT_STOP and need or snap(need) end
-        end
-        for m = k - 1, 1, -1 do -- the ones before it, down
-            local most = vals[o[m + 1]] - g
-            if vals[o[m]] > most then vals[o[m]] = snap(most) end
-        end
-        local changed = false
-        for j = 1, n do
-            if vals[j] ~= before[j] then changed = true break end
-        end
-        if drag and not changed then return end
-        show()
-        if not user or not f.onChange or not changed then return end
-        f.reapply = nil
-        return f.onChange(f:GetValue())
-    end
-
-    local function thumb(i)
-        local t = CreateFrame("Button", nil, track)
-        t:SetSize(12, 18)
-        t.tex = t:CreateTexture(nil, "OVERLAY")
-        t.tex:SetAllPoints(t)
-        t.tex:SetTexture("tk:slider-thumb")
-        t:SetScript("OnMouseDown", function(_, button)
-            -- Section handles use the track's selection path, including a click that reapplies the current stop.
-            if f.originalControl then return track:GetScript("OnMouseDown")(track, button) end
-            if f.sections then return track:GetScript("OnMouseDown")(track, button) end
-            if button == "LeftButton" and enabled then f.dragging = i end
-        end)
-        t:SetScript("OnMouseUp", function() f:Release(true) end)
-        t:SetScript("OnPressCancelled", function() f:Release() end) -- round 61: the press let go with no release
-        W.Tip(t, "") -- install the hook once; the selected section's detail is updated by show()
-        return t
-    end
-    local function valueBoxFor(i)
-        return valueBox(f, 64, function(v)
-            local r = f.handles[i].relative -- a box shown from another handle counts from it (Astra's r60-2 review)
-            if r and shown[r] and vals[r] ~= AT_STOP then v = vals[r] + v end
-            put(i, v, true)
-            if f.onCommit then f.onCommit(f:GetValue()) end
-        end, function(b) b:SetText(text(i)) end)
-    end
-
-    -- a press on the track brings the nearest shown handle there (of two in one place, the one on the pointer's side), and
-    -- it follows the pointer until released
-    track:SetScript("OnMouseDown", function(_, button)
-        if button ~= "LeftButton" or not enabled then return end
-        if f.originalControl then originalPress() return end
-        local v, best, dist = pointed(), nil, nil
-        for i = 1, n do
-            if shown[i] then
-                local d = math.abs(x(v) - x(vals[i]))
-                if not best or d < dist or d == dist and v > vals[i] then best, dist = i, d end
-            end
-        end
-        if not best then return end
-        f.dragging = best
-        -- Wait for release before reapplying an unchanged section. A drag to another stop must not apply this one first.
-        f.reapply = f.sections and true or nil
-        put(best, v, true)
-    end)
-    track:SetScript("OnMouseUp", function() f:Release(true) end)
-    -- s6-ui-core (round 61; Astra's review of round 60, P2): the window losing the focus lets the press go with no
-    -- OnMouseUp (UIHost.FocusChanged), so the drag ends there too, not following the pointer after an Alt-Tab
-    track:SetScript("OnPressCancelled", function() f:Release() end)
-    f:SetScript("OnUpdate", function()
-        if f.dragging then put(f.dragging, pointed(), true, nil, true) end
-    end)
-
-    --- Ends or cancels a drag; a mouse release also reapplies a clicked, unchanged section once.
-    function f:Release(apply)
-        local reapply = apply and f.reapply
-        f.dragging, f.reapply, f.dragOffset, f.activePart = nil, nil, nil, nil
-        if reapply and f.onChange then f.onChange(f:GetValue()) end
-        if apply and f.onCommit then f.onCommit(f:GetValue()) end
-    end
-
-    --- The handles' values, in order (a handle at the end stop: the stop's value).
-    function f:GetValue()
-        local out = {}
-        for i = 1, n do out[i] = reported(vals[i]) end
-        return table.unpack(out, 1, n)
-    end
-
-    --- Shows the values (one a handle, in order); the stop's value puts a handle at the stop. Nothing is reported.
-    function f:SetValue(...)
-        for i = 1, n do
-            local v = select(i, ...)
-            if f.stop and v == f.stop.value then
-                vals[i] = hasStop() and AT_STOP or f.max -- round 62: at the maximum while the stop is away
-            else
-                vals[i] = snap(tonumber(v) or f.min)
-            end
-        end
-        show()
-    end
-
-    --- Turns handle i on or off (its check box too). user: the user's change; a handle turned on is then moved between its
-    --- shown neighbours if it was not there, and the values reported.
-    function f:SetHandleShown(i, on, user)
-        local before = { table.unpack(vals, 1, n) }
-        shown[i] = on and true or false
-        if toggles[i] then toggles[i]:SetChecked(shown[i]) end
-        if not hasStop() then -- round 62: the stop went with this handle on (stop.onlyWithout): its handles to the maximum
-            for j = 1, n do
-                if vals[j] == AT_STOP then vals[j] = f.max end
-            end
-        end
-        if on and user then
-            local o, k = order(i)
-            local g = gap()
-            local v = vals[i]
-            if k > 1 then v = math.max(v, vals[o[k - 1]] + g) end
-            if k < #o then v = math.min(v, vals[o[k + 1]] - g) end
-            if v ~= AT_STOP and v > f.max then v = hasStop() and AT_STOP or f.max end
-            return put(i, v, true, before)
-        end
-        show()
-    end
-
-    --- Sets the slider up for an option (the settings page reuses one for another).
-    function f:Configure(label2, min2, max2, step2, onChange2, opts2)
-        opts2 = opts2 or {}
-        title:SetText(label2)
-        f.min, f.max, f.step, f.onChange, f.onCommit = min2, max2, step2, onChange2, opts2.onCommit
-        -- Sectioned mode uses evenly spaced indices on this same slider and its ordinary snapping/drag path.
-        -- Pass a count or { { text, desc }, ... }; Configure also clears the mode on a pooled slider's next use.
-        f.originalControl = opts2.originalControl == true
-        track:SetHeight(f.originalControl and 13 or 18)
-        f.sections = opts2.sections
-        if type(f.sections) == "number" then
-            local count = f.sections
-            f.sections = {}
-            for i = 1, count do f.sections[i] = { text = tostring(i) } end
-        end
-        if f.sections then f.min, f.max, f.step = 1, #f.sections, 1 end
-        f.handles, f.gap, f.stop, f.onToggle = opts2.handles or { {} }, opts2.gap, opts2.stop, opts2.onToggle
-        n = #f.handles
-        local beside, toggleY = opts2.togglesBeside, 0
-        besideW = 0
-        for i = 1, n do
-            thumbs[i] = thumbs[i] or thumb(i)
-            thumbs[i]:SetSize(f.originalControl and 13 or 12, f.originalControl and 13 or 18)
-            boxes[i] = boxes[i] or valueBoxFor(i)
-            -- a reused slider starts from the new minimum, not the last option's values (Astra's r60-2 review: one left at
-            -- an end stop broke a slider without one); its option's values come next (SetValue)
-            vals[i], shown[i] = f.min, true
-            boxes[i]:SetWidth(n == 1 and 64 or 52)
-            local label3 = f.handles[i].toggle
-            if label3 then
-                local c = toggles[i] or make.Check(S, f, "")
-                toggles[i] = c
-                c:SetLabel(label3)
-                W.Tip(c, f.handles[i].toggleTip) -- round 62 (nil clears a reused box's)
-                c:ClearAllPoints()
-                if beside then -- round 62: right of the track, level with it, one under another
-                    c:SetPoint("LEFT", track, "RIGHT", 8, -toggleY)
-                    besideW = math.max(besideW, c:GetWidth() + 8)
-                else
-                    c:SetPoint("TOPLEFT", f, "TOPLEFT", 0, -56 - toggleY)
-                end
-                c.onChange = function(on)
-                    f:SetHandleShown(i, on, true)
-                    if f.onToggle then f.onToggle(i, on) end
-                end
-                c:SetChecked(true)
-                c:Show()
-                toggleY = toggleY + 24
-            elseif toggles[i] then
-                toggles[i]:Hide()
-            end
-        end
-        for i = n + 1, #thumbs do
-            thumbs[i]:Hide()
-            boxes[i]:Hide()
-            if toggles[i] then toggles[i]:Hide() end
-        end
-        track:SetPoint("TOPRIGHT", f, "TOPRIGHT", -besideW, -17)
-        -- one handle: the ends' values under the ends (the maximum's before the stop); more: the boxes say it
-        lo:SetText(n == 1 and (f.sections and f.sections[1].text or formatValue(min2, step2)) or "")
-        hi:SetText(n == 1 and (f.sections and f.sections[#f.sections].text or formatValue(max2, step2)) or "")
-        stopWell:ClearAllPoints()
-        stopWell:SetPoint("LEFT", track, "RIGHT", -STOP_W - SLIDER_INSET + 4, 0)
-        stopWell:SetPoint("RIGHT", track, "RIGHT", 0, 0)
-        f:SetHeight((f.sections and 66 or 50) + (beside and math.max(0, toggleY - 24) or toggleY))
-        for i, section in ipairs(f.sections or {}) do
-            local d = dividers[i]
-            if not d then
-                -- Track siblings draw above its bar but below its child handles; all levels follow the window.
-                d = CreateFrame("Button", nil, f)
-                d:SetSize(8, 18)
-                local tick = d:CreateTexture(nil, "ARTWORK")
-                tick:SetColorTexture(S.gold[1], S.gold[2], S.gold[3], 0.8)
-                tick:SetSize(2, 12)
-                tick:SetPoint("CENTER", d, "CENTER", 0, 0)
-                -- Dividers share the track's press/release path, including focus cancellation.
-                for _, event in ipairs({ "OnMouseDown", "OnMouseUp", "OnPressCancelled" }) do
-                    d:SetScript(event, function(_, ...) track:GetScript(event)(track, ...) end)
-                end
-                dividers[i] = d
-            end
-            d:ClearAllPoints()
-            d:SetPoint("CENTER", track, "LEFT", x(i), 0)
-            W.Tip(d, (section.text or tostring(i)) .. ". " .. (section.desc or ""))
-            d:Show()
-        end
-        for i = #(f.sections or {}) + 1, #dividers do dividers[i]:Hide() end
-        layout()
-        show()
-    end
-
-    function f:SetEnabled(on)
-        enabled = on
-        f.enabled = on -- s6-ui-core round 129 (CR-UI-09): the flag Paint compares with, as a radio group keeps its own
-        if not on then f.dragging = nil end
-        if on then track:Enable() else track:Disable() end
-        local c = on and S.white or S.grey
-        for i = 1, n do
-            boxes[i]:SetEnabled(on)
-            thumbs[i].tex:SetVertexColor(on and 1 or 0.5, on and 1 or 0.5, on and 1 or 0.5, 1)
-            if toggles[i] then toggles[i]:SetLabelEnabled(on) end
-        end
-        color(title, on and S.gold or S.grey)
-        color(lo, c)
-        color(hi, c)
-        color(stopLabel, c)
-        lit:SetAlpha(on and 1 or 0.3)
-    end
-    f:SetScript("OnSizeChanged", show)
+    local g, w, gr = S.gold, S.white, S.grey
+    local f = TK.Wrap(H:ShellSliderNew(parent.__h, width or 180, string.format("%s %s %s %s %s %s %s %s %s",
+        g[1], g[2], g[3], w[1], w[2], w[3], gr[1], gr[2], gr[3])))
+    f.slider, f.title = sliderPart(f, "track"), sliderPart(f, "title")
+    f.lo, f.hi, f.sectionLabel = sliderPart(f, "lo"), sliderPart(f, "hi"), sliderPart(f, "sectionLabel")
+    f.thumbs, f.boxes, f.toggles, f.dividers = {}, {}, {}, {}
+    for name, fn in pairs(Slider) do f[name] = fn end
+    f:SetScript("OnSliderState", stateChanged)
     f:Configure(label, min, max, step, onChange, opts)
-    f.box = boxes[1] -- a one-handle slider's value box
+    f.box = f.boxes[1] -- a one-handle slider's value box
     f:SetValue(min)
     return f
 end
+
+--- Sets the slider up for an option (the settings page reuses one for another).
+function Slider:Configure(label, min, max, step, onChange, opts)
+    opts = opts or {}
+    -- Sectioned mode: a count or { { text, desc }, ... }; Configure also clears the mode on a pooled slider's next use.
+    local sections = opts.sections
+    if type(sections) == "number" then
+        local count = sections
+        sections = {}
+        for i = 1, count do sections[i] = { text = tostring(i) } end
+    end
+    self.min, self.max, self.step, self.onChange, self.onCommit = min, max, step, onChange, opts.onCommit
+    if sections then self.min, self.max, self.step = 1, #sections, 1 end
+    self.originalControl, self.sections = opts.originalControl == true, sections
+    self.handles, self.gap, self.stop, self.onToggle = opts.handles or ONE_HANDLE, opts.gap, opts.stop, opts.onToggle
+    local n = #self.handles
+    self.n = n
+    -- the options as ShellSlider.Configure reads them: the flags, the handles, the sections' texts, the stop
+    local handles, texts, stop = {}, nil, self.stop
+    for i, h in ipairs(self.handles) do handles[i] = (h.relative or 0) .. "\31" .. (h.toggle or "") end
+    if sections then
+        texts = { #sections }
+        for i, s in ipairs(sections) do texts[i + 1] = s.text or "" end
+    end
+    H:ShellSliderConfigure(self.__h, label or "", min, max, step or 0, self.gap or 0, table.concat({
+        (opts.togglesBeside and "b" or "") .. (self.originalControl and "o" or ""),
+        table.concat(handles, "\29"),
+        texts and table.concat(texts, "\31") or "",
+        stop and ((stop.text or "") .. "\31" .. (stop.onlyWithout or 0)) or "" }, "\30"))
+    for i = 1, n do -- the parts made for new handles, and the check boxes' tooltips
+        if not self.thumbs[i] then
+            local t = sliderPart(self, "thumb", i)
+            t.sliderView, t.handleIndex = self, i
+            t:SetScript("OnEnter", thumbTip)
+            W.Tip(t, "")
+            self.thumbs[i], self.boxes[i] = t, sliderPart(self, "box", i)
+        end
+        local c = sliderPart(self, "toggle", i)
+        if c then
+            self.toggles[i] = c
+            c.label = c.label or sliderPart(self, "toggleLabel", i) -- its text, as make.Check's box had it
+            W.Tip(c, self.handles[i].toggleTip) -- round 62 (nil clears a reused box's)
+        end
+    end
+    for i, s in ipairs(sections or {}) do
+        local d = self.dividers[i] or sliderPart(self, "divider", i)
+        self.dividers[i] = d
+        W.Tip(d, (s.text or tostring(i)) .. ". " .. (s.desc or ""))
+    end
+    self:SetScript("OnSliderChanged", onChange and changed or nil)
+    self:SetScript("OnSliderCommit", opts.onCommit and committed or nil)
+    self:SetScript("OnSliderToggle", opts.onToggle and toggled or nil)
+end
+
+--- The handles' values, in order (a handle at the end stop: the stop's value).
+function Slider:GetValue()
+    local h, n = self.__h, self.n
+    if n == 1 then return reported(self, H:ShellSliderValue(h, 1)) end
+    local out = {}
+    for i = 1, n do out[i] = reported(self, H:ShellSliderValue(h, i)) end
+    return table.unpack(out, 1, n)
+end
+
+--- Shows the values (one a handle, in order); the stop's value puts a handle at the stop. Nothing is reported.
+function Slider:SetValue(...)
+    local h, stop = self.__h, self.stop
+    for i = 1, self.n do
+        local v = select(i, ...)
+        if stop and v == stop.value then
+            H:ShellSliderSet(h, i, 0, true)
+        else
+            H:ShellSliderSet(h, i, tonumber(v) or NAN, false) -- NaN: the minimum
+        end
+    end
+    H:ShellSliderShow(h)
+end
+
+--- Turns handle i on or off (its check box too). user: the user's change; a handle turned on is then moved between its
+--- shown neighbours if it was not there, and the values reported.
+function Slider:SetHandleShown(i, on, user)
+    H:ShellSliderShown(self.__h, i, on and true or false, user and true or false)
+end
+
+function Slider:SetEnabled(on)
+    self.enabled = on -- s6-ui-core round 129 (CR-UI-09): the flag Paint compares with, as a radio group keeps its own
+    H:ShellSliderEnabled(self.__h, on and true or false)
+end
+
+-- WIRE (the music dialog's volumes, music.lua): 4a SliderControlPane's input, worked out by the shell
+-- (ShellSlider.cs: Release, OriginalPart and OriginalPointer by GetPartRect, Drag before a move is sent). Changing what
+-- these return or when they run changes what the server sees.
+
+--- Ends or cancels a press; a mouse release also reapplies a clicked, unchanged section once and commits.
+function Slider:Release(apply) H:ShellSliderRelease(self.__h, apply and true or false) end
+
+--- r66: the original control's part under the pointer (10, 13-17).
+function Slider:OriginalPart() return H:ShellSliderOriginalPart(self.__h) end
+
+--- r66: the pointer along the track in its units, the track's width, and whether the pointer is level with it.
+function Slider:OriginalPointer()
+    local inside, px, width = H:ShellSliderOriginalPointer(self.__h)
+    return px, width, inside
+end
+
+--- The held handle follows the pointer now (the music dialog's press-move hook, before it sends the move).
+function Slider:Drag() H:ShellSliderDrag(self.__h) end
 
 local openDropdown
 

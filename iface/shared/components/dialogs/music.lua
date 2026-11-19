@@ -42,12 +42,19 @@ local function volume(win, index, title)
     win.controls[index] = f
     -- The slider's scripts set its value first, then the same physical event carries it to the model.
     -- 4a SliderControlPane::HandlePointerOrMouseEvent 0x004974B0; no polling-generated input or packets.
+    -- s6-ui-core (round 172): the slider's own handlers are the shell's (ShellSlider.cs), which run before these hooks.
     for _, part in ipairs({ f.slider, f.thumbs[1] }) do
         -- 4a DialogPane 0x0049E240 matches the release's current hit part; Down retains the part before its step.
         -- A cached Up part can refresh Browse and allow shared C12 draws, changing what the server sees later.
+        -- Client review 2.42 (Astra's pass 15). WIRE: a press or release off the slider's parts (10:
+        -- SliderControlPane::HitTestPart 0x00496800) is the dialog's background (kit.lua onPart:
+        -- DialogPane.cpp:318-331), so it tracks nothing and commands nothing; changing it changes when the music
+        -- command runs.
+        part.__noPart = true
         K.Wire(win, part, index, nil, function(down) return down and (f.activePart or 10) or f:OriginalPart() end)
         part:HookScript("OnPressedMove", function()
-            if f.dragging then f:GetScript("OnUpdate")(f) end
+            -- the held thumb takes the pointer before the move is sent (ShellSlider.Drag, was the slider's OnUpdate)
+            if f.dragging then f:Drag() end
             if f.activePart then K.Move(win, index) end
         end)
     end

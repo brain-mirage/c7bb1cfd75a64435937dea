@@ -87,7 +87,17 @@ local function keepSelection(list, rows)
     return keep
 end
 
-local function setRows(list, rows, render)
+--- Client review 2.37. WIRE: a replaced or removed row (the model's resets, BulletinListDialog._resets) clears the whole
+--- selection and the current row, as 4a's removal does (ListPane::RemoveItems 0x004F3D60, ListPane.cpp:100-108, from
+--- AddArticleEntry 0x00474990 and AddOrUpdateMailEntry 0x0047A900), so Read and Delete send nothing until the player
+--- selects again; rows of new ids keep it. Keeping it lets Read send 3B 03 (Delete 3B 05) that 4a does not.
+local function setRows(list, rows, resets, render)
+    if resets ~= list.resets then
+        list.resets = resets
+        list:SetItems(rows, render)
+        list:Select(nil)
+        return
+    end
     local keep = keepSelection(list, rows)
     list:SetItems(rows, render)
     for i, r in ipairs(rows) do if keep[r[2]] then list.selected[i] = true end end
@@ -120,7 +130,7 @@ function Articles.update(win, view)
     local hasExtra = false
     for _, ctl in ipairs(view.controls) do if ctl.index == 8 then hasExtra = true end end
     win.extra:SetShown(hasExtra)
-    setRows(win.list, c.rows or {}, function(row, r)
+    setRows(win.list, c.rows or {}, c.resets, function(row, r)
         row.text:SetText(string.format("%-6s %s   %s  %s", tostring(r[2]), K.Text(r[3]), date(r[4], r[5]), K.Text(r[6])))
         -- s6-modular-g (interfaces, round 12): a look's own rows (7.x's: 4a's columns); drawing only
         if C.look.BoardList.row then C.look.BoardList.row(win, row, r) end
@@ -275,7 +285,7 @@ end
 function Mails.update(win, view)
     local c = view.contents
     win.title:SetText(K.Text(c.title))
-    setRows(win.list, c.rows or {}, function(row, r)
+    setRows(win.list, c.rows or {}, c.resets, function(row, r)
         local mark = r[1] ~= 0 and "* " or "  "
         row.text:SetText(string.format("%s%-14s %s  %s", mark, K.Text(r[3]), date(r[4], r[5]), K.Text(r[6])))
         -- s6-modular-g (interfaces, round 12): a look's own rows (7.x's: 4a's columns); drawing only

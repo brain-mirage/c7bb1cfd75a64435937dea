@@ -80,10 +80,17 @@ return function(L, X)
             local ol, ot, orr, ob = unpack(U.note)
             X.Text(win.note, win, ol, ot, orr, ob, S.TEXT)
             win.note:SetWordWrap(false)
-            -- the sort: the press anywhere on the group turns it over (the kit's switch, as 7.x's look)
+            -- the sort: a radio group of LEVEL (y 37-48) and NAME (y 53-63) in its 62 x 26, as 7.x's look (client
+            -- review 2.42, the shared win:SortPart): the release's option is the model's, so the check box's own turn
+            -- is put back and the pictures follow the model's sort
             X.Rect(win.sort, win, unpack(U.sort))
             for _, part in ipairs({ win.sort.box, win.sort.check, win.sort.hl, win.sort.label }) do part:SetAlpha(0) end
-            win.sort:HookScript("OnClick", function() L.Users.radio(win) end)
+            -- the options end at 4a's exclusive x 59, the group 62 wide (UserListDialogPane.cpp:182; Astra pass 5, P2)
+            win.sortOptions = { width = 62, height = 26, { 0, 0, 59, 11 }, { 0, 16, 59, 26 } }
+            win.sort:HookScript("OnClick", function()
+                win.sort:SetChecked(((win.view and win.view.contents.sort) or 0) == 1)
+                L.Users.radio(win)
+            end)
             -- 7.5.2's hunters only (21): a radio button and its caption over the kit's check box
             X.Rect(win.only, win, unpack(U.only))
             for _, part in ipairs({ win.only.box, win.only.check, win.only.hl }) do part:SetAlpha(0) end

@@ -411,8 +411,13 @@ return function(kit)
                 if button ~= "LeftButton" then return end
                 focusStop(d, stop)
                 local x, y = X.ScreenPoint(TK.Util.CursorRoot())
-                local col, row = math.floor((x - at[1]) / 32), math.floor((y - at[2]) / 32)
-                if col < 0 or col > 3 or row < 0 or row > 3 then return end
+                -- Client review 2.24. WIRE: 4a's ListPane::HitTestItem (0x004F4480, ui/ListPane.cpp:329-346) clamps the
+                -- point into the list's 137 x 150 content (ScrollPane.cpp:955-961), so a press below or beside the
+                -- swatches chooses the nearest one; a press on the scroll bar's 13 pixels at the right chooses nothing.
+                -- The choice is the creation's hair or face colour (04): changing this changes what the server sees.
+                if x - at[1] >= 137 then return end
+                local col = math.max(0, math.min(3, math.floor((x - at[1]) / 32)))
+                local row = math.max(0, math.min(3, math.floor((y - at[2]) / 32)))
                 d.look[key] = row * 4 + col + 1
                 showLook(d)
             end)

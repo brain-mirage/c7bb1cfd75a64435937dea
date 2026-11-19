@@ -167,6 +167,72 @@ local function slotControl(p, name)
     return b
 end
 
+--- Client review 2.35 (Astra's passes 4 and 5). WIRE: a slot's selection (selected(): 4a's m_selectedSpellSlot or
+--- m_selectedInventorySlot, which only a single press on a slot that holds something sets), taken by the pointer to the
+--- page's top or bottom edge, scrolls the list one row every 50 ms, so a drag released there lands on another slot (30
+--- 01 or 30 00 dest src). 4a's move (NewSpellInventoryPane::HandlePointerOrMouseEvent 0x0057D9C0 case 0,
+--- SpellInventoryPane.cpp:709-731; the compact inventory's, NewInventoryPane::HandlePointerOrMouseEvent 0x004ECB50,
+--- InventoryPane.cpp:997-1016, list and grid alike) starts timer 1 in the band from 90 above the pane's top to 20 below
+--- it, and timer 2 from 20 above its bottom to below() under it (the spells' 400, 140 expanded; the compact inventory's
+--- 450; none for an expanded inventory), unless one already runs; a move outside both stops it (:730). Each move is
+--- judged in its order (TK_PRESSED_MOVE, UIHost.PressedMove), so a move out and back before a frame stops the timer and
+--- starts a fresh 50 ms. Only a move does: a press held still starts nothing, and a key that ends the selection leaves
+--- a running timer, whose moves no longer test the bands (:709). A left release stops it by the pane's own rule: the
+--- spells' only with no dialog alive (keepsWithDialog: SpellInventoryPane.cpp:802-804), the inventory's always
+--- (InventoryPane.cpp:1168). Each dispatch (OnTimer 0x0057E1E0, 0x004EDB70) moves the position one row, clamped, and
+--- starts the timer again 50 ms from that dispatch (TimerMgr::StartTimer 0x00597910: the dispatch's tick plus 50), so a
+--- late frame still moves one row. The bands are in the pane's own pixels (4a's), whatever its scale. Changing the
+--- bands, the 50 ms, the step or what starts and stops it changes which slot a held drag is released on, so the move
+--- the server gets. p.edgeTimer is the running timer (-1 up, 1 down, 0 none), a read for the tests; the watcher runs
+--- only while one is pending.
+local function edgeScroll(p, selected, below, controls, keepsWithDialog)
+    local watcher = CreateFrame("Frame", nil, p)
+    local armed, due = false, 0 -- armed: a left press on one of the page's controls is held
+    p.edgeTimer = 0
+    --- -1 in the upper band, 1 in the lower one, else 0: 4a's PointInRect (0x004B7E80, left and top edges in) on the
+    --- pane's own pixels, the cursor moved from UIParent's units by the pane's scale
+    local function zone(reach)
+        local x, y = TK.Util.CursorRoot()
+        local l, b, w, h = TK.Util.RootRect(p)
+        if not l or w <= 0 then return 0 end
+        local width, height = p:GetWidth(), p:GetHeight()
+        local k = width / w
+        local px, down = (x - l) * k, (b + h - y) * k -- from the pane's top left, y down
+        if px < 0 or px >= width then return 0 end
+        if down >= -90 and down < 20 then return -1 end
+        if down >= height - 20 and down < height + reach then return 1 end
+        return 0
+    end
+    local function step()
+        if p.edgeTimer == 0 then watcher:SetScript("OnUpdate", nil) return end
+        local now = GetTime()
+        if now < due then return end
+        p.first = math.max(0, (p.first or 0) + p.edgeTimer) -- the page's refresh clamps it to the list's end
+        due = now + 0.05
+        C:Refresh()
+    end
+    for _, b in ipairs(controls) do
+        b:HookScript("OnMouseDown", function(_, button) if button == "LeftButton" then armed = true end end)
+    end
+    TK.On("TK_PRESSED_MOVE", function() -- a move (4a's case 0)
+        if not armed then return end
+        local reach = selected() and below()
+        if not reach then return end
+        local z = zone(reach)
+        if z == 0 then
+            p.edgeTimer = 0
+        elseif p.edgeTimer == 0 then
+            p.edgeTimer, due = z, GetTime() + 0.05
+            watcher:SetScript("OnUpdate", step)
+        end
+    end)
+    TK.On("GLOBAL_MOUSE_UP", function(_, button)
+        if button ~= "LeftButton" then return end
+        armed = false
+        if not (keepsWithDialog and __tk:ActiveDialogs() > 0) then p.edgeTimer = 0 end
+    end)
+end
+
 --- The items page's rows and cells (main.xml's ITEM_ROWS and ITEM_CELLS), each a slot control at its hit rectangle, its
 --- held label's pen following the row's or cell's (BuildInventorySlotOrigin 0x004EE4F0: including the expanded pane's
 --- +5; the hit and the action stay the control's).
@@ -194,6 +260,10 @@ function scripts.ItemSlots(p)
     Inv.HelpOwner(p, Hud.HelpLine)
     Inv.Track(p.rows)
     Inv.Track(p.cells)
+    local slots = {}
+    for _, b in ipairs(p.rows) do slots[#slots + 1] = b end
+    for _, b in ipairs(p.cells) do slots[#slots + 1] = b end
+    edgeScroll(p, Inv.PressSelected, function() return not p.expanded and 450 end, slots, false) -- 2.35: compact only
 end
 
 function scripts.ListView(p) p.grid, p.first = false, 0 C:Refresh() end
@@ -341,6 +411,7 @@ function scripts.SpellRows(p)
         b:Hide()
         p.rows[n] = b
     end
+    edgeScroll(p, Spells.PressSelected, function() return p.expanded and 140 or 400 end, p.rows, true) -- 2.35
 end
 
 function scripts.Expand(p) toggleExpanded(p) end
@@ -686,6 +757,21 @@ function scripts.TabRequest(b) TK.Actions:Set(b, b.tab.request) end
 --- Whether the panel shows now (in the world, switched on), so the bag, book, character, collection, group, look and
 --- options openers show its pages.
 function C:IsShowing() return self.frame ~= nil and self.frame:IsShown() end
+
+--- Client review 2.44 (Astra's passes 10 and 11): a wheel turn that a dialog holding a press got outside its own place
+--- (the dialogs kit's sidePaneWheel), at (x, y) in UIParent units: the shown page whose bounds hold the point turns by
+--- its own wheel script, its blank band too. WIRE: 4a's DialogPane forwards an event outside its bounds to the
+--- GeneralPurposePanel's active child pane by that pane's bounds (DialogPane.cpp:404, :427-430), so the spell list
+--- moves, whose row a later click casts (0F); dropping or rerouting it changes that slot.
+function C:WheelAt(x, y, delta)
+    for _, page in pairs(self.frame and self.frame.pages or {}) do
+        local wheel = page:GetScript("OnMouseWheel")
+        local l, b, w, h = TK.Util.RootRect(page)
+        if wheel and page:IsVisible() and l and x >= l and x < l + w and y > b and y <= b + h then
+            return wheel(page, delta)
+        end
+    end
+end
 
 -- The tab keys of the expanded panes (the classic keys 'i', '+' and 'f': TOGGLEBAG, TOGGLESPELLBOOK, TOGGLEGROUP). While
 -- the items, spells or group tab is the active one, 4a's pane has the key before UserPane (each switch makes it BackPane's

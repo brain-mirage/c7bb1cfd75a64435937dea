@@ -181,10 +181,13 @@ function C:SettingsNodes()
     } }
     local h = self:Host()
     if not h then return nodes end
+    -- The list reaches the settings window as tab- and newline-separated lines (core/global/settings.lua's
+    -- "settings.catalogue"): a plugin's name or page title has its control characters made spaces (steer 63f81178).
+    local function plain(s) return s and (s:gsub("%c", " ")) end
     for i, p in ipairs(h:List()) do
-        local id = "plugin:" .. p.name
+        local id = "plugin:" .. plain(p.name)
         local tabs = { { name = "About", args = aboutArgs(h, p) } }
-        nodes[#nodes + 1] = { id = id, title = p.title, category = "plugins", order = 910, sub = i,
+        nodes[#nodes + 1] = { id = id, title = plain(p.title), category = "plugins", order = 910, sub = i,
                               machine = true, noReset = true, tabs = tabs } -- a panel's values are the plugin's own
         for j, page in ipairs(p.panel and panelPages(h, p.name) or {}) do
             if not page.title then
@@ -192,9 +195,10 @@ function C:SettingsNodes()
             else
                 -- s6-ui-settings (the owner's nested settings menus: "Plugin X / -- General plugin x settings / --
                 -- additional x"): a page the plugin titled (C_Options.RegisterPanel's title), under the plugin.
-                nodes[#nodes + 1] = { id = id .. ":" .. page.title, title = page.title, parent = id, category = "plugins",
+                local title = plain(page.title)
+                nodes[#nodes + 1] = { id = id .. ":" .. title, title = title, parent = id, category = "plugins",
                                       order = 910, sub = i + j / 1000, machine = true, noReset = true,
-                                      tabs = { { name = page.title, args = page.args } } }
+                                      tabs = { { name = title, args = page.args } } }
             end
         end
     end

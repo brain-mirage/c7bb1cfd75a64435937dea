@@ -87,11 +87,21 @@ local function picker(name, mixing, stacked, single)
         win.list = K.List(win, 3, L.listWidth, L.listHeight, not single)
         win.cancel = K.Button(win, 2, "Cancel", L.button)
         win.ok = K.Button(win, 1, "OK", L.button)
+        -- Client review 2.39. WIRE: a stacked picker's count is the slot's now, not the row's from the last refresh: 4a
+        -- reads the slot record when OK is pressed (AddMixingItemDialog::OnControlCommand 0x004B0120,
+        -- ExchangeDialog.cpp:1010-1011, and PromptForQuantity's maximum, :939-943; the merchant's
+        -- EmployeeInventoryItemCommandHelper 0x004A2450, EmployeeDialogPane.cpp:210, through timer 5 to 54 01's action
+        -- 0). An inventory update while the picker is open changes it. Changing it changes the count in 6B or 54 01.
         function win:Values()
             local out = {}
             for _, i in ipairs(self.list:All()) do
                 local it = self.list.items[i]
-                out[#out + 1] = stacked and (it.slot .. ":" .. it.count) or tostring(it.slot)
+                if stacked then
+                    local ok, _, count = H:GetItemSlot(it.slot)
+                    out[#out + 1] = it.slot .. ":" .. (ok and (count or 1) or it.count)
+                else
+                    out[#out + 1] = tostring(it.slot)
+                end
             end
             return { table.concat(out, ",") }
         end
@@ -182,12 +192,18 @@ end
 
 function Mix.update(win, view)
     local rowsNow = view.contents.rows or {}
+    -- Client review 2.38. WIRE: an ingredient appended keeps the selection (ListPane::AddEntry 0x004F3C50,
+    -- ListPane.cpp:68), one removed clears it and the keys' current row (ListPane::RemoveItems 0x004F3D60, :100-108),
+    -- so Delete (MixItemDialog::OnControlCommand 0x004AF8B0, ExchangeDialog.cpp:886) removes the row the player
+    -- selected and 6B lists the rest. Changing it changes the 6B the server gets.
+    local keep = #rowsNow >= #win.list.items
     win.list:SetItems(rowsNow, function(row, r)
         local name = itemName(r[1])
         row.text:SetText(K.SlotLetter(r[1]) .. ")  " .. name .. "  x" .. tostring(r[2]))
         -- s6-modular-g (interfaces, round 12): a look's own rows (7.x's: the item's picture and its name)
         if C.look.Mix.row then C.look.Mix.row(win, row, r) end
-    end, #rowsNow == #win.list.items)
+    end, keep)
+    if not keep then win.list.anchor = nil end
 end
 
 function Mix.key(win, key)

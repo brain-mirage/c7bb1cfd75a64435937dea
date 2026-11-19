@@ -16,8 +16,9 @@ local Screen = require("shared.original.screen")
 
 -- The slides: one clipping frame (a ScrollFrame clips what is in it) over the window's place while it slides, and one
 -- frame over that place that takes the pointer meanwhile (the shield). One for the client: 4a's slides block it while
--- they run, so there is never a second.
-local slideClip, slideShield
+-- they run, so there is never a second. shieldHold: the left press the shield holds ({ win, pass }: its window and that
+-- slide's dispatch) until its release, even after a newer slide took the shield (client review 2.44, X.SlideOpen).
+local slideClip, slideShield, shieldHold
 
 --- The helpers for one interface. ctx = {
 ---   skin = its skin: the palette's fields (shared/original/palette.lua) and Text(fs, index), TextWidth(text),
@@ -250,15 +251,24 @@ return function(ctx)
     --- SLIDEBG.PAL 4 pixels in (frame 0 the top cap, frame 1's one row down to the thumb and on from it, frame 2 the bottom
     --- cap), and SCRBUTT.EPF's 38-pixel thumb (frame 1 while it is held, in BUTTON.PAL) at the position x (height - 38) /
     --- range, in rows. The kit's bar (W.ScrollArea) keeps its input: a press, a drag and the wheel do what they did.
-    --- Drawing only.
+    --- A pane's own bar (list.paneBar: the rankings' categories, RankingEventScrollPane::OnPaint's parts,
+    --- RankingEventScrollPane.cpp:241-353, on RankingEventListPane::UpdateRenderRegion's rectangle, :580) is drawn the
+    --- same way at its rectangle in the list's: the strip 4 in from each side, so 7 wide on its 15.
+    --- Its place is the kit's input too (client review 2.45, kit.lua's track4a and kitBar). WIRE: the pointer's place
+    --- on that bar decides the press's part and jump, so the first category the next 7D 02 asks for; changing it
+    --- changes that category.
     local function styleBar(list)
         local sf = list.sf
         local track, thumb = sf.track, sf.thumb
         if not track or sf.barStyle then return end
+        local inset = list.paneBar
+        local width = inset and inset.width or 13
+        -- X.List's rectangle is 13 wider than its rows (r - 13): a pane's bar is width wide, inset.right in from r
+        local x = inset and 13 - inset.right - width or 0
         track:ClearAllPoints()
-        track:SetPoint("TOPLEFT", sf, "TOPRIGHT", 0, 0)
-        track:SetPoint("BOTTOMLEFT", sf, "BOTTOMRIGHT", 0, 0)
-        track:SetWidth(13)
+        track:SetPoint("TOPLEFT", sf, "TOPRIGHT", x, inset and -inset.top or 0)
+        track:SetPoint("BOTTOMLEFT", sf, "BOTTOMRIGHT", x, inset and inset.bottom or 0)
+        track:SetWidth(width)
         track.bg:Hide()
         local function art(frame, file, palette)
             local t = track:CreateTexture(nil, "ARTWORK")
@@ -272,23 +282,24 @@ return function(ctx)
         local normal, held = TK.Art.Image("SCRBUTT.EPF", 0, "BUTTON.PAL"), TK.Art.Image("SCRBUTT.EPF", 1, "BUTTON.PAL")
         if normal then thumb.tex:SetTexture(normal) else thumb.tex:SetColorTexture(0, 0, 0, 0) end
         thumb.tex:SetVertexColor(1, 1, 1, 1) -- the kit's thin bar tints its thumb; 4a's picture is drawn as it is
-        thumb:SetWidth(13)
+        thumb:SetWidth(width)
         thumb:HookScript("OnMouseDown", function() if held then thumb.tex:SetTexture(held) end end)
         thumb:HookScript("OnMouseUp", function() if normal then thumb.tex:SetTexture(normal) end end)
 
-        --- Rows y to y + n of the bar (5 wide, 4 in) drawn with t, of its picture's rows from - to (of rows in all: a
-        --- cap's crop, 4a drawing into a smaller rectangle); none when empty.
+        --- Rows y to y + n of the bar (4 in from each side: 5 wide on 13) drawn with t, of its picture's rows from - to
+        --- (of rows in all: a cap's crop, 4a drawing into a smaller rectangle); none when empty.
         local function place(t, y, n, from, to, rows)
             t:SetShown(n > 0)
             if n <= 0 then return end
             t:ClearAllPoints()
             t:SetPoint("TOPLEFT", track, "TOPLEFT", 4, -y)
-            t:SetSize(5, n)
+            t:SetSize(width - 8, n)
             t:SetTexCoord(0, 1, from / rows, to / rows)
         end
         sf.barStyle = function(range, h)
             local rh = list.rowHeight
             local rows = math.floor(range / rh + 0.5)
+            if inset then h = h - inset.top - inset.bottom end -- the bar's own rectangle
             h = math.floor(h + 0.5)
             local can = rows > 0 and h > 38
             track:Show()
@@ -332,6 +343,7 @@ return function(ctx)
     function X.List(win, list, l, t, r, b, cell, rowHeight)
         rowHeight = rowHeight or 12
         X.Rect(list.sf, win, l, t, r - 13, b)
+        list.drawnHeight = b - t -- client review 2.47: the height asked for, not the pixel-snapped one (kit.lua drawn)
         list:SetWidth(r - 13 - l)
         list.cellWidth = cell
         list.sf.bg:Hide()
@@ -983,7 +995,7 @@ return function(ctx)
         local x, y = win.screenX, win.screenY
         local w, h = math.floor(win:GetWidth() + 0.5), math.floor(win:GetHeight() + 0.5)
         local strata, level, start, step
-        local pressed, ended = false, false
+        local ended = false
         --- Step i: the window (4 - i) x height / 5 higher than its place (DialogPane: (4 - i) * height / -5).
         local function at(i)
             local dy = math.floor((4 - i) * h / 5)
@@ -995,11 +1007,15 @@ return function(ctx)
         --- drawn. double: the host's double-press flag, passed on (WIRE: a double-click's second press tracks nothing in
         --- 4a, HandlePointerOrMouseEvent 0x0049E240, so its release clicks nothing: K.PressAt; dropping it toggled a check
         --- box twice).
-        local function pass(down, button, double)
+        local function point()
             local px, py = TK.Util.CursorRoot()
             local _, wb, _, wh = TK.Util.RootRect(win)
             local raised = wb and (wb + wh) - (GetScreenHeight() - (top + y * s)) or 0
-            TK.GetComponent("dialogs").kit.PressAt(win, px, py + raised, button, down, double)
+            return px, py + raised
+        end
+        local function pass(down, button, double)
+            local px, py = point()
+            TK.GetComponent("dialogs").kit.PressAt(win, px, py, button, down, double)
         end
         function clip.finish()
             clip.finish = nil
@@ -1013,23 +1029,54 @@ return function(ctx)
             clip:Hide()
             -- a press still held keeps the shield until its release, which goes the same way
             ended = true
-            if not pressed then shield:Hide() end
+            if not shieldHold then shield:Hide() end
         end
         shield:EnableMouse(true)
+        -- Client review 2.44 (Astra's passes 6 and 7). WIRE: while the shield holds a left press, the window's lists and
+        -- bars read the pointer at the same moved point (win.__pointAt: K.List's pointer, 5.33's Bar:Pointer, the kit's
+        -- controlUnderPointer), as 4a reads the queued press, its moves and its release against the window at its place
+        -- (DialogPane.cpp:357, :496): a scroll bar's jump and its timer's steps, and a held row's steps, then put 4a's
+        -- position where 4a's would be. Reading the real pointer put it a slide step off, so the list's end (3B 02) and
+        -- the row a later click sends were not 4a's. The left hold owns the point and the shield (shieldHold): another
+        -- button's press or release in between takes its own point for its own dispatch (pass) and ends neither.
+        -- Astra's pass 8: the hold stays its window's until its release, even when a newer slide (a server alert opened
+        -- meanwhile) takes the shield: the hold's other buttons, moves and release go to the holding window (its
+        -- pass), as 4a's capture sends them to its source (EventDispatcher.cpp:258, ScrollPane.cpp:134), and the release
+        -- ends that window's point and its bar (K.heldBar). Sending them to the alert left the mail list's bar held.
         shield:SetScript("OnMouseDown", function(_, button, double)
-            pressed = true
-            pass(true, button, double)
+            if not shieldHold and button == "LeftButton" then
+                shieldHold = { win = win, pass = pass }
+                win.__pointAt = point
+            end
+            local to = shieldHold and shieldHold.pass or pass
+            to(true, button, double)
         end)
-        shield:SetScript("OnMouseUp", function(_, button)
-            pressed = false
-            pass(false, button)
+        local function letGo(hold)
+            shieldHold = nil
+            hold.win.__pointAt = nil
             if ended then shield:Hide() end
+        end
+        shield:SetScript("OnMouseUp", function(_, button)
+            local hold = shieldHold
+            local to = hold and hold.pass or pass
+            to(false, button)
+            if hold and button == "LeftButton" then letGo(hold) end
+        end)
+        -- A release the host swallows (UIHost.MouseUp: 7.x's item box shown) posts none of the window's release, but
+        -- the hold ends with it all the same: the window's bar lets go too (kit.CancelPress; Astra's pass 9).
+        shield:SetScript("OnPressCancelled", function(_, button)
+            local hold = shieldHold
+            if not hold or button ~= "LeftButton" then return end
+            TK.GetComponent("dialogs").kit.CancelPress(hold.win)
+            letGo(hold)
         end)
         -- s6-input (round 43; Astra's review of s6-input round 42). WIRE: the moves while the shield holds a press passed
         -- on to a list's row, EventMan's auto-scroll tick's every 20 ms included, go to that row as 4a's go to the list
         -- that tracks the press once the slide is over (ListPane::OnMouseEvent 0x004F4190 case 0: its step, then 3B 02 at
         -- a board's or the mail list's end): K.PressedMoveAt. Dropping it leaves such a list unscrolled and unpaged.
-        shield:SetScript("OnPressedMove", function() TK.GetComponent("dialogs").kit.PressedMoveAt(win) end)
+        shield:SetScript("OnPressedMove", function()
+            TK.GetComponent("dialogs").kit.PressedMoveAt(shieldHold and shieldHold.win or win)
+        end)
         -- from the next frame, once the window is shown at its strata and level (C:Refresh shows it after its update)
         clip:SetScript("OnUpdate", function()
             if not start then

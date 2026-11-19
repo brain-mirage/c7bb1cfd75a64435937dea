@@ -577,6 +577,12 @@ function Frame:SetTakesPointer(on) H:SetTakesPointer(self.__h, on and true or fa
 --- changes what the server sees.
 function Frame:SetCapturesPress(on) H:SetCapturesPress(self.__h, on and true or false) end
 
+--- Client review 2.44 (Astra's pass 8): while on, every wheel turn goes to this frame wherever the pointer is (the host's
+--- WheelCapture), until it is turned off. WIRE: a dialog list whose scroll bar holds the left press (kit.lua's holdBar)
+--- is 4a's capture source, which gets the wheel even under a newer dialog (EventDispatcher.cpp:258); changing it changes
+--- which list turns, so whether the server gets 3B 02.
+function Frame:SetWheelCapture(on) H:SetWheelCapture(self.__h, on and true or false) end
+
 --- s6-interface-7x-b (round 2): a double click's second press over this frame goes to what is under it, as 4a's panes that
 --- act on the left press (event type 1) alone let the double press (type 2) fall through (MiniMapButtonPane::
 --- HandlePointerOrMouseEvent 0x005036A0, MapNamePane.cpp:189; ScrollPane's 0x0055C400; ChattingModifyHeightPane's

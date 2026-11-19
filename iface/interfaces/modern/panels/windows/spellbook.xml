@@ -124,7 +124,9 @@
       <!-- A value column's cell: one line (a), or two (a over b: the damage), or the auras' marks. -->
       <run call="Cells"/>
       <run call="CellControl"/>
-      <on script="OnEnter" call="RowTip"/>
+      <!-- hook: after CellControl's own OnEnter (the press's reach, shared/game/spells.lua; client review 2.25's WIRE:
+           a Simple Click press that reaches another row casts nothing), which a plain script here would replace -->
+      <on script="OnEnter" call="RowTip" hook="true"/>
       <on script="OnLeave" call="RowLeave"/>
       <do Hide=""/>
     </frame>

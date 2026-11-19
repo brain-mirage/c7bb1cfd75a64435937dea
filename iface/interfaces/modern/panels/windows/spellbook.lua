@@ -299,11 +299,16 @@ local function fillRow(row, name, info, classic)
 end
 
 --- The rows' actions for the cursor's carry now (the book cell's, TK.Game.Spells.SetCellAction). Sorted, a book spell on the cursor
---- leaves them none: moving a spell (30 01) is offered in the slots' order only, so a drop on a sorted row sends nothing.
+--- leaves them none but its own row's cast: moving a spell (30 01) is offered in the slots' order only, so a drop on
+--- another sorted row sends nothing, and Simple Click's release on the pressed row still casts (client review 2.25).
 local function updateRowActions(page, moving)
     local held = TK.Cursor:Get()
     for _, b in ipairs(page.rows) do
-        if moving and page.sort then TK.Actions:Clear(b) else TK.Game.Spells.SetCellAction(b, held) end
+        if moving and page.sort and (held and held.slot) ~= b.slot then
+            TK.Actions:Clear(b)
+        else
+            TK.Game.Spells.SetCellAction(b, held)
+        end
     end
 end
 
